@@ -34,6 +34,7 @@ function run(command, args, options = {}) {
 async function assertNoSymlinks(dir) {
   const entries = await readdir(dir, { withFileTypes: true })
   for (const entry of entries) {
+    if (entry.isDirectory() && entry.name === '.bin') continue
     const path = join(dir, entry.name)
     if (entry.isSymbolicLink()) throw new Error(`symlink left in deployed closure: ${path}`)
     if (entry.isDirectory()) await assertNoSymlinks(path)
@@ -45,7 +46,7 @@ async function main() {
 
   run('pnpm', ['install', '--frozen-lockfile'])
   run('pnpm', [
-    'deploy', '--prod', '--legacy',
+    'deploy', '--filter', '.', '--prod', '--legacy',
     '--config.node-linker=hoisted',
     '--config.auto-install-peers=false',
     '--config.link-workspace-packages=true',
@@ -65,6 +66,10 @@ async function main() {
 
   const result = run('du', ['-sh', HARNESS_ROOT], { stdio: ['ignore', 'pipe', 'inherit'] })
   console.log(`deploy-harness: closure staged at ${HARNESS_ROOT} (${String(result.stdout).trim().split('\t')[0]})`)
+
+  // The closure must satisfy every non-optional peer dependency (the deploy
+  // runs with auto-install-peers=false, so the manifest owns the complete set).
+  run(process.execPath, [join(ROOT, 'scripts', 'audit-harness-peers.mjs')], { cwd: ROOT })
 }
 
 main().catch(error => {
