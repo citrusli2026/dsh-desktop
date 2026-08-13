@@ -66,7 +66,11 @@ function createWindow(): BrowserWindow {
 
 /** Fail loudly at boot when the bundled closure is missing or incomplete. */
 function verifyHarness(root: string): void {
-  for (const [label, path] of [['node', nodeBin(root)], ['dsh', dshBin(root)]]) {
+  const checks: ReadonlyArray<readonly [string, string]> = [
+    ['node', nodeBin(root)],
+    ['dsh', dshBin(root)],
+  ]
+  for (const [label, path] of checks) {
     if (!existsSync(path)) {
       throw new Error(`bundled harness incomplete: ${label} missing at ${path}; run 'pnpm run bootstrap' first`)
     }
