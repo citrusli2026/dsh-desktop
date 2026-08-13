@@ -34,8 +34,9 @@ jobs:
       - name: Package (${{ matrix.targets }})
         run: pnpm run dist -- ${{ matrix.targets }}
         env:
-          # Unsigned first (decision 0004): no codesign identity is configured.
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          # No signing identity on CI: electron-builder falls back to ad-hoc
+          # signing on macOS (required to run on Apple Silicon), and leaves
+          # Windows/Linux unsigned. Unsigned-first per decision 0004.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
