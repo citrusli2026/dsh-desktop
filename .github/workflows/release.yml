@@ -71,9 +71,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ github.ref_name }}"
-          gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" --prerelease --repo "${{ github.repository }}" \
+          REPO="${{ github.repository }}"
+          gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || \
+            gh release create "$TAG" --prerelease --repo "$REPO" \
               --title "dsh-desktop $TAG" --generate-notes
-          gh release upload "$TAG" artifacts/* --clobber \
-            --repo "${{ github.repository }}"
-          gh release edit "$TAG" --prerelease --draft=false --repo "${{ github.repository }}"
+          gh release upload "$TAG" artifacts/* --clobber --repo "$REPO"
+          gh release edit "$TAG" --prerelease --draft=false --repo "$REPO"
