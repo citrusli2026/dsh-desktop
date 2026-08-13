@@ -75,5 +75,9 @@ jobs:
           gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || \
             gh release create "$TAG" --prerelease --repo "$REPO" \
               --title "dsh-desktop $TAG" --generate-notes
+          # Wipe stale assets so renamed artifacts never linger side by side.
+          for A in $(gh release view "$TAG" --repo "$REPO" --json assets --jq '.assets[].name'); do
+            gh release delete-asset "$TAG" "$A" -y --repo "$REPO"
+          done
           gh release upload "$TAG" artifacts/* --clobber --repo "$REPO"
           gh release edit "$TAG" --prerelease --draft=false --repo "$REPO"

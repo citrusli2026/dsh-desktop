@@ -46,16 +46,21 @@ mac:
   target:
     - dmg
     - zip
+  # No spaces in artifact names: upload-artifact replaces them with dots and
+  # electron-updater would never find the files latest*.yml references.
+  artifactName: ${name}-${version}-${arch}-mac.${ext}
 
 win:
   target:
     - nsis
+  artifactName: ${name}-setup-${version}.${ext}
 
 linux:
   target:
     - AppImage
     - deb
   category: Development
+  artifactName: ${name}-${version}-${arch}.${ext}
 
 nsis:
   oneClick: false
