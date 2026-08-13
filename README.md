@@ -18,7 +18,7 @@ DeepSeek Harness(`dsh`)的 Electron 桌面壳:下载安装即用,功能与
 
 - macOS:`dsh-desktop-0.1.0-pre.0-arm64-mac.zip` 或 `-arm64.dmg`(**当前仅 Apple Silicon**;未签名,首次打开请右键 → 打开);
 - Windows:`dsh-desktop-setup-0.1.0-pre.0.exe`(NSIS,可选择安装目录);
-- Linux:`dsh-desktop-0.1.0-pre.0-x64.AppImage`(免安装)或 `dsh-desktop_0.1.0-pre.0_amd64.deb`。
+- Linux:`dsh-desktop-0.1.0-pre.0-x86_64.AppImage`(免安装)或 `dsh-desktop-0.1.0-pre.0-amd64.deb`。
 
 Windows / Linux 支持应用内自动更新;macOS 待签名后启用(见决策记录 0004)。
 
