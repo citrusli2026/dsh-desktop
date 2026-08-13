@@ -6,6 +6,10 @@ directories:
   output: dist
   buildResources: build
 
+# Reuse the Electron dist staged by scripts/install-electron.mjs instead of
+# downloading a second copy (scripts verify sha256 against checksums.json).
+electronDist: node_modules/electron/dist
+
 files:
   - lib/**
   - package.json

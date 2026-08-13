@@ -11,7 +11,7 @@
     "node": "^22.19.0 || >=24.0.0"
   },
   "scripts": {
-    "build": "esbuild src/main/index.ts --bundle --platform=node --format=esm --external:electron --outfile=lib/main/index.js --sourcemap",
+    "build": "node scripts/build.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "dev": "pnpm run build && electron .",
     "start": "electron .",
@@ -19,6 +19,7 @@
     "fetch-node": "node scripts/fetch-node.mjs",
     "deploy-harness": "node scripts/deploy-harness.mjs",
     "bootstrap": "pnpm run deploy-harness && pnpm run fetch-node",
+    "postinstall": "node scripts/install-electron.mjs",
     "dist": "pnpm run build && electron-builder",
     "dist:dir": "pnpm run build && electron-builder --dir"
   },
@@ -27,6 +28,7 @@
     "electron": "^43.4.0",
     "electron-builder": "^26.0.0",
     "esbuild": "^0.25.0",
+    "extract-zip": "^2.0.1",
     "tar": "^7.0.0",
     "typescript": "^7.0.0"
   }

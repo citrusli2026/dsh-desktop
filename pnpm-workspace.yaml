@@ -1,0 +1,7 @@
+# pnpm 10+ 默认拒绝任何带 install/build 脚本的依赖(strictDepBuilds),
+# 必须在此逐一审查放行。esbuild 需要落位平台二进制;
+# electron-winstaller 的脚本为 Windows 打 NSIS 包选择 7z 架构。
+
+allowBuilds:
+  esbuild: true
+  electron-winstaller: true

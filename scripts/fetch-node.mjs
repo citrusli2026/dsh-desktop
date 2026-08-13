@@ -13,7 +13,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { extract } from 'tar'
 
-const DIST_BASE = 'https://nodejs.org/dist'
+const DIST_BASE = process.env.NODE_DIST_MIRROR ?? 'https://npmmirror.com/mirrors/node'
 const HARNESS_ROOT = join(process.cwd(), 'resources', 'harness')
 const TMP_ROOT = join(process.cwd(), 'resources', 'harness.tmp')
 
