@@ -6,7 +6,7 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.7.0",
-  "main": "lib/main/index.js",
+  "main": "lib/main/index.cjs",
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
   },
@@ -27,12 +27,10 @@
     "@types/node": "^22.0.0",
     "electron": "^43.4.0",
     "electron-builder": "^26.0.0",
+    "electron-updater": "^6.8.9",
     "esbuild": "^0.25.0",
     "extract-zip": "^2.0.1",
     "tar": "^7.0.0",
     "typescript": "^7.0.0"
-  },
-  "dependencies": {
-    "electron-updater": "^6.8.9"
   }
 }
