@@ -33,7 +33,9 @@ jobs:
       - run: pnpm install
       - run: pnpm run bootstrap
       - name: Package (${{ matrix.targets }})
-        run: pnpm run dist -- ${{ matrix.targets }} --publish never
+        # electron-builder is invoked directly: pnpm's `--` forwarding would
+        # insert a literal `--` before these args and turn them positional.
+        run: pnpm run build && pnpm exec electron-builder ${{ matrix.targets }} --publish never
         env:
           # No signing identity on CI: electron-builder falls back to ad-hoc
           # signing on macOS (required to run on Apple Silicon), and leaves

@@ -22,11 +22,11 @@ function fail(message) {
   process.exit(1)
 }
 
-/** Node dist label for the current platform/arch, e.g. darwin-arm64. */
+/** Node dist label for the current platform/arch, e.g. darwin-arm64, win-x64. */
 function distName() {
   const platform = process.platform === 'darwin' ? 'darwin'
     : process.platform === 'linux' ? 'linux'
-    : process.platform === 'win32' ? 'win32'
+    : process.platform === 'win32' ? 'win'
     : null
   const arch = process.arch === 'arm64' ? 'arm64'
     : process.arch === 'x64' ? 'x64'
@@ -59,7 +59,7 @@ const sha256 = buffer => createHash('sha256').update(buffer).digest('hex')
 
 async function main() {
   const name = distName()
-  const archiveExt = name.startsWith('win32') ? 'zip' : 'tar.gz'
+  const archiveExt = name.startsWith('win') ? 'zip' : 'tar.gz'
   const index = JSON.parse(await fetchText(`${DIST_BASE}/index.json`))
   const version = index.find(entry =>
     typeof entry.version === 'string' && entry.version.startsWith('v22.')
@@ -68,7 +68,7 @@ async function main() {
   if (version === undefined) fail('no Node 22.x LTS (>= 22.19.0) found in index.json')
   const file = `node-${version}-${name}.${archiveExt}`
   const nodeDir = join(HARNESS_ROOT, 'node')
-  const nodeExecutable = join(nodeDir, 'bin', name.startsWith('win32') ? 'node.exe' : 'node')
+  const nodeExecutable = join(nodeDir, 'bin', name.startsWith('win') ? 'node.exe' : 'node')
   const manifestPath = join(nodeDir, 'NODE_DIST.json')
 
   if (existsSync(manifestPath)) {
@@ -110,7 +110,7 @@ async function main() {
   if (!existsSync(extracted)) fail(`expected extraction root ${extracted}`)
   await rm(nodeDir, { recursive: true, force: true })
   await rename(extracted, nodeDir)
-  if (!name.startsWith('win32')) await chmod(nodeExecutable, 0o755)
+  if (!name.startsWith('win')) await chmod(nodeExecutable, 0o755)
 
   await writeFile(manifestPath, `${JSON.stringify({
     version, distName: name, file, sha256: actual, fetchedAt: new Date().toISOString(),
