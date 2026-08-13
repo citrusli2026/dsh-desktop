@@ -1,0 +1,40 @@
+appId: io.github.citrusli2026.dsh-desktop
+productName: DSH Desktop
+copyright: Copyright © 2026 dsh-desktop contributors (MIT)
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - lib/**
+  - package.json
+
+# The bundled harness (node runtime + @deepseek-ai/dsh closure) lives outside
+# the asar so native modules and the child-process spawn work from plain paths.
+extraResources:
+  - from: resources/harness
+    to: harness
+
+asar: true
+npmRebuild: false
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - dmg
+    - zip
+
+win:
+  target:
+    - nsis
+
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Development
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true

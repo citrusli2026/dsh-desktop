@@ -1,0 +1,33 @@
+{
+  "name": "dsh-desktop",
+  "version": "0.1.0-pre.0",
+  "description": "DeepSeek Harness Electron desktop shell: download and use; identical to `dsh web`",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "main": "lib/main/index.js",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "scripts": {
+    "build": "esbuild src/main/index.ts --bundle --platform=node --format=esm --external:electron --outfile=lib/main/index.js --sourcemap",
+    "typecheck": "tsc -p tsconfig.json",
+    "dev": "pnpm run build && electron .",
+    "start": "electron .",
+    "smoke": "pnpm run build && electron . --smoke-test",
+    "fetch-node": "node scripts/fetch-node.mjs",
+    "deploy-harness": "node scripts/deploy-harness.mjs",
+    "bootstrap": "pnpm run deploy-harness && pnpm run fetch-node",
+    "dist": "pnpm run build && electron-builder",
+    "dist:dir": "pnpm run build && electron-builder --dir"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "electron": "^43.4.0",
+    "electron-builder": "^26.0.0",
+    "esbuild": "^0.25.0",
+    "tar": "^7.0.0",
+    "typescript": "^7.0.0"
+  }
+}
