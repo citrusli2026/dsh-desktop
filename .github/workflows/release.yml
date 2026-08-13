@@ -53,6 +53,9 @@ jobs:
             dist/*.exe
             dist/*.AppImage
             dist/*.deb
+            # Update metadata electron-updater reads from GitHub Releases.
+            dist/latest*.yml
+            dist/*.blockmap
           if-no-files-found: error
 
   publish:
