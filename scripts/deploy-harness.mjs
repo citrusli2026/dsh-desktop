@@ -15,6 +15,8 @@ import { join } from 'node:path'
 const ROOT = process.cwd()
 const MANIFEST_DIR = join(ROOT, 'manifest', 'harness')
 const HARNESS_ROOT = join(ROOT, 'resources', 'harness')
+// Windows resolves pnpm through its .cmd shim, which spawn() refuses.
+const PNPM = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { cwd: MANIFEST_DIR, stdio: 'inherit', ...options })
@@ -44,8 +46,8 @@ async function assertNoSymlinks(dir) {
 async function main() {
   await rm(HARNESS_ROOT, { recursive: true, force: true })
 
-  run('pnpm', ['install', '--frozen-lockfile'])
-  run('pnpm', [
+  run(PNPM, ['install', '--frozen-lockfile'])
+  run(PNPM, [
     'deploy', '--filter', '.', '--prod', '--legacy',
     '--config.node-linker=hoisted',
     '--config.auto-install-peers=false',
@@ -64,8 +66,22 @@ async function main() {
     if (!existsSync(path)) throw new Error(`deployed closure incomplete: ${label} missing at ${path}`)
   }
 
-  const result = run('du', ['-sh', HARNESS_ROOT], { stdio: ['ignore', 'pipe', 'inherit'] })
-  console.log(`deploy-harness: closure staged at ${HARNESS_ROOT} (${String(result.stdout).trim().split('\t')[0]})`)
+  if (process.platform === 'win32') {
+    // No du on Windows; report a JS-walked byte count instead.
+    let bytes = 0
+    async function sizeOf(dir) {
+      for (const entry of await readdir(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name)
+        if (entry.isDirectory()) await sizeOf(path)
+        else bytes += (await lstat(path)).size
+      }
+    }
+    await sizeOf(HARNESS_ROOT)
+    console.log(`deploy-harness: closure staged at ${HARNESS_ROOT} (${Math.round(bytes / 1024 / 1024)}M)`)
+  } else {
+    const result = run('du', ['-sh', HARNESS_ROOT], { stdio: ['ignore', 'pipe', 'inherit'] })
+    console.log(`deploy-harness: closure staged at ${HARNESS_ROOT} (${String(result.stdout).trim().split('\t')[0]})`)
+  }
 
   // The closure must satisfy every non-optional peer dependency (the deploy
   // runs with auto-install-peers=false, so the manifest owns the complete set).

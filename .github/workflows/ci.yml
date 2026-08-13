@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm run typecheck
+      - run: pnpm run build
+      - run: pnpm run bootstrap
+      - name: Smoke test (headless X server)
+        run: xvfb-run -a pnpm run smoke -- --no-sandbox
+        env:
+          ELECTRON_DISABLE_SANDBOX: "1"
