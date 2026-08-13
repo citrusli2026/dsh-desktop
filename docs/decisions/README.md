@@ -11,3 +11,4 @@
 | [0004](0004-unsigned-release-first.md) | 先以未签名(unsinged)形式发布,签名后补 | 已接受 |
 | [0005](0005-harness-closure-pnpm-deploy.md) | 用 pnpm deploy 物化 harness 依赖闭包 | 已接受 |
 | [0006](0006-process-supervision-protocol.md) | harness 进程监督协议:就绪行解析、崩溃重启、优雅退出 | 已接受 |
+| [0007](0007-cjs-main-bundle.md) | 主进程以 CJS 单文件形式打包(esbuild bundle,electron-updater 内联) | 已接受 |
