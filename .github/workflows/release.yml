@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -32,11 +33,13 @@ jobs:
       - run: pnpm install
       - run: pnpm run bootstrap
       - name: Package (${{ matrix.targets }})
-        run: pnpm run dist -- ${{ matrix.targets }}
+        run: pnpm run dist -- ${{ matrix.targets }} --publish never
         env:
           # No signing identity on CI: electron-builder falls back to ad-hoc
           # signing on macOS (required to run on Apple Silicon), and leaves
           # Windows/Linux unsigned. Unsigned-first per decision 0004.
+          # --publish never keeps electron-builder from creating the release
+          # itself; the publish job below owns release creation.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -58,11 +61,14 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
-      - name: Create GitHub release
+      - name: Publish GitHub release (create if missing, upload assets, undraft)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ github.ref_name }}" artifacts/* \
-            --repo "${{ github.repository }}" \
-            --title "dsh-desktop ${{ github.ref_name }}" \
-            --generate-notes
+          TAG="${{ github.ref_name }}"
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" --prerelease --repo "${{ github.repository }}" \
+              --title "dsh-desktop $TAG" --generate-notes
+          gh release upload "$TAG" artifacts/* --clobber \
+            --repo "${{ github.repository }}"
+          gh release edit "$TAG" --prerelease --draft=false --repo "${{ github.repository }}"

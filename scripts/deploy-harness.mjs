@@ -15,8 +15,6 @@ import { join } from 'node:path'
 const ROOT = process.cwd()
 const MANIFEST_DIR = join(ROOT, 'manifest', 'harness')
 const HARNESS_ROOT = join(ROOT, 'resources', 'harness')
-// Windows resolves pnpm through its .cmd shim, which spawn() refuses.
-const PNPM = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { cwd: MANIFEST_DIR, stdio: 'inherit', ...options })
@@ -25,6 +23,25 @@ function run(command, args, options = {}) {
     process.exit(result.status ?? 1)
   }
   return result
+}
+
+/**
+ * Run pnpm in the manifest directory. Windows resolves pnpm through its .cmd
+ * shim, which spawn() refuses to execute directly, so route it through
+ * cmd.exe /c instead.
+ * @param args - pnpm arguments.
+ */
+function runPnpm(args) {
+  if (process.platform === 'win32') {
+    const quoted = args.map(arg => (/\s/.test(arg) ? `"${arg}"` : arg)).join(' ')
+    const result = spawnSync('cmd.exe', ['/d', '/s', '/c', `pnpm ${quoted}`], { cwd: MANIFEST_DIR, stdio: 'inherit' })
+    if (result.status !== 0) {
+      console.error(`deploy-harness: 'pnpm ${args.join(' ')}' failed`)
+      process.exit(result.status ?? 1)
+    }
+  } else {
+    run('pnpm', args)
+  }
 }
 
 /**
@@ -46,8 +63,8 @@ async function assertNoSymlinks(dir) {
 async function main() {
   await rm(HARNESS_ROOT, { recursive: true, force: true })
 
-  run(PNPM, ['install', '--frozen-lockfile'])
-  run(PNPM, [
+  runPnpm(['install', '--frozen-lockfile'])
+  runPnpm([
     'deploy', '--filter', '.', '--prod', '--legacy',
     '--config.node-linker=hoisted',
     '--config.auto-install-peers=false',
