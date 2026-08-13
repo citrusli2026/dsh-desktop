@@ -1,0 +1,10 @@
+node_modules/
+lib/
+dist/
+resources/harness/
+resources/harness.tmp/
+*.log
+.DS_Store
+.env
+.idea/
+.vscode/
