@@ -108,15 +108,18 @@ async function boot(): Promise<string> {
   }
 }
 
+/** Quit through the app flow so before-quit stops the harness first. */
+function quitGracefully(code: number): void {
+  process.exitCode = code
+  app.quit()
+}
+
 async function smokeVerify(url: string): Promise<void> {
   const response = await net.fetch(url)
   const body = await response.text()
-  if (response.ok && body.includes('__DSH_BOOT__')) {
-    console.log(`SMOKE_OK ${url}`)
-    process.exit(0)
-  }
-  console.error(`SMOKE_FAIL ${url} status=${response.status}`)
-  process.exit(1)
+  const ok = response.ok && body.includes('__DSH_BOOT__')
+  console.error(`smoke: ${ok ? 'OK' : 'FAIL'} ${url} status=${response.status} body=${body.length}B boot=${body.includes('__DSH_BOOT__')}`)
+  quitGracefully(ok ? 0 : 1)
 }
 
 app.on('before-quit', (event) => {
@@ -145,15 +148,15 @@ if (!gotLock) {
       const url = await boot()
       if (SMOKE_TEST) {
         const timer = setTimeout(() => {
-          console.error('SMOKE_TIMEOUT')
-          process.exit(1)
+          console.error('smoke: TIMEOUT')
+          quitGracefully(1)
         }, SMOKE_TIMEOUT_MS)
         timer.unref()
         await smokeVerify(url)
       }
     } catch (error) {
       console.error('dsh-desktop: boot failed:', error instanceof Error ? error.message : error)
-      if (SMOKE_TEST) process.exit(1)
+      if (SMOKE_TEST) quitGracefully(1)
     }
   })
 }
