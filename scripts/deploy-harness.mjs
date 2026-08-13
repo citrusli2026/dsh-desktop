@@ -1,0 +1,73 @@
+/**
+ * Materialize the @deepseek-ai/dsh dependency closure for the bundled harness
+ * (docs/decisions/0005): install the pure manifest in manifest/harness against
+ * its committed lockfile, then `pnpm deploy` (legacy, hoisted) a symlink-free
+ * node_modules into resources/harness/ — the closure technique the upstream
+ * deepseek-harness single-exe build uses. Clears resources/harness first, so
+ * run fetch-node afterwards (that is the bootstrap order).
+ * @module scripts/deploy-harness
+ */
+import { spawnSync } from 'node:child_process'
+import { lstat, readdir, rm } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+
+const ROOT = process.cwd()
+const MANIFEST_DIR = join(ROOT, 'manifest', 'harness')
+const HARNESS_ROOT = join(ROOT, 'resources', 'harness')
+
+function run(command, args, options = {}) {
+  const result = spawnSync(command, args, { cwd: MANIFEST_DIR, stdio: 'inherit', ...options })
+  if (result.status !== 0) {
+    console.error(`deploy-harness: '${command} ${args.join(' ')}' failed`)
+    process.exit(result.status ?? 1)
+  }
+  return result
+}
+
+/**
+ * Verify the deployed closure carries no symlinks: the harness is spawned
+ * from a plain directory, and symlinks would break packaged installs that
+ * are copied around by installers. `.bin` shims are removed beforehand.
+ * @param dir - closure root to walk.
+ */
+async function assertNoSymlinks(dir) {
+  const entries = await readdir(dir, { withFileTypes: true })
+  for (const entry of entries) {
+    const path = join(dir, entry.name)
+    if (entry.isSymbolicLink()) throw new Error(`symlink left in deployed closure: ${path}`)
+    if (entry.isDirectory()) await assertNoSymlinks(path)
+  }
+}
+
+async function main() {
+  await rm(HARNESS_ROOT, { recursive: true, force: true })
+
+  run('pnpm', ['install', '--frozen-lockfile'])
+  run('pnpm', [
+    'deploy', '--prod', '--legacy',
+    '--config.node-linker=hoisted',
+    '--config.auto-install-peers=false',
+    '--config.link-workspace-packages=true',
+    HARNESS_ROOT,
+  ])
+
+  const shims = join(HARNESS_ROOT, 'node_modules', '.bin')
+  if (existsSync(shims)) await rm(shims, { recursive: true, force: true })
+
+  await assertNoSymlinks(HARNESS_ROOT)
+
+  const dshBin = join(HARNESS_ROOT, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
+  const pnpmCjs = join(HARNESS_ROOT, 'node_modules', 'pnpm', 'bin', 'pnpm.cjs')
+  for (const [label, path] of [['dsh bin', dshBin], ['pnpm.cjs', pnpmCjs]]) {
+    if (!existsSync(path)) throw new Error(`deployed closure incomplete: ${label} missing at ${path}`)
+  }
+
+  const result = run('du', ['-sh', HARNESS_ROOT], { stdio: ['ignore', 'pipe', 'inherit'] })
+  console.log(`deploy-harness: closure staged at ${HARNESS_ROOT} (${String(result.stdout).trim().split('\t')[0]})`)
+}
+
+main().catch(error => {
+  console.error('deploy-harness:', error instanceof Error ? error.message : String(error))
+  process.exit(1)
+})

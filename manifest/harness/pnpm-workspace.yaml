@@ -1,0 +1,15 @@
+# pnpm 10+ blocks any dependency shipping an install/build script until it is
+# explicitly reviewed here (strictDepBuilds). Mirrors the upstream
+# deepseek-harness allowlist: allow the scripts the harness closure genuinely
+# needs, deny the ones that are no-ops here.
+
+allowBuilds:
+  esbuild: true
+  node-pty: true
+  koffi: true
+  sharp: true
+  # Restores the executable bit on node-pty's macOS spawn helper.
+  '@deepseek-ai/dsh-subprocess-local': true
+  '@google/genai': false
+  protobufjs: false
+  node-addon-require-builtin: false

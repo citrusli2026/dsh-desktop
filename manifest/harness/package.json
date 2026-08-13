@@ -1,0 +1,11 @@
+{
+  "name": "dsh-desktop-harness",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pure dependency manifest defining the bundled @deepseek-ai/dsh closure for dsh-desktop; materialized by scripts/deploy-harness.mjs",
+  "license": "MIT",
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.1.0-rc.6",
+    "pnpm": "11.7.0"
+  }
+}
