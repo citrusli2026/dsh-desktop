@@ -11,7 +11,10 @@ await build({
   bundle: true,
   platform: 'node',
   format: 'esm',
-  external: ['electron'],
+  // electron-updater ships CJS with dynamic requires that esbuild cannot
+  // bundle into ESM output; it stays external and electron-builder packs it
+  // (and its deps) into the asar from the production dependency tree.
+  external: ['electron', 'electron-updater'],
   outfile: 'lib/main/index.js',
   sourcemap: true,
 })

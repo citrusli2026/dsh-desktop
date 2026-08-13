@@ -34,6 +34,13 @@ extraResources:
 asar: true
 npmRebuild: false
 
+# GitHub Releases feed for electron-updater (Windows/Linux; macOS updates
+# require signing, see docs/decisions/0004).
+publish:
+  provider: github
+  owner: citrusli2026
+  repo: dsh-desktop
+
 mac:
   category: public.app-category.developer-tools
   target:

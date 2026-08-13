@@ -6,9 +6,12 @@
  */
 import { app, BrowserWindow, net, shell } from 'electron'
 import { existsSync } from 'node:fs'
+import electronUpdater from 'electron-updater'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { errorPageHtml, loadingPageHtml } from './pages.ts'
 import { dshBin, harnessRoot, nodeBin } from './paths.ts'
+
+const { autoUpdater } = electronUpdater
 
 /** Load an external `dsh web` instance instead of supervising one (dev only). */
 const DEV_WEB_URL = process.env.DSH_DESKTOP_DEV_WEB_URL
@@ -132,6 +135,22 @@ app.on('before-quit', (event) => {
 app.on('window-all-closed', () => {
   app.quit()
 })
+
+// Windows/Linux auto-update via GitHub Releases. macOS is skipped until a
+// signed/notarized build exists (decision 0004); dev and smoke runs are
+// skipped because app-update.yml only exists in packaged builds. Failures
+// stay silent: updates are best-effort for an offline-capable desktop app.
+if (app.isPackaged && !SMOKE_TEST && process.platform !== 'darwin') {
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+  autoUpdater.on('update-downloaded', () => {
+    console.log('dsh-desktop: update downloaded, will install on quit')
+  })
+  autoUpdater.on('error', (error) => {
+    console.warn(`dsh-desktop: update check failed: ${error.message}`)
+  })
+  void autoUpdater.checkForUpdatesAndNotify().catch(() => {})
+}
 
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
