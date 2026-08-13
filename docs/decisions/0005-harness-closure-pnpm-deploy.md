@@ -16,19 +16,25 @@
 沿用上游 deepseek-harness 单文件可执行构建已经验证过的闭包技术:
 
 - `manifest/harness/package.json` 是**纯依赖 manifest**(零代码),精确 pin
-  `@deepseek-ai/dsh` 版本,另带 `pnpm`(供壳内 `dsh plugin` 安装插件用);
+  `@deepseek-ai/dsh` 版本,显式声明闭包内所有非可选 peer 依赖(约 20 个),
+  另带 `pnpm`(供壳内 `dsh plugin` 安装插件用);
 - `scripts/deploy-harness.mjs` 执行:
   1. `pnpm --dir manifest/harness install --frozen-lockfile`(锁文件入库,构建可复现);
-  2. `pnpm deploy --prod --legacy --config.node-linker=hoisted
+  2. `pnpm deploy --filter . --prod --legacy --config.node-linker=hoisted
      --config.auto-install-peers=false --config.link-workspace-packages=true
      resources/harness`,物化出**无符号链接**的扁平 node_modules;
-  3. 删除 `.bin` shim,逐目录断言闭包内不再有符号链接,校验 dsh bin 与 pnpm.cjs 存在;
+  3. 跳过 `.bin` shim 目录,逐目录断言闭包内不再有符号链接,
+     校验 dsh bin 与 pnpm.cjs 存在;
+  4. 运行 `scripts/audit-harness-peers.mjs`:遍历闭包全部 package.json,
+     任何未被满足的非可选 peer 一律硬失败(防止运行时
+     `ERR_MODULE_NOT_FOUND`);
 - `manifest/harness/pnpm-workspace.yaml` 复刻上游 `allowBuilds` 白名单
   (pnpm 10+ 的 strictDepBuilds:未列出的安装脚本一律硬失败),
   放行 node-pty / koffi / sharp / esbuild / dsh-subprocess-local 的脚本,
   拒绝 @google/genai / protobufjs / node-addon-require-builtin 的无用脚本;
 - 部署产物整体落在 `resources/harness/`,由 electron-builder 的
   `extraResources` 带出 asar,子进程从普通文件路径 spawn。
+  `pnpm run bootstrap` 的固定顺序是 deploy → fetch-node(部署会清空目标目录)。
 
 ## 后果
 
