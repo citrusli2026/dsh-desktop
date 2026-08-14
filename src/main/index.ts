@@ -243,6 +243,16 @@ if (!gotLock) {
       }
     } catch (error) {
       console.error('dsh-electron-shell: boot failed:', error instanceof Error ? error.message : error)
+      if (!SMOKE_TEST) {
+        // Boot can fail before any window exists (verifyHarness rejects on a
+        // missing closure, before createWindow runs). Never leave a
+        // windowless, trayless zombie: surface the failure and give the user
+        // a way to quit or retry.
+        const message = error instanceof Error ? error.message : String(error)
+        if (mainWindow === undefined || mainWindow.isDestroyed()) mainWindow = createWindow()
+        void mainWindow.loadURL(errorPageHtml(0, message))
+        createTray()
+      }
       if (SMOKE_TEST) {
         if (process.env.DSH_DESKTOP_TEST_FAIL_HARNESS === '1' && mainWindow !== undefined) {
           // The error page must carry the retry button wired to the preload;

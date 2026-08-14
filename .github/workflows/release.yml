@@ -61,6 +61,11 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
+    # Tag pushes only. On workflow_dispatch github.ref_name is the BRANCH name,
+    # so without this guard a manual "test the packaging" run would create a
+    # release (and tag) literally named e.g. "main". Dispatch = build test;
+    # tag = release. mirror-r2 is skipped automatically via `needs`.
+    if: ${{ github.ref_type == 'tag' }}
     steps:
       - uses: actions/download-artifact@v4
         with:
