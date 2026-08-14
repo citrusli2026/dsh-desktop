@@ -68,3 +68,8 @@ linux:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+
+# LZMA-family dmg image: markedly smaller than the default zlib image at the
+# cost of one-time compression time in the release workflow.
+dmg:
+  format: UDBZ

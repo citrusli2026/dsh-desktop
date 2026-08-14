@@ -13,3 +13,4 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0005 | Materialize the harness closure with pnpm deploy | [EN](0005-harness-closure-pnpm-deploy.md) · [中文](0005-harness-closure-pnpm-deploy.zh.md) | Accepted / 已接受 |
 | 0006 | Harness supervision protocol | [EN](0006-process-supervision-protocol.md) · [中文](0006-process-supervision-protocol.zh.md) | Accepted / 已接受 |
 | 0007 | CJS single-file main bundle | [EN](0007-cjs-main-bundle.md) · [中文](0007-cjs-main-bundle.zh.md) | Accepted / 已接受 |
+| 0008 | Size reduction and download channels for Chinese networks | [EN](0008-size-and-cn-download-channels.md) · [中文](0008-size-and-cn-download-channels.zh.md) | Accepted / 已接受 |
