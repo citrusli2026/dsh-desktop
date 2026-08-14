@@ -60,6 +60,57 @@ async function assertNoSymlinks(dir) {
   }
 }
 
+/**
+ * Prune runtime-irrelevant content from the closure (about 96M on macOS):
+ * node-pty's foreign-platform prebuilds and build-time sources, TypeScript
+ * declarations, @types, and every source map. Licenses are never touched.
+ * The harness keeps its current-platform node-pty prebuild, verified to load
+ * under the bundled Node (its loader prefers build/, then prebuilds/<plat>).
+ */
+async function pruneClosure() {
+  const modules = join(HARNESS_ROOT, 'node_modules')
+  const removed = []
+
+  // node-pty: keep lib/ + the current platform's prebuild + package metadata.
+  const pty = join(modules, 'node-pty')
+  if (existsSync(pty)) {
+    const prebuilds = join(pty, 'prebuilds')
+    const keep = `${process.platform}-${process.arch}`
+    if (existsSync(prebuilds)) {
+      for (const entry of await readdir(prebuilds, { withFileTypes: true })) {
+        if (entry.isDirectory() && entry.name !== keep) {
+          await rm(join(prebuilds, entry.name), { recursive: true, force: true })
+          removed.push(`node-pty/prebuilds/${entry.name}`)
+        }
+      }
+    }
+    for (const dir of ['src', 'deps', 'third_party', 'typings', 'scripts']) {
+      await rm(join(pty, dir), { recursive: true, force: true })
+      removed.push(`node-pty/${dir}`)
+    }
+  }
+
+  // TypeScript-only and source-map content is never imported at runtime.
+  const walk = async (dir) => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name)
+      if (entry.isDirectory()) {
+        if (entry.name === '@types' || entry.name.endsWith('.d.ts')) {
+          await rm(path, { recursive: true, force: true })
+          removed.push(path.slice(modules.length + 1))
+        } else {
+          await walk(path)
+        }
+      } else if (entry.name.endsWith('.map') || entry.name.endsWith('.d.ts')) {
+        await rm(path, { force: true })
+        removed.push(path.slice(modules.length + 1))
+      }
+    }
+  }
+  await walk(modules)
+  console.log(`deploy-harness: pruned ${removed.length} paths from the closure`)
+}
+
 async function main() {
   await rm(HARNESS_ROOT, { recursive: true, force: true })
 
@@ -76,6 +127,7 @@ async function main() {
   if (existsSync(shims)) await rm(shims, { recursive: true, force: true })
 
   await assertNoSymlinks(HARNESS_ROOT)
+  await pruneClosure()
 
   const dshBin = join(HARNESS_ROOT, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
   const pnpmCjs = join(HARNESS_ROOT, 'node_modules', 'pnpm', 'bin', 'pnpm.cjs')
