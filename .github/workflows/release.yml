@@ -46,7 +46,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dsh-desktop-${{ matrix.os }}
+          name: dsh-electron-shell-${{ matrix.os }}
           path: |
             dist/*.dmg
             dist/*.zip
@@ -74,7 +74,7 @@ jobs:
           REPO="${{ github.repository }}"
           gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || \
             gh release create "$TAG" --prerelease --repo "$REPO" \
-              --title "dsh-desktop $TAG" --generate-notes
+              --title "dsh-electron-shell $TAG" --generate-notes
           # Wipe stale assets so renamed artifacts never linger side by side.
           for A in $(gh release view "$TAG" --repo "$REPO" --json assets --jq '.assets[].name'); do
             gh release delete-asset "$TAG" "$A" -y --repo "$REPO"
@@ -107,7 +107,7 @@ jobs:
         run: |
           npm install -g wrangler
           for f in artifacts/*; do
-            wrangler r2 object put "dsh-desktop/${{ github.ref_name }}/$(basename "$f")" --file "$f"
+            wrangler r2 object put "dsh-electron-shell/${{ github.ref_name }}/$(basename "$f")" --file "$f"
           done
       - name: Report mirror location
-        run: echo "Mirrored under dsh-desktop/${{ github.ref_name }}/ in the configured R2 bucket"
+        run: echo "Mirrored under dsh-electron-shell/${{ github.ref_name }}/ in the configured R2 bucket"

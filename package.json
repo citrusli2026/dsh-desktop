@@ -1,8 +1,8 @@
 {
-  "name": "dsh-desktop",
+  "name": "dsh-electron-shell",
   "version": "0.1.1-pre.0",
-  "description": "DeepSeek Harness Electron desktop shell: download and use; identical to `dsh web`",
-  "author": "dsh-desktop contributors <citrusli@126.com>",
+  "description": "Unofficial DeepSeek Harness Electron desktop shell: download and use; identical to `dsh web`",
+  "author": "dsh-electron-shell contributors <citrusli@126.com>",
   "license": "MIT",
   "private": true,
   "type": "module",

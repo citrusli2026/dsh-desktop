@@ -1,8 +1,8 @@
 # Decision Records
 
-This directory records the architecture decisions made while building dsh-desktop. Each record covers context, the decision, consequences, and alternatives. Records are numbered; accepted decisions constrain the implementation. Every record ships in English (`.md`) and Chinese (`.zh.md`).
+This directory records the architecture decisions made while building dsh-electron-shell. Each record covers context, the decision, consequences, and alternatives. Records are numbered; accepted decisions constrain the implementation. Every record ships in English (`.md`) and Chinese (`.zh.md`).
 
-本目录记录 dsh-desktop 实现过程中的架构决策,每篇含背景、决策、后果与备选方案;已接受的决策约束后续实现。每篇同时提供英文(`.md`)与中文(`.zh.md`)。
+本目录记录 dsh-electron-shell 实现过程中的架构决策,每篇含背景、决策、后果与备选方案;已接受的决策约束后续实现。每篇同时提供英文(`.md`)与中文(`.zh.md`)。
 
 | No. | Title / 标题 | EN / 中文 | Status / 状态 |
 |---|---|---|---|

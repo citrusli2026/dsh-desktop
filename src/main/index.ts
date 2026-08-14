@@ -1,5 +1,5 @@
 /**
- * dsh-desktop main process: a single-instance window hosting the bundled
+ * dsh-electron-shell main process: a single-instance window hosting the bundled
  * DeepSeek Harness web runtime, following the supervision protocol described
  * in docs/decisions/0006-process-supervision-protocol.md.
  * @module main/index
@@ -58,7 +58,7 @@ function createWindow(): BrowserWindow {
     minWidth: 960,
     minHeight: 640,
     show: false,
-    title: 'DSH Desktop',
+    title: 'DSH Electron Shell',
     webPreferences: {
       contextIsolation: true,
       sandbox: true,
@@ -100,9 +100,9 @@ function createTray(): void {
   const image = nativeImage.createFromPath(join(app.getAppPath(), 'build', 'trayTemplate.png'))
   if (process.platform === 'darwin') image.setTemplateImage(true)
   tray = new Tray(image)
-  tray.setToolTip('DSH Desktop')
+  tray.setToolTip('DSH Electron Shell')
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: '打开 DSH Desktop', click: showWindow },
+    { label: '打开 DSH Electron Shell', click: showWindow },
     { type: 'separator' },
     { label: '退出', click: () => app.quit() },
   ]))
@@ -152,7 +152,7 @@ async function boot(): Promise<string> {
   }
 
   if (DEV_WEB_URL !== undefined) {
-    console.log(`dsh-desktop: dev mode, loading ${DEV_WEB_URL}`)
+    console.log(`dsh-electron-shell: dev mode, loading ${DEV_WEB_URL}`)
     allowedOrigin = new URL(DEV_WEB_URL).origin
     await mainWindow.loadURL(DEV_WEB_URL)
     return DEV_WEB_URL
@@ -163,11 +163,11 @@ async function boot(): Promise<string> {
     const url = await supervisor.start()
     allowedOrigin = new URL(url).origin
     await mainWindow.loadURL(url)
-    console.log(`dsh-desktop: harness ready at ${url}`)
+    console.log(`dsh-electron-shell: harness ready at ${url}`)
     return url
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    console.error(`dsh-desktop: ${message}`)
+    console.error(`dsh-electron-shell: ${message}`)
     await mainWindow.loadURL(errorPageHtml(0, message))
     throw error
   }
@@ -213,10 +213,10 @@ if (app.isPackaged && !SMOKE_TEST && process.platform !== 'darwin') {
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
   autoUpdater.on('update-downloaded', () => {
-    console.log('dsh-desktop: update downloaded, will install on quit')
+    console.log('dsh-electron-shell: update downloaded, will install on quit')
   })
   autoUpdater.on('error', (error) => {
-    console.warn(`dsh-desktop: update check failed: ${error.message}`)
+    console.warn(`dsh-electron-shell: update check failed: ${error.message}`)
   })
   void autoUpdater.checkForUpdatesAndNotify().catch(() => {})
 }
@@ -242,7 +242,7 @@ if (!gotLock) {
         await smokeVerify(url)
       }
     } catch (error) {
-      console.error('dsh-desktop: boot failed:', error instanceof Error ? error.message : error)
+      console.error('dsh-electron-shell: boot failed:', error instanceof Error ? error.message : error)
       if (SMOKE_TEST) {
         if (process.env.DSH_DESKTOP_TEST_FAIL_HARNESS === '1' && mainWindow !== undefined) {
           // The error page must carry the retry button wired to the preload;

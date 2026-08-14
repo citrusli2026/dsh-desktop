@@ -1,8 +1,8 @@
 {
-  "name": "dsh-desktop-harness",
+  "name": "dsh-electron-shell-harness",
   "version": "0.0.0",
   "private": true,
-  "description": "Pure dependency manifest defining the bundled @deepseek-ai/dsh closure for dsh-desktop; materialized by scripts/deploy-harness.mjs",
+  "description": "Pure dependency manifest defining the bundled @deepseek-ai/dsh closure for dsh-electron-shell; materialized by scripts/deploy-harness.mjs",
   "license": "MIT",
   "dependencies": {
     "@deepseek-ai/dsh": "0.1.0-rc.6",

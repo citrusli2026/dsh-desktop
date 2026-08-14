@@ -1,10 +1,13 @@
-# dsh-desktop
+# dsh-electron-shell
 
 [English](README.md)
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)(`dsh`)的 Electron 桌面壳:下载安装即用,功能与
 `npx @deepseek-ai/dsh web` 完全一致——壳只提供窗口、进程监督、托盘与自动更新,
 不改变任何 agent 功能。壳本身 MIT 开源。
+
+> 非官方社区打包,与 DeepSeek AI 无关联;DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打包。
+> Unofficial community packaging, not affiliated with DeepSeek AI. DeepSeek Harness is a trademark of DeepSeek; this repo only repackages it under MIT.
 
 ## 特性
 
@@ -17,13 +20,13 @@
 
 ## 下载
 
-在 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) 下载对应平台的安装包:
+在 [GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases) 下载对应平台的安装包:
 
 | 平台 | 安装包 |
 |---|---|
-| macOS(仅 Apple Silicon,未签名) | `dsh-desktop-<版本>-arm64-mac.dmg` 或 `-arm64-mac.zip` |
-| Windows | `dsh-desktop-setup-<版本>.exe`(NSIS,可选择安装目录) |
-| Linux | `dsh-desktop-<版本>-x86_64.AppImage`(免安装)或 `dsh-desktop-<版本>-amd64.deb` |
+| macOS(仅 Apple Silicon,未签名) | `dsh-electron-shell-<版本>-arm64-mac.dmg` 或 `-arm64-mac.zip` |
+| Windows | `dsh-electron-shell-setup-<版本>.exe`(NSIS,可选择安装目录) |
+| Linux | `dsh-electron-shell-<版本>-x86_64.AppImage`(免安装)或 `dsh-electron-shell-<版本>-amd64.deb` |
 
 - macOS:首次打开请右键 → 打开(未签名,决策记录 0004);
 - Windows SmartScreen:点「更多信息」→「仍要运行」(未签名)。
@@ -32,10 +35,10 @@
 
 如果 github.com 在你的网络下很慢或不可达,可以在下载地址前加社区加速前缀。
 例如原地址为
-`https://github.com/citrusli2026/dsh-desktop/releases/download/vX.Y.Z/<文件>`:
+`https://github.com/citrusli2026/dsh-electron-shell/releases/download/vX.Y.Z/<文件>`:
 
 ```
-https://ghproxy.net/https://github.com/citrusli2026/dsh-desktop/releases/download/vX.Y.Z/<文件>
+https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/download/vX.Y.Z/<文件>
 ```
 
 其他可选前缀(随社区维护情况增减):`https://gh-proxy.com/`、`https://ghfast.top/`。

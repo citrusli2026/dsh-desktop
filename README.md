@@ -1,8 +1,11 @@
-# dsh-desktop
+# dsh-electron-shell
 
 [中文](README.zh.md)
 
 An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`): download, install, and use — functionally identical to `npx @deepseek-ai/dsh web`. The shell only provides the window, process supervision, tray, and updates; it never changes agent behavior. MIT-licensed.
+
+> Unofficial community packaging, not affiliated with DeepSeek AI. DeepSeek Harness is a trademark of DeepSeek; this repo only repackages it under MIT.
+> 非官方社区打包,与 DeepSeek AI 无关联;DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打包。
 
 ## Features
 
@@ -13,13 +16,13 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 
 ## Download
 
-Get the installer for your platform from [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases):
+Get the installer for your platform from [GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases):
 
 | Platform | Asset |
 |---|---|
-| macOS (Apple Silicon only, unsigned) | `dsh-desktop-<version>-arm64-mac.dmg` or `-arm64-mac.zip` |
-| Windows | `dsh-desktop-setup-<version>.exe` (NSIS) |
-| Linux | `dsh-desktop-<version>-x86_64.AppImage` or `dsh-desktop-<version>-amd64.deb` |
+| macOS (Apple Silicon only, unsigned) | `dsh-electron-shell-<version>-arm64-mac.dmg` or `-arm64-mac.zip` |
+| Windows | `dsh-electron-shell-setup-<version>.exe` (NSIS) |
+| Linux | `dsh-electron-shell-<version>-x86_64.AppImage` or `dsh-electron-shell-<version>-amd64.deb` |
 
 - macOS: right-click → Open on first launch (unsigned, decision 0004);
 - Windows SmartScreen: choose "More info" → "Run anyway" (unsigned).
@@ -27,10 +30,10 @@ Get the installer for your platform from [GitHub Releases](https://github.com/ci
 ### Slow or blocked GitHub? Download acceleration
 
 If github.com is slow or unreachable from your network, try prefixing the release URL with a community proxy. For example, with the GitHub URL
-`https://github.com/citrusli2026/dsh-desktop/releases/download/vX.Y.Z/<file>`:
+`https://github.com/citrusli2026/dsh-electron-shell/releases/download/vX.Y.Z/<file>`:
 
 ```
-https://ghproxy.net/https://github.com/citrusli2026/dsh-desktop/releases/download/vX.Y.Z/<file>
+https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/download/vX.Y.Z/<file>
 ```
 
 Other prefixes that come and go over time: `https://gh-proxy.com/`, `https://ghfast.top/`. These are community-run, free, and unaffiliated with this project: availability varies, so try the next one when one is down.

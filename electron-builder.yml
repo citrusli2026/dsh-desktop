@@ -1,6 +1,6 @@
-appId: io.github.citrusli2026.dsh-desktop
-productName: DSH Desktop
-copyright: Copyright © 2026 dsh-desktop contributors (MIT)
+appId: io.github.citrusli2026.dsh-electron-shell
+productName: DSH Electron Shell
+copyright: Copyright © 2026 dsh-electron-shell contributors (MIT)
 
 directories:
   output: dist
@@ -42,7 +42,7 @@ npmRebuild: false
 publish:
   provider: github
   owner: citrusli2026
-  repo: dsh-desktop
+  repo: dsh-electron-shell
 
 mac:
   category: public.app-category.developer-tools

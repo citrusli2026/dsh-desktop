@@ -8,5 +8,5 @@
   <rect x="64" y="64" width="896" height="896" rx="220" fill="url(#bg)"/>
   <rect x="64" y="64" width="896" height="896" rx="220" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="12"/>
   <text x="512" y="600" font-family="Menlo, Monaco, 'Courier New', monospace" font-size="440" font-weight="700" fill="#ffffff" text-anchor="middle">DSH</text>
-  <text x="512" y="792" font-family="Menlo, Monaco, 'Courier New', monospace" font-size="120" font-weight="600" fill="#c7d2fe" text-anchor="middle">DESKTOP</text>
+  <text x="512" y="792" font-family="Menlo, Monaco, 'Courier New', monospace" font-size="120" font-weight="600" fill="#c7d2fe" text-anchor="middle">SHELL</text>
 </svg>
