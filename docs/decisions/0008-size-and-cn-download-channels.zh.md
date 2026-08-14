@@ -19,8 +19,9 @@ zip 259MB / exe 184MB / AppImage 248MB / deb 178MB);且国内大量用户无法
   node-pty 构建期源码、全部 `*.map`(19MB)、全部 `*.d.ts`(13MB)、
   `@types/`(2.8MB);许可证文件一律不动。闭包 349MB → 188MB;
   实测 dmg 237MB → 209MB、zip 259MB → 223MB(压缩参数不变);
-- NSIS 改为最高压缩;dmg 镜像由 UDZO(zlib)改为 UDBZ(bzip2),
-  以发布构建的一次性时间换体积;
+- NSIS 保持 electron-builder 默认(v26 已移除 `compression` 选项);
+  dmg 镜像由 UDZO(zlib)改为 UDBZ(bzip2),以发布构建的一次性时间换体积——
+  实测 dmg 209MB → 185MB,zip 不变(223MB);
 - Electron 本体、内置 Node、以及所有 agent 能力一概不动——
   "靠砍功能瘦身"被明确排除。
 

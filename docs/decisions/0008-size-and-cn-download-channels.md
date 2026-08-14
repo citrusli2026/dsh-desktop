@@ -21,8 +21,10 @@ download-and-use goal.
   build-time sources, every `*.map` (19MB), every `*.d.ts` (13MB), and
   `@types/` (2.8MB); licenses are never touched. Closure: 349MB → 188MB;
   measured dmg 237MB → 209MB, zip 259MB → 223MB at identical compression;
-- NSIS switches to maximum compression; the dmg image switches from UDZO
-  (zlib) to UDBZ (bzip2), trading one-time release-build time for size;
+- NSIS keeps electron-builder defaults (v26 removed the `compression` option);
+  the dmg image switches from UDZO (zlib) to UDBZ (bzip2), trading one-time
+  release-build time for size — measured: dmg 209MB → 185MB, zip unchanged
+  at 223MB;
 - Electron itself, the bundled Node, and every agent capability stay
   untouched — shrinking by feature removal was explicitly out of scope.
 
