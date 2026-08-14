@@ -22,6 +22,16 @@ jobs:
       - run: pnpm run build
       - run: pnpm run bootstrap
       - name: Smoke test (headless X server)
-        run: xvfb-run -a pnpm run smoke -- --no-sandbox
+        # No `-- --no-sandbox` here: pnpm inserts a literal `--` before extra
+        # args, so the flag would reach Electron as a positional argument, not
+        # a switch. ELECTRON_DISABLE_SANDBOX=1 is what actually disables it.
+        run: xvfb-run -a pnpm run smoke
         env:
           ELECTRON_DISABLE_SANDBOX: "1"
+      - name: Smoke test — error page and retry roundtrip
+        # Simulated boot failure: the error page must carry the retry button
+        # and clicking it must bring a real harness up (src/main/index.ts).
+        run: xvfb-run -a pnpm run smoke
+        env:
+          ELECTRON_DISABLE_SANDBOX: "1"
+          DSH_DESKTOP_TEST_FAIL_HARNESS: "1"

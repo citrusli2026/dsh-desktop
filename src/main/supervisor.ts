@@ -175,18 +175,24 @@ export class HarnessSupervisor {
    */
   stop(): Promise<void> {
     return new Promise<void>((resolve) => {
+      // Ending the log stream releases the file handle; a replacement
+      // supervisor (manual retry) reopens the same file in append mode.
+      const finish = (): void => {
+        this.logStream?.end()
+        resolve()
+      }
       if (this.restartTimer !== undefined) clearTimeout(this.restartTimer)
       const child = this.child
       if (child === undefined) {
         this.stopping = true
-        resolve()
+        finish()
         return
       }
       this.stopping = true
       const killTimer = setTimeout(() => child.kill('SIGKILL'), STOP_TIMEOUT_MS)
       child.once('exit', () => {
         clearTimeout(killTimer)
-        resolve()
+        finish()
       })
       // SIGTERM on Windows is TerminateProcess for the direct child only;
       // sweep the whole tree so shell sessions and subagents do not survive

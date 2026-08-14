@@ -110,8 +110,14 @@ function createTray(): void {
 }
 
 /** Manual retry from the error page (docs/decisions/0006: M3 follow-up). */
-ipcMain.handle('harness:retry', async () => {
+ipcMain.handle('harness:retry', async (event) => {
   if (mainWindow === undefined || mainWindow.isDestroyed()) return false
+  // Only the shell's own error page (a data: URL in this window) may restart
+  // the harness; the harness UI itself must not spawn a second instance.
+  if (event.sender !== mainWindow.webContents || event.senderFrame?.url.startsWith('data:') !== true) return false
+  // Dispose the previous supervisor first: stop any lingering child (a
+  // timed-out boot may still be coming up) and release its log handle.
+  await supervisor?.stop()
   supervisor = new HarnessSupervisor({ onState: applyState })
   try {
     const url = await supervisor.start()

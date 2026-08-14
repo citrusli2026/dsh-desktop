@@ -36,7 +36,9 @@ download-and-use goal.
   community-run and churn;
 - The release workflow gains an optional `mirror-r2` job that uploads every
   asset to a Cloudflare R2 bucket (10GB free storage, free egress) under
-  `dsh-desktop/<tag>/`, gated on `R2_ACCOUNT_ID` / `R2_API_TOKEN` repository
+  `dsh-electron-shell/<tag>/` (renamed from `dsh-desktop/<tag>/` together with
+  the repository; old-prefix objects stay in place), gated on `R2_ACCOUNT_ID`
+  / `R2_API_TOKEN` repository
   secrets — skipped silently when unconfigured, so forks and CI stay green.
 
 ## Consequences

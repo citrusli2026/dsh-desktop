@@ -31,7 +31,8 @@ zip 259MB / exe 184MB / AppImage 248MB / deb 178MB);且国内大量用户无法
   (`ghproxy.net` 于 2026-08 实测可用;备选 `gh-proxy.com`、`ghfast.top`),
   并明确声明这些镜像由社区免费运营、可用性会波动;
 - release 流水线新增可选任务 `mirror-r2`:把全部资产上传到 Cloudflare R2
-  (10GB 免费存储、出口流量免费),前缀 `dsh-desktop/<tag>/`,
+  (10GB 免费存储、出口流量免费),前缀 `dsh-electron-shell/<tag>/`
+  (随仓库改名自 `dsh-desktop/<tag>/` 变更,旧前缀对象保留不动),
   由仓库 secrets `R2_ACCOUNT_ID` / `R2_API_TOKEN` 开关——未配置时静默跳过,
   fork 与 CI 不受影响。
 
