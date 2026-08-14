@@ -17,6 +17,7 @@
     "dev": "pnpm run build && electron .",
     "start": "electron .",
     "smoke": "pnpm run build && electron . --smoke-test",
+    "gen-icons": "node scripts/gen-icons.mjs",
     "fetch-node": "node scripts/fetch-node.mjs",
     "deploy-harness": "node scripts/deploy-harness.mjs",
     "bootstrap": "pnpm run deploy-harness && pnpm run fetch-node",
@@ -31,6 +32,7 @@
     "electron-updater": "^6.8.9",
     "esbuild": "^0.25.0",
     "extract-zip": "^2.0.1",
+    "sharp": "^0.35.3",
     "tar": "^7.0.0",
     "typescript": "^7.0.0"
   }

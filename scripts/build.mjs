@@ -21,3 +21,13 @@ await build({
   outfile: 'lib/main/index.cjs',
   sourcemap: true,
 })
+
+await build({
+  entryPoints: ['src/preload/index.ts'],
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  external: ['electron'],
+  outfile: 'lib/preload/index.cjs',
+  sourcemap: true,
+})

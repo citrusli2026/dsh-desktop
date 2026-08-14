@@ -11,6 +11,11 @@ function escapeHtml(text: string): string {
   ))
 }
 
+/** Wrap a page in a data: URL — loadURL rejects bare HTML strings. */
+function asDataUrl(html: string): string {
+  return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
+}
+
 const STYLE = `
   body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
          background: #f7f8fa; color: #1f2328; display: flex; align-items: center;
@@ -24,16 +29,20 @@ const STYLE = `
   @keyframes spin { to { transform: rotate(360deg); } }
   pre { text-align: left; background: #0d1117; color: #e6edf3; padding: 16px;
         border-radius: 8px; font-size: 12px; max-height: 300px; overflow: auto; }
+  button { margin: 16px auto 0; padding: 10px 28px; font-size: 14px;
+           background: #4d6bfe; color: #fff; border: none; border-radius: 8px;
+           cursor: pointer; }
+  button:hover { background: #3b57e0; }
 `
 
 /** The startup placeholder page. */
 export function loadingPageHtml(): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><title>DSH Desktop</title>
+  return asDataUrl(`<!doctype html><html><head><meta charset="utf-8"><title>DSH Desktop</title>
     <style>${STYLE}</style></head><body><div class="card">
     <div class="spinner"></div>
     <h1>正在启动 DeepSeek Harness</h1>
     <p>首次启动需要初始化配置,请稍候…</p>
-    </div></body></html>`
+    </div></body></html>`)
 }
 
 /**
@@ -43,11 +52,24 @@ export function loadingPageHtml(): string {
  * @param logTail - the last harness output lines.
  */
 export function errorPageHtml(attempts: number, logTail: string): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><title>DSH Desktop — 启动失败</title>
+  return asDataUrl(`<!doctype html><html><head><meta charset="utf-8"><title>DSH Desktop — 启动失败</title>
     <style>${STYLE}</style></head><body><div class="card">
     <h1>DeepSeek Harness 启动失败</h1>
     <p>harness 进程在短时间内崩溃了 ${attempts} 次,已停止自动重试。</p>
     <p>完整日志位于应用数据目录的 logs/harness.log;下面是最近的输出:</p>
     <pre>${escapeHtml(logTail)}</pre>
-    </div></body></html>`
+    <button onclick="retry()">重试启动</button>
+    <script>
+      function retry() {
+        const button = document.querySelector('button');
+        button.disabled = true;
+        button.textContent = '正在启动…';
+        const result = window.dshDesktop?.retryHarness?.();
+        if (result instanceof Promise) result.catch(() => {
+          button.disabled = false;
+          button.textContent = '重试启动';
+        });
+      }
+    </script>
+    </div></body></html>`)
 }
