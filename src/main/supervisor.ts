@@ -10,18 +10,10 @@ import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import { app } from 'electron'
 import { dshBin, nodeBin } from './paths.ts'
-
-/** Upstream readiness contract: one stdout line naming the loopback URL. */
-const READY_LINE = /^dsh web: (http:\/\/127\.0\.0\.1:\d+)/
+import { decideRestart, exitsInWindow, parseReadyUrl, RESTART_BASE_DELAY_MS } from './restart-policy.ts'
 
 /** Give a broken first boot room before declaring failure. */
 const READY_TIMEOUT_MS = 90_000
-
-/** Crash budget: at most this many unexpected exits inside the window. */
-const MAX_RESTARTS_IN_WINDOW = 5
-const RESTART_WINDOW_MS = 10 * 60_000
-const RESTART_BASE_DELAY_MS = 2_000
-const RESTART_MAX_DELAY_MS = 30_000
 
 /** Graceful-stop budget before SIGKILL. */
 const STOP_TIMEOUT_MS = 5_000
@@ -67,8 +59,7 @@ export class HarnessSupervisor {
 
   /** Number of unexpected exits inside the current restart window. */
   private windowedAttempts(): number {
-    const cutoff = Date.now() - RESTART_WINDOW_MS
-    this.exitTimes = this.exitTimes.filter(time => time >= cutoff)
+    this.exitTimes = exitsInWindow(this.exitTimes, Date.now())
     return this.exitTimes.length
   }
 
@@ -91,8 +82,8 @@ export class HarnessSupervisor {
       const lines = createInterface({ input: stream! })
       lines.on('line', (line) => {
         this.recordLine(line)
-        const match = READY_LINE.exec(line)
-        if (match !== null) this.onReady(match[1]!)
+        const url = parseReadyUrl(line)
+        if (url !== undefined) this.onReady(url)
       })
     }
     child.once('error', (error) => {
@@ -135,12 +126,12 @@ export class HarnessSupervisor {
   }
 
   private scheduleRestart(): void {
-    const attempts = this.windowedAttempts()
-    if (attempts > MAX_RESTARTS_IN_WINDOW) {
-      this.events.onState({ phase: 'crashed', attempts, logTail: this.logLines.join('\n') })
+    const decision = decideRestart(this.windowedAttempts(), this.restartDelay)
+    if (decision.action === 'gaveUp') {
+      this.events.onState({ phase: 'crashed', attempts: decision.attempts, logTail: this.logLines.join('\n') })
       return
     }
-    this.restartDelay = Math.min(this.restartDelay * 2, RESTART_MAX_DELAY_MS)
+    this.restartDelay = decision.delay
     this.events.onState({ phase: 'starting' })
     this.restartTimer = setTimeout(() => {
       this.restartTimer = undefined

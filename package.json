@@ -18,6 +18,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test \"test/**/*.test.ts\"",
     "dev": "pnpm run build && electron .",
     "start": "electron .",
     "smoke": "pnpm run build && electron . --smoke-test",

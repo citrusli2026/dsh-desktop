@@ -12,6 +12,11 @@ import { join } from 'node:path'
 
 const ROOT = process.cwd()
 const MODULES = join(ROOT, 'resources', 'harness', 'node_modules')
+// Audit coverage allowlist: only these scopes are descended into (plus every
+// unscoped package). Scoped packages outside this list — e.g. @npmcli/* and
+// the other packages shipped inside pnpm's own dist — are NOT audited: they
+// are self-contained bundles with no external peers. Extend the set when a
+// newly deployed scoped package declares peers of its own.
 const SCOPES = new Set(['@deepseek-ai', '@agentclientprotocol', '@earendil-works', '@google', '@koromix', '@img', '@electron', '@types'])
 
 async function collectPackages(dir) {
