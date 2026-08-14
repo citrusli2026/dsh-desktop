@@ -42,3 +42,11 @@ Node 二进制由 `scripts/fetch-node.mjs` 从 nodejs.org 官方发行包下载,
   且每个 Electron 大版本都要重验 ABI 矩阵——作为后续瘦身备选,当前否决;
 - 把 harness 直接嵌进 Electron 主进程:ESM loader、原生 ABI、进程所有权
   信号处理都与上游运行方式不同,风险最大,否决。
+
+## 修订 2026-08-14:pin 死的运行时
+
+原先内置 Node 在 bootstrap 时动态解析(当时的最新 22.x LTS),构建不可
+复现,且校验和与二进制同源于镜像站。现版本与各平台 SHA-256 已 pin 在
+`manifest/node-runtime.json`,镜像只能交付与仓库提交哈希一致的字节。
+维护者用 `node scripts/fetch-node.mjs --update-pin` 从官方 nodejs.org
+升级 pin。

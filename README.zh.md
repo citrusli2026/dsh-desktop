@@ -67,6 +67,8 @@ pnpm run dist        # 打当前平台的安装包(产物在 dist/)
 - `ELECTRON_BUILDER_BINARIES_MIRROR` — electron-builder 辅助二进制
 - `NODE_DIST_MIRROR` — 内置 Node 发行包(官方源为 `https://nodejs.org/dist`)
 
+内置 Node 本身是 pin 死的:版本与各平台 SHA-256 记录在 `manifest/node-runtime.json`,bootstrap 可复现,镜像只能交付与仓库提交哈希一致的字节。维护者用 `node scripts/fetch-node.mjs --update-pin` 升级 pin(从官方 nodejs.org 解析最新 22.x LTS)。
+
 ## 目录结构
 
 ```

@@ -59,6 +59,8 @@ Mirrors: this repository defaults to npmmirror (fast in China) for npm packages,
 - `ELECTRON_BUILDER_BINARIES_MIRROR`
 - `NODE_DIST_MIRROR` (official: `https://nodejs.org/dist`)
 
+The bundled Node itself is pinned: version and per-platform SHA-256 live in `manifest/node-runtime.json`, so bootstrap is reproducible and a mirror can only deliver bytes matching the committed hash. Maintainers bump the pin with `node scripts/fetch-node.mjs --update-pin`, which re-resolves the latest 22.x LTS against the official nodejs.org dist.
+
 ## Layout
 
 ```

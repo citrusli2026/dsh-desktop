@@ -1,9 +1,16 @@
 /**
  * Stage the bundled Node.js runtime for the harness child process
- * (docs/decisions/0002): pick the latest 22.x LTS (>= 22.19.0) for the
- * current platform/arch from nodejs.org, verify it against the official
- * SHASUMS256.txt, extract it to resources/harness/node/, and record a
- * provenance manifest. Re-runs are skipped when the same version is staged.
+ * (docs/decisions/0002). Reproducible by construction: the version and the
+ * per-platform SHA-256 are pinned in manifest/node-runtime.json, and the
+ * mirror only delivers bytes that must match the committed hash — payload
+ * and checksum no longer share a trust root, so a poisoned mirror cannot
+ * swap the runtime.
+ *
+ * Maintainers bump the pin deliberately:
+ *   node scripts/fetch-node.mjs --update-pin
+ * which resolves the latest 22.x LTS (>= 22.19.0) from nodejs.org and
+ * records the official SHASUMS256.txt values into the pin file, then stages
+ * it. Re-runs are skipped when the pinned version is already staged.
  * @module scripts/fetch-node
  */
 import { createHash } from 'node:crypto'
@@ -13,9 +20,16 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { extract } from 'tar'
 
+/** Bootstrap payload source: fast mirror by default, bytes verified against the pin. */
 const DIST_BASE = process.env.NODE_DIST_MIRROR ?? 'https://npmmirror.com/mirrors/node'
+/** Trust anchor for --update-pin: always the official dist, never a mirror. */
+const OFFICIAL_DIST = 'https://nodejs.org/dist'
+const PIN_PATH = join(process.cwd(), 'manifest', 'node-runtime.json')
 const HARNESS_ROOT = join(process.cwd(), 'resources', 'harness')
 const TMP_ROOT = join(process.cwd(), 'resources', 'harness.tmp')
+const DIST_NAMES = ['darwin-arm64', 'darwin-x64', 'linux-arm64', 'linux-x64', 'win-arm64', 'win-x64']
+
+const UPDATE_PIN = process.argv.includes('--update-pin')
 
 function fail(message) {
   console.error(`fetch-node: ${message}`)
@@ -57,16 +71,54 @@ async function downloadFile(url, dest) {
 
 const sha256 = buffer => createHash('sha256').update(buffer).digest('hex')
 
-async function main() {
-  const name = distName()
-  const archiveExt = name.startsWith('win') ? 'zip' : 'tar.gz'
-  const index = JSON.parse(await fetchText(`${DIST_BASE}/index.json`))
+async function readPin() {
+  try {
+    return JSON.parse(await readFile(PIN_PATH, 'utf8'))
+  } catch {
+    fail(`cannot read pin file ${PIN_PATH}; restore it or run with --update-pin`)
+  }
+}
+
+/**
+ * Refresh the pin from the official nodejs.org dist: latest 22.x LTS plus
+ * the SHASUMS256.txt entry of every supported platform archive.
+ */
+async function updatePin() {
+  const index = JSON.parse(await fetchText(`${OFFICIAL_DIST}/index.json`))
   const version = index.find(entry =>
     typeof entry.version === 'string' && entry.version.startsWith('v22.')
     && entry.lts !== false && atLeast22_19(entry.version),
   )?.version
-  if (version === undefined) fail('no Node 22.x LTS (>= 22.19.0) found in index.json')
-  const file = `node-${version}-${name}.${archiveExt}`
+  if (version === undefined) fail('no Node 22.x LTS (>= 22.19.0) found in official index.json')
+  const sums = await fetchText(`${OFFICIAL_DIST}/${version}/SHASUMS256.txt`)
+  const hashes = {}
+  for (const name of DIST_NAMES) {
+    const file = `node-${version}-${name}.${name.startsWith('win') ? 'zip' : 'tar.gz'}`
+    const hash = sums.split('\n')
+      .map(line => line.trim().split(/\s+/))
+      .find(parts => parts[1] === file)?.[0]
+    if (hash === undefined) fail(`no checksum for ${file} in official SHASUMS256.txt`)
+    hashes[name] = hash
+  }
+  const pin = {
+    version,
+    pinnedAt: new Date().toISOString().slice(0, 10),
+    source: `${OFFICIAL_DIST}/${version}/SHASUMS256.txt`,
+    comment: 'Pinned Node.js 22 LTS runtime for the bundled harness (scripts/fetch-node.mjs). Hashes are recorded from the official nodejs.org SHASUMS256.txt at pin time; mirrors only deliver bytes that must match. Bump deliberately: node scripts/fetch-node.mjs --update-pin',
+    sha256: hashes,
+  }
+  await writeFile(PIN_PATH, `${JSON.stringify(pin, null, 2)}\n`)
+  console.log(`fetch-node: pinned Node ${version} in ${PIN_PATH}`)
+  return pin
+}
+
+async function main() {
+  const pin = UPDATE_PIN ? await updatePin() : await readPin()
+  const version = pin.version
+  const name = distName()
+  const expected = pin.sha256?.[name]
+  if (typeof expected !== 'string') fail(`no pinned sha256 for ${name} in ${PIN_PATH}`)
+  const file = `node-${version}-${name}.${name.startsWith('win') ? 'zip' : 'tar.gz'}`
   const nodeDir = join(HARNESS_ROOT, 'node')
   const nodeExecutable = join(nodeDir, 'bin', name.startsWith('win') ? 'node.exe' : 'node')
   const manifestPath = join(nodeDir, 'NODE_DIST.json')
@@ -74,7 +126,8 @@ async function main() {
   if (existsSync(manifestPath)) {
     try {
       const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
-      if (manifest.version === version && manifest.distName === name && existsSync(nodeExecutable)) {
+      if (manifest.version === version && manifest.distName === name
+        && manifest.sha256 === expected && existsSync(nodeExecutable)) {
         console.log(`fetch-node: Node ${version} for ${name} already staged, skipping`)
         return
       }
@@ -83,19 +136,13 @@ async function main() {
     }
   }
 
-  const sums = await fetchText(`${DIST_BASE}/${version}/SHASUMS256.txt`)
-  const expected = sums.split('\n')
-    .map(line => line.trim().split(/\s+/))
-    .find(parts => parts[1] === file)?.[0]
-  if (expected === undefined) fail(`no checksum for ${file} in SHASUMS256.txt`)
-
   await rm(TMP_ROOT, { recursive: true, force: true })
   await mkdir(TMP_ROOT, { recursive: true })
   const archivePath = join(TMP_ROOT, file)
-  console.log(`fetch-node: downloading ${file}`)
+  console.log(`fetch-node: downloading ${file} (pinned ${version})`)
   const buffer = await downloadFile(`${DIST_BASE}/${version}/${file}`, archivePath)
   const actual = sha256(buffer)
-  if (actual !== expected) fail(`checksum mismatch for ${file}: expected ${expected}, got ${actual}`)
+  if (actual !== expected) fail(`checksum mismatch for ${file}: pinned ${expected}, got ${actual}`)
 
   console.log(`fetch-node: extracting ${file}`)
   if (file.endsWith('.zip')) {

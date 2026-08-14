@@ -49,3 +49,13 @@ Chose **A: bundled standalone Node 22 LTS (≥ 22.19)**:
   future slim-down option, rejected for now;
 - Embedding the harness in the Electron main process: ESM loader, native ABI,
   and process-ownership differences vs upstream — riskiest, rejected.
+
+## Amendment 2026-08-14: pinned runtime
+
+The staged Node was originally resolved dynamically (latest 22.x LTS at
+bootstrap time), which made builds non-reproducible and let the checksum
+arrive from the same mirror as the payload. The version and per-platform
+SHA-256 are now pinned in `manifest/node-runtime.json`; mirrors only deliver
+bytes that must match the committed hash. Maintainers bump the pin with
+`node scripts/fetch-node.mjs --update-pin` against the official nodejs.org
+dist.
