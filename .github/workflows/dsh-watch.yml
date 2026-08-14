@@ -1,0 +1,93 @@
+name: dsh-watch
+
+# Daily upstream watch (docs/decisions/0009): when a newer @deepseek-ai/dsh
+# appears on npm, bump the manifest pin + composite version, regenerate the
+# closure lockfile, rebuild, smoke-test, and open a PR with the result. If
+# verification fails (commonly the 24h minimumReleaseAge floor on a fresh
+# upstream release — it succeeds on the next day's run), open an issue.
+on:
+  schedule:
+    # 09:42 Beijing, off-peak minute.
+    - cron: "42 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Check upstream @deepseek-ai/dsh
+        id: check
+        # version.mjs check: exit 0 = up to date, 3 = update available,
+        # anything else = real failure. Never fail the job here.
+        run: |
+          set +e
+          OUT=$(node scripts/version.mjs check 2>&1)
+          CODE=$?
+          set -e
+          echo "$OUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "new=$(printf '%s\n' "$OUT" | sed -n 's/^version-check: update available: //p')" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Up to date
+        if: steps.check.outputs.code == '0'
+        run: echo "dsh-watch: bundled dsh is the latest published"
+      - name: Fail on inconsistent version state or registry outage
+        if: steps.check.outputs.code != '0' && steps.check.outputs.code != '3'
+        run: exit 1
+      - run: pnpm install
+        if: steps.check.outputs.code == '3'
+      - name: Bump dsh pin + composite version
+        if: steps.check.outputs.code == '3'
+        run: node scripts/version.mjs bump dsh "${{ steps.check.outputs.new }}"
+      - name: Regenerate the closure lockfile
+        if: steps.check.outputs.code == '3'
+        run: pnpm -C manifest/harness install --lockfile-only
+      - name: Rebuild the harness closure
+        if: steps.check.outputs.code == '3'
+        run: pnpm run bootstrap
+      - name: Smoke test the bumped harness
+        if: steps.check.outputs.code == '3'
+        run: xvfb-run -a pnpm run smoke
+        env:
+          ELECTRON_DISABLE_SANDBOX: "1"
+      - name: Open the bump PR
+        if: steps.check.outputs.code == '3'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW: ${{ steps.check.outputs.new }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH="dsh-bump/$NEW"
+          if [ "$(gh pr list --head "$BRANCH" --json number --jq 'length')" != "0" ]; then
+            echo "dsh-watch: PR for $BRANCH already open, skipping"
+            exit 0
+          fi
+          git checkout -b "$BRANCH"
+          git add package.json manifest/harness
+          git commit -m "build: bump @deepseek-ai/dsh to $NEW (shell rev resets to 0)"
+          git push -f origin "$BRANCH"
+          gh pr create --title "Bump @deepseek-ai/dsh to $NEW" \
+            --body "Automated by dsh-watch: manifest pin, closure lockfile, and composite version bumped; bootstrap + smoke green in this run." \
+            --head "$BRANCH" --base main
+      - name: Open an issue when the bump fails verification
+        if: failure() && steps.check.outputs.code == '3'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW: ${{ steps.check.outputs.new }}
+        run: |
+          gh issue create --title "dsh-watch: bump to $NEW failed verification" \
+            --body "The automated bump to @deepseek-ai/dsh $NEW failed in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Most often this is the 24h minimumReleaseAge floor on a fresh upstream release (the next daily run usually succeeds); otherwise inspect the run for an upstream breaking change."

@@ -14,6 +14,10 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 - **Robust**: crash auto-restart with exponential backoff, manual retry on the error page, single-instance lock, tray icon, logs on disk;
 - **Updates**: automatic updates on Windows / Linux; macOS waits for signing (decision 0004).
 
+## Versioning
+
+Version and tag are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.0-rc.6.shell.3` bundles `@deepseek-ai/dsh` 0.1.0-rc.6 at shell revision 3. `scripts/version.mjs` owns the version field (`show` / `check` / `bump`); a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically (decision 0009).
+
 ## Download
 
 Get the installer for your platform from [GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases):

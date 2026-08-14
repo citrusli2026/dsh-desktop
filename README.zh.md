@@ -18,6 +18,13 @@
   系统托盘、日志落盘;
 - **更新**:Windows / Linux 应用内自动更新;macOS 待签名后启用(决策记录 0004)。
 
+## 版本号
+
+版本号与 tag 为复合式:`<dsh 版本>.shell.<壳修订号>`——如 `0.1.0-rc.6.shell.3`
+表示打包 `@deepseek-ai/dsh` 0.1.0-rc.6、壳第 3 次修订。版本字段由
+`scripts/version.mjs` 统一管理(`show` / `check` / `bump`);`dsh-watch`
+工作流每日检查上游 npm,发现新版自动开经验证的 bump PR(决策记录 0009)。
+
 ## 下载
 
 在 [GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases) 下载对应平台的安装包:

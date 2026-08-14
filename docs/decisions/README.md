@@ -14,3 +14,4 @@ This directory records the architecture decisions made while building dsh-electr
 | 0006 | Harness supervision protocol | [EN](0006-process-supervision-protocol.md) · [中文](0006-process-supervision-protocol.zh.md) | Accepted / 已接受 |
 | 0007 | CJS single-file main bundle | [EN](0007-cjs-main-bundle.md) · [中文](0007-cjs-main-bundle.zh.md) | Accepted / 已接受 |
 | 0008 | Size reduction and download channels for Chinese networks | [EN](0008-size-and-cn-download-channels.md) · [中文](0008-size-and-cn-download-channels.zh.md) | Accepted / 已接受 |
+| 0009 | Composite version (dsh + shell) and upstream watch automation | [EN](0009-composite-version-dsh-watch.md) · [中文](0009-composite-version-dsh-watch.zh.md) | Accepted / 已接受 |
