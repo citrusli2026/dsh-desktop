@@ -1,33 +1,38 @@
-# 0004:先以未签名(unsinged)形式发布,签名后补
+# 0004: Release unsigned first, sign later
 
-- 日期:2026-02-09
-- 状态:已接受
+- Date: 2026-02-09
+- Status: accepted
+- 中文:[0004](0004-unsigned-release-first.zh.md)
 
-## 背景
+## Context
 
-代码签名影响三件事:macOS Gatekeeper 与公证(notarization)、
-Windows SmartScreen 信誉、electron-updater 在 macOS 上的可用性
-(mac 更新要求应用已签名)。证书涉及 Apple Developer 账号(99 美元/年)
-与维护者私钥管理;本仓库建在个人 GitHub 账号下,起步阶段无证书。
+Code signing affects three things: macOS Gatekeeper/notarization, Windows
+SmartScreen reputation, and electron-updater availability on macOS (mac updates
+require a signed app). Certificates need an Apple Developer account
+(USD 99/year) and maintainer key management; this repository starts on a
+personal GitHub account without certificates.
 
-## 决策
+## Decision
 
-第一阶段按 **unsigned 发布**:
+Ship **unsigned** in the first phase:
 
-- CI 三平台构建产物直接发布到 GitHub Releases;
-- macOS 用户首次启动需右键 → 打开(README 明确说明);
-- macOS 上自动更新暂不启用,Windows / Linux 的 electron-updater 正常工作;
-- 仓库结构与 CI 预留签名位(证书走 CI secrets,签名步骤以后置开关开启),
-  拿到证书后补上公证与 mac 自动更新,不改变其他设计。
+- CI builds all three platforms and publishes to GitHub Releases;
+- macOS users right-click → Open on first launch (documented in the README);
+- Automatic updates are disabled on macOS; Windows / Linux electron-updater
+  works normally;
+- The repo layout and CI reserve signing slots (certificates via CI secrets,
+  enabled by a later flag); notarization and macOS updates come later without
+  changing anything else.
 
-## 后果
+## Consequences
 
-- 正面:最快让"下载即用"闭环;开源仓库无门槛(任何 fork 都能跑通发布流程);
-- 负面:mac 用户有首次打开摩擦;SmartScreen 在 Windows 上对未签名 exe
-  会提示"更多信息 → 仍要运行",文档需覆盖。
+- Positive: fastest path to download-and-use; any fork can run the release
+  pipeline without credentials;
+- Negative: first-launch friction on macOS; SmartScreen warns on unsigned
+  Windows builds — both covered in the README.
 
-## 备选方案
+## Alternatives
 
-- 一开始就申请 Apple Developer 并配置公证:拖慢首个版本,且个人账号
-  证书管理成本高,推迟;
-- 仅发 Windows/Linux:违背"三平台桌面应用"目标,否决。
+- Set up Apple Developer + notarization from day one: delays the first release
+  and raises maintainer overhead — deferred;
+- Ship Windows/Linux only: against the three-platform goal — rejected.

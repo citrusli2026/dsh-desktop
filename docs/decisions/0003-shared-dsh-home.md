@@ -1,31 +1,40 @@
-# 0003:默认与 CLI 共享 ~/.dsh 数据目录
+# 0003: Share ~/.dsh with the CLI by default
 
-- 日期:2026-02-09
-- 状态:已接受
+- Date: 2026-02-09
+- Status: accepted
+- 中文:[0003](0003-shared-dsh-home.zh.md)
 
-## 背景
+## Context
 
-harness 的所有用户数据(会话 JSONL、设置、凭据、profile、插件)统一存放在
-`DSH_HOME`(默认 `~/.dsh`,可用环境变量覆盖,见上游 `dsh-home-paths`)。
-命令行用户与桌面用户可能是同一批人,数据放哪决定了两者能否互通。
+The harness keeps all user data (session JSONL, settings, credentials, profiles,
+plugins) under `DSH_HOME` (default `~/.dsh`, overridable via environment
+variable; see upstream `dsh-home-paths`). CLI and desktop users are often the
+same people, so the location decides whether the two surfaces interoperate.
 
-## 决策
+## Decision
 
-桌面壳**默认不改 `DSH_HOME`**,即与 CLI 共享 `~/.dsh`:
+The desktop shell leaves `DSH_HOME` untouched by default, i.e. shares `~/.dsh`
+with the CLI:
 
-- 用户从 CLI 换到桌面版(或反过来),会话、设置、API key 无缝延续;
-- 壳不复制、不迁移数据,避免双份状态漂移;
-- 壳内设置页预留"切换 DSH_HOME"入口(后续里程碑实现),高级用户可显式隔离。
+- Sessions, settings, and API keys carry over when switching between CLI and
+  desktop, in both directions;
+- The shell copies and migrates nothing, avoiding state drift between two
+  copies;
+- A future settings entry may let advanced users pick an isolated home; the
+  default stays shared.
 
-## 后果
+## Consequences
 
-- 正面:零迁移、与上游文档一致、行为最可预期;
-- 负面:桌面版与 CLI 同时读写同一目录时由上游自身的一致性机制负责
-  (上游本就是多进程可共享的设计,例如多开 web 实例);若未来需要
-  "桌面版独立沙盒数据",再以显式选项提供,不改变默认值。
+- Positive: zero migration, matches upstream docs, most predictable behavior;
+- Negative: concurrent CLI + desktop use relies on upstream's own consistency
+  (the harness is designed for multi-process sharing, e.g. multiple web
+  instances); an isolated "desktop-only sandbox" would be an explicit opt-in,
+  never the default.
 
-## 备选方案
+## Alternatives
 
-- 默认指向应用私有数据目录(如 `~/Library/Application Support/dsh-desktop`):
-  隔离干净,但违背"与 CLI 一致"的直觉,且需要迁移工具,否决;
-- 首次启动弹窗让用户选:对"下载即用"目标来说多一步摩擦,留作后续可选功能。
+- App-private data dir (e.g. `~/Library/Application Support/dsh-desktop`):
+  cleaner isolation but breaks CLI parity and needs migration tooling —
+  rejected;
+- A first-run dialog asking users to choose: extra friction against the
+  download-and-use goal — possible optional feature later.

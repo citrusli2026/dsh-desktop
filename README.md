@@ -1,62 +1,76 @@
 # dsh-desktop
 
-DeepSeek Harness(`dsh`)的 Electron 桌面壳:下载安装即用,功能与
-`npx @deepseek-ai/dsh web` 完全一致——壳只提供窗口、进程监督与自动更新,
-不改变任何 agent 功能。壳本身 MIT 开源。
+[中文](README.zh.md)
 
-## 特性
+An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`): download, install, and use — functionally identical to `npx @deepseek-ai/dsh web`. The shell only provides the window, process supervision, tray, and updates; it never changes agent behavior. MIT-licensed.
 
-- **开箱即用**:内置独立 Node 运行时与 `@deepseek-ai/dsh` 完整依赖闭包,
-  无需预装 Node.js;
-- **与 CLI 互通**:默认共享 `~/.dsh`,会话、设置、API key 与命令行版延续;
-- **健壮性**:harness 崩溃指数退避自动重启、单实例锁、日志落盘;
-- **更新**:Windows / Linux 自动更新;macOS 待签名后启用(见决策记录 0004)。
+## Features
 
-## 下载
+- **Zero setup**: bundles its own Node.js runtime and the complete `@deepseek-ai/dsh` dependency closure — no Node.js install required;
+- **Interoperates with the CLI**: shares `~/.dsh` by default, so sessions, settings, and API keys carry over from the command line;
+- **Robust**: crash auto-restart with exponential backoff, manual retry on the error page, single-instance lock, tray icon, logs on disk;
+- **Updates**: automatic updates on Windows / Linux; macOS waits for signing (decision 0004).
 
-在 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) 下载对应平台的安装包:
+## Download
 
-- macOS:`dsh-desktop-0.1.0-pre.0-arm64-mac.zip` 或 `-arm64.dmg`(**当前仅 Apple Silicon**;未签名,首次打开请右键 → 打开);
-- Windows:`dsh-desktop-setup-0.1.0-pre.0.exe`(NSIS,可选择安装目录);
-- Linux:`dsh-desktop-0.1.0-pre.0-x86_64.AppImage`(免安装)或 `dsh-desktop-0.1.0-pre.0-amd64.deb`。
+Get the installer for your platform from [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases):
 
-Windows / Linux 支持应用内自动更新;macOS 待签名后启用(见决策记录 0004)。
+| Platform | Asset |
+|---|---|
+| macOS (Apple Silicon only, unsigned) | `dsh-desktop-<version>-arm64-mac.dmg` or `-arm64-mac.zip` |
+| Windows | `dsh-desktop-setup-<version>.exe` (NSIS) |
+| Linux | `dsh-desktop-<version>-x86_64.AppImage` or `dsh-desktop-<version>-amd64.deb` |
 
-## 开发
+- macOS: right-click → Open on first launch (unsigned, decision 0004);
+- Windows SmartScreen: choose "More info" → "Run anyway" (unsigned).
 
-要求:Node `^22.19.0 || >=24.0.0`,pnpm 11。
+### Slow or blocked GitHub? Download acceleration
+
+If github.com is slow or unreachable from your network, try prefixing the release URL with a community proxy. For example, with the GitHub URL
+`https://github.com/citrusli2026/dsh-desktop/releases/download/vX.Y.Z/<file>`:
+
+```
+https://ghproxy.net/https://github.com/citrusli2026/dsh-desktop/releases/download/vX.Y.Z/<file>
+```
+
+Other prefixes that come and go over time: `https://gh-proxy.com/`, `https://ghfast.top/`. These are community-run, free, and unaffiliated with this project: availability varies, so try the next one when one is down.
+
+Project owners can also enable the optional Cloudflare R2 mirror in the release workflow (job `mirror-r2`, gated on `R2_ACCOUNT_ID` / `R2_API_TOKEN` repository secrets) to publish a stable mirror automatically.
+
+## Development
+
+Requires Node `^22.19.0 || >=24.0.0` and pnpm 11.
 
 ```sh
-pnpm install         # 安装依赖并下载 Electron(默认走 npmmirror 国内镜像)
-pnpm run bootstrap   # 物化 harness 依赖闭包 + 下载内置 Node 22 LTS
-pnpm run dev         # 本机运行
-pnpm run smoke       # 冒烟:harness 就绪 → 窗口加载 → 校验页面 → 退出
-pnpm run dist        # 打当前平台的安装包(产物在 dist/)
+pnpm install         # deps + Electron binary (npmmirror by default)
+pnpm run bootstrap   # materialize the harness closure + bundled Node 22 LTS
+pnpm run dev         # run locally
+pnpm run smoke       # smoke: harness ready → window loads → verify page → exit
+pnpm run dist        # build installers for the current platform (into dist/)
 ```
 
-慢网络/海外环境:仓库默认使用国内镜像(npmmirror)加速下载,可用环境变量覆盖:
+Mirrors: this repository defaults to npmmirror (fast in China) for npm packages, the Electron binary, electron-builder helpers, and the bundled Node tarball. Override per environment variable if you prefer the official sources:
 
-- `NPM_CONFIG_REGISTRY` — npm 包源
-- `ELECTRON_MIRROR` — Electron 二进制
-- `ELECTRON_BUILDER_BINARIES_MIRROR` — electron-builder 辅助二进制
-- `NODE_DIST_MIRROR` — 内置 Node 发行包(官方源为 `https://nodejs.org/dist`)
+- `NPM_CONFIG_REGISTRY`
+- `ELECTRON_MIRROR`
+- `ELECTRON_BUILDER_BINARIES_MIRROR`
+- `NODE_DIST_MIRROR` (official: `https://nodejs.org/dist`)
 
-## 目录结构
+## Layout
 
 ```
-src/main/            Electron 主进程:进程监督、窗口、占位/错误页
-scripts/             fetch-node / deploy-harness / install-electron
-manifest/harness/    纯依赖 manifest:精确 pin @deepseek-ai/dsh 及其闭包
-resources/harness/   bootstrap 产物(gitignore,不入库)
-docs/decisions/      决策记录:架构选择与实现过程
+src/main/            Electron main: supervision, window, pages, tray
+src/preload/         sandboxed bridge (manual harness retry for the error page)
+scripts/             fetch-node / deploy-harness / install-electron / build / gen-icons
+manifest/harness/    pure dependency manifest pinning @deepseek-ai/dsh and its closure
+resources/harness/   bootstrap output (gitignored)
+docs/decisions/      decision records (ADR-style)
 ```
 
-## 文档
+## Documentation
 
-- [决策记录](docs/decisions/README.md):为什么这么设计(内置 Node、共享 ~/.dsh、unsigned 先发等);
-- 架构与实现细节见各决策记录中的背景与备选方案说明。
+- [Decision records](docs/decisions/README.md): why it is built this way (bundled Node, shared `~/.dsh`, unsigned-first, closure deployment, supervision protocol, CJS main bundle, …).
 
 ## License
 
-[MIT](LICENSE)。内置的 DeepSeek Harness 运行时来自
-[@deepseek-ai/dsh](https://www.npmjs.com/package/@deepseek-ai/dsh)(MIT)。
+[MIT](LICENSE). The bundled DeepSeek Harness runtime comes from [@deepseek-ai/dsh](https://www.npmjs.com/package/@deepseek-ai/dsh) (MIT).

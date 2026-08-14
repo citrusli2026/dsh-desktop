@@ -1,44 +1,51 @@
-# 0002:harness 运行在随壳内置的独立 Node 上
+# 0002: Harness runs on a bundled standalone Node
 
-- 日期:2026-02-09
-- 状态:已接受
+- Date: 2026-02-09
+- Status: accepted
+- 中文:[0002](0002-bundled-node-runtime.zh.md)
 
-## 背景
+## Context
 
-Electron 自带一个 Node,但 harness 需要真正的 Node 运行时
-(上游 engines: `^22.19.0 || >=24.0.0`)。harness 闭包含原生模块:
-`node-pty`(NAN 绑定,按 Node ABI 编译)、`koffi`(纯 FFI,ABI 稳定)、
-`sharp`(N-API,ABI 稳定)、`node-addon-require-builtin`(平台预编译 addon)、
-Linux 上的 `@deepseek-ai/node-addon-landlock-run`。
+Electron embeds its own Node, but the harness needs a real Node runtime
+(upstream engines: `^22.19.0 || >=24.0.0`). The closure contains native modules:
+`node-pty` (NAN, built per Node ABI), `koffi` (pure FFI, ABI-stable), `sharp`
+(N-API, ABI-stable), `node-addon-require-builtin` (platform-prebuilt addon), and
+`@deepseek-ai/node-addon-landlock-run` (Linux-only sandbox launcher).
 
-两种候选:
+Two candidates:
 
-- A. 随壳内置官方 Node 22 LTS 二进制,harness 作为独立子进程运行;
-- B. 用 Electron 自带 Node(`ELECTRON_RUN_AS_NODE=1`)运行 harness。
+- A. Bundle an official Node 22 LTS binary with the app and run the harness as
+  a separate child process;
+- B. Run the harness on Electron's embedded Node (`ELECTRON_RUN_AS_NODE=1`).
 
-## 决策
+## Decision
 
-选择 **A:内置独立 Node 22 LTS(≥ 22.19)**:
+Chose **A: bundled standalone Node 22 LTS (≥ 22.19)**:
 
-- 与上游官方支持的运行方式完全一致,不在上游测试矩阵之外引入新组合;
-- 原生模块按普通 Node ABI 安装即可,零 `@electron/rebuild`;
-- Electron 升级与 harness 运行时彻底解耦;
-- 代价:安装包多约 30MB(压缩后)。
+- Identical to the upstream-supported way of running the harness — no new
+  combination outside upstream's test matrix;
+- Native modules install against the ordinary Node ABI; zero
+  `@electron/rebuild`;
+- Electron upgrades are fully decoupled from the harness runtime;
+- Cost: roughly 30MB more per installer (compressed).
 
-Node 二进制由 `scripts/fetch-node.mjs` 从 nodejs.org 官方发行包下载,
-校验 SHASUMS256.txt 后解压到 `resources/harness/node/`,版本自动选"最新 22.x LTS"
-并记录到清单文件,构建可复现。
+`scripts/fetch-node.mjs` downloads the official Node distribution
+(npmmirror by default, `NODE_DIST_MIRROR` to override), verifies it against
+`SHASUMS256.txt`, extracts it to `resources/harness/node/`, picks the latest
+22.x LTS automatically, and records a provenance manifest.
 
-## 后果
+## Consequences
 
-- 正面:一致性、零重编译、升级隔离;
-- 负面:双运行时(Electron + Node)体积;每个平台要各下一份 Node;
-  需要在 CI 里保证下载源可达并校验哈希(已内置 SHA256 校验)。
+- Positive: parity, no rebuilds, upgrade isolation;
+- Negative: two runtimes (Electron + Node) and one Node download per platform;
+  CI must reach the dist source, which the built-in SHA256 verification makes
+  safe.
 
-## 备选方案
+## Alternatives
 
-- B(`ELECTRON_RUN_AS_NODE`):Electron ≥ 40 内置 Node 24,恰好满足 engines;
-  省体积,但 node-pty / require-builtin / landlock 需要 `@electron/rebuild`,
-  且每个 Electron 大版本都要重验 ABI 矩阵——作为后续瘦身备选,当前否决;
-- 把 harness 直接嵌进 Electron 主进程:ESM loader、原生 ABI、进程所有权
-  信号处理都与上游运行方式不同,风险最大,否决。
+- B (`ELECTRON_RUN_AS_NODE`): Electron ≥ 40 embeds Node 24, satisfying engines;
+  smaller, but node-pty / require-builtin / landlock need `@electron/rebuild`
+  and every Electron major bump re-verifies the ABI matrix — deferred as a
+  future slim-down option, rejected for now;
+- Embedding the harness in the Electron main process: ESM loader, native ABI,
+  and process-ownership differences vs upstream — riskiest, rejected.
