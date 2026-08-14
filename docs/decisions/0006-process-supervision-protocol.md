@@ -30,12 +30,14 @@
 
 - 正面:协议完全依赖上游稳定契约(就绪行、回环绑定、SIGTERM 语义),
   壳内零私有协议;崩溃恢复对用户可见(占位页 → 正常页,错误页含日志);
-- 负面:就绪前退出不重试意味着"首次启动碰上瞬态故障"需要用户重开应用,
-  后续里程碑可在错误页加"重试"按钮弥补;
+- 负面:就绪前退出不重试意味着"首次启动碰上瞬态故障"需要用户重开应用;
+  0.1.1-pre.0 起错误页提供"重试启动"按钮(preload/IPC 桥),补掉了该缺口;
 - 已知限制(Windows):Node 的 `child.kill('SIGTERM')` 在 Windows 上是
   TerminateProcess 硬杀,harness 收不到信号、无法走优雅落盘路径。
-  上游 JSONL 持久化是逐事件写穿,最坏丢最后一个事件;后续里程碑可引入
-  `windows-kill`(GenerateConsoleCtrlEvent)补优雅退出。
+  上游 JSONL 持久化是逐事件写穿,最坏丢最后一个事件。退出时用
+  `taskkill /T /F` 清扫整棵进程树,保证 harness 派生的 shell 会话与
+  subagent 不残留;真正的 Ctrl+C 级优雅退出需要 `GenerateConsoleCtrlEvent`,
+  留给后续里程碑。
 
 ## 备选方案
 

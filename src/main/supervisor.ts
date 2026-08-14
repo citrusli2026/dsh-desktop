@@ -188,7 +188,13 @@ export class HarnessSupervisor {
         clearTimeout(killTimer)
         resolve()
       })
+      // SIGTERM on Windows is TerminateProcess for the direct child only;
+      // sweep the whole tree so shell sessions and subagents do not survive
+      // an app quit (their incremental JSONL writes bound the data loss).
       child.kill('SIGTERM')
+      if (process.platform === 'win32' && child.pid !== undefined) {
+        spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' })
+      }
     })
   }
 }
