@@ -20,6 +20,11 @@ if (!TOKEN || !REPO || !tag || files.length === 0) {
   process.exit(1)
 }
 
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execFileP = promisify(execFile)
+
 const API = `https://api.gitcode.com/api/v5/repos/${REPO}`
 
 async function uploadOne(path) {
@@ -30,11 +35,18 @@ async function uploadOne(path) {
   const { url, headers } = await metaResponse.json()
   if (typeof url !== 'string' || headers === undefined) throw new Error(`upload_url for ${name}: unexpected response shape`)
 
-  const { readFile } = await import('node:fs/promises')
-  const body = await readFile(path)
-  const put = await fetch(url, { method: 'PUT', headers, body })
-  if (!put.ok) throw new Error(`PUT ${name} -> HTTP ${put.status}: ${(await put.text()).slice(0, 200)}`)
-  console.log(`gitcode-upload: ${name} uploaded (${Math.round(body.length / 1024 / 1024)}M)`)
+  // PUT via curl: Node fetch(undici) caps response-header wait at 300s, which a
+  // ~200MB upload to OBS can exceed before the server answers.
+  const args = ['-sfS', '--max-time', '1200', '-T', path]
+  for (const [key, value] of Object.entries(headers)) args.push('-H', `${key}: ${value}`)
+  args.push(url)
+  try {
+    await execFileP('curl', args, { maxBuffer: 4 * 1024 * 1024, timeout: 21 * 60_000 })
+  } catch (error) {
+    throw new Error(`PUT ${name} failed: ${String(error.stderr || error.message).slice(0, 300)}`)
+  }
+  const { statSync } = await import('node:fs')
+  console.log(`gitcode-upload: ${name} uploaded (${Math.round(statSync(path).size / 1024 / 1024)}M)`)
 }
 
 for (const file of files) {
