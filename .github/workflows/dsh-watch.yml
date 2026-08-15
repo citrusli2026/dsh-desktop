@@ -43,7 +43,7 @@ jobs:
           exit 0
       - name: Up to date
         if: steps.check.outputs.code == '0'
-        run: echo "dsh-watch: bundled dsh is the latest published"
+        run: 'echo "dsh-watch: bundled dsh is the latest published"'
       - name: Fail on inconsistent version state or registry outage
         if: steps.check.outputs.code != '0' && steps.check.outputs.code != '3'
         run: exit 1
