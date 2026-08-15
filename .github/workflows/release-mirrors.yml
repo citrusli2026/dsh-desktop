@@ -3,6 +3,13 @@ name: Release Mirrors
 # Mirrors are deliberately separate from the release workflow: GitHub assets
 # and site refresh remain green even when a third-party distribution service
 # is slow or unavailable.
+#
+# GitCode is NOT mirrored from here anymore: pushing 160–220 MB from GitHub's
+# overseas runners to GitCode OBS ran at ~150 KB/s and died on 502 once the
+# pre-signed URL expired mid-transfer (shell.8/shell.9). GitCode mirroring is
+# now pull-mode, owned by the GitCode-side pipeline in
+# .gitcode/workflows/release-mirror.yml. The manual GitHub-side fallback
+# remains available via gitcode-backfill.yml (small files only in practice).
 on:
   workflow_run:
     workflows: [Release]
@@ -45,45 +52,3 @@ jobs:
           done
       - name: Report mirror location
         run: echo "Mirrored under dsh-electron-shell/$TAG/ in the configured R2 bucket"
-
-  mirror-gitcode:
-    if: ${{ (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') && vars.GITCODE_REPO != '' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    env:
-      TAG: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || inputs.tag }}
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
-      GITCODE_REPO: ${{ vars.GITCODE_REPO }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '22'
-          package-manager-cache: false
-      - name: Download published assets
-        run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir artifacts
-      - name: Wait for the mirrored tag and create the GitCode release if missing
-        run: |
-          API="https://api.gitcode.com/api/v5/repos/$GITCODE_REPO"
-          for attempt in {1..20}; do
-            if curl -sf -H "PRIVATE-TOKEN: $GITCODE_TOKEN" "$API/releases/$TAG" >/dev/null; then
-              exit 0
-            fi
-            if curl -sf -X POST "$API/releases" \
-              -H "PRIVATE-TOKEN: $GITCODE_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d "{\"tag_name\": \"$TAG\", \"name\": \"dsh-desktop $TAG\", \"prerelease\": true, \"body\": \"Mirrored from https://github.com/citrusli2026/dsh-electron-shell/releases\"}" >/dev/null; then
-              exit 0
-            fi
-            echo "GitCode tag not ready yet (attempt $attempt/20)"
-            sleep 15
-          done
-          echo "GitCode did not expose $TAG within five minutes"
-          exit 1
-      - name: Upload assets to the GitCode release
-        run: node scripts/gitcode-upload.mjs "$TAG" artifacts/*
-      - name: Report mirror location
-        run: echo "Mirrored to https://gitcode.com/$GITCODE_REPO/releases/download/$TAG/..."

@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Host+Grotesk:wght@500;600;700&amp;display=swap" />
-<link rel="stylesheet" href="/assets/style.css?v=12" />
+<link rel="stylesheet" href="/assets/style.css?v=13" />
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"dsh-desktop","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","isAccessibleForFree":true,"license":"https://opensource.org/license/mit","url":"https://dsh-desktop.com/","downloadUrl":"https://github.com/citrusli2026/dsh-electron-shell/releases"}</script>
 </head>
 <body>
@@ -89,7 +89,7 @@
               <div class="msg msg--agent">好的。我会自带 Node.js 运行时,用户无需任何环境配置。</div>
               <div class="msg msg--tool">$ read_file manifest/harness/deps.json</div>
               <div class="msg msg--tool">$ run pnpm run bootstrap</div>
-              <div class="msg msg--agent">完成。<b>进程守护、权限默认拒绝、更新检查</b>都已就位。</div>
+              <div class="msg msg--agent">完成。<b>原生双语菜单、进程守护、权限默认拒绝</b>都已就位。</div>
               <div class="harness__input"><span class="prompt">&gt;</span><span class="cursor"></span></div>
             </div>
           </div>
@@ -121,7 +121,7 @@
       <div class="boundary-grid" data-reveal style="--i:4">
         <article>
           <p class="boundary-grid__eyebrow" data-i18n="wf.adds.label">桌面壳新增</p>
-          <ul data-i18n="wf.adds"><li>原生窗口、托盘与单实例</li><li>运行时封装与进程守护</li><li>受控更新、日志和诊断报告</li><li>Electron 沙箱与导航边界</li></ul>
+          <ul data-i18n="wf.adds"><li>跟随 Harness 的中英菜单与主题</li><li>原生窗口、托盘与单实例</li><li>运行时封装、进程守护与诊断</li><li>Electron 沙箱与导航边界</li></ul>
         </article>
         <article>
           <p class="boundary-grid__eyebrow" data-i18n="wf.keeps.label">Harness 保持原样</p>
@@ -136,7 +136,7 @@
     <div class="wrap">
       <p class="sec-marker" data-reveal>02 / <span data-i18n="dl.marker">下载</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="dl.title">选择你的平台</h2>
-      <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">国内镜像可用时自动走 GitCode(华为云 CDN),否则回落 GitHub;页面数据随发版自动同步。</p>
+      <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">macOS 与 Windows 安装包均提供 GitHub 与 GitCode 国内镜像两个下载源;镜像在发版后由维护者手动补齐,页面检测到可用后自动展示。Linux 用户请使用下方命令行方式。</p>
 
       <div class="panel" data-reveal style="--i:3">
         <span class="tick tick--tl" aria-hidden="true"></span><span class="tick tick--tr" aria-hidden="true"></span>
@@ -159,16 +159,6 @@
           <button class="copybtn" data-copy="npx @deepseek-ai/dsh web" type="button" data-i18n="copy">复制</button>
         </div>
         <p class="note" data-i18n="dl.note">命令行方式同样可用;桌面壳功能与其完全一致,但使用独立数据目录 <code>~/.dsh-desktop</code>,互不干扰。</p>
-
-        <details class="allfiles">
-          <summary data-i18n="dl.allfiles">全部文件(含差量更新元数据)</summary>
-          <table>
-            <thead><tr><th data-i18n="dl.th.file">文件</th><th data-i18n="dl.th.size">大小</th><th data-i18n="dl.th.dl">下载量</th><th></th></tr></thead>
-            <tbody id="all-files">
-              <tr><td colspan="4"><a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases →</a></td></tr>
-            </tbody>
-          </table>
-        </details>
       </div>
     </div>
   </section>
@@ -189,12 +179,12 @@
             <p>桌面版默认使用 <code>~/.dsh-desktop</code>:设置、会话、API Key、插件都是独立的一份,安装卸载都不影响你的命令行工作流。需要共享时,设 <code>DSH_HOME=~/.dsh</code> 即可。</p>
           </article>
           <article class="feature-card" data-i18n="ft.p3">
-            <h3>崩溃自愈,指数退避</h3>
-            <p>进程崩溃自动重启(指数退避),错误页可手动重试并查看日志尾部;单实例锁防止多开,托盘常驻,日志落盘可查。</p>
+            <h3>原生菜单与 Harness 保持同一种语言</h3>
+            <p>首次启动按系统语言选择中文或英文;之后读取同一份 <code>locale.preference</code>,无需重启即可同步应用菜单、托盘、About、恢复页和对话框。主题也跟随 Harness 设置。</p>
           </article>
           <article class="feature-card" data-i18n="ft.p4">
-            <h3>Windows / Linux 自动更新</h3>
-            <p>基于 electron-updater 的原地自动更新;macOS 在签名前检查新版本并引导至下载页。每日 <code>dsh-watch</code> 工作流跟踪上游 npm,有新版本自动发起升级 PR。</p>
+            <h3>持续守护与可靠更新</h3>
+            <p>崩溃后按预算退避重启,窗口关闭后可驻留托盘,也可从帮助菜单安全重启 Harness。Windows / Linux 支持原地更新;macOS 检查新版本并引导至精确发布页。</p>
           </article>
           <article class="feature-card" data-i18n="ft.p5">
             <h3>渲染层能力默认收敛</h3>
@@ -259,6 +249,10 @@
           <summary data-i18n="faq.q6">桌面版会申请摄像头、定位或文件系统权限吗?</summary>
           <p data-i18n="faq.a6">不会。当前功能不需要这些 Electron Web 权限,桌面壳默认拒绝媒体、定位、通知、采集和文件系统等额外请求;未来如确有需要,必须经过明确的白名单审查。</p>
         </details>
+        <details>
+          <summary data-i18n="faq.q7">桌面菜单为什么是中文或英文?</summary>
+          <p data-i18n="faq.a7">首次启动跟随电脑系统语言;不支持的系统语言默认使用英文。之后在 Harness 中切换语言,应用菜单、托盘和 Shell 对话框会读取同一设置并实时同步。</p>
+        </details>
       </div>
     </div>
   </section>
@@ -281,6 +275,6 @@
   </div>
 </footer>
 
-<script src="/assets/app.js?v=12" defer></script>
+<script src="/assets/app.js?v=13" defer></script>
 </body>
 </html>

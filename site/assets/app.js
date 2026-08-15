@@ -25,26 +25,24 @@
       'hero.secondary': '看看桌面壳做了什么 →',
       'hero.meta': '无需 Node.js',
       'trust.local': 'Loopback 本地运行', 'trust.isolated': '默认独立数据目录',
-      'trust.guarded': '沙箱与权限默认拒绝', 'trust.verifiable': '公开 CI 与发布制品',
+      'trust.guarded': '沙箱与权限默认拒绝', 'trust.verifiable': '公开 CI 与真实应用测试',
       'wf.marker': '工作方式', 'wf.title': '一个桌面入口,三层可靠性',
       'wf.lead': '像成熟桌面工具一样开箱即用,同时保留上游 Harness 的原始能力与可审计边界。',
       'wf.s1.title': '下载即运行', 'wf.s1.body': '自带锁定版本的 Node.js 与完整依赖,不要求全局环境。',
       'wf.s2.title': '本地隔离启动', 'wf.s2.body': 'Harness 只监听 loopback,默认使用 ~/.dsh-desktop,不碰 CLI 数据。',
       'wf.s3.title': '桌面壳持续守护', 'wf.s3.body': '托盘状态、崩溃重启、更新检查、日志轮换与诊断导出形成恢复闭环。',
       'wf.adds.label': '桌面壳新增', 'wf.keeps.label': 'Harness 保持原样',
-      'wf.adds': '<li>原生窗口、托盘与单实例</li><li>运行时封装与进程守护</li><li>受控更新、日志和诊断报告</li><li>Electron 沙箱与导航边界</li>',
+      'wf.adds': '<li>跟随 Harness 的中英菜单与主题</li><li>原生窗口、托盘与单实例</li><li>运行时封装、进程守护与诊断</li><li>Electron 沙箱与导航边界</li>',
       'wf.keeps': '<li>Agent 与工具调用行为</li><li>上游版本和依赖闭包</li><li>模型、账户与插件配置</li><li>CLI 仍可独立并行使用</li>',
       'dl.marker': '下载', 'dl.title': '选择你的平台',
-      'dl.lead': '国内镜像可用时自动走 GitCode(华为云 CDN),否则回落 GitHub;页面数据随发版自动同步。',
+      'dl.lead': 'macOS 与 Windows 安装包均提供 GitHub 与 GitCode 国内镜像两个下载源;镜像在发版后由维护者手动补齐,页面检测到可用后自动展示。Linux 用户请使用下方命令行方式。',
       'dl.fallback': '版本数据加载失败时,可直接前往 <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> 或 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a> 下载。',
       'dl.note': '命令行方式同样可用;桌面壳功能与其完全一致,但使用独立数据目录 <code>~/.dsh-desktop</code>,互不干扰。',
-      'dl.allfiles': '全部文件(含差量更新元数据)',
-      'dl.th.file': '文件', 'dl.th.size': '大小', 'dl.th.dl': '下载量',
       'ft.marker': '特性', 'ft.title': '为什么用它',
       'ft.p1': '<h3>无需安装 Node.js</h3><p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本与 SHA-256 逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>',
       'ft.p2': '<h3>独立数据目录,环境隔离</h3><p>桌面版默认使用 <code>~/.dsh-desktop</code>:设置、会话、API Key、插件都是独立的一份,安装卸载都不影响你的命令行工作流。需要共享时,设 <code>DSH_HOME=~/.dsh</code> 即可。</p>',
-      'ft.p3': '<h3>崩溃自愈,指数退避</h3><p>进程崩溃自动重启(指数退避),错误页可手动重试并查看日志尾部;单实例锁防止多开,托盘常驻,日志落盘可查。</p>',
-      'ft.p4': '<h3>Windows / Linux 自动更新</h3><p>基于 electron-updater 的原地自动更新;macOS 在签名前检查新版本并引导至下载页。每日 <code>dsh-watch</code> 工作流跟踪上游 npm,有新版本自动发起升级 PR。</p>',
+      'ft.p3': '<h3>原生菜单与 Harness 保持同一种语言</h3><p>首次启动按系统语言选择中文或英文;之后读取同一份 <code>locale.preference</code>,无需重启即可同步应用菜单、托盘、About、恢复页和对话框。主题也跟随 Harness 设置。</p>',
+      'ft.p4': '<h3>持续守护与可靠更新</h3><p>崩溃后按预算退避重启,窗口关闭后可驻留托盘,也可从帮助菜单安全重启 Harness。Windows / Linux 支持原地更新;macOS 检查新版本并引导至精确发布页。</p>',
       'ft.p5': '<h3>渲染层能力默认收敛</h3><p>保持 Electron 沙箱与上下文隔离、关闭 Node 集成并限制页面导航;媒体、定位、通知、屏幕采集和文件系统等额外权限默认拒绝,未来只能按需显式放行。</p>',
       'ft.p6': '<h3>问题发生时,带走一份可检查的报告</h3><p>帮助菜单、托盘和启动失败页都能导出本地诊断报告。报告包含版本、系统状态和有上限的日志尾部,自动遮罩常见密钥与主目录,且绝不自动上传。</p>',
       'vr.marker': '版本号', 'vr.title': '版本号怎么读',
@@ -63,6 +61,8 @@
       'faq.a5': '当前仅提供 Apple Silicon(arm64)安装包。Intel Mac 可暂时使用命令行方式 <code>npx @deepseek-ai/dsh web</code>,功能完全一致。',
       'faq.q6': '桌面版会申请摄像头、定位或文件系统权限吗?',
       'faq.a6': '不会。当前功能不需要这些 Electron Web 权限,桌面壳默认拒绝媒体、定位、通知、采集和文件系统等额外请求;未来如确有需要,必须经过明确的白名单审查。',
+      'faq.q7': '桌面菜单为什么是中文或英文?',
+      'faq.a7': '首次启动跟随电脑系统语言;不支持的系统语言默认使用英文。之后在 Harness 中切换语言,应用菜单、托盘和 Shell 对话框会读取同一设置并实时同步。',
       'footer.legal': 'MIT © 2026 dsh-desktop contributors<br /><strong>社区维护 · 非官方产品</strong><br />与 DeepSeek AI 无隶属、授权或合作关系',
       'footer.mirror': 'GitCode 镜像', 'footer.releases': '全部版本', 'footer.issues': '问题反馈',
       'footer.sync': '纯静态站点 · 部署于 Vercel<br />版本数据由 GitHub Actions 自动同步',
@@ -82,26 +82,24 @@
       'hero.secondary': 'See what the shell adds →',
       'hero.meta': 'NO NODE.JS REQUIRED',
       'trust.local': 'Loopback-only runtime', 'trust.isolated': 'Isolated data by default',
-      'trust.guarded': 'Sandboxed, deny by default', 'trust.verifiable': 'Public CI and artifacts',
+      'trust.guarded': 'Sandboxed, deny by default', 'trust.verifiable': 'Public CI and real-app tests',
       'wf.marker': 'HOW IT WORKS', 'wf.title': 'One desktop entry point. Three reliability layers.',
       'wf.lead': 'Ready like a mature desktop tool, while keeping upstream Harness behavior and boundaries auditable.',
       'wf.s1.title': 'Download and run', 'wf.s1.body': 'A pinned Node.js runtime and full dependency closure are included. No global setup.',
       'wf.s2.title': 'Start locally, stay isolated', 'wf.s2.body': 'Harness listens on loopback and defaults to ~/.dsh-desktop, leaving CLI data alone.',
       'wf.s3.title': 'The shell keeps watch', 'wf.s3.body': 'Tray status, crash restart, update checks, log rotation, and diagnostics close the recovery loop.',
       'wf.adds.label': 'THE DESKTOP SHELL ADDS', 'wf.keeps.label': 'HARNESS STAYS INTACT',
-      'wf.adds': '<li>Native window, tray, and single instance</li><li>Runtime packaging and process supervision</li><li>Controlled updates, logs, and diagnostics</li><li>Electron sandbox and navigation boundary</li>',
+      'wf.adds': '<li>Harness-synced bilingual menus and theme</li><li>Native window, tray, and single instance</li><li>Runtime packaging, supervision, and diagnostics</li><li>Electron sandbox and navigation boundary</li>',
       'wf.keeps': '<li>Agent and tool-call behavior</li><li>Upstream version and dependency closure</li><li>Model, account, and plugin configuration</li><li>The CLI remains independently usable</li>',
       'dl.marker': 'DOWNLOAD', 'dl.title': 'Pick your platform',
-      'dl.lead': 'Direct downloads from GitHub Releases. Data on this page syncs automatically with every release.',
+      'dl.lead': 'macOS and Windows installers are served from both GitHub and a GitCode (China) mirror; the mirror is topped up by the maintainer after each release and appears once verified. Linux users: use the CLI below.',
       'dl.fallback': 'If live data fails to load, head to <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> directly.',
       'dl.note': 'The CLI route works too; the shell is functionally identical but keeps its own data home at <code>~/.dsh-desktop</code> — no interference either way.',
-      'dl.allfiles': 'All files (incl. delta-update metadata)',
-      'dl.th.file': 'FILE', 'dl.th.size': 'SIZE', 'dl.th.dl': 'DOWNLOADS',
       'ft.marker': 'FEATURES', 'ft.title': 'Why this shell',
       'ft.p1': '<h3>No Node.js install required</h3><p>The shell bundles a pinned Node.js 22 LTS runtime and the complete <code>@deepseek-ai/dsh</code> dependency closure, SHA-256 locked per platform. Download → double-click → use.</p>',
       'ft.p2': '<h3>Isolated data home</h3><p>The desktop app defaults to <code>~/.dsh-desktop</code>: settings, sessions, API keys, and plugins are its own copy — installing or uninstalling never touches your CLI workflow. Set <code>DSH_HOME=~/.dsh</code> to share again.</p>',
-      'ft.p3': '<h3>Crash-proof supervision</h3><p>Auto-restart with exponential backoff, manual retry on the error page with a log tail, single-instance lock, system tray, logs on disk.</p>',
-      'ft.p4': '<h3>Auto-update on Windows / Linux</h3><p>In-place updates via electron-updater; macOS checks and points to the download page until signing lands. A daily <code>dsh-watch</code> workflow tracks upstream npm and files upgrade PRs automatically.</p>',
+      'ft.p3': '<h3>Native chrome in the same language as Harness</h3><p>First launch follows the operating-system language. Afterwards the shell reads the same <code>locale.preference</code>, live-syncing the app menu, tray, About, recovery pages, and dialogs without a restart. Theme follows Harness too.</p>',
+      'ft.p4': '<h3>Continuous supervision and reliable updates</h3><p>Budgeted backoff after crashes, close-to-tray behavior, and a safe Harness restart from Help. Windows / Linux update in place; macOS checks for updates and opens the exact release page.</p>',
       'ft.p5': '<h3>Renderer capabilities stay constrained</h3><p>Electron sandboxing and context isolation stay on, Node integration stays off, and navigation is guarded. Media, location, notification, capture, and filesystem permissions are denied by default; future exceptions must be explicitly allowlisted.</p>',
       'ft.p6': '<h3>Take an inspectable report when something breaks</h3><p>Export a local diagnostic report from Help, the tray, or the startup error page. It includes versions, system state, and a bounded log tail, masks common secrets and the home path, and is never uploaded automatically.</p>',
       'vr.marker': 'VERSIONING', 'vr.title': 'Reading the version',
@@ -120,6 +118,8 @@
       'faq.a5': 'Only Apple Silicon (arm64) builds are provided for now. Intel Macs can use <code>npx @deepseek-ai/dsh web</code> — functionally identical.',
       'faq.q6': 'Does the desktop app request camera, location, or filesystem access?',
       'faq.a6': 'No. Current features need none of those Electron web permissions, so media, location, notifications, capture, and filesystem requests are denied by default. Any future exception requires an explicit, reviewed allowlist.',
+      'faq.q7': 'Why are desktop menus in Chinese or English?',
+      'faq.a7': 'First launch follows the computer language; unsupported languages fall back to English. Change the language inside Harness afterwards and the app menu, tray, and shell dialogs live-sync from the same setting.',
       'footer.legal': 'MIT © 2026 dsh-desktop contributors<br /><strong>Community-maintained · Unofficial</strong><br />No affiliation, authorization, or partnership with DeepSeek AI',
       'footer.mirror': 'GitCode mirror', 'footer.releases': 'All releases', 'footer.issues': 'Issues',
       'footer.sync': 'Static site · deployed on Vercel<br />Release data auto-synced by GitHub Actions',
@@ -131,24 +131,20 @@
     zh: {
       mac: ['macOS', 'APPLE SILICON · 未签名,首次请右键 → 打开'],
       win: ['Windows', 'NSIS 安装包 · SmartScreen 选"更多信息 → 仍要运行"'],
-      linux: ['Linux', 'APPIMAGE 开箱即跑;DEB 适合 DEBIAN / UBUNTU 系'],
     },
     en: {
       mac: ['macOS', 'APPLE SILICON · UNSIGNED; RIGHT-CLICK → OPEN ON FIRST LAUNCH'],
       win: ['Windows', 'NSIS INSTALLER · SMARTSCREEN: "MORE INFO → RUN ANYWAY"'],
-      linux: ['Linux', 'APPIMAGE RUNS ANYWHERE; DEB FOR DEBIAN / UBUNTU'],
     },
   }
   var OS_NOTE = {
     zh: {
       mac: '.dmg 拖入"应用程序"即可;.zip 解压后直接运行。',
       win: '支持 Windows 10 及以上(64 位);安装后自动更新。',
-      linux: 'AppImage 需 chmod +x;两种格式均支持自动更新。',
     },
     en: {
       mac: 'Drag the .dmg into Applications; or unzip and run directly.',
       win: 'Windows 10+ (64-bit); auto-updates after install.',
-      linux: 'chmod +x the AppImage; both formats auto-update.',
     },
   }
 
@@ -187,12 +183,15 @@
     return null
   }
 
-  /* 按语言选下载源:中文优先 GitCode 镜像(已验证可用),英文一律 GitHub */
-  function linkOf(a) {
-    if (lang === 'zh' && a.gitcode_url && a.gitcode_ok) {
-      return { href: a.gitcode_url, badge: '<span class="src-badge src-badge--gc">GITCODE · 国内镜像</span>' }
-    }
-    return { href: a.url, badge: '<span class="src-badge src-badge--gh">GITHUB</span>' }
+  /* 每个资产给出两个下载源:GitCode 国内镜像(已验证可用时)+ GitHub。
+     中文界面镜像排前,英文界面 GitHub 排前。 */
+  function linksOf(a) {
+    var gh = { href: a.url, src: 'GitHub' }
+    var gc = a.gitcode_url && a.gitcode_ok
+      ? { href: a.gitcode_url, src: lang === 'zh' ? 'GitCode 镜像' : 'GitCode mirror' }
+      : null
+    if (!gc) return [gh]
+    return lang === 'zh' ? [gc, gh] : [gh, gc]
   }
 
   /* ══ 数据加载 ══════════════════════════════════════ */
@@ -258,31 +257,33 @@
 
   function renderPlatforms(data) {
     var installers = data.release.assets.filter(function (a) { return a.kind === 'installer' })
-    var groups = { mac: [], win: [], linux: [] }
+    var groups = { mac: [], win: [] }
     installers.forEach(function (a) {
       var p = platformOf(a.name)
-      if (p) groups[p.os].push(Object.assign({}, a, p))
+      if (p && groups[p.os]) groups[p.os].push(Object.assign({}, a, p))
     })
 
     var labels = OS_LABEL[lang]
     var notes = OS_NOTE[lang]
     var html = ''
-    ;['mac', 'win', 'linux'].forEach(function (os) {
+    ;['mac', 'win'].forEach(function (os) {
       var list = groups[os]
       if (!list.length) return
       list.sort(function (a, b) { return (b.primary ? 1 : 0) - (a.primary ? 1 : 0) })
       html += '<div class="platform-group">'
       html += '<div class="platform-group__head"><h3>' + labels[os][0] + '</h3><span>' + labels[os][1] + '</span></div>'
       list.forEach(function (a) {
-        var link = linkOf(a)
+        var links = linksOf(a)
         html += '<div class="asset-row">'
         html += '<span class="asset-row__name" title="' + a.name + '">' + a.name + '</span>'
         html += '<span class="asset-row__meta">' + fmtSize(a.size) + ' · ↓ ' + a.downloads + '</span>'
-        html += '<span class="asset-row__actions">' + link.badge
-        html += '<a class="dl-btn' + (a.primary ? '' : ' dl-btn--alt') + '" href="' + link.href + '">'
-          + '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M8 11.5 3.5 7l1.4-1.4L7 7.7V1h2v6.7l2.1-2.1L12.5 7 8 11.5ZM2 13.5h12V15H2v-1.5Z"/></svg>'
-          + a.fmt + '</a>'
-        html += '<button class="copybtn" type="button" data-copy="' + link.href + '">' + t('copy.link') + '</button>'
+        html += '<span class="asset-row__actions">'
+        links.forEach(function (link, i) {
+          html += '<a class="dl-btn' + (i === 0 && a.primary ? '' : ' dl-btn--alt') + '" href="' + link.href + '">'
+            + '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M8 11.5 3.5 7l1.4-1.4L7 7.7V1h2v6.7l2.1-2.1L12.5 7 8 11.5ZM2 13.5h12V15H2v-1.5Z"/></svg>'
+            + a.fmt + ' · ' + link.src + '</a>'
+        })
+        html += '<button class="copybtn" type="button" data-copy="' + links[0].href + '">' + t('copy.link') + '</button>'
         html += '</span></div>'
       })
       html += '<p class="platform-note">' + notes[os] + '</p>'
@@ -291,31 +292,16 @@
     if (html) $('#platform-rows').innerHTML = html
   }
 
-  function renderAllFiles(data) {
-    var rows = data.release.assets.map(function (a) {
-      var link = linkOf(a)
-      var kind = a.kind === 'blockmap'
-        ? ' <span style="color:var(--faint)">(' + (lang === 'zh' ? '差量更新' : 'delta update') + ')</span>'
-        : a.kind === 'update-meta'
-          ? ' <span style="color:var(--faint)">(' + (lang === 'zh' ? '更新元数据' : 'update metadata') + ')</span>'
-          : ''
-      return '<tr><td><a href="' + link.href + '">' + a.name + '</a>' + kind + '</td><td>'
-        + fmtSize(a.size) + '</td><td>' + a.downloads + '</td>'
-        + '<td><button class="copybtn" type="button" data-copy="' + link.href + '">' + t('copy.link') + '</button></td></tr>'
-    }).join('')
-    if (rows) $('#all-files').innerHTML = rows
-  }
-
   function tunePrimaryCta(data) {
     var ua = navigator.userAgent
-    var os = /Mac/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : /Linux/.test(ua) ? 'linux' : null
+    var os = /Mac/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : null
     if (!os) return
     var hit = data.release.assets.filter(function (a) {
       var p = platformOf(a.name)
       return p && p.os === os && p.primary
     })[0]
     if (!hit) return
-    var link = linkOf(hit)
+    var link = linksOf(hit)[0]
     var cta = $('#cta-primary')
     cta.href = link.href
     cta.textContent = (lang === 'zh'
@@ -378,10 +364,8 @@
     if (siteData) {
       renderMeta(siteData)
       renderPlatforms(siteData)
-      renderAllFiles(siteData)
       tunePrimaryCta(siteData)
       bindCopy($('#platform-rows'))
-      bindCopy($('#all-files'))
     }
   }
 
@@ -404,10 +388,8 @@
       siteData = data
       renderMeta(data)
       renderPlatforms(data)
-      renderAllFiles(data)
       tunePrimaryCta(data)
       bindCopy($('#platform-rows'))
-      bindCopy($('#all-files'))
     })
     .catch(function () {
       $('#release-meta').textContent = 'OFFLINE → GITHUB'

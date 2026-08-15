@@ -73,3 +73,37 @@ per-asset links exist at `gitcode.com/<repo>/releases/download/<tag>/<file>` —
 only the `file-cdn.gitcode.com` host behind them is time-limited, so public
 copy must use the former. R2 keeps the stable, self-controlled, globally fast
 (outside China) fixed-URL role.
+
+## Amendment 2026-08-15 (2): manual mirror upload; site narrows to macOS/Windows with dual sources
+
+The `mirror-gitcode` push job failed on both shell.8 and shell.9: GitHub's
+overseas runners reach GitCode OBS at ~150 KB/s, so a ~200 MB asset takes
+~18 minutes and the OBS pre-signed PUT URL expires mid-transfer (502); the
+uploader's fail-fast then aborted the whole batch. A GitCode-side pull-mode
+pipeline (domestic runner pulls from GitHub, writes to OBS) was designed and
+then rejected by the maintainer: a second cross-platform pipeline is
+disproportionate complexity for a best-effort channel.
+
+The channel is now **manual**: after each release the maintainer uploads the
+three user-facing installers (macOS dmg/zip, Windows exe) through the GitCode
+release page — the maintainer's domestic network makes browser uploads
+painless, the same approach other projects use. blockmap / latest*.yml are
+not mirrored: auto-updater always talks to GitHub, and the site no longer
+shows engineering files. After uploading, trigger `Site Data Refresh` once;
+`gen-site-data.mjs`'s range-GET probe flips those assets to `gitcode_ok` and
+the site starts showing the mirror source.
+
+The download section narrows accordingly:
+
+- only macOS and Windows groups render; Linux assets still ship on GitHub
+  Releases (scripts and CI gates unchanged) but are no longer displayed —
+  the copy points Linux users at `npx @deepseek-ai/dsh web`;
+- every asset shows two buttons side by side: GitCode mirror (when
+  `gitcode_ok`) and GitHub — Chinese UI puts the mirror first, English puts
+  GitHub first; no more single-source language switching;
+- the collapsed "all files (incl. delta-update metadata)" table is removed —
+  update metadata is consumed programmatically by electron-updater from
+  GitHub, so listing it on the site served no user purpose;
+- the `mirror-gitcode` job is gone from `release-mirrors.yml` (R2 stays);
+  `scripts/gitcode-upload.mjs` keeps its hardened retries (fresh signed URL
+  per attempt, per-file failure isolation) for manual/debug use only.

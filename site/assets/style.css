@@ -416,14 +416,7 @@ a { color: inherit; }
   font-family: var(--mono); font-size: 11.5px; color: var(--faint);
   white-space: nowrap; text-align: right;
 }
-.asset-row__actions { display: flex; gap: 8px; align-items: center; }
-.src-badge {
-  font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
-  padding: 2px 8px; border-radius: 4px;
-  white-space: nowrap;
-}
-.src-badge--gc { color: var(--signal-deep); background: var(--signal-dim); }
-.src-badge--gh { color: var(--faint); background: rgba(0, 0, 0, 0.04); }
+.asset-row__actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .dl-btn {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--ink); color: #fff;
@@ -462,31 +455,6 @@ a { color: inherit; }
 .copybtn:hover { box-shadow: 0 0 12px rgba(103, 153, 254, 0.22); }
 .copybtn.is-copied { color: var(--amber); border-color: var(--amber); box-shadow: none; }
 .note { font-size: 13px; color: var(--faint); padding: 12px 22px 20px; }
-
-/* 全部文件 */
-.allfiles { border-top: 1px solid var(--border); margin-top: 14px; }
-.allfiles summary {
-  padding: 15px 22px; cursor: pointer;
-  font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em;
-  color: var(--faint);
-  list-style: none;
-  transition: color 0.15s ease;
-}
-.allfiles summary:hover { color: var(--text); }
-.allfiles summary::before { content: "+ "; color: var(--signal); }
-.allfiles[open] summary::before { content: "− "; }
-.allfiles table {
-  width: 100%; border-collapse: collapse;
-  font-family: var(--mono); font-size: 12px;
-}
-.allfiles th, .allfiles td {
-  text-align: left; padding: 9px 22px;
-  border-top: 1px solid var(--border);
-  font-weight: 400; color: var(--muted);
-}
-.allfiles th { color: var(--faint); font-size: 10.5px; letter-spacing: 0.14em; }
-.allfiles td a { color: var(--signal); text-decoration: none; }
-.allfiles td a:hover { text-decoration: underline; }
 
 /* ══ 可扫读能力矩阵 ══ */
 .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow-card); }
@@ -601,6 +569,4 @@ a { color: inherit; }
   .panel__head, .platform-group__head, .asset-row { padding-left: 16px; padding-right: 16px; }
   .asset-row__actions { flex-wrap: wrap; }
   .cmdline { margin-left: 16px; margin-right: 16px; }
-  .allfiles { overflow-x: auto; }
-  .allfiles table { min-width: 620px; }
 }

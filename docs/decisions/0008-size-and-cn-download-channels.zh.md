@@ -62,3 +62,32 @@ GitCode 托管的附件由国内华为云 CDN 节点分发(CNAME `*.cdnhwc*`、O
 `gitcode.com/<仓库>/releases/download/<tag>/<文件>`,只有背后的
 `file-cdn.gitcode.com` 直链带时效签名,对外文案一律用前者。
 R2 继续承担稳定、自有、(中国以外)全球快的固定 URL 角色。
+
+## 修订 2026-08-15(之二):镜像改人工上传,官网收敛为 macOS/Windows 双平台双源
+
+`mirror-gitcode` 推送任务在 shell.8/9 连续失败,根因是 GitHub 海外 runner →
+GitCode OBS 跨境推送仅 ~150 KB/s,单个 ~200 MB 资产约 18 分钟,OBS 预签名
+PUT URL 在传完前过期返回 502,脚本 fail-fast 使整批中止。曾设计 GitCode 侧
+流水线拉取式镜像(国内 runner 从 GitHub 拉取后写入 OBS),经维护者评估后
+放弃:为降级渠道再维护一套跨平台流水线,复杂度不成比例。
+
+现行机制改为**人工上传**:发版后由维护者在 GitCode 发行版页面手动上传
+macOS(dmg/zip)与 Windows(exe)三个面向用户的安装包——维护者处于国内
+网络,浏览器上传畅通,这正是其他项目(如 DeepSeek-Harness dmg)采用的方式。
+blockmap / latest*.yml 不镜像:auto-updater 始终直连 GitHub,站点也不展示
+这些工程文件。上传完成后手动触发一次 `Site Data Refresh`,
+`gen-site-data.mjs` 的 range GET 探测会把对应资产标记为 `gitcode_ok`,
+官网随之自动展示镜像源。
+
+官网下载区同步收敛:
+
+- 只渲染 macOS 与 Windows 两组;Linux 资产仍在 GitHub Release 中发布
+  (脚本与 CI 门禁不变),但官网不再展示,文案引导 Linux 用户使用
+  `npx @deepseek-ai/dsh web`;
+- 每个资产并列两个下载按钮:GitCode 镜像(`gitcode_ok` 时)与 GitHub,
+  中文界面镜像在前,英文界面 GitHub 在前;不再按语言硬切换单一来源;
+- 移除“全部文件(含差量更新元数据)”折叠表——更新元数据由
+  electron-updater 程序化直连 GitHub,站点展示它没有用户价值;
+- GitHub 侧 `release-mirrors.yml` 的 `mirror-gitcode` 任务删除,仅保留
+  `mirror-r2`;`scripts/gitcode-upload.mjs` 保留并强化了重试(每次重试
+  重新取签名 URL、单文件失败不阻断),仅供手动/调试使用。

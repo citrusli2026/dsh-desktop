@@ -5,7 +5,7 @@
 > contract, and next iteration boundary. Website and mirror operations live in
 > the root `HANDOFF.md`.
 
-最后更新:2026-08-15 · 已发布版本 `0.1.0-rc.6.shell.9`
+最后更新:2026-08-15 · 本次发布目标 `0.1.0-rc.6.shell.10` · tag 受主分支 CI 门禁
 
 ## 1. 当前结果
 
@@ -74,28 +74,52 @@ tag Release 在上述基础上再执行质量门禁,并强制:
 
 shell.9:CI run `31870759765`;Release run `31870835413`;11 个资产发布成功。
 
-## 4. 后续最小迭代
+## 4. shell.10 发布后的最小迭代
 
-下一轮优先保持小步、可验证,不要再次把职责塞回 `index.ts`:
+下一轮继续保持小步、可验证,不要再次把职责塞回 `index.ts`:
 
-1. **壳文案 i18n**:按 `app.getLocale()` 为菜单、托盘、内置页和对话框提供中英
-   文案,IPC 名和 smoke 约定保持不变。
-2. **诊断体验补强**:报告问题前可复制/预览诊断摘要;继续扩充遮罩测试,但不要
+1. **诊断体验补强**:报告问题前可复制/预览诊断摘要;继续扩充遮罩测试,但不要
    引入自动上传或收集完整会话目录。
-3. **平台收尾**:评估 Linux deb 更新提示、Windows 更温和的进程树退出;
+2. **平台收尾**:评估 Linux deb 更新提示、Windows 进程树退出的真实平台断言;
    macOS 签名/公证仍是启用原地更新的前置条件。
-4. **发布可复现性**:为发布资产增加 checksum 清单与验证,再考虑 provenance/
+3. **发布可复现性**:为发布资产增加 checksum 清单与验证,再考虑 provenance/
    SBOM;保持镜像与核心发布解耦。
-5. **官网证据层**:加入短 changelog/决策记录入口,让版本能力和限制可直接追溯,
+4. **官网证据层**:加入短 changelog/决策记录入口,让版本能力和限制可直接追溯,
    但不要增加重型前端框架。
 
 参考规划 `docs/plans/next-iteration-refactor-tests.md` 的重构项已在 shell.9
 完成;该文件可保留为历史输入,不应再按“未执行”状态重复实施。
+
+### shell.10 发布内容
+
+- 首次启动根据 `app.getPreferredSystemLanguages()` 写入缺失的
+  `locale.preference`;支持中文/英文,其他语言回退英文。写入保留 YAML 注释与
+  其他配置,使用跨进程锁和同目录原子替换。
+- 菜单、托盘、About、加载/错误页、更新与诊断对话框完整双语,并监听 Harness
+  的 `locale.preference` / `ui-theme.preference` 实时同步。About 与帮助菜单同时
+  标明社区非官方身份并提供社区、源代码、Harness 官方和 DeepSeek 官网链接。
+- 主窗口已隐藏原生标题栏并使用完整内容高度：macOS 保留交通灯，Windows/Linux
+  使用透明窗口控件覆盖层；preload 只增加 12 px 透明拖拽区，不创建可见假标题栏。
+- 完成 close-to-tray 首次解释、单飞重启确认、第二实例恢复窗口、渲染进程有界
+  恢复、运行期日志轮换和精确 Release URL 校验。
+- 单测增至 53 项；真实 Electron E2E 覆盖无标题栏/拖拽区、原生菜单/标题元数据、
+  语言热切换、沙箱、close-to-tray 和第二实例恢复，关键场景连续五轮共 10 次
+  通过。CI/Release 已
+  加入 E2E，三平台打包后从 unpacked 产物启动 Harness。
+- Apple Silicon 签名基线包已用本机 Apple Development 身份通过
+  `codesign --verify --deep --strict`；包含最终菜单的 `dist-review` 审核包为节省
+  重复签名时间显式跳过签名，但已用隔离 user-data 启动自身 Harness 并保持运行。
+  仍未公证，`spctl` 拒绝符合预期，不能作为公开分发签名宣传。
+- 官网第二轮内容已同步上述能力，宽屏和 390 px 窄屏无横向溢出、控制台无告警。
+  版本已 bump 为 shell.10；主分支 CI 通过后才推 tag，Release 完成后由站点刷新
+  工作流更新下载数据，避免官网提前指向未发布产物。
+
+完整菜单合同与后续小步路线见 `docs/plans/electron-shell-capabilities.md`。
 
 ## 5. 已知限制
 
 - 公开 macOS Release 仍未完成分发签名/公证,只能检查更新并引导下载;本机审核包
   的 Apple Development 签名不等价于 Developer ID 分发签名或 notarization;
 - 诊断遮罩为尽力而为,界面已要求用户分享前自行检查;
-- GitCode 从 GitHub runner 上传约 160–220 MB 资产仍慢,只作降级渠道;
-- shell 界面当前以中文为主,下一轮再做受控 i18n,避免与本轮结构改动混杂。
+- GitCode 发行版资产为人工镜像渠道:跨境自动推送/拉取方案均已否决(0008
+  第二修订),发版后由维护者手动上传 dmg/zip/exe 并触发 Site Data Refresh;
