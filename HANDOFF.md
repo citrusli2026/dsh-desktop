@@ -12,7 +12,7 @@
 | 主分支 CI | ✅ run `31870759765`;38 项单测、官网门禁、构建、三条 xvfb 冒烟全绿 |
 | 核心发布 | ✅ Release run `31870835413`;tag/版本、制品矩阵、更新元数据均通过门禁 |
 | 官网数据 | ✅ refresh run `31871089497`;`release.json` 已自动提交为 shell.9 |
-| 国内镜像 | 🟡 GitCode release/资产为独立尽力而为渠道,不阻塞 GitHub 与官网 |
+| 国内镜像 | 🟡 GitCode `main` 与 shell.9 tag 已同步;大文件资产仍为独立尽力而为渠道 |
 
 ## 二、shell.9 官网与交付变化
 
@@ -60,6 +60,8 @@ tag push  → Release verify
 
 - GitCode 大文件上传是降级渠道。若继续投入,优先实现逐文件并行/可恢复上传或
   更换国内对象存储,不要让它重新进入核心 Release 依赖链。
-- GitCode 代码仓仍需显式快进 `main` 并推同名 tag;本次 shell.9 发布后要确认。
+- GitCode `main` 已快进到 `815b472`;镜像流程曾把 shell.9 tag 建在旧提交
+  `c94e70b`,已精确修正为发布提交 `23c4c23`。后续仍要在发版后核对 tag peeled
+  commit,不能只检查“同名 tag 已存在”。
 - macOS 仍未签名/公证;首次运行需右键打开,应用只检查更新并引导下载。
 - `*.vercel.app` 在国内可能受 DNS 影响;正式域名使用 `dsh-desktop.com`。
