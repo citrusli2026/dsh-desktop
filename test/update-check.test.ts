@@ -7,7 +7,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { compareVersions, isNewerVersion, splitCompositeVersion } from '../src/main/update-check.ts'
+import { compareVersions, isNewerVersion, latestPublishedVersion, splitCompositeVersion } from '../src/main/update-check.ts'
 
 test('isNewerVersion detects a newer shell revision', () => {
   assert.equal(isNewerVersion('0.1.0-rc.6.shell.3', '0.1.0-rc.6.shell.4'), true)
@@ -44,4 +44,14 @@ test('splitCompositeVersion splits the About-surface version', () => {
   assert.deepEqual(splitCompositeVersion('1.2.3.shell.0'), { dsh: '1.2.3', shellRev: 0 })
   assert.equal(splitCompositeVersion('1.2.3'), undefined, 'plain versions are not composite')
   assert.equal(splitCompositeVersion('0.1.0-rc.6.shell.x'), undefined)
+})
+
+test('latestPublishedVersion includes prereleases and ignores drafts or malformed entries', () => {
+  assert.equal(latestPublishedVersion([
+    { tag_name: 'v0.1.0-rc.6.shell.7', draft: false, prerelease: true },
+    { tag_name: 'v0.1.0-rc.6.shell.10', draft: false, prerelease: true },
+    { tag_name: 'v9.9.9', draft: true, prerelease: false },
+    { tag_name: 'not-a-version', draft: false },
+  ]), '0.1.0-rc.6.shell.10')
+  assert.equal(latestPublishedVersion({ message: 'Not Found' }), undefined)
 })

@@ -8,6 +8,11 @@ name: Site Data Refresh
 on:
   release:
     types: [published, edited]
+  # Releases created by release.yml use GITHUB_TOKEN, so their `release`
+  # events do not start another workflow. This event closes that gap.
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
   schedule:
     - cron: '17 2,14 * * *'  # UTC 02:17/14:17 = 北京 10:17/22:17,避开整点半点
   workflow_dispatch:
@@ -22,10 +27,13 @@ concurrency:
 
 jobs:
   refresh:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: main
 
       - uses: actions/setup-node@v5
         with:
@@ -49,16 +57,19 @@ jobs:
           TAG=$(node -p "require('./site/data/release.json').release.tag")
           git add site/data/release.json
           git commit -m "site: sync release data ${TAG}"
-          git push
+          git pull --rebase origin main
+          git push origin HEAD:main
           echo "pushed site data update for ${TAG}"
 
       - name: Summary
         if: always()
         run: |
-          echo "## 🌐 Site Data Refresh" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Time:** $(date -u)" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Status:** ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Result:** $(cat site/data/release.json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);console.log(j.release.tag+' / '+j.release.assets.length+' assets')})" 2>/dev/null || echo n/a)" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## 🌐 Site Data Refresh"
+            echo "- **Time:** $(date -u)"
+            echo "- **Status:** ${{ job.status }}"
+            echo "- **Result:** $(node -e "const j=require('./site/data/release.json');console.log(j.release.tag+' / '+j.release.assets.length+' assets')" 2>/dev/null || echo n/a)"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # 失败时开 issue 告警(按标题去重,已存在则评论追加)
       - name: Create issue on failure

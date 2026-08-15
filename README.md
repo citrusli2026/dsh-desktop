@@ -16,6 +16,7 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 - **Zero setup**: bundles its own Node.js runtime and the complete `@deepseek-ai/dsh` dependency closure — no Node.js install required;
 - **Isolated by default**: the desktop app keeps its own data home (`~/.dsh-desktop`) — settings, sessions, API keys, and plugins stay separate from the CLI; set `DSH_HOME=~/.dsh` to share with the CLI again (decision 0012);
 - **Robust**: crash auto-restart with exponential backoff, manual retry on the error page, single-instance lock, system tray with live harness status (restart / logs / update check), persisted window geometry, logs on disk;
+- **Restrained renderer**: context isolation and sandboxing stay enabled, Node integration stays off, navigation is guarded, and unexpected device, capture, notification, or filesystem permissions are denied by default (decision 0014);
 - **Updates**: automatic updates on Windows / Linux; macOS checks for new releases and points at the download page until signing exists (decisions 0004, 0010).
 
 ## Versioning

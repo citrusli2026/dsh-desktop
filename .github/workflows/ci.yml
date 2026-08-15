@@ -20,6 +20,7 @@ jobs:
       - run: pnpm install
       - run: pnpm run typecheck
       - run: pnpm run test
+      - run: pnpm run site:check
       - run: pnpm run build
       - run: pnpm run bootstrap
       - name: Smoke test (headless X server)

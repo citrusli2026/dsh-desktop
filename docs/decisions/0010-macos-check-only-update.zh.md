@@ -14,10 +14,11 @@ semver 比较,做这件事不需要 updater 机制。
 
 ## 决策
 
-- macOS 采用**仅检查式提示**:从 GitHub Releases API 取最新 release
-  标签,与运行版本比较(`src/main/update-check.ts` 的
-  `isNewerVersion`,纯函数模块、有单元测试;无法解析的标签永远不算
-  "更新"——发布源是不可信输入)。发现新版本时弹出对话框,主按钮打开
+- macOS 采用**仅检查式提示**:从 GitHub Releases API 获取 release 列表,
+  纳入非草稿的 prerelease,从可解析版本中选择最高版本再与运行版本比较
+  (`src/main/update-check.ts` 的 `latestPublishedVersion` /
+  `isNewerVersion`,纯函数模块、有单元测试;无法解析的标签会被忽略——
+  发布源是不可信输入)。发现新版本时弹出对话框,主按钮打开
   releases 页面,由用户手动下载并覆盖安装。
 - 每次启动自动检查一次,延迟 15 秒以避开启动期的网络高峰;自动检查
   失败保持静默。托盘菜单项(检查更新…)手动触发同一检查并告知结果,

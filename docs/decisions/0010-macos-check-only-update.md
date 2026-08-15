@@ -15,10 +15,12 @@ the latest GitHub release tag; no updater machinery is needed for that.
 
 ## Decision
 
-- macOS gets a **check-only prompt**: fetch the latest release tag from the
-  GitHub Releases API, compare it with the running version
-  (`isNewerVersion` in `src/main/update-check.ts`, a pure unit-tested
-  module; unparseable tags are never "newer" — the feed is untrusted input),
+- macOS gets a **check-only prompt**: fetch the releases list from the GitHub
+  Releases API, include non-draft prereleases, and select the highest
+  parseable version before comparing it with the running version
+  (`latestPublishedVersion` / `isNewerVersion` in
+  `src/main/update-check.ts`, a pure unit-tested module; unparseable tags are
+  ignored — the feed is untrusted input),
   and when a newer version exists show a dialog whose primary button opens
   the releases page for a manual download-and-overwrite install.
 - One automatic check per launch, delayed 15 s so boot traffic settles;

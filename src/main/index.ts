@@ -4,7 +4,7 @@
  * in docs/decisions/0006-process-supervision-protocol.md.
  * @module main/index
  */
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, screen, shell, Tray } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, screen, session, shell, Tray } from 'electron'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import electronUpdater from 'electron-updater'
@@ -12,8 +12,9 @@ import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { errorPageHtml, loadingPageHtml } from './pages.ts'
 import { dshBin, harnessRoot, nodeBin } from './paths.ts'
 import { fitWindowState, MIN_WINDOW_HEIGHT, MIN_WINDOW_WIDTH, type WindowState } from './window-state.ts'
-import { isNewerVersion } from './update-check.ts'
+import { isNewerVersion, latestPublishedVersion } from './update-check.ts'
 import { configureAboutPanel, installAppMenu } from './menu.ts'
+import { denyUnexpectedPermissions } from './permissions.ts'
 
 const { autoUpdater } = electronUpdater
 
@@ -24,7 +25,7 @@ const SMOKE_TEST = process.argv.includes('--smoke-test')
 const SMOKE_TIMEOUT_MS = 150_000
 
 /** GitHub Releases feed backing the macOS check-only update prompt. */
-const RELEASES_API_URL = 'https://api.github.com/repos/citrusli2026/dsh-electron-shell/releases/latest'
+const RELEASES_API_URL = 'https://api.github.com/repos/citrusli2026/dsh-electron-shell/releases?per_page=20'
 const RELEASES_PAGE_URL = 'https://github.com/citrusli2026/dsh-electron-shell/releases/latest'
 /** Delay before the automatic macOS update check so boot traffic settles. */
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -243,10 +244,7 @@ async function checkMacUpdate(manual: boolean): Promise<void> {
     })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const payload: unknown = await response.json()
-    const tagName = typeof payload === 'object' && payload !== null
-      ? (payload as { tag_name?: unknown }).tag_name
-      : undefined
-    const latest = typeof tagName === 'string' ? tagName.replace(/^v/, '') : ''
+    const latest = latestPublishedVersion(payload) ?? ''
     if (latest !== '' && isNewerVersion(app.getVersion(), latest)) {
       const { response: choice } = await dialog.showMessageBox({
         type: 'info',
@@ -396,6 +394,9 @@ if (!gotLock) {
   })
 
   void app.whenReady().then(async () => {
+    // Harness is served from loopback, but it remains web content: deny device,
+    // capture, notification, and filesystem permission prompts by default.
+    denyUnexpectedPermissions(session.defaultSession)
     // Branded menu + About surface in every mode, so CI smoke runs exercise
     // this path headlessly too.
     configureAboutPanel()

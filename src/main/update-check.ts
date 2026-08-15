@@ -64,6 +64,25 @@ export function isNewerVersion(current: string, candidate: string): boolean {
 }
 
 /**
+ * Pick the newest non-draft version from GitHub's releases-list payload.
+ * Prereleases are intentionally eligible: every dsh-desktop build is a
+ * prerelease until the upstream dsh version leaves RC status.
+ */
+export function latestPublishedVersion(payload: unknown): string | undefined {
+  if (!Array.isArray(payload)) return undefined
+  let latest: string | undefined
+  for (const item of payload) {
+    if (typeof item !== 'object' || item === null) continue
+    const release = item as { draft?: unknown; tag_name?: unknown }
+    if (release.draft === true || typeof release.tag_name !== 'string') continue
+    const candidate = release.tag_name.replace(/^v/, '')
+    if (parseVersion(candidate) === undefined) continue
+    if (latest === undefined || compareVersions(candidate, latest)! > 0) latest = candidate
+  }
+  return latest
+}
+
+/**
  * Split the composite `<dsh version>.shell.<rev>` version
  * (docs/decisions/0009) for display in the About surface.
  * @returns the bundled dsh version and shell revision, or undefined when the

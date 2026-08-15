@@ -64,7 +64,7 @@ jobs:
     # Tag pushes only. On workflow_dispatch github.ref_name is the BRANCH name,
     # so without this guard a manual "test the packaging" run would create a
     # release (and tag) literally named e.g. "main". Dispatch = build test;
-    # tag = release. mirror-r2 is skipped automatically via `needs`.
+    # tag = release. Optional mirrors run independently after this workflow.
     if: ${{ github.ref_type == 'tag' }}
     steps:
       - uses: actions/download-artifact@v4
@@ -86,72 +86,3 @@ jobs:
           done
           gh release upload "$TAG" artifacts/* --clobber --repo "$REPO"
           gh release edit "$TAG" --prerelease --draft=false --repo "$REPO"
-
-  mirror-r2:
-    # Optional: mirror release assets to Cloudflare R2 so users who cannot
-    # reach github.com still have a download channel. Enable it by setting the
-    # repository VARIABLE R2_ACCOUNT_ID (job-level `if` cannot read secrets);
-    # the API token itself comes from the R2_API_TOKEN secret. Without the
-    # variable this job is skipped and GitHub Releases remains the only
-    # channel.
-    needs: publish
-    runs-on: ubuntu-latest
-    if: ${{ vars.R2_ACCOUNT_ID != '' }}
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.R2_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Upload assets to R2
-        run: |
-          npm install -g wrangler
-          for f in artifacts/*; do
-            wrangler r2 object put "dsh-electron-shell/${{ github.ref_name }}/$(basename "$f")" --file "$f"
-          done
-      - name: Report mirror location
-        run: echo "Mirrored under dsh-electron-shell/${{ github.ref_name }}/ in the configured R2 bucket"
-
-  mirror-gitcode:
-    # Optional: mirror release assets to GitCode — attachments are served from
-    # Huawei Cloud CDN nodes inside China, the fastest domestic channel we
-    # have found. Enable by setting the repository VARIABLE GITCODE_REPO
-    # (owner/repo of the GitCode mirror repository) and the GITCODE_TOKEN
-    # secret (personal access token). Without the variable this job is
-    # skipped. Verified end-to-end 2026-08-15: upload_url returns an OBS
-    # pre-signed PUT plus the signed headers; scripts/gitcode-upload.mjs
-    # drives it. Stable per-asset links live at
-    # gitcode.com/<repo>/releases/download/<tag>/<file>; the file-cdn
-    # hostname behind them serves time-limited signed URLs.
-    needs: publish
-    runs-on: ubuntu-latest
-    if: ${{ vars.GITCODE_REPO != '' }}
-    env:
-      GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
-      GITCODE_REPO: ${{ vars.GITCODE_REPO }}
-      TAG: ${{ github.ref_name }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Create the GitCode release if missing
-        run: |
-          API="https://api.gitcode.com/api/v5/repos/$GITCODE_REPO"
-          curl -sf "$API/releases/$TAG?access_token=$GITCODE_TOKEN" >/dev/null || \
-            curl -sf -X POST "$API/releases" \
-              -H "Content-Type: application/json" \
-              -d "{\"access_token\": \"$GITCODE_TOKEN\", \"tag_name\": \"$TAG\", \"name\": \"dsh-electron-shell $TAG\", \"prerelease\": true, \"body\": \"Mirrored from https://github.com/citrusli2026/dsh-electron-shell/releases\"}"
-      - name: Upload assets to the GitCode release
-        run: node scripts/gitcode-upload.mjs "$TAG" artifacts/*
-      - name: Report mirror location
-        run: echo "Mirrored to https://gitcode.com/$GITCODE_REPO/releases/download/$TAG/..."
