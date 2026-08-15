@@ -18,6 +18,10 @@ const REPO = process.env.REPO || 'citrusli2026/dsh-electron-shell'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = path.join(ROOT, 'site', 'data', 'release.json')
 
+/** GitCode mirror (华为云 CDN,国内直连);下载链接按 tag+文件名拼出并逐一验证。 */
+const GITCODE_REPO = process.env.GITCODE_REPO || 'citrusli2026/dsh-electron-shell'
+const GITCODE_BASE = `https://gitcode.com/${GITCODE_REPO}/releases/download`
+
 const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || ''
 
 async function api(url) {
@@ -39,6 +43,18 @@ function classify(name) {
   if (name.endsWith('.blockmap')) return 'blockmap'
   if (/^latest.*\.yml$/.test(name)) return 'update-meta'
   return 'installer'
+}
+
+/** GitCode redirects to a time-limited signed CDN URL; HEAD is rejected (401),
+ *  so verify with a 1-byte range GET and treat 200/206 as available. */
+async function verifyGitCode(url) {
+  try {
+    const res = await fetch(url, { headers: { Range: 'bytes=0-0' }, redirect: 'follow' })
+    await res.body?.cancel()
+    return res.status === 200 || res.status === 206
+  } catch {
+    return false
+  }
 }
 
 const [releases, repo] = await Promise.all([
@@ -68,12 +84,17 @@ const data = {
     html_url: release.html_url,
     published_at: release.published_at,
     prerelease: release.prerelease,
-    assets: release.assets.map((a) => ({
-      name: a.name,
-      size: a.size,
-      downloads: a.download_count,
-      url: a.browser_download_url,
-      kind: classify(a.name),
+    assets: await Promise.all(release.assets.map(async (a) => {
+      const gitcodeUrl = `${GITCODE_BASE}/${release.tag_name}/${a.name}`
+      return {
+        name: a.name,
+        size: a.size,
+        downloads: a.download_count,
+        url: a.browser_download_url,
+        kind: classify(a.name),
+        gitcode_url: gitcodeUrl,
+        gitcode_ok: await verifyGitCode(gitcodeUrl),
+      }
     })),
   },
 }

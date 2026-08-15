@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-15T02:57:40.593Z",
+  "generated_at": "2026-08-15T04:48:15.050Z",
   "repo": {
     "full_name": "citrusli2026/dsh-electron-shell",
     "html_url": "https://github.com/citrusli2026/dsh-electron-shell",
@@ -18,77 +18,99 @@
         "size": 163063404,
         "downloads": 0,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-amd64.deb",
-        "kind": "installer"
+        "kind": "installer",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-amd64.deb",
+        "gitcode_ok": false
       },
       {
         "name": "dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.dmg",
         "size": 184599802,
         "downloads": 2,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.dmg",
-        "kind": "installer"
+        "kind": "installer",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.dmg",
+        "gitcode_ok": true
       },
       {
         "name": "dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.dmg.blockmap",
         "size": 195076,
         "downloads": 0,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.dmg.blockmap",
-        "kind": "blockmap"
+        "kind": "blockmap",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.dmg.blockmap",
+        "gitcode_ok": false
       },
       {
         "name": "dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.zip",
         "size": 223767882,
         "downloads": 0,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.zip",
-        "kind": "installer"
+        "kind": "installer",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.zip",
+        "gitcode_ok": false
       },
       {
         "name": "dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.zip.blockmap",
         "size": 233424,
         "downloads": 0,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.zip.blockmap",
-        "kind": "blockmap"
+        "kind": "blockmap",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-arm64-mac.zip.blockmap",
+        "gitcode_ok": false
       },
       {
         "name": "dsh-electron-shell-0.1.0-rc.6.shell.3-x86_64.AppImage",
         "size": 218844477,
         "downloads": 0,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-x86_64.AppImage",
-        "kind": "installer"
+        "kind": "installer",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-0.1.0-rc.6.shell.3-x86_64.AppImage",
+        "gitcode_ok": false
       },
       {
         "name": "dsh-electron-shell-setup-0.1.0-rc.6.shell.3.exe",
         "size": 165281657,
         "downloads": 0,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-setup-0.1.0-rc.6.shell.3.exe",
-        "kind": "installer"
+        "kind": "installer",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-setup-0.1.0-rc.6.shell.3.exe",
+        "gitcode_ok": false
       },
       {
         "name": "dsh-electron-shell-setup-0.1.0-rc.6.shell.3.exe.blockmap",
         "size": 171796,
         "downloads": 0,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-setup-0.1.0-rc.6.shell.3.exe.blockmap",
-        "kind": "blockmap"
+        "kind": "blockmap",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/dsh-electron-shell-setup-0.1.0-rc.6.shell.3.exe.blockmap",
+        "gitcode_ok": false
       },
       {
         "name": "latest-linux.yml",
         "size": 619,
         "downloads": 0,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/latest-linux.yml",
-        "kind": "update-meta"
+        "kind": "update-meta",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/latest-linux.yml",
+        "gitcode_ok": false
       },
       {
         "name": "latest-mac.yml",
         "size": 594,
         "downloads": 0,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/latest-mac.yml",
-        "kind": "update-meta"
+        "kind": "update-meta",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/latest-mac.yml",
+        "gitcode_ok": false
       },
       {
         "name": "latest.yml",
         "size": 404,
         "downloads": 0,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/latest.yml",
-        "kind": "update-meta"
+        "kind": "update-meta",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.3/latest.yml",
+        "gitcode_ok": false
       }
     ]
   }

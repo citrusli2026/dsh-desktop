@@ -4,255 +4,206 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>dsh-electron-shell — DeepSeek Harness 桌面壳 · 下载</title>
-<meta name="description" content="dsh-electron-shell:DeepSeek Harness 的非官方 Electron 桌面壳。自带 Node.js 运行时,下载即用,支持 macOS / Windows / Linux,与 npx @deepseek-ai/dsh web 功能一致。" />
+<meta name="description" content="dsh-electron-shell:DeepSeek Harness 的非官方 Electron 桌面壳。自带 Node.js 运行时,独立数据目录,下载即用,支持 macOS / Windows / Linux。" />
 <meta property="og:title" content="dsh-electron-shell — DeepSeek Harness 桌面壳" />
-<meta property="og:description" content="自带运行时,下载即用的 DeepSeek Harness 桌面版。macOS / Windows / Linux。" />
+<meta property="og:description" content="自带运行时、独立环境的 DeepSeek Harness 桌面版。macOS / Windows / Linux。" />
 <meta property="og:type" content="website" />
+<meta name="theme-color" content="#0a0b0d" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="stylesheet" href="/assets/style.css" />
 </head>
 <body>
 
-<!-- ══ 菜单栏 ══ -->
-<header class="menubar">
-  <a class="menubar__brand" href="#top">
+<header class="topbar">
+  <a class="topbar__brand" href="#top">
     <img src="/assets/favicon.svg" alt="" width="20" height="20" />
     <span>dsh-electron-shell</span>
   </a>
-  <nav class="menubar__nav" aria-label="页面导航">
-    <a href="#download">下载</a>
-    <a href="#features">特性</a>
-    <a href="#version">版本号</a>
-    <a href="#mirror">加速</a>
-    <a href="#faq">常见问题</a>
+  <nav class="topbar__nav" aria-label="页面导航">
+    <a href="#download" data-i18n="nav.download">下载</a>
+    <a href="#features" data-i18n="nav.features">特性</a>
+    <a href="#version" data-i18n="nav.version">版本号</a>
+    <a href="#faq" data-i18n="nav.faq">常见问题</a>
   </nav>
-  <div class="menubar__right">
+  <div class="topbar__right">
+    <button class="lang-toggle" id="lang-toggle" type="button" aria-label="Switch language">EN</button>
     <a class="gh-chip" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">
-      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-      <span id="stars">GitHub</span>
+      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+      <span id="stars">★</span>
     </a>
-    <a class="btn btn--primary btn--sm" href="#download">立即下载</a>
+    <a class="btn btn--primary btn--sm" href="#download" data-i18n="nav.cta">立即下载</a>
   </div>
 </header>
 
 <main id="top">
 
-  <!-- ══ 桌面 · Hero ══ -->
-  <section class="desktop">
-    <div class="desktop__inner">
-
-      <aside class="dock" aria-label="桌面文件">
-        <a class="dock__item" href="https://github.com/citrusli2026/dsh-electron-shell#readme" target="_blank" rel="noopener">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 4h16l8 8v32H12z" fill="#fff" stroke="#0b0b0b" stroke-width="2"/><path d="M28 4v8h8" fill="none" stroke="#0b0b0b" stroke-width="2"/><path d="M17 20h14M17 26h14M17 32h9" stroke="#8a8474" stroke-width="2" stroke-linecap="round"/></svg>
-          <span>README.md</span>
-        </a>
-        <a class="dock__item" href="https://github.com/citrusli2026/dsh-electron-shell/tree/main/docs/decisions" target="_blank" rel="noopener">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 12a4 4 0 0 1 4-4h9l4 6h15a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4z" fill="#f3c94f" stroke="#0b0b0b" stroke-width="2"/><path d="M6 20h36" stroke="#0b0b0b" stroke-width="2"/></svg>
-          <span>决策记录</span>
-        </a>
-        <a class="dock__item" href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="10" width="32" height="30" rx="3" fill="#fff" stroke="#0b0b0b" stroke-width="2"/><path d="M8 18h32" stroke="#0b0b0b" stroke-width="2"/><rect x="14" y="24" width="7" height="7" fill="#f54e00"/><path d="M26 24h8M26 30h8M14 4v8M34 4v8" stroke="#0b0b0b" stroke-width="2" stroke-linecap="round"/></svg>
-          <span>Releases</span>
-        </a>
-        <a class="dock__item" href="https://github.com/citrusli2026/dsh-electron-shell/blob/main/LICENSE" target="_blank" rel="noopener">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="10" y="6" width="28" height="36" rx="3" fill="#fff" stroke="#0b0b0b" stroke-width="2"/><path d="M16 15h16M16 21h16M16 27h10" stroke="#8a8474" stroke-width="2" stroke-linecap="round"/><circle cx="30" cy="34" r="6" fill="none" stroke="#f54e00" stroke-width="2.5"/></svg>
-          <span>LICENSE</span>
-        </a>
-        <a class="dock__item" href="https://github.com/citrusli2026/dsh-electron-shell/issues" target="_blank" rel="noopener">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 10a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H20l-9 8v-8h-1a4 4 0 0 1-2-.5z" fill="#fff" stroke="#0b0b0b" stroke-width="2"/><path d="M15 14h18M15 20h12" stroke="#8a8474" stroke-width="2" stroke-linecap="round"/></svg>
-          <span>问题反馈</span>
-        </a>
-      </aside>
-
-      <div class="desktop__stage">
-        <p class="kicker">非官方社区打包 · MIT 开源</p>
-        <h1 class="headline">给 DeepSeek Harness<br />一扇 <em>桌面窗口</em>。</h1>
-        <p class="subhead">
-          dsh-electron-shell 是 DeepSeek Harness 的 Electron 桌面壳:自带 Node.js 运行时与完整依赖,
-          双击即用,功能与 <code>npx @deepseek-ai/dsh web</code> 完全一致。
-        </p>
+  <!-- ══ HERO ══ -->
+  <section class="hero">
+    <div class="hero__grid" aria-hidden="true"></div>
+    <div class="wrap hero__inner">
+      <div class="hero__copy" data-reveal>
+        <p class="kicker" data-i18n="hero.kicker">// 非官方社区打包 · MIT 开源</p>
+        <h1 class="headline" data-i18n="hero.h1">给 DeepSeek Harness<br />一扇 <em>桌面窗口</em>。</h1>
+        <p class="subhead" data-i18n="hero.sub">dsh-electron-shell 是 DeepSeek Harness 的 Electron 桌面壳:自带 Node.js 运行时与完整依赖,双击即用;独立数据目录,与命令行互不影响。</p>
         <div class="cta-row">
-          <a class="btn btn--primary" id="cta-primary" href="#download">下载桌面版</a>
-          <a class="btn btn--ghost" href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a>
+          <a class="btn btn--primary btn--glow" id="cta-primary" href="#download" data-i18n="hero.cta">下载桌面版</a>
+          <a class="btn btn--ghost" id="cta-secondary" href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases →</a>
         </div>
+        <p class="hero__meta" id="hero-meta">v0.1.0-rc.6.shell.3 · macOS / Windows / Linux · <span data-i18n="hero.meta">无需 Node.js</span></p>
+      </div>
 
-        <!-- 可拖动的产品窗口 -->
-        <div class="window window--hero" id="hero-window">
-          <div class="window__titlebar" id="hero-titlebar">
+      <div class="hero__monitor" data-reveal style="--i:1">
+        <span class="tick tick--tl" aria-hidden="true"></span><span class="tick tick--tr" aria-hidden="true"></span>
+        <span class="tick tick--bl" aria-hidden="true"></span><span class="tick tick--br" aria-hidden="true"></span>
+        <div class="window">
+          <div class="window__titlebar">
             <span class="lights" aria-hidden="true"><i class="l1"></i><i class="l2"></i><i class="l3"></i></span>
             <span class="window__title">DSH Electron Shell</span>
             <a class="version-chip" id="version-chip" href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">v0.1.0-rc.6.shell.3</a>
           </div>
           <div class="window__body harness">
+            <div class="harness__scan" aria-hidden="true"></div>
             <div class="harness__rail" aria-hidden="true">
               <i></i><i></i><i></i>
             </div>
             <div class="harness__main" aria-hidden="true">
-              <div class="harness__header">DeepSeek Harness <span>web</span></div>
+              <div class="harness__header">DEEPSEEK HARNESS <span>· WEB</span></div>
               <div class="msg msg--user">帮我把这个命令行工具打包成桌面应用</div>
               <div class="msg msg--agent">好的。我会自带 Node.js 运行时,用户无需任何环境配置。</div>
               <div class="msg msg--tool">$ read_file manifest/harness/deps.json</div>
               <div class="msg msg--tool">$ run pnpm run bootstrap</div>
               <div class="msg msg--agent">完成。<b>崩溃自动重启、托盘、自动更新</b>都已就位。</div>
-              <div class="harness__input"><span class="cursor"></span>输入指令,Enter 发送…</div>
+              <div class="harness__input"><span class="prompt">&gt;</span><span class="cursor"></span></div>
             </div>
           </div>
         </div>
-        <p class="hero-hint">提示:拖动标题栏,这扇窗口可以移动 —— 壳的全部工作,就是提供这扇窗。</p>
       </div>
     </div>
   </section>
 
-  <!-- ══ 下载 ══ -->
+  <!-- ══ 01 下载 ══ -->
   <section class="section" id="download">
     <div class="wrap">
-      <h2 class="section__title"><a href="#download" class="anchor">#</a>下载</h2>
-      <div class="window">
-        <div class="window__titlebar window__titlebar--static">
-          <span class="lights" aria-hidden="true"><i class="l1"></i><i class="l2"></i><i class="l3"></i></span>
-          <span class="window__title">Releases</span>
-          <span class="release-meta" id="release-meta">加载版本信息…</span>
-        </div>
-        <div class="window__body window__body--light">
-          <div id="platform-rows">
-            <!-- JS 渲染;以下为兜底 -->
-            <div class="asset-fallback">
-              <p>版本数据加载失败时,可直接前往
-                <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a>
-                下载最新安装包。</p>
-            </div>
-          </div>
+      <p class="sec-marker" data-reveal>01 / <span data-i18n="dl.marker">下载</span></p>
+      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="dl.title">选择你的平台</h2>
+      <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">国内用户默认走 GitCode 镜像(华为云 CDN 直连);页面数据随每次发版自动同步。</p>
 
-          <div class="cmdline">
-            <span class="cmdline__prompt">$</span>
-            <code>npx @deepseek-ai/dsh web</code>
-            <button class="copybtn" data-copy="npx @deepseek-ai/dsh web" type="button">复制</button>
-          </div>
-          <p class="note">命令行方式同样可用;桌面壳与其共享 <code>~/.dsh</code>,会话、设置与 API Key 全部互通。</p>
-
-          <details class="allfiles">
-            <summary>全部文件(含差量更新元数据)</summary>
-            <table>
-              <thead><tr><th>文件</th><th>大小</th><th>下载量</th><th></th></tr></thead>
-              <tbody id="all-files">
-                <tr><td colspan="4"><a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">在 GitHub 查看全部文件 →</a></td></tr>
-              </tbody>
-            </table>
-          </details>
+      <div class="panel" data-reveal style="--i:3">
+        <span class="tick tick--tl" aria-hidden="true"></span><span class="tick tick--tr" aria-hidden="true"></span>
+        <span class="tick tick--bl" aria-hidden="true"></span><span class="tick tick--br" aria-hidden="true"></span>
+        <div class="panel__head">
+          <span class="panel__label">RELEASES</span>
+          <span class="release-meta" id="release-meta">…</span>
         </div>
+        <div id="platform-rows">
+          <div class="asset-fallback">
+            <p data-i18n="dl.fallback">版本数据加载失败时,可直接前往
+              <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a>
+              或 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a> 下载。</p>
+          </div>
+        </div>
+
+        <div class="cmdline">
+          <span class="cmdline__prompt">$</span>
+          <code>npx @deepseek-ai/dsh web</code>
+          <button class="copybtn" data-copy="npx @deepseek-ai/dsh web" type="button" data-i18n="copy">复制</button>
+        </div>
+        <p class="note" data-i18n="dl.note">命令行方式同样可用;桌面壳功能与其完全一致,但使用独立数据目录 <code>~/.dsh-desktop</code>,互不干扰。</p>
+
+        <details class="allfiles">
+          <summary data-i18n="dl.allfiles">全部文件(含差量更新元数据)</summary>
+          <table>
+            <thead><tr><th data-i18n="dl.th.file">文件</th><th data-i18n="dl.th.size">大小</th><th data-i18n="dl.th.dl">下载量</th><th></th></tr></thead>
+            <tbody id="all-files">
+              <tr><td colspan="4"><a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases →</a></td></tr>
+            </tbody>
+          </table>
+        </details>
       </div>
     </div>
   </section>
 
-  <!-- ══ 特性 ══ -->
+  <!-- ══ 02 特性 ══ -->
   <section class="section" id="features">
     <div class="wrap">
-      <h2 class="section__title"><a href="#features" class="anchor">#</a>特性</h2>
-      <div class="window">
-        <div class="window__titlebar window__titlebar--static">
-          <span class="lights" aria-hidden="true"><i class="l1"></i><i class="l2"></i><i class="l3"></i></span>
-          <span class="window__title">为什么用它</span>
-        </div>
+      <p class="sec-marker" data-reveal>02 / <span data-i18n="ft.marker">特性</span></p>
+      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="ft.title">为什么用它</h2>
+
+      <div class="panel" data-reveal style="--i:2">
         <div class="tabs" role="tablist">
-          <button class="tab is-active" role="tab" aria-selected="true" data-tab="t1" type="button">零配置</button>
-          <button class="tab" role="tab" aria-selected="false" data-tab="t2" type="button">与 CLI 互通</button>
-          <button class="tab" role="tab" aria-selected="false" data-tab="t3" type="button">稳定守护</button>
-          <button class="tab" role="tab" aria-selected="false" data-tab="t4" type="button">自动更新</button>
+          <button class="tab is-active" role="tab" aria-selected="true" data-tab="t1" type="button" data-i18n="ft.tab1">零配置</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="t2" type="button" data-i18n="ft.tab2">独立环境</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="t3" type="button" data-i18n="ft.tab3">稳定守护</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="t4" type="button" data-i18n="ft.tab4">自动更新</button>
         </div>
-        <div class="window__body window__body--light tab-panels">
-          <div class="tab-panel is-active" id="t1" role="tabpanel">
+        <div class="tab-panels">
+          <div class="tab-panel is-active" id="t1" role="tabpanel" data-i18n="ft.p1">
             <h3>无需安装 Node.js</h3>
-            <p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本与 SHA-256 逐平台锁定。
-            下载安装包 → 双击 → 使用,没有任何环境配置;镜像源默认走 npmmirror,国内构建与下载都快。</p>
+            <p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本与 SHA-256 逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>
           </div>
-          <div class="tab-panel" id="t2" role="tabpanel">
-            <h3>和命令行共享同一个家</h3>
-            <p>默认共享 <code>~/.dsh</code>:你在 CLI 里登录过的 API Key、调好的设置、聊过的会话,打开桌面版原样都在;
-            反过来也一样。壳从不改变 agent 行为 —— 它只负责窗口。</p>
+          <div class="tab-panel" id="t2" role="tabpanel" data-i18n="ft.p2">
+            <h3>独立数据目录,环境隔离</h3>
+            <p>桌面版默认使用 <code>~/.dsh-desktop</code>:设置、会话、API Key、插件都是独立的一份,安装卸载都不影响你的命令行工作流。需要共享时,设 <code>DSH_HOME=~/.dsh</code> 即可。</p>
           </div>
-          <div class="tab-panel" id="t3" role="tabpanel">
+          <div class="tab-panel" id="t3" role="tabpanel" data-i18n="ft.p3">
             <h3>崩溃自愈,指数退避</h3>
-            <p>进程崩溃自动重启(指数退避),错误页可手动重试并查看日志尾部;单实例锁防止多开,
-            托盘常驻,日志落盘可查。</p>
+            <p>进程崩溃自动重启(指数退避),错误页可手动重试并查看日志尾部;单实例锁防止多开,托盘常驻,日志落盘可查。</p>
           </div>
-          <div class="tab-panel" id="t4" role="tabpanel">
+          <div class="tab-panel" id="t4" role="tabpanel" data-i18n="ft.p4">
             <h3>Windows / Linux 自动更新</h3>
-            <p>基于 electron-updater 的原地自动更新;macOS 因未签名暂不支持自动更新(见决策记录 0004),
-            每日 <code>dsh-watch</code> 工作流会跟踪上游 npm 新版本并自动发起升级 PR。</p>
+            <p>基于 electron-updater 的原地自动更新;macOS 在签名前检查新版本并引导至下载页。每日 <code>dsh-watch</code> 工作流跟踪上游 npm,有新版本自动发起升级 PR。</p>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ══ 版本号 ══ -->
+  <!-- ══ 03 版本号 ══ -->
   <section class="section" id="version">
     <div class="wrap">
-      <h2 class="section__title"><a href="#version" class="anchor">#</a>版本号怎么读</h2>
-      <div class="version-display">
+      <p class="sec-marker" data-reveal>03 / <span data-i18n="vr.marker">版本号</span></p>
+      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="vr.title">版本号怎么读</h2>
+      <div class="version-display" data-reveal style="--i:2">
         <code><span class="v-core" id="v-core">0.1.0-rc.6</span><span class="v-sep">.</span><span class="v-shell" id="v-shell">shell.3</span></code>
       </div>
-      <div class="version-legend">
+      <div class="version-legend" data-reveal style="--i:3">
         <div class="legend-row">
           <code class="legend-chip legend-chip--core">0.1.0-rc.6</code>
-          <p><b>内核版本</b> —— 内置的 <code>@deepseek-ai/dsh</code> 版本。每日工作流自动检查 npm 上游,有新版本就开升级 PR。</p>
+          <p data-i18n="vr.core"><b>内核版本</b> —— 内置的 <code>@deepseek-ai/dsh</code> 版本。每日工作流自动检查 npm 上游,有新版本就开升级 PR。</p>
         </div>
         <div class="legend-row">
           <code class="legend-chip legend-chip--shell">shell.3</code>
-          <p><b>壳修订号</b> —— 壳自身(窗口、守护、打包)的第 3 次修订。同一内核可以有多次壳修订。</p>
+          <p data-i18n="vr.shell"><b>壳修订号</b> —— 壳自身(窗口、守护、打包)的修订次数。同一内核可以有多次壳修订。</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ══ 加速 ══ -->
-  <section class="section" id="mirror">
-    <div class="wrap">
-      <h2 class="section__title"><a href="#mirror" class="anchor">#</a>GitHub 太慢?加速下载</h2>
-      <p class="section__lead">在下载链接前加一个社区代理前缀即可。选一个文件,拼出你的加速链接:</p>
-      <div class="mirror-tool">
-        <select id="mirror-select" aria-label="选择要下载的文件">
-          <option value="">— 正在加载文件列表 —</option>
-        </select>
-        <div class="mirror-presets">
-          <button class="mirror-prefix is-active" type="button" data-prefix="https://ghproxy.net/">ghproxy.net</button>
-          <button class="mirror-prefix" type="button" data-prefix="https://gh-proxy.com/">gh-proxy.com</button>
-          <button class="mirror-prefix" type="button" data-prefix="https://ghfast.top/">ghfast.top</button>
-        </div>
-        <div class="cmdline cmdline--wide">
-          <code id="mirror-url">https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/download/…</code>
-          <button class="copybtn" id="mirror-copy" type="button">复制</button>
-        </div>
-      </div>
-      <p class="note">以上为社区公益代理,可用性随缘,一个不通就换下一个;项目维护者还可选启用 Cloudflare R2 与 GitCode 镜像(发布流水线自带)。</p>
-    </div>
-  </section>
-
-  <!-- ══ FAQ ══ -->
+  <!-- ══ 04 FAQ ══ -->
   <section class="section" id="faq">
     <div class="wrap">
-      <h2 class="section__title"><a href="#faq" class="anchor">#</a>常见问题</h2>
-      <div class="faq">
+      <p class="sec-marker" data-reveal>04 / <span data-i18n="faq.marker">常见问题</span></p>
+      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="faq.title">常见问题</h2>
+      <div class="faq" data-reveal style="--i:2">
         <details>
-          <summary>macOS 提示"无法打开,因为无法验证开发者"?</summary>
-          <p>macOS 版目前未签名(决策记录 0004)。首次启动请 <b>右键 → 打开</b>,在弹窗中确认即可,之后正常双击启动。</p>
+          <summary data-i18n="faq.q1">macOS 提示"无法打开,因为无法验证开发者"?</summary>
+          <p data-i18n="faq.a1">macOS 版目前未签名(决策记录 0004)。首次启动请 <b>右键 → 打开</b>,在弹窗中确认即可,之后正常双击启动。</p>
         </details>
         <details>
-          <summary>Windows SmartScreen 拦截怎么办?</summary>
-          <p>安装包未购买代码签名证书。点击 <b>"更多信息" → "仍要运行"</b> 即可。安装包由 GitHub Actions 从公开源码构建,可全程审计。</p>
+          <summary data-i18n="faq.q2">Windows SmartScreen 拦截怎么办?</summary>
+          <p data-i18n="faq.a2">安装包未购买代码签名证书。点击 <b>"更多信息" → "仍要运行"</b> 即可。安装包由 GitHub Actions 从公开源码构建,可全程审计。</p>
         </details>
         <details>
-          <summary>这和 DeepSeek 官方是什么关系?</summary>
-          <p>非官方社区打包,与 DeepSeek AI 无关联。DeepSeek Harness 是 DeepSeek 的商标;本仓库仅在 MIT 许可下再打包
-          <a href="https://www.npmjs.com/package/@deepseek-ai/dsh" target="_blank" rel="noopener">@deepseek-ai/dsh</a>,不改变其任何行为。</p>
+          <summary data-i18n="faq.q3">这和 DeepSeek 官方是什么关系?</summary>
+          <p data-i18n="faq.a3">非官方社区打包,与 DeepSeek AI 无关联。DeepSeek Harness 是 DeepSeek 的商标;本仓库仅在 MIT 许可下再打包 <a href="https://www.npmjs.com/package/@deepseek-ai/dsh" target="_blank" rel="noopener">@deepseek-ai/dsh</a>,不改变其任何行为。</p>
         </details>
         <details>
-          <summary>我已经在用 npx @deepseek-ai/dsh web,需要迁移吗?</summary>
-          <p>不需要。桌面壳与 CLI 默认共享 <code>~/.dsh</code>,会话、设置、API Key 直接互通,装完打开就是熟悉的状态。</p>
+          <summary data-i18n="faq.q4">我在用 npx @deepseek-ai/dsh web,配置会带过来吗?</summary>
+          <p data-i18n="faq.a4">不会——桌面版是独立环境,数据放在 <code>~/.dsh-desktop</code>,与 CLI 的 <code>~/.dsh</code> 互不影响(决策记录 0012)。想沿用 CLI 配置,启动前设 <code>DSH_HOME=~/.dsh</code> 即可。</p>
         </details>
         <details>
-          <summary>Apple Silicon 以外的 Mac 可以用吗?</summary>
-          <p>当前仅提供 Apple Silicon(arm64)安装包。Intel Mac 可暂时使用命令行方式 <code>npx @deepseek-ai/dsh web</code>,功能完全一致。</p>
+          <summary data-i18n="faq.q5">Apple Silicon 以外的 Mac 可以用吗?</summary>
+          <p data-i18n="faq.a5">当前仅提供 Apple Silicon(arm64)安装包。Intel Mac 可暂时使用命令行方式 <code>npx @deepseek-ai/dsh web</code>,功能完全一致。</p>
         </details>
       </div>
     </div>
@@ -264,15 +215,15 @@
   <div class="wrap footer__grid">
     <div>
       <p class="footer__brand">dsh-electron-shell</p>
-      <p class="footer__legal">MIT © 2026 dsh-electron-shell contributors<br />非官方社区打包,与 DeepSeek AI 无关联</p>
+      <p class="footer__legal" data-i18n="footer.legal">MIT © 2026 dsh-electron-shell contributors<br />非官方社区打包,与 DeepSeek AI 无关联</p>
     </div>
     <nav class="footer__links" aria-label="页脚链接">
-      <a href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">源代码</a>
-      <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">全部版本</a>
-      <a href="https://github.com/citrusli2026/dsh-electron-shell/tree/main/docs/decisions" target="_blank" rel="noopener">决策记录</a>
-      <a href="https://github.com/citrusli2026/dsh-electron-shell/issues" target="_blank" rel="noopener">问题反馈</a>
+      <a href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://gitcode.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener" data-i18n="footer.mirror">GitCode 镜像</a>
+      <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener" data-i18n="footer.releases">全部版本</a>
+      <a href="https://github.com/citrusli2026/dsh-electron-shell/issues" target="_blank" rel="noopener" data-i18n="footer.issues">问题反馈</a>
     </nav>
-    <p class="footer__sync">本页为纯静态站点,部署于 Vercel;<br />版本与下载数据由 GitHub Actions 自动同步<br /><span id="sync-time"></span></p>
+    <p class="footer__sync"><span data-i18n="footer.sync">纯静态站点 · 部署于 Vercel<br />版本数据由 GitHub Actions 自动同步</span><br /><span id="sync-time"></span></p>
   </div>
 </footer>
 
