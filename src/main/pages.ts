@@ -33,6 +33,8 @@ const STYLE = `
            background: #4d6bfe; color: #fff; border: none; border-radius: 8px;
            cursor: pointer; }
   button:hover { background: #3b57e0; }
+  button.secondary { margin-left: 8px; background: transparent; color: #4b5563; border: 1px solid #d1d5db; }
+  button.secondary:hover { color: #1f2328; background: #eef0f3; }
 `
 
 /** The startup placeholder page. */
@@ -59,6 +61,7 @@ export function errorPageHtml(attempts: number, logTail: string): string {
     <p>完整日志位于应用数据目录的 logs/harness.log;下面是最近的输出:</p>
     <pre>${escapeHtml(logTail)}</pre>
     <button onclick="retry()">重试启动</button>
+    <button class="secondary" onclick="exportReport()">导出诊断报告</button>
     <p id="hint" style="min-height: 1.2em"></p>
     <script>
       function retry() {
@@ -84,6 +87,10 @@ export function errorPageHtml(attempts: number, logTail: string): string {
         } catch (error) {
           restore();
         }
+      }
+      function exportReport() {
+        var bridge = window.dshDesktop && window.dshDesktop.exportDiagnostics;
+        if (bridge) bridge();
       }
     </script>
     </div></body></html>`)

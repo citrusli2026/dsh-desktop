@@ -9,4 +9,6 @@ import { contextBridge, ipcRenderer } from 'electron'
 contextBridge.exposeInMainWorld('dshDesktop', {
   /** Ask the main process to start the harness again. Resolves true on ready. */
   retryHarness: (): Promise<boolean> => ipcRenderer.invoke('harness:retry'),
+  /** Export a local diagnostic report from the built-in error page. */
+  exportDiagnostics: (): Promise<boolean> => ipcRenderer.invoke('shell:export-diagnostics'),
 })

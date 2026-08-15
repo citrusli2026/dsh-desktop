@@ -182,6 +182,26 @@ a { color: inherit; }
   color: var(--faint);
 }
 
+/* ══ 可信基线与工作方式 ══ */
+.trust-strip { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--panel-2); }
+.trust-strip__grid { display: grid; grid-template-columns: repeat(4, 1fr); padding-top: 0; padding-bottom: 0; }
+.trust-strip__grid div { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 18px 20px; border-left: 1px solid var(--border); }
+.trust-strip__grid div:last-child { border-right: 1px solid var(--border); }
+.trust-strip__grid b { font-family: var(--mono); color: var(--signal); font-size: 10.5px; letter-spacing: 0.16em; }
+.trust-strip__grid span { color: var(--muted); font-size: 12.5px; }
+.sec-title--wide { max-width: 28ch; }
+.workflow-grid { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; background: var(--panel); }
+.workflow-grid article { min-height: 220px; padding: 28px 26px; }
+.workflow-grid article + article { border-left: 1px solid var(--border); }
+.workflow-grid article > span { display: block; margin-bottom: 44px; font-family: var(--mono); color: var(--signal); font-size: 12px; letter-spacing: 0.14em; }
+.workflow-grid h3 { margin-bottom: 10px; font-size: 18px; }
+.workflow-grid p { color: var(--muted); font-size: 14px; }
+.boundary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.boundary-grid article { padding: 26px; border: 1px solid var(--border); border-radius: var(--r); background: var(--panel-2); }
+.boundary-grid__eyebrow { margin-bottom: 16px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--signal); }
+.boundary-grid ul { display: grid; gap: 9px; list-style: none; color: var(--muted); font-size: 14px; }
+.boundary-grid li::before { content: "✓"; margin-right: 10px; color: var(--signal); font-family: var(--mono); }
+
 /* 浮动监视器 */
 .hero__monitor { position: relative; animation: float-y 7s ease-in-out infinite; }
 @keyframes float-y {
@@ -518,4 +538,12 @@ a { color: inherit; }
   .asset-row { grid-template-columns: 1fr; gap: 8px; }
   .asset-row__meta { text-align: left; }
   .release-meta { display: none; }
+  .trust-strip__grid { grid-template-columns: 1fr 1fr; }
+  .trust-strip__grid div:nth-child(3) { border-top: 1px solid var(--border); }
+  .trust-strip__grid div:nth-child(4) { border-top: 1px solid var(--border); border-right: 1px solid var(--border); }
+  .workflow-grid { grid-template-columns: 1fr; }
+  .workflow-grid article { min-height: 0; }
+  .workflow-grid article + article { border-left: 0; border-top: 1px solid var(--border); }
+  .workflow-grid article > span { margin-bottom: 20px; }
+  .boundary-grid { grid-template-columns: 1fr; }
 }

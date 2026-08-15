@@ -70,7 +70,7 @@ export function configureAboutPanel(): void {
  * Install the branded application menu. Called on every ready (including
  * smoke runs, so CI exercises this path headlessly).
  */
-export function installAppMenu(): void {
+export function installAppMenu(exportDiagnostics?: () => Promise<boolean>): void {
   const isMac = process.platform === 'darwin'
   const template: MenuItemConstructorOptions[] = []
 
@@ -135,6 +135,9 @@ export function installAppMenu(): void {
     { label: '项目主页(GitHub)', click: () => { void shell.openExternal(REPO_URL) } },
     { label: '下载最新版', click: () => { void shell.openExternal(RELEASES_URL) } },
     { label: '报告问题', click: () => { void shell.openExternal(ISSUES_URL) } },
+    ...(exportDiagnostics === undefined ? [] : [
+      { label: '导出诊断报告…', click: () => { void exportDiagnostics() } } satisfies MenuItemConstructorOptions,
+    ]),
     { type: 'separator' },
     { label: 'DeepSeek Harness(上游)', click: () => { void shell.openExternal(UPSTREAM_URL) } },
   ]

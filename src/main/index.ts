@@ -16,6 +16,7 @@ import {
 import { createTray, refreshTray } from './tray.ts'
 import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } from './update-prompt.ts'
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
+import { exportDiagnosticReport } from './diagnostics.ts'
 
 const DEV_WEB_URL = process.env.DSH_DESKTOP_DEV_WEB_URL
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -58,6 +59,13 @@ ipcMain.handle('harness:retry', async (event) => {
   return restartHarness()
 })
 
+ipcMain.handle('shell:export-diagnostics', async (event) => {
+  const window = windowContext.mainWindow
+  if (window === undefined || window.isDestroyed()) return false
+  if (event.sender !== window.webContents || event.senderFrame?.url.startsWith('data:') !== true) return false
+  return exportDiagnosticReport(lastState)
+})
+
 function verifyHarness(root: string): void {
   const checks: ReadonlyArray<readonly [string, string]> = [['node', nodeBin(root)], ['dsh', dshBin(root)]]
   for (const [label, path] of checks) {
@@ -96,6 +104,7 @@ const trayActions = {
   getState: (): HarnessState | undefined => lastState,
   showWindow: (): void => showWindow(windowContext),
   restartHarness,
+  exportDiagnostics: (): Promise<boolean> => exportDiagnosticReport(lastState),
   checkForUpdates: checkForUpdatesInteractively,
 }
 
@@ -122,7 +131,7 @@ if (!gotLock) {
   void app.whenReady().then(async () => {
     denyUnexpectedPermissions(session.defaultSession)
     configureAboutPanel()
-    installAppMenu()
+    installAppMenu(() => exportDiagnosticReport(lastState))
     try {
       const url = await boot()
       if (!SMOKE_TEST) {

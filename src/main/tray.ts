@@ -10,6 +10,7 @@ export interface TrayActions {
   getState(): HarnessState | undefined
   showWindow(): void
   restartHarness(): Promise<boolean>
+  exportDiagnostics(): Promise<boolean>
   checkForUpdates(): Promise<void>
 }
 
@@ -25,6 +26,7 @@ function buildTrayMenu(): Menu {
     { label: statusLabel(current.getState()), enabled: false },
     { label: '重启 Harness', click: () => { void current.restartHarness() } },
     { label: '打开日志目录', click: () => { void shell.openPath(join(app.getPath('userData'), 'logs')) } },
+    { label: '导出诊断报告…', click: () => { void current.exportDiagnostics() } },
     { type: 'separator' },
     { label: '检查更新…', click: () => { void current.checkForUpdates() } },
     { label: `版本 v${app.getVersion()}`, enabled: false },

@@ -13,6 +13,7 @@ import * as electron from 'electron'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, nodeBin } from './paths.ts'
 import { decideRestart, exitsInWindow, parseReadyUrl, RESTART_BASE_DELAY_MS } from './restart-policy.ts'
+import { rotateLogFiles } from './diagnostics.ts'
 
 /** Give a broken first boot room before declaring failure. */
 const READY_TIMEOUT_MS = 90_000
@@ -84,7 +85,9 @@ export class HarnessSupervisor {
     this.env = { ...baseEnv, DSH_HOME: resolveDshHome(baseEnv, homedir()) }
     this.readyTimeoutMs = options.readyTimeoutMs ?? READY_TIMEOUT_MS
     mkdirSync(logDir, { recursive: true })
-    this.logStream = createWriteStream(join(logDir, 'harness.log'), { flags: 'a' })
+    const logPath = join(logDir, 'harness.log')
+    rotateLogFiles(logPath)
+    this.logStream = createWriteStream(logPath, { flags: 'a' })
   }
 
   /** Number of unexpected exits inside the current restart window. */
