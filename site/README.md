@@ -39,6 +39,12 @@ cd site && python3 -m http.server 8080
 # 或 npx serve site
 ```
 
+## 域名
+
+正式域名 <https://dsh-desktop.com>(www 308 跳转主域),阿里云 DNS:
+A `@` → `216.198.79.1` / `64.29.17.1`,CNAME `www` → Vercel 专属解析值。
+HTTPS 证书由 Vercel 自动签发续期;`dsh-electron-shell.vercel.app` 作为备用域名保留。
+
 ## Vercel 接入(一次性)
 
 1. <https://vercel.com/new> → Import `citrusli2026/dsh-electron-shell`;

@@ -7,7 +7,7 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 > Unofficial community packaging, not affiliated with DeepSeek AI. DeepSeek Harness is a trademark of DeepSeek; this repo only repackages it under MIT.
 > 非官方社区打包,与 DeepSeek AI 无关联;DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打包。
 
-**Website / 官网**: <https://dsh-electron-shell.vercel.app> — intro & downloads, auto-synced with GitHub Releases (`site/` + `site-refresh` workflow).
+**Website / 官网**: <https://dsh-desktop.com> — intro & downloads, auto-synced with GitHub Releases (`site/` + `site-refresh` workflow).
 
 ## Features
 
