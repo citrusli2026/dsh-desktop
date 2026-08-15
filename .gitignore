@@ -11,3 +11,4 @@ resources/harness.tmp/
 
 # Local release verification downloads (packed apps, dmgs)
 release-check/
+.vercel

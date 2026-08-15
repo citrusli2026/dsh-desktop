@@ -9,6 +9,8 @@
 > 非官方社区打包,与 DeepSeek AI 无关联;DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打包。
 > Unofficial community packaging, not affiliated with DeepSeek AI. DeepSeek Harness is a trademark of DeepSeek; this repo only repackages it under MIT.
 
+**官网**: <https://dsh-electron-shell.vercel.app> —— 介绍与下载,数据随 GitHub Releases 自动同步(`site/` + `site-refresh` 工作流)。
+
 ## 特性
 
 - **开箱即用**:内置独立 Node 运行时与 `@deepseek-ai/dsh` 完整依赖闭包,
