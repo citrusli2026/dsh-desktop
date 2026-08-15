@@ -59,16 +59,31 @@ export function errorPageHtml(attempts: number, logTail: string): string {
     <p>完整日志位于应用数据目录的 logs/harness.log;下面是最近的输出:</p>
     <pre>${escapeHtml(logTail)}</pre>
     <button onclick="retry()">重试启动</button>
+    <p id="hint" style="min-height: 1.2em"></p>
     <script>
       function retry() {
-        const button = document.querySelector('button');
+        var button = document.querySelector('button');
+        var hint = document.getElementById('hint');
         button.disabled = true;
         button.textContent = '正在启动…';
-        const result = window.dshDesktop?.retryHarness?.();
-        if (result instanceof Promise) result.catch(() => {
+        // A resolved `false` means the restart never reached readiness; the
+        // page must not stay stuck on "正在启动…" in that case.
+        function restore() {
           button.disabled = false;
           button.textContent = '重试启动';
-        });
+          hint.textContent = '启动仍未成功,请查看日志后再试。';
+        }
+        try {
+          var bridge = window.dshDesktop && window.dshDesktop.retryHarness;
+          var result = bridge ? bridge() : undefined;
+          if (result instanceof Promise) {
+            result.then(function (ok) { if (!ok) restore(); }).catch(restore);
+          } else {
+            restore();
+          }
+        } catch (error) {
+          restore();
+        }
       }
     </script>
     </div></body></html>`)

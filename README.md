@@ -45,7 +45,7 @@ Other prefixes that come and go over time: `https://gh-proxy.com/`, `https://ghf
 Project owners can enable two mirrors; both are opt-in jobs in the release workflow and skip silently when unconfigured:
 
 - **Cloudflare R2** (job `mirror-r2`): S3-compatible object storage with zero egress fees (10 GB free). Create a bucket named `dsh-electron-shell`, create an R2 API token with object read/write on it, then set repository variable `R2_ACCOUNT_ID` and secret `R2_API_TOKEN`. Every release afterwards mirrors automatically under `dsh-electron-shell/<tag>/`; bind a custom domain (or the r2.dev dev URL) on the bucket for stable public links. To backfill an already-published release: download its assets with `gh release download <tag>`, then `wrangler r2 object put "dsh-electron-shell/<tag>/<file>" --file <file>` per asset.
-- **GitCode** (job `mirror-gitcode`, skeleton): attachments are served from Huawei Cloud CDN nodes inside China. Create a mirror repository on gitcode.com, mint a personal access token, then set variable `GITCODE_REPO` (`owner/repo`) and secret `GITCODE_TOKEN`. The upload schema is marked TODO pending a live-account check. Users must link the GitCode release *page* — `file-cdn.gitcode.com` direct links are time-limited signed URLs.
+- **GitCode** (job `mirror-gitcode`, verified 2026-08-15): attachments are served from Huawei Cloud CDN nodes inside China. Create a mirror repository on gitcode.com, mint a personal access token, then set variable `GITCODE_REPO` (`owner/repo`) and secret `GITCODE_TOKEN`. Stable per-asset links exist at `https://gitcode.com/<owner>/<repo>/releases/download/<tag>/<file>`; only the `file-cdn.gitcode.com` host behind them serves time-limited signed URLs, so never paste those.
 
 ## Development
 

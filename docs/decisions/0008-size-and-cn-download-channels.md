@@ -66,8 +66,10 @@ from Huawei Cloud CDN nodes inside China (CNAME `*.cdnhwc*`, OBS S3 headers).
 GitCode's OpenAPI gained release create + attachment `upload_url` endpoints in
 2025-06, so the release workflow gained a `mirror-gitcode` job (gated on
 variable `GITCODE_REPO` + secret `GITCODE_TOKEN`) as a second, China-fast
-channel next to R2. Two caveats are written into the job and the README: the
-upload schema is TODO-unverified until exercised with a live token, and
-user-facing links must point at the GitCode release page because
-`file-cdn.gitcode.com` URLs are time-limited signed URLs. R2 keeps the stable,
-self-controlled, globally fast (outside China) fixed-URL role.
+channel next to R2. Live-tested 2026-08-15 (`scripts/gitcode-upload.mjs`):
+`upload_url` returns an OBS pre-signed PUT plus signed headers (the
+`x-obs-callback` registers the object as a release attachment), and stable
+per-asset links exist at `gitcode.com/<repo>/releases/download/<tag>/<file>` —
+only the `file-cdn.gitcode.com` host behind them is time-limited, so public
+copy must use the former. R2 keeps the stable, self-controlled, globally fast
+(outside China) fixed-URL role.

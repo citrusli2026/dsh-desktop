@@ -123,9 +123,11 @@ jobs:
     # have found. Enable by setting the repository VARIABLE GITCODE_REPO
     # (owner/repo of the GitCode mirror repository) and the GITCODE_TOKEN
     # secret (personal access token). Without the variable this job is
-    # skipped. NOTE: the upload_url request/response schema is unverified
-    # against a live account (GitCode docs are JS-rendered) — marked TODO
-    # below; confirm before enabling.
+    # skipped. Verified end-to-end 2026-08-15: upload_url returns an OBS
+    # pre-signed PUT plus the signed headers; scripts/gitcode-upload.mjs
+    # drives it. Stable per-asset links live at
+    # gitcode.com/<repo>/releases/download/<tag>/<file>; the file-cdn
+    # hostname behind them serves time-limited signed URLs.
     needs: publish
     runs-on: ubuntu-latest
     if: ${{ vars.GITCODE_REPO != '' }}
@@ -134,32 +136,22 @@ jobs:
       GITCODE_REPO: ${{ vars.GITCODE_REPO }}
       TAG: ${{ github.ref_name }}
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Create the GitCode release if missing
         run: |
           API="https://api.gitcode.com/api/v5/repos/$GITCODE_REPO"
           curl -sf "$API/releases/$TAG?access_token=$GITCODE_TOKEN" >/dev/null || \
             curl -sf -X POST "$API/releases" \
-              --data-urlencode "access_token=$GITCODE_TOKEN" \
-              --data-urlencode "tag_name=$TAG" \
-              --data-urlencode "name=dsh-electron-shell $TAG" \
-              --data-urlencode "prerelease=true" \
-              --data-urlencode "body=Mirrored from github.com/citrusli2026/dsh-electron-shell releases."
+              -H "Content-Type: application/json" \
+              -d "{\"access_token\": \"$GITCODE_TOKEN\", \"tag_name\": \"$TAG\", \"name\": \"dsh-electron-shell $TAG\", \"prerelease\": true, \"body\": \"Mirrored from https://github.com/citrusli2026/dsh-electron-shell/releases\"}"
       - name: Upload assets to the GitCode release
-        run: |
-          API="https://api.gitcode.com/api/v5/repos/$GITCODE_REPO"
-          for f in artifacts/*; do
-            NAME=$(basename "$f")
-            # TODO(unverified): confirm the upload_url JSON response field and
-            # the upload verb (PUT binary vs multipart POST) against a live
-            # account; GitCode docs are JS-rendered and could not be scraped.
-            UPLOAD_URL=$(curl -sf "$API/releases/$TAG/upload_url?access_token=$GITCODE_TOKEN&file_name=$NAME" | sed -n 's/.*"url"[ :]*"\([^"]*\)".*/\1/p')
-            if [ -z "$UPLOAD_URL" ]; then echo "mirror-gitcode: no upload url for $NAME"; exit 1; fi
-            curl -sf -X PUT --upload-file "$f" "$UPLOAD_URL"
-            echo "mirror-gitcode: uploaded $NAME"
-          done
+        run: node scripts/gitcode-upload.mjs "$TAG" artifacts/*
       - name: Report mirror location
-        run: echo "Mirrored to GitCode release $TAG of $GITCODE_REPO (link the release page, never the time-limited file-cdn URL)"
+        run: echo "Mirrored to https://gitcode.com/$GITCODE_REPO/releases/download/$TAG/..."

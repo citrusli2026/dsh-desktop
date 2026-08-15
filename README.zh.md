@@ -60,11 +60,12 @@ https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/
   (或 r2.dev 开发域名)即得固定下载链接。补传已发布版本:
   `gh release download <tag>` 下载资产后逐文件
   `wrangler r2 object put "dsh-electron-shell/<tag>/<文件>" --file <文件>`。
-- **GitCode**(任务 `mirror-gitcode`,骨架):附件由国内华为云 CDN 节点分发。
-  在 gitcode.com 建镜像仓库、签发 personal access token,设置仓库变量
-  `GITCODE_REPO`(`owner/repo`)与 secret `GITCODE_TOKEN`;上传接口细节标了
-  TODO,待真实账号联调。用户侧只能放 GitCode 的 release **页面**链接——
-  `file-cdn.gitcode.com` 直链是签名时效 URL,会过期。
+- **GitCode**(任务 `mirror-gitcode`,2026-08-15 已联调验证):附件由国内华为云
+  CDN 节点分发。在 gitcode.com 建镜像仓库、签发 personal access token,设置
+  仓库变量 `GITCODE_REPO`(`owner/repo`)与 secret `GITCODE_TOKEN` 即可。
+  稳定附件链接形如
+  `https://gitcode.com/<owner>/<repo>/releases/download/<tag>/<文件>`;
+  其背后的 `file-cdn.gitcode.com` 直链是签名时效 URL,不要直接对外引用。
 
 ## 开发
 

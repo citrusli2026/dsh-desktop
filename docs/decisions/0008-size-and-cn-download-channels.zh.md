@@ -56,7 +56,9 @@ GitCode 托管的附件由国内华为云 CDN 节点分发(CNAME `*.cdnhwc*`、O
 响应头)。GitCode OpenAPI 已于 2025-06 补齐 release 创建与附件
 `upload_url` 接口,因此 release 流水线新增 `mirror-gitcode` 任务(仓库
 变量 `GITCODE_REPO` + secret `GITCODE_TOKEN` 开关),作为与 R2 并列的
-国内快速渠道。两条注意已写进任务与 README:上传接口 schema 待真实 token
-联调(标 TODO);用户侧链接必须指向 GitCode 的 release 页面,因为
-`file-cdn.gitcode.com` 直链是签名时效 URL。R2 继续承担稳定、自有、
-(中国以外)全球快的固定 URL 角色。
+国内快速渠道。2026-08-15 已实测联通(`scripts/gitcode-upload.mjs`):
+`upload_url` 返回 OBS 预签名 PUT 地址与签名头(`x-obs-callback` 负责把
+对象登记为 release 附件);稳定附件链接为
+`gitcode.com/<仓库>/releases/download/<tag>/<文件>`,只有背后的
+`file-cdn.gitcode.com` 直链带时效签名,对外文案一律用前者。
+R2 继续承担稳定、自有、(中国以外)全球快的固定 URL 角色。
