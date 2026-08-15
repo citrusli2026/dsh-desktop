@@ -1,6 +1,6 @@
 # Electron Shell 能力规划
 
-> 状态：shell.10 范围与本机审核完成，版本已 bump；tag 受主分支 CI 门禁。
+> 状态：shell.10 已发布；主分支 CI、三平台 packaged smoke 与官网刷新均通过。
 > 原则：原生能力只解决桌面生命周期与可信交付，不复制 Harness 已有业务功能。
 
 ## 1. 产品约定

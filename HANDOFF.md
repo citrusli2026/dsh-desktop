@@ -8,11 +8,11 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>(备用 <https://dsh-electron-shell.vercel.app>) |
-| 本次发布目标 | 🟡 `v0.1.0-rc.6.shell.10`;本地门禁通过后提交,主分支 CI 通过再推 tag |
-| 主分支 CI | ✅ run `31870759765`;38 项单测、官网门禁、构建、三条 xvfb 冒烟全绿 |
-| 核心发布 | ✅ Release run `31870835413`;tag/版本、制品矩阵、更新元数据均通过门禁 |
-| 官网数据 | ✅ refresh run `31871089497`;`release.json` 已自动提交为 shell.9 |
-| 国内镜像 | 🟡 GitCode `main` 与 shell.9 tag 已同步;发行版资产改人工上传(见第四节),shell.9 三个安装包待维护者手动补齐 |
+| 最新版本 | ✅ `v0.1.0-rc.6.shell.10`,macOS / Windows / Linux 共 11 个资产齐全 |
+| 主分支 CI | ✅ run `31889803242`;53 项单测、官网门禁、构建、三条 xvfb 冒烟与真实 Electron E2E 全绿 |
+| 核心发布 | ✅ Release run `31889903318`;tag/版本、三平台 packaged smoke、制品矩阵与更新元数据均通过 |
+| 官网数据 | ✅ refresh run `31890214574`;提交 `292c2a8` 已同步 shell.10 的 11 个资产并部署 |
+| 国内镜像 | 🟡 GitCode 发行版资产为人工渠道;shell.10 的 dmg/zip/exe 待维护者手动补齐 |
 
 ## 二、官网浅色体系与声明精简(2026-08-15 已提交部署,无新 tag)
 
@@ -107,6 +107,6 @@ auto-updater 始终直连 GitHub。
   Apple Silicon 签名基线包通过严格 codesign；包含最终菜单的 `dist-review`
   审核包显式跳过重复签名，但已隔离启动自身 Harness 并保持运行供人工审核。
   未公证导致 `spctl` 拒绝是已知且预期的分发限制。
-- 本次发布提交已将版本 bump 为 shell.10；只在主分支 CI 通过后推 tag，Release
-  三平台制品完成后再由 Site Data Refresh 更新官网 release 数据。完整顺序见
+- shell.10 已按“主分支 CI → tag → 三平台 Release → Site Data Refresh”顺序
+  发布，正式域名已验证返回本版本和 11 个资产。完整顺序与后续边界见
   `docs/plans/electron-shell-capabilities.md`。

@@ -5,7 +5,7 @@
 > contract, and next iteration boundary. Website and mirror operations live in
 > the root `HANDOFF.md`.
 
-最后更新:2026-08-15 · 本次发布目标 `0.1.0-rc.6.shell.10` · tag 受主分支 CI 门禁
+最后更新:2026-08-15 · 已发布版本 `0.1.0-rc.6.shell.10`
 
 ## 1. 当前结果
 
@@ -60,19 +60,24 @@ src/preload/index.ts        仅暴露 retry 与诊断导出两项窄桥
 每次主分支 CI 执行:
 
 1. TypeScript typecheck;
-2. 38 个 `node:test` 单测;
+2. 53 个 `node:test` 单测;
 3. `site:check`(release 数据、三平台安装包、双语键与静态资源);
 4. 主进程/预加载构建;
 5. Harness 闭包与内置 Node bootstrap;
-6. 三条 xvfb 冒烟:正常启动、错误页重试成功、强制重试失败后按钮恢复。
+6. 三条 xvfb 冒烟:正常启动、错误页重试成功、强制重试失败后按钮恢复;
+7. 真实 Electron E2E:无标题栏拖拽区、语言同步、沙箱、close-to-tray 与
+   第二实例恢复。
 
 tag Release 在上述基础上再执行质量门禁,并强制:
 
 - tag 等于 `v${package.version}`;
+- 三平台从 unpacked 产物启动内置 Harness 并通过 smoke;
 - macOS / Windows / Linux 11 个预期制品齐全;
 - `latest.yml`、`latest-mac.yml`、`latest-linux.yml` 引用本次版本安装包。
 
 shell.9:CI run `31870759765`;Release run `31870835413`;11 个资产发布成功。
+shell.10:CI run `31889803242`;Release run `31889903318`;Site Data Refresh run
+`31890214574`;11 个资产发布并同步官网成功。
 
 ## 4. shell.10 发布后的最小迭代
 
@@ -111,8 +116,8 @@ shell.9:CI run `31870759765`;Release run `31870835413`;11 个资产发布成功�
   重复签名时间显式跳过签名，但已用隔离 user-data 启动自身 Harness 并保持运行。
   仍未公证，`spctl` 拒绝符合预期，不能作为公开分发签名宣传。
 - 官网第二轮内容已同步上述能力，宽屏和 390 px 窄屏无横向溢出、控制台无告警。
-  版本已 bump 为 shell.10；主分支 CI 通过后才推 tag，Release 完成后由站点刷新
-  工作流更新下载数据，避免官网提前指向未发布产物。
+  shell.10 已在主分支 CI 通过后发布，站点刷新工作流已将 11 个下载资产同步到
+  正式域名。
 
 完整菜单合同与后续小步路线见 `docs/plans/electron-shell-capabilities.md`。
 
