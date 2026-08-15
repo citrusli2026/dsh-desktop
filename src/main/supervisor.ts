@@ -5,7 +5,7 @@
  * @module main/supervisor
  */
 import { spawn, type ChildProcess } from 'node:child_process'
-import { createWriteStream, mkdirSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
@@ -13,7 +13,7 @@ import * as electron from 'electron'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, nodeBin } from './paths.ts'
 import { decideRestart, exitsInWindow, parseReadyUrl, RESTART_BASE_DELAY_MS } from './restart-policy.ts'
-import { rotateLogFiles } from './diagnostics.ts'
+import { RollingLogWriter } from './diagnostics.ts'
 
 /** Give a broken first boot room before declaring failure. */
 const READY_TIMEOUT_MS = 90_000
@@ -67,11 +67,12 @@ export class HarnessSupervisor {
   private restartDelay = RESTART_BASE_DELAY_MS
   private exitTimes: number[] = []
   private readonly logLines: string[] = []
-  private readonly logStream: NodeJS.WritableStream | undefined
+  private readonly logWriter: RollingLogWriter
   private readonly command: string
   private readonly args: readonly string[]
   private readonly env: NodeJS.ProcessEnv
   private readonly readyTimeoutMs: number
+  private stopInFlight: Promise<void> | undefined
 
   constructor(
     events: SupervisorEvents,
@@ -86,8 +87,7 @@ export class HarnessSupervisor {
     this.readyTimeoutMs = options.readyTimeoutMs ?? READY_TIMEOUT_MS
     mkdirSync(logDir, { recursive: true })
     const logPath = join(logDir, 'harness.log')
-    rotateLogFiles(logPath)
-    this.logStream = createWriteStream(logPath, { flags: 'a' })
+    this.logWriter = new RollingLogWriter(logPath)
   }
 
   /** Number of unexpected exits inside the current restart window. */
@@ -100,7 +100,7 @@ export class HarnessSupervisor {
   private recordLine(line: string): void {
     this.logLines.push(line)
     if (this.logLines.length > LOG_TAIL_LINES) this.logLines.shift()
-    this.logStream?.write(`${line}\n`)
+    this.logWriter.write(line)
   }
 
   private spawnOnce(): ChildProcess {
@@ -122,15 +122,15 @@ export class HarnessSupervisor {
     }
     child.once('error', (error) => {
       this.recordLine(`supervisor: spawn error: ${String(error)}`)
-      this.rejectReady?.(error)
+      this.failStart(error)
     })
     child.once('exit', (code, signal) => {
       this.child = undefined
       this.recordLine(`supervisor: harness exited code=${String(code)} signal=${String(signal)}`)
       if (this.stopping) return
-      if (this.resolveReady !== undefined) {
+      if (this.rejectReady !== undefined) {
         // Died before ever reaching readiness: fail this start attempt.
-        this.rejectReady?.(new Error(`harness exited before ready (code ${String(code)}, signal ${String(signal)})`))
+        this.failStart(new Error(`harness exited before ready (code ${String(code)}, signal ${String(signal)})`))
         return
       }
       this.exitTimes.push(Date.now())
@@ -157,6 +157,15 @@ export class HarnessSupervisor {
     this.resolveReady = undefined
     this.rejectReady = undefined
     this.restartDelay = RESTART_BASE_DELAY_MS
+  }
+
+  private failStart(error: Error): void {
+    const reject = this.rejectReady
+    if (reject === undefined) return
+    this.stopping = true
+    this.child?.kill('SIGTERM')
+    this.clearStartAttempt()
+    reject(error)
   }
 
   private scheduleRestart(): void {
@@ -187,8 +196,7 @@ export class HarnessSupervisor {
       this.resolveReady = resolve
       this.rejectReady = reject
       this.readyTimer = setTimeout(() => {
-        this.clearStartAttempt()
-        reject(new Error(`harness not ready within ${this.readyTimeoutMs} ms`))
+        this.failStart(new Error(`harness not ready within ${this.readyTimeoutMs} ms`))
       }, this.readyTimeoutMs)
       this.spawnOnce()
     })
@@ -199,13 +207,9 @@ export class HarnessSupervisor {
    * call with no child running; never rejects.
    */
   stop(): Promise<void> {
-    return new Promise<void>((resolve) => {
-      // Ending the log stream releases the file handle; a replacement
-      // supervisor (manual retry) reopens the same file in append mode.
-      const finish = (): void => {
-        this.logStream?.end()
-        resolve()
-      }
+    if (this.stopInFlight !== undefined) return this.stopInFlight
+    this.stopInFlight = new Promise<void>((resolve) => {
+      const finish = (): void => { void this.logWriter.close().then(resolve) }
       if (this.restartTimer !== undefined) clearTimeout(this.restartTimer)
       const child = this.child
       if (child === undefined) {
@@ -227,5 +231,6 @@ export class HarnessSupervisor {
         spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' })
       }
     })
+    return this.stopInFlight
   }
 }

@@ -1,47 +1,87 @@
 /** Platform update setup and the unsigned-macOS check-only prompt. */
 import { app, dialog, net, shell } from 'electron'
 import electronUpdater from 'electron-updater'
-import { isNewerVersion, latestPublishedVersion } from './update-check.ts'
+import { isNewerVersion, latestPublishedRelease } from './update-check.ts'
+import { shellText, type ShellLocale } from './locale.ts'
 
 const { autoUpdater } = electronUpdater
 const RELEASES_API_URL = 'https://api.github.com/repos/citrusli2026/dsh-electron-shell/releases?per_page=20'
-const RELEASES_PAGE_URL = 'https://github.com/citrusli2026/dsh-electron-shell/releases/latest'
 
-export async function checkMacUpdate(manual: boolean): Promise<void> {
+export async function checkMacUpdate(manual: boolean, locale: ShellLocale): Promise<void> {
   try {
     const response = await net.fetch(RELEASES_API_URL, {
       headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'dsh-desktop' },
     })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const payload: unknown = await response.json()
-    const latest = latestPublishedVersion(payload) ?? ''
-    if (latest !== '' && isNewerVersion(app.getVersion(), latest)) {
+    const latest = latestPublishedRelease(payload)
+    if (latest !== undefined && isNewerVersion(app.getVersion(), latest.version)) {
       const { response: choice } = await dialog.showMessageBox({
         type: 'info',
-        message: `发现新版本 v${latest}`,
-        detail: `当前版本 v${app.getVersion()}。macOS 版暂未签名,没有自动更新(决策 0004);请下载新版手动覆盖安装。`,
-        buttons: ['前往下载', '稍后'],
+        title: shellText(locale, 'update.title'),
+        message: shellText(locale, 'update.available', { version: latest.version }),
+        detail: shellText(locale, 'update.macDetail', { current: app.getVersion() }),
+        buttons: [shellText(locale, 'update.download'), shellText(locale, 'update.later')],
         defaultId: 0,
         cancelId: 1,
       })
-      if (choice === 0) void shell.openExternal(RELEASES_PAGE_URL)
+      if (choice === 0) await shell.openExternal(latest.htmlUrl)
     } else if (manual) {
-      await dialog.showMessageBox({ type: 'info', message: '已是最新版本', detail: `当前版本 v${app.getVersion()}。`, buttons: ['好'] })
+      await dialog.showMessageBox({
+        type: 'info',
+        title: shellText(locale, 'update.title'),
+        message: shellText(locale, 'update.current'),
+        detail: shellText(locale, 'update.currentDetail', { version: app.getVersion() }),
+        buttons: [shellText(locale, 'common.ok')],
+      })
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     console.warn(`dsh-desktop: macOS update check failed: ${message}`)
-    if (manual) await dialog.showMessageBox({ type: 'warning', message: '检查更新失败', detail: message, buttons: ['好'] })
+    if (manual) await dialog.showMessageBox({
+      type: 'warning',
+      title: shellText(locale, 'update.title'),
+      message: shellText(locale, 'update.failed'),
+      detail: message,
+      buttons: [shellText(locale, 'common.ok')],
+    })
   }
 }
 
-export async function checkForUpdatesInteractively(): Promise<void> {
+export async function checkForUpdatesInteractively(locale: ShellLocale): Promise<void> {
   if (!app.isPackaged) {
-    await dialog.showMessageBox({ type: 'info', message: '检查更新', detail: '开发模式没有更新源。', buttons: ['好'] })
+    await dialog.showMessageBox({
+      type: 'info',
+      title: shellText(locale, 'update.title'),
+      message: shellText(locale, 'update.title'),
+      detail: shellText(locale, 'update.dev'),
+      buttons: [shellText(locale, 'common.ok')],
+    })
   } else if (process.platform === 'darwin') {
-    await checkMacUpdate(true)
+    await checkMacUpdate(true, locale)
   } else {
-    await autoUpdater.checkForUpdatesAndNotify()
+    try {
+      const result = await autoUpdater.checkForUpdatesAndNotify()
+      const candidate = result?.updateInfo.version
+      if (candidate === undefined || !isNewerVersion(app.getVersion(), candidate)) {
+        await dialog.showMessageBox({
+          type: 'info',
+          title: shellText(locale, 'update.title'),
+          message: shellText(locale, 'update.current'),
+          detail: shellText(locale, 'update.currentDetail', { version: app.getVersion() }),
+          buttons: [shellText(locale, 'common.ok')],
+        })
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      await dialog.showMessageBox({
+        type: 'warning',
+        title: shellText(locale, 'update.title'),
+        message: shellText(locale, 'update.failed'),
+        detail: message,
+        buttons: [shellText(locale, 'common.ok')],
+      })
+    }
   }
 }
 

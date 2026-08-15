@@ -25,6 +25,10 @@ jobs:
       - run: pnpm run test
       - run: pnpm run site:check
       - run: pnpm run build
+      - name: Electron shell E2E release gate
+        run: xvfb-run -a pnpm run test:e2e
+        env:
+          ELECTRON_DISABLE_SANDBOX: "1"
       - name: Verify tag matches package version
         if: ${{ github.ref_type == 'tag' }}
         run: test "v$(node -p "require('./package.json').version")" = "${{ github.ref_name }}"
@@ -64,6 +68,14 @@ jobs:
           # --publish never keeps electron-builder from creating the release
           # itself; the publish job below owns release creation.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Smoke packaged app (macOS / Windows)
+        if: ${{ runner.os != 'Linux' }}
+        run: node scripts/smoke-packaged.mjs
+      - name: Smoke packaged app (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: xvfb-run -a node scripts/smoke-packaged.mjs
+        env:
+          ELECTRON_DISABLE_SANDBOX: "1"
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:

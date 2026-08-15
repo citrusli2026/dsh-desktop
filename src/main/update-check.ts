@@ -69,15 +69,34 @@ export function isNewerVersion(current: string, candidate: string): boolean {
  * prerelease until the upstream dsh version leaves RC status.
  */
 export function latestPublishedVersion(payload: unknown): string | undefined {
+  return latestPublishedRelease(payload)?.version
+}
+
+export interface PublishedRelease {
+  version: string
+  htmlUrl: string
+}
+
+/** Pick the newest eligible release together with its exact GitHub page URL. */
+export function latestPublishedRelease(payload: unknown): PublishedRelease | undefined {
   if (!Array.isArray(payload)) return undefined
-  let latest: string | undefined
+  let latest: PublishedRelease | undefined
   for (const item of payload) {
     if (typeof item !== 'object' || item === null) continue
-    const release = item as { draft?: unknown; tag_name?: unknown }
-    if (release.draft === true || typeof release.tag_name !== 'string') continue
+    const release = item as { draft?: unknown; tag_name?: unknown; html_url?: unknown }
+    if (release.draft === true || typeof release.tag_name !== 'string' || typeof release.html_url !== 'string') continue
     const candidate = release.tag_name.replace(/^v/, '')
     if (parseVersion(candidate) === undefined) continue
-    if (latest === undefined || compareVersions(candidate, latest)! > 0) latest = candidate
+    let url: URL
+    try {
+      url = new URL(release.html_url)
+    } catch {
+      continue
+    }
+    if (url.protocol !== 'https:' || url.hostname !== 'github.com' || !url.pathname.startsWith('/citrusli2026/dsh-electron-shell/releases/')) continue
+    if (latest === undefined || compareVersions(candidate, latest.version)! > 0) {
+      latest = { version: candidate, htmlUrl: url.href }
+    }
   }
   return latest
 }

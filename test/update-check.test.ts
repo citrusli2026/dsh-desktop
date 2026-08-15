@@ -7,7 +7,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { compareVersions, isNewerVersion, latestPublishedVersion, splitCompositeVersion } from '../src/main/update-check.ts'
+import { compareVersions, isNewerVersion, latestPublishedRelease, latestPublishedVersion, splitCompositeVersion } from '../src/main/update-check.ts'
 
 test('isNewerVersion detects a newer shell revision', () => {
   assert.equal(isNewerVersion('0.1.0-rc.6.shell.3', '0.1.0-rc.6.shell.4'), true)
@@ -48,10 +48,20 @@ test('splitCompositeVersion splits the About-surface version', () => {
 
 test('latestPublishedVersion includes prereleases and ignores drafts or malformed entries', () => {
   assert.equal(latestPublishedVersion([
-    { tag_name: 'v0.1.0-rc.6.shell.7', draft: false, prerelease: true },
-    { tag_name: 'v0.1.0-rc.6.shell.10', draft: false, prerelease: true },
-    { tag_name: 'v9.9.9', draft: true, prerelease: false },
-    { tag_name: 'not-a-version', draft: false },
+    { tag_name: 'v0.1.0-rc.6.shell.7', draft: false, prerelease: true, html_url: 'https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.0-rc.6.shell.7' },
+    { tag_name: 'v0.1.0-rc.6.shell.10', draft: false, prerelease: true, html_url: 'https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.0-rc.6.shell.10' },
+    { tag_name: 'v9.9.9', draft: true, prerelease: false, html_url: 'https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v9.9.9' },
+    { tag_name: 'not-a-version', draft: false, html_url: 'https://github.com/citrusli2026/dsh-electron-shell/releases/tag/nope' },
   ]), '0.1.0-rc.6.shell.10')
   assert.equal(latestPublishedVersion({ message: 'Not Found' }), undefined)
+})
+
+test('latestPublishedRelease returns the exact trusted prerelease URL', () => {
+  assert.deepEqual(latestPublishedRelease([
+    { tag_name: 'v0.1.0-rc.6.shell.10', draft: false, html_url: 'https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.0-rc.6.shell.10' },
+    { tag_name: 'v9.9.9', draft: false, html_url: 'https://evil.example/releases/tag/v9.9.9' },
+  ]), {
+    version: '0.1.0-rc.6.shell.10',
+    htmlUrl: 'https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.0-rc.6.shell.10',
+  })
 })

@@ -1,8 +1,10 @@
 import type { HarnessState } from './supervisor.ts'
+import { shellText, type ShellLocale } from './locale.ts'
 
 /** Pure status label shared by the tray and its unit test. */
-export function statusLabel(state: HarnessState | undefined): string {
-  if (state?.phase === 'ready') return '状态:运行中'
-  if (state?.phase === 'crashed') return `状态:已崩溃(${state.attempts} 次)`
-  return '状态:启动中…'
+export function statusLabel(locale: ShellLocale, state: HarnessState | undefined, restarting = false): string {
+  if (restarting) return shellText(locale, 'tray.statusRestarting')
+  if (state?.phase === 'ready') return shellText(locale, 'tray.statusRunning')
+  if (state?.phase === 'crashed') return shellText(locale, 'tray.statusRecoveryPaused', { count: state.attempts })
+  return shellText(locale, 'tray.statusStarting')
 }

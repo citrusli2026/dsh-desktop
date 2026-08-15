@@ -1,9 +1,11 @@
 /** Local diagnostic export and bounded harness-log retention. */
 import electron from 'electron'
 import { closeSync, existsSync, openSync, readSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { appendFile } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
 import { basename, join } from 'node:path'
 import type { HarnessState } from './supervisor.ts'
+import { shellText, type ShellLocale } from './locale.ts'
 
 export const MAX_LOG_BYTES = 5 * 1024 * 1024
 export const KEPT_LOG_FILES = 3
@@ -18,6 +20,42 @@ export function rotateLogFiles(logPath: string, maxBytes = MAX_LOG_BYTES, keep =
     if (!existsSync(source)) continue
     rmSync(target, { force: true })
     renameSync(source, target)
+  }
+}
+
+/** Serialized, non-blocking append writer that enforces the size budget while the app stays open. */
+export class RollingLogWriter {
+  private readonly logPath: string
+  private readonly maxBytes: number
+  private readonly keep: number
+  private bytes: number
+  private queue: Promise<void> = Promise.resolve()
+
+  constructor(logPath: string, maxBytes = MAX_LOG_BYTES, keep = KEPT_LOG_FILES) {
+    this.logPath = logPath
+    this.maxBytes = maxBytes
+    this.keep = keep
+    rotateLogFiles(logPath, maxBytes, keep)
+    this.bytes = existsSync(logPath) ? statSync(logPath).size : 0
+  }
+
+  write(line: string): void {
+    const content = `${line}\n`
+    const length = Buffer.byteLength(content)
+    this.queue = this.queue.then(async () => {
+      if (this.bytes > 0 && this.bytes + length > this.maxBytes) {
+        rotateLogFiles(this.logPath, 0, this.keep)
+        this.bytes = 0
+      }
+      await appendFile(this.logPath, content, { encoding: 'utf8', mode: 0o600 })
+      this.bytes += length
+    }).catch(error => {
+      console.warn(`dsh-desktop: writing harness log failed: ${error instanceof Error ? error.message : String(error)}`)
+    })
+  }
+
+  async close(): Promise<void> {
+    await this.queue
   }
 }
 
@@ -89,14 +127,14 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
 }
 
 /** Ask for a destination, write a local-only report, then offer to reveal it. */
-export async function exportDiagnosticReport(state: HarnessState | undefined): Promise<boolean> {
+export async function exportDiagnosticReport(state: HarnessState | undefined, locale: ShellLocale = 'en'): Promise<boolean> {
   const api = electron as unknown as typeof import('electron')
   const warning = await api.dialog.showMessageBox({
     type: 'info',
-    title: '导出诊断报告',
-    message: '报告只会保存到你选择的位置,不会自动上传。',
-    detail: '报告包含版本、系统信息和最近 256 KiB Harness 日志。常见密钥和用户主目录会自动遮罩,分享前仍建议自行检查内容。',
-    buttons: ['继续导出', '取消'],
+    title: shellText(locale, 'diagnostics.title'),
+    message: shellText(locale, 'diagnostics.message'),
+    detail: shellText(locale, 'diagnostics.detail'),
+    buttons: [shellText(locale, 'diagnostics.continue'), shellText(locale, 'common.cancel')],
     defaultId: 0,
     cancelId: 1,
   })
@@ -104,31 +142,43 @@ export async function exportDiagnosticReport(state: HarnessState | undefined): P
 
   const date = new Date().toISOString().slice(0, 10)
   const result = await api.dialog.showSaveDialog({
-    title: '保存 dsh-desktop 诊断报告',
+    title: shellText(locale, 'diagnostics.saveTitle'),
     defaultPath: join(api.app.getPath('downloads'), `dsh-desktop-diagnostics-${date}.txt`),
     filters: [{ name: 'Text report', extensions: ['txt'] }],
   })
   if (result.canceled || result.filePath === undefined) return false
 
-  const logPath = join(api.app.getPath('userData'), 'logs', 'harness.log')
-  const report = formatDiagnosticReport({
-    createdAt: new Date().toISOString(),
-    appVersion: api.app.getVersion(),
-    electronVersion: process.versions.electron ?? 'unknown',
-    chromiumVersion: process.versions.chrome ?? 'unknown',
-    nodeVersion: process.versions.node,
-    platform: process.platform,
-    platformRelease: release(),
-    arch: process.arch,
-    harnessState: state,
-    logTail: readLogTail(logPath),
-  })
-  writeFileSync(result.filePath, report, { mode: 0o600 })
+  try {
+    const logPath = join(api.app.getPath('userData'), 'logs', 'harness.log')
+    const report = formatDiagnosticReport({
+      createdAt: new Date().toISOString(),
+      appVersion: api.app.getVersion(),
+      electronVersion: process.versions.electron ?? 'unknown',
+      chromiumVersion: process.versions.chrome ?? 'unknown',
+      nodeVersion: process.versions.node,
+      platform: process.platform,
+      platformRelease: release(),
+      arch: process.arch,
+      harnessState: state,
+      logTail: readLogTail(logPath),
+    })
+    writeFileSync(result.filePath, report, { mode: 0o600 })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.warn(`dsh-desktop: diagnostic export failed: ${message}`)
+    await api.dialog.showMessageBox({
+      type: 'error',
+      message: shellText(locale, 'diagnostics.failed'),
+      detail: message,
+      buttons: [shellText(locale, 'common.ok')],
+    })
+    return false
+  }
   const done = await api.dialog.showMessageBox({
     type: 'info',
-    message: '诊断报告已保存',
+    message: shellText(locale, 'diagnostics.saved'),
     detail: basename(result.filePath),
-    buttons: ['在文件夹中显示', '完成'],
+    buttons: [shellText(locale, 'diagnostics.showFolder'), shellText(locale, 'diagnostics.done')],
     defaultId: 1,
     cancelId: 1,
   })

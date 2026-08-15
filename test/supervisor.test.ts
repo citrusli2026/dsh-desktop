@@ -49,5 +49,5 @@ test('supervisor rejects when readiness exceeds the injected timeout', async () 
 
 test('stop is safe before a child is started', async () => {
   const { supervisor } = await fixture(['-e', 'process.exit(0)'])
-  await supervisor.stop()
+  await Promise.all([supervisor.stop(), supervisor.stop()])
 })

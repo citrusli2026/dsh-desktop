@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { formatDiagnosticReport, readLogTail, redactDiagnosticsLog, rotateLogFiles } from '../src/main/diagnostics.ts'
+import { formatDiagnosticReport, readLogTail, redactDiagnosticsLog, RollingLogWriter, rotateLogFiles } from '../src/main/diagnostics.ts'
 
 test('redactDiagnosticsLog masks credentials and the home path', () => {
   const redacted = redactDiagnosticsLog('/Users/test/project\nAuthorization: Bearer abc.def\napi_key=secret', '/Users/test')
@@ -26,6 +26,17 @@ test('rotateLogFiles keeps a bounded numbered history', async () => {
   rotateLogFiles(path, 1, 2)
   assert.equal(await readFile(`${path}.1`, 'utf8'), 'current')
   assert.equal(await readFile(`${path}.2`, 'utf8'), 'previous')
+})
+
+test('RollingLogWriter rotates during a long-running process', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'dsh-rolling-log-'))
+  const path = join(dir, 'harness.log')
+  const writer = new RollingLogWriter(path, 8, 2)
+  writer.write('first')
+  writer.write('second')
+  await writer.close()
+  assert.equal(await readFile(`${path}.1`, 'utf8'), 'first\n')
+  assert.equal(await readFile(path, 'utf8'), 'second\n')
 })
 
 test('formatDiagnosticReport records versions and crash state without upload', () => {

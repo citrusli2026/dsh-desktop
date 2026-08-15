@@ -1,5 +1,6 @@
 /** Headless smoke assertions used by CI and local release verification. */
 import { app, type BrowserWindow, net } from 'electron'
+import { shellText, type ShellLocale } from './locale.ts'
 
 export const SMOKE_TEST = process.argv.includes('--smoke-test')
 export const SMOKE_TIMEOUT_MS = 150_000
@@ -28,12 +29,14 @@ export function armSmokeTimeout(): void {
 export async function verifySmokeFailureRecovery(
   window: BrowserWindow,
   getAllowedOrigin: () => string | undefined,
+  locale: ShellLocale,
 ): Promise<void> {
   const button = await window.webContents.executeJavaScript(
     "document.querySelector('button')?.textContent ?? ''",
   ).catch(() => '')
   console.error(`smoke: error-page button=${JSON.stringify(button)}`)
-  if (button !== '重试启动') {
+  const retryLabel = shellText(locale, 'page.retry')
+  if (button !== retryLabel) {
     quitGracefully(1)
     return
   }
@@ -47,8 +50,8 @@ export async function verifySmokeFailureRecovery(
       ).catch(() => '')
       if (recovered === '') await new Promise(resolve => setTimeout(resolve, 500))
     }
-    console.error(recovered === '重试启动' ? 'smoke: retry-failure recovery OK' : 'smoke: retry-failure left the error page stuck')
-    quitGracefully(recovered === '重试启动' ? 0 : 1)
+    console.error(recovered === retryLabel ? 'smoke: retry-failure recovery OK' : 'smoke: retry-failure left the error page stuck')
+    quitGracefully(recovered === retryLabel ? 0 : 1)
     return
   }
 

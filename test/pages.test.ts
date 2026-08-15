@@ -33,7 +33,8 @@ test('errorPageHtml retry script restores the button when the bridge is missing'
 test('loadingPageHtml and errorPageHtml render as data URLs', () => {
   assert.ok(loadingPageHtml().startsWith('data:text/html;charset=utf-8,'))
   assert.ok(errorPageHtml(6, 'tail').startsWith('data:text/html;charset=utf-8,'))
-  assert.ok(decodeURIComponent(errorPageHtml(6, 'tail')).includes('重试启动'))
+  assert.ok(decodeURIComponent(errorPageHtml(6, 'tail')).includes('Start again'))
+  assert.ok(decodeURIComponent(errorPageHtml(6, 'tail', 'zh')).includes('再次启动'))
 })
 
 test('built-in pages carry a restrictive CSP and the error page exposes local diagnostics', () => {
@@ -41,6 +42,6 @@ test('built-in pages carry a restrictive CSP and the error page exposes local di
   const error = decodeURIComponent(errorPageHtml(6, 'tail'))
   assert.match(loading, /Content-Security-Policy/)
   assert.match(loading, /default-src 'none'/)
-  assert.match(error, /导出诊断报告/)
+  assert.match(error, /Export Diagnostic Report/)
   assert.match(error, /dshDesktop\.exportDiagnostics/)
 })
