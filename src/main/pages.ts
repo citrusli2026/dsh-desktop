@@ -66,7 +66,7 @@ export function errorPageHtml(attempts: number, logTail: string): string {
         var hint = document.getElementById('hint');
         button.disabled = true;
         button.textContent = '正在启动…';
-        // A resolved `false` means the restart never reached readiness; the
+        // A resolved false means the restart never reached readiness; the
         // page must not stay stuck on "正在启动…" in that case.
         function restore() {
           button.disabled = false;
