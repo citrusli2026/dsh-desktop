@@ -360,8 +360,8 @@
   function applyLang() {
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
     document.title = lang === 'zh'
-      ? 'dsh-electron-shell — DeepSeek Harness 桌面壳 · 下载'
-      : 'dsh-electron-shell — DeepSeek Harness desktop shell · Download'
+      ? 'dsh-desktop — DeepSeek Harness 桌面壳 · 下载'
+      : 'dsh-desktop — DeepSeek Harness desktop shell · Download'
     $all('[data-i18n]').forEach(function (el) {
       var key = el.getAttribute('data-i18n')
       if (I18N[lang][key] !== undefined) el.innerHTML = I18N[lang][key]
