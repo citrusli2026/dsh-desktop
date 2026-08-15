@@ -1,6 +1,8 @@
-# dsh-electron-shell
+# dsh-desktop
 
 [中文](README.zh.md)
+
+> Naming: the app and its download artifacts are `dsh-desktop`; the GitHub repository keeps its original name `dsh-electron-shell`. 命名规则:应用与安装包叫 `dsh-desktop`;GitHub 仓库沿用原名 `dsh-electron-shell`。
 
 An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`): download, install, and use — functionally identical to `npx @deepseek-ai/dsh web`. The shell only provides the window, process supervision, tray, and updates; it never changes agent behavior. MIT-licensed.
 
@@ -26,9 +28,9 @@ Get the installer for your platform from [GitHub Releases](https://github.com/ci
 
 | Platform | Asset |
 |---|---|
-| macOS (Apple Silicon only, unsigned) | `dsh-electron-shell-<version>-arm64-mac.dmg` or `-arm64-mac.zip` |
-| Windows | `dsh-electron-shell-setup-<version>.exe` (NSIS) |
-| Linux | `dsh-electron-shell-<version>-x86_64.AppImage` or `dsh-electron-shell-<version>-amd64.deb` |
+| macOS (Apple Silicon only, unsigned) | `dsh-desktop-<version>-arm64-mac.dmg` or `-arm64-mac.zip` |
+| Windows | `dsh-desktop-setup-<version>.exe` (NSIS) |
+| Linux | `dsh-desktop-<version>-x86_64.AppImage` or `dsh-desktop-<version>-amd64.deb` |
 
 - macOS: right-click → Open on first launch (unsigned, decision 0004);
 - Windows SmartScreen: choose "More info" → "Run anyway" (unsigned).

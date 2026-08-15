@@ -1,5 +1,5 @@
 /**
- * dsh-electron-shell main process: a single-instance window hosting the bundled
+ * dsh-desktop main process: a single-instance window hosting the bundled
  * DeepSeek Harness web runtime, following the supervision protocol described
  * in docs/decisions/0006-process-supervision-protocol.md.
  * @module main/index
@@ -90,7 +90,7 @@ function saveWindowState(window: BrowserWindow): void {
     const state: WindowState = { ...bounds, isMaximized: window.isMaximized() }
     writeFileSync(windowStatePath(), `${JSON.stringify(state)}\n`)
   } catch (error) {
-    console.warn(`dsh-electron-shell: saving window state failed: ${error instanceof Error ? error.message : String(error)}`)
+    console.warn(`dsh-desktop: saving window state failed: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
@@ -114,9 +114,9 @@ function createWindow(): BrowserWindow {
     minWidth: MIN_WINDOW_WIDTH,
     minHeight: MIN_WINDOW_HEIGHT,
     show: false,
-    // Fallback only: the shell pages and the harness UI set their own
-    // <title> (both "DeepSeek Harness") once loaded.
-    title: 'DeepSeek Harness',
+    // Fallback only: the shell pages set their own <title> once loaded;
+    // after boot the harness UI's own document.title takes over.
+    title: 'dsh-desktop',
     webPreferences: {
       contextIsolation: true,
       sandbox: true,
@@ -165,7 +165,7 @@ function statusLabel(): string {
 /** Tray context menu: status, lifecycle actions, diagnostics, update, quit. */
 function buildTrayMenu(): Menu {
   return Menu.buildFromTemplate([
-    { label: '打开 DSH Electron Shell', click: showWindow },
+    { label: '打开 dsh-desktop', click: showWindow },
     { type: 'separator' },
     { label: statusLabel(), enabled: false },
     { label: '重启 Harness', click: () => { void restartHarness() } },
@@ -186,7 +186,7 @@ function createTray(): void {
   const image = nativeImage.createFromPath(join(app.getAppPath(), 'build', 'trayTemplate.png'))
   if (process.platform === 'darwin') image.setTemplateImage(true)
   tray = new Tray(image)
-  tray.setToolTip('DSH Electron Shell')
+  tray.setToolTip('dsh-desktop')
   tray.setContextMenu(buildTrayMenu())
   if (process.platform !== 'darwin') tray.on('click', showWindow)
 }
@@ -239,7 +239,7 @@ ipcMain.handle('harness:retry', async (event) => {
 async function checkMacUpdate(manual: boolean): Promise<void> {
   try {
     const response = await net.fetch(RELEASES_API_URL, {
-      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'dsh-electron-shell' },
+      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'dsh-desktop' },
     })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const payload: unknown = await response.json()
@@ -267,7 +267,7 @@ async function checkMacUpdate(manual: boolean): Promise<void> {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    console.warn(`dsh-electron-shell: macOS update check failed: ${message}`)
+    console.warn(`dsh-desktop: macOS update check failed: ${message}`)
     if (manual) {
       await dialog.showMessageBox({ type: 'warning', message: '检查更新失败', detail: message, buttons: ['好'] })
     }
@@ -317,7 +317,7 @@ async function boot(): Promise<string> {
   }
 
   if (DEV_WEB_URL !== undefined) {
-    console.log(`dsh-electron-shell: dev mode, loading ${DEV_WEB_URL}`)
+    console.log(`dsh-desktop: dev mode, loading ${DEV_WEB_URL}`)
     allowedOrigin = new URL(DEV_WEB_URL).origin
     await mainWindow.loadURL(DEV_WEB_URL)
     return DEV_WEB_URL
@@ -328,11 +328,11 @@ async function boot(): Promise<string> {
     const url = await supervisor.start()
     allowedOrigin = new URL(url).origin
     await mainWindow.loadURL(url)
-    console.log(`dsh-electron-shell: harness ready at ${url}`)
+    console.log(`dsh-desktop: harness ready at ${url}`)
     return url
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    console.error(`dsh-electron-shell: ${message}`)
+    console.error(`dsh-desktop: ${message}`)
     await mainWindow.loadURL(errorPageHtml(0, message))
     throw error
   }
@@ -379,10 +379,10 @@ if (app.isPackaged && !SMOKE_TEST && process.platform !== 'darwin') {
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
   autoUpdater.on('update-downloaded', () => {
-    console.log('dsh-electron-shell: update downloaded, will install on quit')
+    console.log('dsh-desktop: update downloaded, will install on quit')
   })
   autoUpdater.on('error', (error) => {
-    console.warn(`dsh-electron-shell: update check failed: ${error.message}`)
+    console.warn(`dsh-desktop: update check failed: ${error.message}`)
   })
   void autoUpdater.checkForUpdatesAndNotify().catch(() => {})
 }
@@ -419,7 +419,7 @@ if (!gotLock) {
         await smokeVerify(url)
       }
     } catch (error) {
-      console.error('dsh-electron-shell: boot failed:', error instanceof Error ? error.message : error)
+      console.error('dsh-desktop: boot failed:', error instanceof Error ? error.message : error)
       if (!SMOKE_TEST) {
         // Boot can fail before any window exists (verifyHarness rejects on a
         // missing closure, before createWindow runs). Never leave a

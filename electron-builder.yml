@@ -1,6 +1,6 @@
 appId: io.github.citrusli2026.dsh-electron-shell
-productName: DSH Electron Shell
-copyright: Copyright © 2026 dsh-electron-shell contributors (MIT)
+productName: dsh-desktop
+copyright: Copyright © 2026 dsh-desktop contributors (MIT)
 
 directories:
   output: dist

@@ -79,7 +79,7 @@ jobs:
           REPO="${{ github.repository }}"
           gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || \
             gh release create "$TAG" --prerelease --repo "$REPO" \
-              --title "dsh-electron-shell $TAG" --generate-notes
+              --title "dsh-desktop $TAG" --generate-notes
           # Wipe stale assets so renamed artifacts never linger side by side.
           for A in $(gh release view "$TAG" --repo "$REPO" --json assets --jq '.assets[].name'); do
             gh release delete-asset "$TAG" "$A" -y --repo "$REPO"

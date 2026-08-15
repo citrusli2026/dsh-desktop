@@ -18,3 +18,4 @@ This directory records the architecture decisions made while building dsh-electr
 | 0010 | macOS check-only update prompt | [EN](0010-macos-check-only-update.md) · [中文](0010-macos-check-only-update.zh.md) | Accepted / 已接受 |
 | 0011 | Shell UX polish: retry recovery, persisted window state, tray surface / 壳体验打磨:重试恢复、窗口状态持久化、托盘面 | [EN](0011-shell-ux-polish.md) · [中文](0011-shell-ux-polish.zh.md) | Accepted / 已接受 |
 | 0012 | Isolate the desktop data home by default / 桌面数据目录默认独立 | [EN](0012-isolated-dsh-home.md) · [中文](0012-isolated-dsh-home.zh.md) | Accepted / 已接受 |
+| 0013 | Product naming: app/artifacts are dsh-desktop, repo keeps dsh-electron-shell / 产品命名:应用与安装包用 dsh-desktop,仓库保持 dsh-electron-shell | [EN](0013-product-naming.md) · [中文](0013-product-naming.zh.md) | Accepted / 已接受 |

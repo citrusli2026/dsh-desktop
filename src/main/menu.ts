@@ -40,8 +40,8 @@ function iconImage(): Electron.NativeImage {
 export async function showAboutDialog(): Promise<void> {
   const { response } = await dialog.showMessageBox({
     type: 'info',
-    title: '关于 DSH Electron Shell',
-    message: 'DSH Electron Shell',
+    title: '关于 dsh-desktop',
+    message: 'dsh-desktop',
     detail: aboutDetail(),
     icon: iconImage(),
     buttons: ['打开项目主页', '好'],
@@ -56,7 +56,7 @@ export function configureAboutPanel(): void {
   if (process.platform !== 'darwin') return
   const composite = splitCompositeVersion(app.getVersion())
   app.setAboutPanelOptions({
-    applicationName: 'DSH Electron Shell',
+    applicationName: 'dsh-desktop',
     applicationVersion: app.getVersion(),
     version: composite === undefined ? `Electron ${process.versions.electron}` : `dsh ${composite.dsh} · Electron ${process.versions.electron}`,
     copyright: 'MIT · 非官方社区打包,与 DeepSeek 无关联',
@@ -78,7 +78,7 @@ export function installAppMenu(): void {
     template.push({
       label: app.name,
       submenu: [
-        { role: 'about', label: '关于 DSH Electron Shell' },
+        { role: 'about', label: '关于 dsh-desktop' },
         { type: 'separator' },
         { role: 'services', label: '服务' },
         { type: 'separator' },
@@ -141,7 +141,7 @@ export function installAppMenu(): void {
   if (!isMac) {
     helpSubmenu.push(
       { type: 'separator' },
-      { label: '关于 DSH Electron Shell', click: () => { void showAboutDialog() } },
+      { label: '关于 dsh-desktop', click: () => { void showAboutDialog() } },
     )
   }
   template.push({ label: '帮助', submenu: helpSubmenu })

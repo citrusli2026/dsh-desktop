@@ -37,7 +37,7 @@ const STYLE = `
 
 /** The startup placeholder page. */
 export function loadingPageHtml(): string {
-  return asDataUrl(`<!doctype html><html><head><meta charset="utf-8"><title>DeepSeek Harness</title>
+  return asDataUrl(`<!doctype html><html><head><meta charset="utf-8"><title>dsh-desktop</title>
     <style>${STYLE}</style></head><body><div class="card">
     <div class="spinner"></div>
     <h1>正在启动 DeepSeek Harness</h1>
@@ -52,7 +52,7 @@ export function loadingPageHtml(): string {
  * @param logTail - the last harness output lines.
  */
 export function errorPageHtml(attempts: number, logTail: string): string {
-  return asDataUrl(`<!doctype html><html><head><meta charset="utf-8"><title>DeepSeek Harness — 启动失败</title>
+  return asDataUrl(`<!doctype html><html><head><meta charset="utf-8"><title>dsh-desktop — 启动失败</title>
     <style>${STYLE}</style></head><body><div class="card">
     <h1>DeepSeek Harness 启动失败</h1>
     <p>harness 进程在短时间内崩溃了 ${attempts} 次,已停止自动重试。</p>

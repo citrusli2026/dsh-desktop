@@ -1,6 +1,8 @@
-# dsh-electron-shell
+# dsh-desktop
 
 [English](README.md)
+
+> 命名规则:应用与安装包叫 `dsh-desktop`;GitHub 仓库沿用原名 `dsh-electron-shell`。
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)(`dsh`)的 Electron 桌面壳:下载安装即用,功能与
 `npx @deepseek-ai/dsh web` 完全一致——壳只提供窗口、进程监督、托盘与自动更新,
@@ -36,9 +38,9 @@
 
 | 平台 | 安装包 |
 |---|---|
-| macOS(仅 Apple Silicon,未签名) | `dsh-electron-shell-<版本>-arm64-mac.dmg` 或 `-arm64-mac.zip` |
-| Windows | `dsh-electron-shell-setup-<版本>.exe`(NSIS,可选择安装目录) |
-| Linux | `dsh-electron-shell-<版本>-x86_64.AppImage`(免安装)或 `dsh-electron-shell-<版本>-amd64.deb` |
+| macOS(仅 Apple Silicon,未签名) | `dsh-desktop-<版本>-arm64-mac.dmg` 或 `-arm64-mac.zip` |
+| Windows | `dsh-desktop-setup-<版本>.exe`(NSIS,可选择安装目录) |
+| Linux | `dsh-desktop-<版本>-x86_64.AppImage`(免安装)或 `dsh-desktop-<版本>-amd64.deb` |
 
 - macOS:首次打开请右键 → 打开(未签名,决策记录 0004);
 - Windows SmartScreen:点「更多信息」→「仍要运行」(未签名)。
