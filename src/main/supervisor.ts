@@ -9,7 +9,7 @@ import { createWriteStream, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
-import { app } from 'electron'
+import * as electron from 'electron'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, nodeBin } from './paths.ts'
 import { decideRestart, exitsInWindow, parseReadyUrl, RESTART_BASE_DELAY_MS } from './restart-policy.ts'
@@ -34,6 +34,20 @@ export interface SupervisorEvents {
   onState(state: HarnessState): void
 }
 
+/** Testable process and filesystem overrides; production uses bundled defaults. */
+export interface SupervisorOptions {
+  command?: string
+  args?: readonly string[]
+  logDir?: string
+  env?: NodeJS.ProcessEnv
+  readyTimeoutMs?: number
+}
+
+function defaultLogDir(): string {
+  if (electron.app === undefined) throw new Error('Electron app is unavailable; provide logDir')
+  return join(electron.app.getPath('userData'), 'logs')
+}
+
 /**
  * Owns one harness child process across restarts. `start()` resolves with the
  * ready URL of the first run that reaches readiness; afterwards, unexpected
@@ -42,6 +56,7 @@ export interface SupervisorEvents {
  * current URL or show the error page.
  */
 export class HarnessSupervisor {
+  private readonly events: SupervisorEvents
   private child: ChildProcess | undefined
   private stopping = false
   private resolveReady: ((url: string) => void) | undefined
@@ -52,9 +67,22 @@ export class HarnessSupervisor {
   private exitTimes: number[] = []
   private readonly logLines: string[] = []
   private readonly logStream: NodeJS.WritableStream | undefined
+  private readonly command: string
+  private readonly args: readonly string[]
+  private readonly env: NodeJS.ProcessEnv
+  private readonly readyTimeoutMs: number
 
-  constructor(private readonly events: SupervisorEvents) {
-    const logDir = join(app.getPath('userData'), 'logs')
+  constructor(
+    events: SupervisorEvents,
+    options: SupervisorOptions = {},
+  ) {
+    this.events = events
+    const logDir = options.logDir ?? defaultLogDir()
+    this.command = options.command ?? nodeBin()
+    this.args = options.args ?? [dshBin(), '--profile', 'web', '--port', '0']
+    const baseEnv = options.env ?? process.env
+    this.env = { ...baseEnv, DSH_HOME: resolveDshHome(baseEnv, homedir()) }
+    this.readyTimeoutMs = options.readyTimeoutMs ?? READY_TIMEOUT_MS
     mkdirSync(logDir, { recursive: true })
     this.logStream = createWriteStream(join(logDir, 'harness.log'), { flags: 'a' })
   }
@@ -73,11 +101,11 @@ export class HarnessSupervisor {
   }
 
   private spawnOnce(): ChildProcess {
-    const child = spawn(nodeBin(), [dshBin(), '--profile', 'web', '--port', '0'], {
+    const child = spawn(this.command, [...this.args], {
       // Isolate the desktop data home by default (decision 0012): the harness
       // uses ~/.dsh-desktop unless the user sets DSH_HOME explicitly (e.g.
       // DSH_HOME=~/.dsh to share with the CLI again).
-      env: { ...process.env, DSH_HOME: resolveDshHome(process.env, homedir()) },
+      env: this.env,
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     this.child = child
@@ -157,8 +185,8 @@ export class HarnessSupervisor {
       this.rejectReady = reject
       this.readyTimer = setTimeout(() => {
         this.clearStartAttempt()
-        reject(new Error(`harness not ready within ${READY_TIMEOUT_MS} ms`))
-      }, READY_TIMEOUT_MS)
+        reject(new Error(`harness not ready within ${this.readyTimeoutMs} ms`))
+      }, this.readyTimeoutMs)
       this.spawnOnce()
     })
   }

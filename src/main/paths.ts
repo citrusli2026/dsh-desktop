@@ -2,7 +2,7 @@
  * Packaged and dev resource locations for the bundled harness runtime.
  * @module main/paths
  */
-import { app } from 'electron'
+import * as electron from 'electron'
 import { join } from 'node:path'
 
 /**
@@ -12,9 +12,10 @@ import { join } from 'node:path'
  * @returns the absolute harness root directory.
  */
 export function harnessRoot(): string {
-  return app.isPackaged
+  if (electron.app === undefined) throw new Error('Electron app is unavailable; provide a harness root')
+  return electron.app.isPackaged
     ? join(process.resourcesPath, 'harness')
-    : join(app.getAppPath(), 'resources', 'harness')
+    : join(electron.app.getAppPath(), 'resources', 'harness')
 }
 
 /**
@@ -22,8 +23,8 @@ export function harnessRoot(): string {
  * @param root - harness root, defaulting to {@link harnessRoot}.
  * @returns the platform Node binary path.
  */
-export function nodeBin(root: string = harnessRoot()): string {
-  return join(root, 'node', 'bin', process.platform === 'win32' ? 'node.exe' : 'node')
+export function nodeBin(root: string = harnessRoot(), platform: NodeJS.Platform = process.platform): string {
+  return join(root, 'node', 'bin', platform === 'win32' ? 'node.exe' : 'node')
 }
 
 /**
