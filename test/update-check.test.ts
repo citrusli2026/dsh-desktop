@@ -1,0 +1,40 @@
+/**
+ * Unit tests for the pure semver comparison behind the macOS check-only
+ * update prompt (src/main/update-check.ts). The composite version
+ * `<dsh>.shell.<rev>` (docs/decisions/0009) is semver: the shell revision is
+ * a prerelease identifier, so `rc.6.shell.4` outranks `rc.6.shell.3`.
+ * Run with `pnpm run test` (node --test; Node >= 22.19 strips the types natively).
+ */
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { compareVersions, isNewerVersion } from '../src/main/update-check.ts'
+
+test('isNewerVersion detects a newer shell revision', () => {
+  assert.equal(isNewerVersion('0.1.0-rc.6.shell.3', '0.1.0-rc.6.shell.4'), true)
+  assert.equal(isNewerVersion('0.1.0-rc.6.shell.3', '0.1.0-rc.6.shell.10'), true)
+})
+
+test('isNewerVersion detects a newer bundled dsh version', () => {
+  assert.equal(isNewerVersion('0.1.0-rc.6.shell.3', '0.1.0-rc.7'), true)
+  assert.equal(isNewerVersion('0.1.0-rc.6.shell.3', '0.2.0'), true)
+})
+
+test('isNewerVersion rejects equal, older, and unparseable candidates', () => {
+  assert.equal(isNewerVersion('0.1.0-rc.6.shell.3', '0.1.0-rc.6.shell.3'), false)
+  assert.equal(isNewerVersion('0.1.0-rc.6.shell.3', '0.1.0-rc.6.shell.2'), false)
+  assert.equal(isNewerVersion('0.1.0-rc.6.shell.3', 'latest'), false)
+  assert.equal(isNewerVersion('0.1.0-rc.6.shell.3', ''), false)
+})
+
+test('a release outranks its prereleases', () => {
+  assert.equal(isNewerVersion('0.1.0-rc.6.shell.9', '0.1.0'), true)
+  assert.equal(isNewerVersion('0.1.0', '0.1.0-rc.7'), false)
+})
+
+test('compareVersions orders prerelease identifiers per semver', () => {
+  assert.ok(compareVersions('0.1.0-rc.6.shell.3', '0.1.0-rc.6.shell.3') === 0)
+  assert.ok(compareVersions('0.1.0-rc.10', '0.1.0-rc.9')! > 0, 'numeric identifiers compare numerically')
+  assert.ok(compareVersions('0.1.0-alpha', '0.1.0-alpha.1')! < 0, 'shorter prerelease set ranks lower')
+  assert.ok(compareVersions('0.1.0-1', '0.1.0-alpha')! < 0, 'numeric identifiers rank below alphanumeric')
+  assert.equal(compareVersions('nonsense', '0.1.0'), undefined)
+})

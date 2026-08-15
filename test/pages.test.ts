@@ -1,0 +1,37 @@
+/**
+ * Unit tests for the shell pages (src/main/pages.ts): HTML escaping of the
+ * log tail and the retry button's recovery contract (the P0 stuck-button
+ * regression: a resolved `false` from the retry bridge must re-enable the
+ * button, not leave the page stuck on "正在启动…").
+ * Run with `pnpm run test` (node --test; Node >= 22.19 strips the types natively).
+ */
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { errorPageHtml, loadingPageHtml } from '../src/main/pages.ts'
+
+test('errorPageHtml escapes the log tail before embedding it', () => {
+  const html = errorPageHtml(6, '<script>alert("x")</script> & "quoted"')
+  assert.ok(!html.includes('<script>alert'), 'raw script tag must not survive')
+  assert.ok(html.includes(encodeURIComponent('&lt;script&gt;')) || html.includes('%3Cscript%3E'),
+    'angle brackets must be escaped (page is a data: URL, so compare on the encoded form too)')
+})
+
+test('errorPageHtml retry script restores the button on a resolved false', () => {
+  const html = decodeURIComponent(errorPageHtml(6, 'tail'))
+  assert.ok(html.includes('.then('), 'the retry result promise must be chained')
+  assert.ok(html.includes('if (!ok) restore()'), 'a resolved false must trigger recovery')
+  assert.ok(html.includes('.catch(restore)'), 'a rejected promise must trigger recovery')
+})
+
+test('errorPageHtml retry script restores the button when the bridge is missing', () => {
+  const html = decodeURIComponent(errorPageHtml(6, 'tail'))
+  assert.ok(html.includes('bridge ? bridge() : undefined'))
+  // Non-promise result (missing preload bridge) also restores.
+  assert.ok(html.includes('restore();'))
+})
+
+test('loadingPageHtml and errorPageHtml render as data URLs', () => {
+  assert.ok(loadingPageHtml().startsWith('data:text/html;charset=utf-8,'))
+  assert.ok(errorPageHtml(6, 'tail').startsWith('data:text/html;charset=utf-8,'))
+  assert.ok(decodeURIComponent(errorPageHtml(6, 'tail')).includes('重试启动'))
+})

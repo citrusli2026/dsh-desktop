@@ -15,3 +15,4 @@ This directory records the architecture decisions made while building dsh-electr
 | 0007 | CJS single-file main bundle | [EN](0007-cjs-main-bundle.md) · [中文](0007-cjs-main-bundle.zh.md) | Accepted / 已接受 |
 | 0008 | Size reduction and download channels for Chinese networks | [EN](0008-size-and-cn-download-channels.md) · [中文](0008-size-and-cn-download-channels.zh.md) | Accepted / 已接受 |
 | 0009 | Composite version (dsh + shell) and upstream watch automation | [EN](0009-composite-version-dsh-watch.md) · [中文](0009-composite-version-dsh-watch.zh.md) | Accepted / 已接受 |
+| 0010 | macOS check-only update prompt | [EN](0010-macos-check-only-update.md) · [中文](0010-macos-check-only-update.zh.md) | Accepted / 已接受 |

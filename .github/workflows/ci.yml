@@ -36,3 +36,11 @@ jobs:
         env:
           ELECTRON_DISABLE_SANDBOX: "1"
           DSH_DESKTOP_TEST_FAIL_HARNESS: "1"
+      - name: Smoke test — forced retry failure recovers the button
+        # The retry IPC is forced to resolve false: the error page must
+        # re-enable the button instead of sticking on "正在启动…".
+        run: xvfb-run -a pnpm run smoke
+        env:
+          ELECTRON_DISABLE_SANDBOX: "1"
+          DSH_DESKTOP_TEST_FAIL_HARNESS: "1"
+          DSH_DESKTOP_TEST_RETRY_FAIL: "1"
