@@ -5,87 +5,84 @@
 > contract, and next iteration boundary. Website and mirror operations live in
 > the root `HANDOFF.md`.
 
-最后更新:2026-08-15 · 已发布版本 `0.1.0-rc.6.shell.8`
+最后更新:2026-08-15 · 已发布版本 `0.1.0-rc.6.shell.9`
 
 ## 1. 当前结果
 
-`dsh-desktop` 自带 Node 22 运行时与完整 `@deepseek-ai/dsh` 依赖闭包,提供
-窗口、进程监督、托盘、菜单和更新能力,不改变 agent 行为。应用与安装包使用
-`dsh-desktop` 名称;GitHub/GitCode 仓库 URL、appId 与历史基础设施继续使用
-`dsh-electron-shell`(ADR 0013)。
+`dsh-desktop` 自带 Node 22 与完整 `@deepseek-ai/dsh` 依赖闭包,提供原生窗口、
+托盘、菜单、单实例、进程监督、更新与本地诊断,不改变 Agent 行为。默认使用
+`~/.dsh-desktop`,与 CLI 数据隔离;渲染器保持沙箱、上下文隔离、关闭 Node
+集成、限制导航并默认拒绝额外 Web 权限。
 
-本轮 shell.8 已完成并发布:
+shell.9 以三轮迭代完成:
 
-- 修复 macOS 更新检查:不再调用会排除 prerelease 的 `/releases/latest`,改为
-  读取 release 列表、过滤草稿并选择最高可解析版本;全 prerelease 仓库不再 404。
-- 收紧渲染层权限:Electron 权限检查与请求默认拒绝,未来能力必须显式加白名单
-  (ADR 0014)。
-- 官网增加安全边界说明和 FAQ,下载数据同步到 shell.8,镜像不可用自动回落。
-- CI 新增官网完整性检查;核心 Release、官网刷新、第三方镜像解耦。
+1. **结构与测试基线**:`index.ts` 从 485 行拆到约 150 行;窗口、托盘、更新、
+   smoke 分模块。`HarnessSupervisor` 支持 command/args/logDir/env/timeout 注入,
+   用真实 fixture 子进程测试就绪、提前退出、超时与 stop。
+2. **故障恢复与产品叙事**:`harness.log` 超过 5 MiB 轮转并保留三代;帮助菜单、
+   托盘、错误页可导出最多 256 KiB 的本地诊断报告,遮罩常见凭据和主目录,
+   不自动上传(ADR 0015)。官网明确区分壳新增能力与未改变的 Harness 行为。
+3. **设计与持续交付**:加载/错误页与官网统一近黑 + 信号绿视觉;官网能力改为
+   可扫读矩阵并补无障碍/窄屏;Release 增加版本与 11 资产/updater 元数据门禁。
 
 ## 2. 架构速览
 
 ```text
-src/main/index.ts           主进程装配、窗口/托盘/IPC/更新/生命周期
+src/main/index.ts           Electron 生命周期与模块装配
+src/main/window.ts          窗口、状态持久化、导航守卫、hide-on-close
+src/main/tray.ts            托盘状态与生命周期入口
+src/main/update-prompt.ts   跨平台更新与 macOS check-only 提示
+src/main/smoke.ts           CI 冒烟断言与退出约定
 src/main/supervisor.ts      Harness 子进程生命周期与退避重启
+src/main/diagnostics.ts     日志轮转、遮罩、报告格式与导出
 src/main/restart-policy.ts  就绪协议、退避与重启预算纯函数
 src/main/window-state.ts    窗口几何校验纯函数
-src/main/update-check.ts    复合版本比较 + release 列表选择
 src/main/permissions.ts     Electron 会话权限默认拒绝
-src/main/dsh-home.ts        独立 DSH_HOME 解析
-src/main/menu.ts            应用菜单与 About
-src/main/pages.ts           加载页与错误页
-src/main/paths.ts           开发态/打包态资源路径
-src/preload/index.ts        唯一桥:harness:retry
+src/main/menu.ts            应用菜单、About、诊断入口
+src/main/pages.ts           有 CSP 的加载页与错误恢复页
+src/preload/index.ts        仅暴露 retry 与诊断导出两项窄桥
 ```
 
 ## 3. 当前验证契约
 
 每次主分支 CI 执行:
 
-1. typecheck;
-2. 26 个 `node:test` 单测;
-3. `site:check`(release 数据、三平台资产、双语键、静态资源、tab 目标);
+1. TypeScript typecheck;
+2. 38 个 `node:test` 单测;
+3. `site:check`(release 数据、三平台安装包、双语键与静态资源);
 4. 主进程/预加载构建;
 5. Harness 闭包与内置 Node bootstrap;
 6. 三条 xvfb 冒烟:正常启动、错误页重试成功、强制重试失败后按钮恢复。
 
-本轮发布前本地也执行了同样的三条冒烟链路。Release run
-`31868875099` 三平台构建和 11 个资产发布成功。
+tag Release 在上述基础上再执行质量门禁,并强制:
 
-## 4. 发布与数据流
+- tag 等于 `v${package.version}`;
+- macOS / Windows / Linux 11 个预期制品齐全;
+- `latest.yml`、`latest-mac.yml`、`latest-linux.yml` 引用本次版本安装包。
 
-```text
-main push → CI + Vercel
-tag push  → Release(构建 + GitHub Release)
-             ├─ Site Data Refresh → main 的 release.json → Vercel
-             └─ Release Mirrors → R2/GitCode(可失败、不中断主发布)
-```
+shell.9:CI run `31870759765`;Release run `31870835413`;11 个资产发布成功。
 
-版本只通过 `node scripts/version.mjs` 修改。下次发版先 bump,推 main 等 CI
-全绿,再创建 tag。GitCode 当前不能保证自动同步代码,还需显式快进其 `main`
-并推送同名 tag;镜像资产失败不影响 GitHub 主渠道。
+## 4. 后续最小迭代
 
-## 5. 下一轮:纯重构 + 测试补强
+下一轮优先保持小步、可验证,不要再次把职责塞回 `index.ts`:
 
-下一轮应保持**不改变外部行为、不发版**的边界,独立 PR 完成:
+1. **壳文案 i18n**:按 `app.getLocale()` 为菜单、托盘、内置页和对话框提供中英
+   文案,IPC 名和 smoke 约定保持不变。
+2. **诊断体验补强**:报告问题前可复制/预览诊断摘要;继续扩充遮罩测试,但不要
+   引入自动上传或收集完整会话目录。
+3. **平台收尾**:评估 Linux deb 更新提示、Windows 更温和的进程树退出;
+   macOS 签名/公证仍是启用原地更新的前置条件。
+4. **发布可复现性**:为发布资产增加 checksum 清单与验证,再考虑 provenance/
+   SBOM;保持镜像与核心发布解耦。
+5. **官网证据层**:加入短 changelog/决策记录入口,让版本能力和限制可直接追溯,
+   但不要增加重型前端框架。
 
-1. 把 `index.ts` 按职责拆为 `window.ts`、`tray.ts`、`update-prompt.ts`、
-   `smoke.ts`,让入口只保留装配与生命周期编排;
-2. 对 `HarnessSupervisor` 做默认行为等价的构造注入(command / args /
-   logDir / env / readyTimeoutMs),用临时 fixture 子进程补齐核心生命周期测试;
-3. 增加 `paths` 与 `menu` 中纯逻辑测试;
-4. 保持 IPC 名、三个 smoke 环境变量、退出码、before-quit 顺序、单实例和
-   hide-on-close 行为不变;
-5. typecheck、全量单测、build 与三条 smoke 全绿后再合并,不打新 tag。
+参考规划 `docs/plans/next-iteration-refactor-tests.md` 的重构项已在 shell.9
+完成;该文件可保留为历史输入,不应再按“未执行”状态重复实施。
 
-这轮完成后再考虑产品项:日志轮转、诊断导出、Linux deb 更新提示、Windows
-更温和的进程树退出、macOS 签名/公证与壳文案 i18n。不要把这些功能混入
-重构 PR。
+## 5. 已知限制
 
-## 6. 已知限制
-
-- `harness.log` 尚无轮转上限;
 - macOS 未签名/公证,只能检查更新并引导下载;
-- GitCode 从 GitHub runner 上传约 160–220 MB 资产极慢,当前为尽力而为渠道;
-- 主进程入口仍偏大,下一轮按上一节拆分,不要边拆边改变用户行为。
+- 诊断遮罩为尽力而为,界面已要求用户分享前自行检查;
+- GitCode 从 GitHub runner 上传约 160–220 MB 资产仍慢,只作降级渠道;
+- shell 界面当前以中文为主,下一轮再做受控 i18n,避免与本轮结构改动混杂。
