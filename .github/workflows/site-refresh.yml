@@ -1,0 +1,79 @@
+name: Site Data Refresh
+
+# 官网(site/)的下载数据自动化:
+#   release 发布/编辑 → 立即同步;每日两次兜底(北京 10:17 / 22:17);支持手动触发。
+# 同步产生提交 → push 到 main → Vercel Git 集成自动重新部署,全程无人值守。
+# 参考: llmcompare 的 daily-refresh 管线。
+
+on:
+  release:
+    types: [published, edited]
+  schedule:
+    - cron: '17 2,14 * * *'  # UTC 02:17/14:17 = 北京 10:17/22:17,避开整点半点
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Regenerate site/data/release.json
+        id: gen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "dsh-shell-bot"
+          git config user.email "bot@users.noreply.github.com"
+          node scripts/gen-site-data.mjs
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet -- site/data/release.json; then
+            echo "no data change; nothing to commit"
+            exit 0
+          fi
+          TAG=$(node -p "require('./site/data/release.json').release.tag")
+          git add site/data/release.json
+          git commit -m "site: sync release data ${TAG}"
+          git push
+          echo "pushed site data update for ${TAG}"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 🌐 Site Data Refresh" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Time:** $(date -u)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Status:** ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Result:** $(cat site/data/release.json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);console.log(j.release.tag+' / '+j.release.assets.length+' assets')})" 2>/dev/null || echo n/a)" >> "$GITHUB_STEP_SUMMARY"
+
+      # 失败时开 issue 告警(按标题去重,已存在则评论追加)
+      - name: Create issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="🚨 官网数据同步失败 $(date -u +%Y-%m-%d)"
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          ISSUE_NUMBER=$(gh issue list --state open --search "$TITLE" --json number,title \
+            --jq '.[] | select(.title == "'"$TITLE"'") | .number' | head -n 1)
+          if [ -n "$ISSUE_NUMBER" ]; then
+            gh issue comment "$ISSUE_NUMBER" --body "再次失败,请查看 [Actions 日志]($RUN_URL)。" || true
+          else
+            gh issue create --title "$TITLE" \
+              --body "官网 site/data/release.json 同步失败,请查看 [Actions 日志]($RUN_URL)。" \
+              --label "bug" || true
+          fi
