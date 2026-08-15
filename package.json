@@ -1,6 +1,6 @@
 {
   "name": "dsh-electron-shell",
-  "version": "0.1.0-rc.6.shell.3",
+  "version": "0.1.0-rc.6.shell.4",
   "description": "Unofficial DeepSeek Harness Electron desktop shell: download and use; identical to `dsh web`",
   "author": "dsh-electron-shell contributors <citrusli@126.com>",
   "license": "MIT",
