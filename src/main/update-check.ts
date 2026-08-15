@@ -62,3 +62,15 @@ export function isNewerVersion(current: string, candidate: string): boolean {
   const order = compareVersions(candidate, current)
   return order !== undefined && order > 0
 }
+
+/**
+ * Split the composite `<dsh version>.shell.<rev>` version
+ * (docs/decisions/0009) for display in the About surface.
+ * @returns the bundled dsh version and shell revision, or undefined when the
+ *   version is not composite (e.g. a plain dev version).
+ */
+export function splitCompositeVersion(version: string): { dsh: string; shellRev: number } | undefined {
+  const match = /^(.+)\.shell\.(\d+)$/.exec(version)
+  if (match === null || match[1] === undefined || match[2] === undefined) return undefined
+  return { dsh: match[1], shellRev: Number(match[2]) }
+}

@@ -13,9 +13,10 @@ electronDist: node_modules/electron/dist
 files:
   - lib/**
   - package.json
-  # Tray template images loaded from the asar at runtime.
+  # Tray template images and the About-panel icon loaded from the asar.
   - build/trayTemplate.png
   - build/trayTemplate@2x.png
+  - build/icon.png
 
 # The bundled harness (node runtime + @deepseek-ai/dsh closure) lives outside
 # the asar so native modules and the child-process spawn work from plain paths.

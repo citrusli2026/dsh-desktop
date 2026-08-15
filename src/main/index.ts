@@ -13,6 +13,7 @@ import { errorPageHtml, loadingPageHtml } from './pages.ts'
 import { dshBin, harnessRoot, nodeBin } from './paths.ts'
 import { fitWindowState, MIN_WINDOW_HEIGHT, MIN_WINDOW_WIDTH, type WindowState } from './window-state.ts'
 import { isNewerVersion } from './update-check.ts'
+import { configureAboutPanel, installAppMenu } from './menu.ts'
 
 const { autoUpdater } = electronUpdater
 
@@ -113,7 +114,9 @@ function createWindow(): BrowserWindow {
     minWidth: MIN_WINDOW_WIDTH,
     minHeight: MIN_WINDOW_HEIGHT,
     show: false,
-    title: 'DSH Electron Shell',
+    // Fallback only: the shell pages and the harness UI set their own
+    // <title> (both "DeepSeek Harness") once loaded.
+    title: 'DeepSeek Harness',
     webPreferences: {
       contextIsolation: true,
       sandbox: true,
@@ -393,6 +396,10 @@ if (!gotLock) {
   })
 
   void app.whenReady().then(async () => {
+    // Branded menu + About surface in every mode, so CI smoke runs exercise
+    // this path headlessly too.
+    configureAboutPanel()
+    installAppMenu()
     try {
       const url = await boot()
       if (!SMOKE_TEST) {

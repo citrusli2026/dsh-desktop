@@ -7,7 +7,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { compareVersions, isNewerVersion } from '../src/main/update-check.ts'
+import { compareVersions, isNewerVersion, splitCompositeVersion } from '../src/main/update-check.ts'
 
 test('isNewerVersion detects a newer shell revision', () => {
   assert.equal(isNewerVersion('0.1.0-rc.6.shell.3', '0.1.0-rc.6.shell.4'), true)
@@ -37,4 +37,11 @@ test('compareVersions orders prerelease identifiers per semver', () => {
   assert.ok(compareVersions('0.1.0-alpha', '0.1.0-alpha.1')! < 0, 'shorter prerelease set ranks lower')
   assert.ok(compareVersions('0.1.0-1', '0.1.0-alpha')! < 0, 'numeric identifiers rank below alphanumeric')
   assert.equal(compareVersions('nonsense', '0.1.0'), undefined)
+})
+
+test('splitCompositeVersion splits the About-surface version', () => {
+  assert.deepEqual(splitCompositeVersion('0.1.0-rc.6.shell.4'), { dsh: '0.1.0-rc.6', shellRev: 4 })
+  assert.deepEqual(splitCompositeVersion('1.2.3.shell.0'), { dsh: '1.2.3', shellRev: 0 })
+  assert.equal(splitCompositeVersion('1.2.3'), undefined, 'plain versions are not composite')
+  assert.equal(splitCompositeVersion('0.1.0-rc.6.shell.x'), undefined)
 })
