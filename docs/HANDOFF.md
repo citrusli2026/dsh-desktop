@@ -5,7 +5,7 @@
 > contract, and next iteration boundary. Website and mirror operations live in
 > the root `HANDOFF.md`.
 
-最后更新:2026-08-15 · 已发布版本 `0.1.0-rc.6.shell.10`
+最后更新:2026-08-16 · 已发布版本 `0.1.0-rc.6.shell.11`
 
 ## 1. 当前结果
 
@@ -79,6 +79,9 @@ shell.11 起,tag Release 在上述基础上再执行质量门禁,并强制:
 shell.9:CI run `31870759765`;Release run `31870835413`;11 个资产发布成功。
 shell.10:CI run `31889803242`;Release run `31889903318`;Site Data Refresh run
 `31890214574`;11 个资产发布并同步官网成功。
+shell.11:CI run `31893979444`;Release run `31894394693`;发布提交
+`cca1a8277e962709b8ddabe80e9941f7135b00a5`;post-GitCode Site Data Refresh run
+`31898225900`;严格 6 个 GitHub 资产与 4 个 GitCode 公开镜像资产均验证成功。
 
 ## 4. shell.10 发布后的最小迭代
 
@@ -122,7 +125,7 @@ shell.10:CI run `31889803242`;Release run `31889903318`;Site Data Refresh run
 
 完整菜单合同与后续小步路线见 `docs/plans/electron-shell-capabilities.md`。
 
-### shell.11 候选内容（发布完成后回填运行记录）
+### shell.11 已发布内容
 
 - 发布面收敛为两个大体积安装包:Apple Silicon DMG 与 Windows x64 EXE;
   每个安装包附标准 `.sha256`,Windows 自动更新继续保留 `latest.yml` 与
@@ -131,6 +134,13 @@ shell.10:CI run `31889803242`;Release run `31889903318`;Site Data Refresh run
   清晰间隔;仍不引入可见假标题栏。
 - 帮助菜单移除与 About 重复的“社区官网”和“Harness 官方页”,保留项目源代码、
   问题反馈与 DeepSeek 官方网站;About 继续承担完整社区身份与来源说明。
+- GitHub Release 只含 DMG、DMG `.sha256`、Windows EXE、EXE `.sha256`、
+  `latest.yml` 与 EXE `.blockmap`;前四项进入官网和 GitCode,后两项只服务
+  Windows electron-updater。严格门禁会拒绝 Linux、ZIP、`latest-mac.yml` 或
+  任何额外 Release 文件。
+- GitCode tag 与 GitHub tag 都指向 `cca1a827`;国内四个下载 URL 匿名 range
+  GET 均返回 HTTP 206。官网数据提交 `74fc28e` 已把四项 `gitcode_ok` 更新为
+  `true`,正式域名已展示双源下载与最终 SHA-256。
 
 ## 5. 已知限制
 

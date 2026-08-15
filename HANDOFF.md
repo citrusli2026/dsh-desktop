@@ -1,6 +1,6 @@
 # HANDOFF — 官网与交付链路
 
-> 更新于 2026-08-15。产品架构与后续迭代见 `docs/HANDOFF.md`;本文只记录
+> 更新于 2026-08-16。产品架构与后续迭代见 `docs/HANDOFF.md`;本文只记录
 > 官网、发布、镜像和日常运维的当前事实。
 
 ## 一、当前状态
@@ -8,11 +8,11 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>(备用 <https://dsh-electron-shell.vercel.app>) |
-| 最新版本 | 🔄 `v0.1.0-rc.6.shell.11` 发布候选；仅两个大体积安装包，另有两个哈希与两个 Windows updater 小文件 |
-| 主分支 CI | ✅ run `31889803242`;53 项单测、官网门禁、构建、三条 xvfb 冒烟与真实 Electron E2E 全绿 |
-| 核心发布 | ✅ Release run `31889903318`;tag/版本、三平台 packaged smoke、制品矩阵与更新元数据均通过 |
-| 官网数据 | ✅ refresh run `31890214574`;提交 `292c2a8` 已同步 shell.10 的 11 个资产并部署 |
-| 国内镜像 | 🔄 GitCode 发行版资产为人工渠道;shell.11 发布后从国内网络上传 dmg/exe 与哈希 |
+| 最新版本 | ✅ `v0.1.0-rc.6.shell.11`;仅两个大体积安装包，另有两个哈希与两个 Windows updater 小文件 |
+| 主分支 CI | ✅ run `31893979444`;55 项单测、官网门禁、构建、三条 xvfb 冒烟与真实 Electron E2E 全绿 |
+| 核心发布 | ✅ Release run `31894394693`;严格 6 文件门禁、双平台 packaged smoke 与更新元数据均通过 |
+| 官网数据 | ✅ post-GitCode refresh run `31898225900`;提交 `74fc28e` 已发布双端下载、哈希与国内镜像状态 |
+| 国内镜像 | ✅ GitCode tag 指向 `cca1a827`;DMG、EXE 与两个哈希均已上传并通过匿名 1-byte range GET |
 
 ## 二、官网浅色体系与声明精简(2026-08-15 已提交部署,无新 tag)
 
@@ -90,8 +90,9 @@ auto-updater 始终直连 GitHub。
   推送 ~150 KB/s 且预签名 URL 过期 502;拉取式流水线复杂度不成比例,放弃)。
   自部署 gh-proxy(`GH_PROXY_PREFIX` 思路)仅作备选;公共代理实例实测
   不可靠(mirror.ghproxy.com / ghfast.top 已失联),不进入任何链路。
-- GitCode `main` 已快进到 `815b472`;镜像流程曾把 shell.9 tag 建在旧提交
-  `c94e70b`,已精确修正为发布提交 `23c4c23`。后续仍要在发版后核对 tag peeled
+- GitCode `main` 已同步 shell.11 主线;镜像流程曾把 shell.9 tag 建在旧提交
+  `c94e70b`,已精确修正为发布提交 `23c4c23`。shell.11 tag 已核对为发布提交
+  `cca1a827`;后续仍要在发版后核对 tag peeled
   commit,不能只检查“同名 tag 已存在”。
 - macOS 仍未签名/公证;首次运行需右键打开,应用只检查更新并引导下载。
 - `*.vercel.app` 在国内可能受 DNS 影响;正式域名使用 `dsh-desktop.com`。
@@ -111,7 +112,7 @@ auto-updater 始终直连 GitHub。
   发布，正式域名已验证返回本版本和 11 个资产。完整顺序与后续边界见
   `docs/plans/electron-shell-capabilities.md`。
 
-## 八、shell.11 发布候选
+## 八、shell.11 已发布
 
 - Release 从 11 个资产收敛为严格 6 个文件:只有 Apple Silicon DMG 与 Windows
   x64 EXE 两个大文件,各附一个 `.sha256`;另保留 Windows 已安装客户端所需的
@@ -121,5 +122,12 @@ auto-updater 始终直连 GitHub。
 - macOS 侧栏增加 12 px 顶部安全间距,使交通灯与 DeepSeek 品牌区分离；帮助菜单
   删除与 About 重复的社区官网和 Harness 官方页,保留项目源码、反馈与 DeepSeek
   官网。
-- 发布完成后需在本节/状态表回填 GitHub CI、Release、Site Data Refresh run，
-  GitCode tag 提交与四个面向用户文件的可下载验证结果。
+- GitHub 主分支 CI run `31893979444`、Release run `31894394693`、首次官网同步
+  run `31894723515` 均成功;tag `v0.1.0-rc.6.shell.11` 精确指向
+  `cca1a8277e962709b8ddabe80e9941f7135b00a5`。
+- GitCode 国内发行版已发布,同一 tag / commit 下只人工上传 DMG、EXE 与两份
+  `.sha256`;四个稳定下载 URL 均以匿名 `Range: bytes=0-0` 返回 HTTP 206。
+- 国内镜像完成后再次执行 Site Data Refresh run `31898225900`,生成提交
+  `74fc28e`;正式域名已验证只渲染两个安装包、两个哈希,并为两端同时展示
+  GitCode / GitHub 下载源。Windows updater 所需 `latest.yml` 与 `.exe.blockmap`
+  继续只保留在 GitHub Release,不进入官网公开资产卡和 GitCode 人工镜像。
