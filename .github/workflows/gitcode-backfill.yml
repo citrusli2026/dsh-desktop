@@ -1,0 +1,71 @@
+name: GitCode Mirror Backfill
+
+# 把历史 release 的资产回补到 GitCode 镜像(华为云 CDN,国内直连)。
+# 仅上传 GitCode 上尚不可下载的文件(range GET 实测),可重复执行。
+# mirror-gitcode 在 release.yml 里只跟随新发版;本工作流用于补齐旧 tag。
+# 前置:仓库变量 GITCODE_REPO + 密钥 GITCODE_TOKEN(与 release.yml 相同)。
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要回补的 release tag(如 v0.1.0-rc.6.shell.3)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ vars.GITCODE_REPO != '' }}
+    env:
+      GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
+      GITCODE_REPO: ${{ vars.GITCODE_REPO }}
+      TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Download release assets from GitHub
+        run: gh release download "$TAG" --dir assets --clobber
+
+      - name: Create the GitCode release if missing
+        run: |
+          API="https://api.gitcode.com/api/v5/repos/$GITCODE_REPO"
+          curl -sf "$API/releases/$TAG?access_token=$GITCODE_TOKEN" >/dev/null || \
+            curl -sf -X POST "$API/releases" \
+              -H "Content-Type: application/json" \
+              -d "{\"access_token\": \"$GITCODE_TOKEN\", \"tag_name\": \"$TAG\", \"name\": \"dsh-electron-shell $TAG\", \"prerelease\": true, \"body\": \"Mirrored from https://github.com/citrusli2026/dsh-electron-shell/releases\"}"
+
+      - name: Upload only assets missing on GitCode
+        run: |
+          MISSING=()
+          for f in assets/*; do
+            name=$(basename "$f")
+            url="https://gitcode.com/$GITCODE_REPO/releases/download/$TAG/$name"
+            code=$(curl -sL -r 0-0 -o /dev/null -w '%{http_code}' --max-time 60 "$url" || true)
+            if [ "$code" = "200" ] || [ "$code" = "206" ]; then
+              echo "skip $name (already mirrored)"
+            else
+              echo "missing $name (HTTP $code) -> will upload"
+              MISSING+=("$f")
+            fi
+          done
+          if [ ${#MISSING[@]} -eq 0 ]; then
+            echo "nothing to backfill"
+            exit 0
+          fi
+          node scripts/gitcode-upload.mjs "$TAG" "${MISSING[@]}"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 🪞 GitCode Backfill $TAG" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Status:** ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Links:** https://gitcode.com/$GITCODE_REPO/releases/download/$TAG/…" >> "$GITHUB_STEP_SUMMARY"
