@@ -14,7 +14,27 @@
 | 官网数据 | ✅ refresh run `31871089497`;`release.json` 已自动提交为 shell.9 |
 | 国内镜像 | 🟡 GitCode `main` 与 shell.9 tag 已同步;大文件资产仍为独立尽力而为渠道 |
 
-## 二、shell.9 官网与交付变化
+## 二、官网浅色体系与声明精简(2026-08-15 已提交部署,无新 tag)
+
+1. 官网视觉已参考 DeepSeek 官网当前设计令牌调整为浅色体系:`#f9f8f8` 页面底色、
+   `#1e232c` 正文、`#4d6bfe` 品牌蓝,正文使用 DM Sans,标题使用 Host Grotesk,
+   卡片采用 16/24 px 圆角与轻玻璃层;静态缓存键升至 `v=12`。
+2. 社区身份声明已按人工审核意见精简:顶栏标签与首屏提示只保留“社区出品 /
+   非官方”与官方站点外链,“与 DeepSeek AI 无隶属、授权或合作关系”的正式
+   法律句式仅保留在页脚一处;FAQ 第 3 条作为对直接提问的回答维持不变。
+3. 本地 `site:check`、1440 px 宽屏、390 px 窄屏、中英切换和 5 个下载入口已
+   通过。改动范围为 `site/index.html`、`site/assets/style.css`、
+   `site/assets/app.js`,push `main` 后由 Vercel 自动部署。
+4. Apple Silicon 本地产物已生成:
+   `dist/dsh-desktop-0.1.0-rc.6.shell.9-arm64-mac.{dmg,zip}`。本机 Apple
+   Development 签名验证通过但未公证;DMG SHA-256 为
+   `1ba98e73df9a30a3af50160a004ab565b81c7d927f1cbbb46971cdab16c0a77e`,ZIP 为
+   `d1aa8957b61b207693d42c340429b9eb078811ac2fc9bbe3e69f8c624f695108`。
+5. 当前仓库没有 iOS/Xcode 工程;Electron 交付目标是 macOS、Windows、Linux。
+   如需 iPhone/iPad 包,必须另立 SwiftUI 或跨平台客户端,不能从现有 Electron
+   配置直接生成。
+
+## 三、shell.9 官网与交付变化
 
 1. 官网首屏从“有一个桌面窗口”转为“可靠桌面工作台”,新增四项可信基线、
    三步运行链路和“桌面壳新增 / Harness 保持原样”边界对照。
@@ -27,7 +47,7 @@
 5. `Site Data Refresh` 已验证 Release 完成后可自动生成、提交 shell.9 数据,
    该提交会继续触发 Vercel 部署。
 
-## 三、发布与官网数据流
+## 四、发布与官网数据流
 
 ```text
 main push → CI + Vercel
@@ -42,7 +62,7 @@ tag push  → Release verify
 官网数据生成器逐资产用 range GET 探测 GitCode;中文页面只在稳定镜像 URL
 真实可下载时采用镜像,否则回落 GitHub。不要把带时效签名的 CDN URL 写入站点。
 
-## 四、运维速查
+## 五、运维速查
 
 | 操作 | 命令 / 入口 |
 |---|---|
@@ -56,7 +76,7 @@ tag push  → Release verify
 | 下次壳发版 | `node scripts/version.mjs bump shell` → CI 绿 → 推 tag |
 | 线上部署 | push `main`;Vercel 项目 root=`site/` 自动部署 |
 
-## 五、已知事项
+## 六、已知事项
 
 - GitCode 大文件上传是降级渠道。若继续投入,优先实现逐文件并行/可恢复上传或
   更换国内对象存储,不要让它重新进入核心 Release 依赖链。

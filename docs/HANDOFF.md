@@ -25,6 +25,18 @@ shell.9 以三轮迭代完成:
 3. **设计与持续交付**:加载/错误页与官网统一近黑 + 信号绿视觉;官网能力改为
    可扫读矩阵并补无障碍/窄屏;Release 增加版本与 11 资产/updater 元数据门禁。
 
+### 官网浅色体系(2026-08-15 已提交部署,无新 tag)
+
+- 官网已改为参考 DeepSeek 官网设计令牌的浅色蓝白体系(DM Sans / Host
+  Grotesk、`#f9f8f8`、`#1e232c`、`#4d6bfe`、16/24 px 圆角);社区身份声明
+  经人工审核后精简为“社区出品 / 非官方”,正式免责句式只留页脚一处。
+- 本地站点宽屏/390 px 窄屏、中英切换、5 个下载入口和控制台已验证;38 项应用
+  测试仍全部通过。
+- Apple Silicon DMG/ZIP 已在本机生成;`.app` 使用本机 Apple Development 身份
+  签名并通过 `codesign --verify --deep --strict`,但没有 notarization,不能据此
+  宣称公开 Release 已完成签名/公证。
+- 当前代码库没有 iOS/Xcode 工程,现有 Electron 打包只能产出 macOS 而非 iOS。
+
 ## 2. 架构速览
 
 ```text
@@ -82,7 +94,8 @@ shell.9:CI run `31870759765`;Release run `31870835413`;11 个资产发布成功�
 
 ## 5. 已知限制
 
-- macOS 未签名/公证,只能检查更新并引导下载;
+- 公开 macOS Release 仍未完成分发签名/公证,只能检查更新并引导下载;本机审核包
+  的 Apple Development 签名不等价于 Developer ID 分发签名或 notarization;
 - 诊断遮罩为尽力而为,界面已要求用户分享前自行检查;
 - GitCode 从 GitHub runner 上传约 160–220 MB 资产仍慢,只作降级渠道;
 - shell 界面当前以中文为主,下一轮再做受控 i18n,避免与本轮结构改动混杂。

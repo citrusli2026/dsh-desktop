@@ -4,16 +4,19 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>dsh-desktop — DeepSeek Harness 桌面壳 · 下载</title>
-<meta name="description" content="dsh-desktop:DeepSeek Harness 的非官方 Electron 桌面壳。自带 Node.js 运行时,独立数据目录,权限默认拒绝,支持 macOS / Windows / Linux。" />
+<meta name="description" content="dsh-desktop:社区维护的 DeepSeek Harness 非官方 Electron 桌面壳。自带 Node.js 运行时,独立数据目录,权限默认拒绝,支持 macOS / Windows / Linux。" />
 <meta property="og:title" content="dsh-desktop — DeepSeek Harness 桌面壳" />
-<meta property="og:description" content="自带运行时、独立环境的 DeepSeek Harness 桌面版。macOS / Windows / Linux。" />
+<meta property="og:description" content="社区维护、非官方的 DeepSeek Harness 桌面版。自带运行时与独立环境,支持 macOS / Windows / Linux。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://dsh-desktop.com/" />
-<meta name="theme-color" content="#0a0b0d" />
-<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#f9f8f8" />
+<meta name="color-scheme" content="light" />
 <link rel="canonical" href="https://dsh-desktop.com/" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=10" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Host+Grotesk:wght@500;600;700&amp;display=swap" />
+<link rel="stylesheet" href="/assets/style.css?v=12" />
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"dsh-desktop","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","isAccessibleForFree":true,"license":"https://opensource.org/license/mit","url":"https://dsh-desktop.com/","downloadUrl":"https://github.com/citrusli2026/dsh-electron-shell/releases"}</script>
 </head>
 <body>
@@ -24,6 +27,7 @@
   <a class="topbar__brand" href="#top">
     <img src="/assets/favicon.svg" alt="" width="20" height="20" />
     <span>dsh-desktop</span>
+    <span class="community-tag" data-i18n="brand.community">社区版 · 非官方</span>
   </a>
   <nav class="topbar__nav" aria-label="页面导航">
     <a href="#download" data-i18n="nav.download">下载</a>
@@ -50,7 +54,12 @@
     <div class="hero__grid" aria-hidden="true"></div>
     <div class="wrap hero__inner">
       <div class="hero__copy" data-reveal>
-        <p class="kicker" data-i18n="hero.kicker">// 非官方社区打包 · MIT 开源</p>
+        <div class="community-notice" role="note">
+          <strong data-i18n="community.label">社区维护</strong>
+          <span data-i18n="community.body">社区出品,非 DeepSeek 官方产品</span>
+          <a href="https://www.deepseek.com/" target="_blank" rel="noopener" data-i18n="community.official">访问官方站点 ↗</a>
+        </div>
+        <p class="kicker" data-i18n="hero.kicker">COMMUNITY DESKTOP SHELL · MIT</p>
         <h1 class="headline" data-i18n="hero.h1">把 DeepSeek Harness<br />变成可靠的 <em>桌面工作台</em>。</h1>
         <p class="subhead" data-i18n="hero.sub">零配置启动、独立数据空间、崩溃自愈与本地诊断。dsh-desktop 只增强桌面体验,不改写 Harness 的 Agent 行为。</p>
         <div class="cta-row">
@@ -260,7 +269,7 @@
   <div class="wrap footer__grid">
     <div>
       <p class="footer__brand">dsh-desktop</p>
-      <p class="footer__legal" data-i18n="footer.legal">MIT © 2026 dsh-desktop contributors<br />非官方社区打包,与 DeepSeek AI 无关联</p>
+      <p class="footer__legal" data-i18n="footer.legal">MIT © 2026 dsh-desktop contributors<br /><strong>社区维护 · 非官方产品</strong><br />与 DeepSeek AI 无隶属、授权或合作关系</p>
     </div>
     <nav class="footer__links" aria-label="页脚链接">
       <a href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a>
@@ -272,6 +281,6 @@
   </div>
 </footer>
 
-<script src="/assets/app.js?v=10" defer></script>
+<script src="/assets/app.js?v=12" defer></script>
 </body>
 </html>
