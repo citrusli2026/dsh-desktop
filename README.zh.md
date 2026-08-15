@@ -51,9 +51,20 @@ https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/
 其他可选前缀(随社区维护情况增减):`https://gh-proxy.com/`、`https://ghfast.top/`。
 这些镜像由社区免费运营、与本项目无关,可用性会波动——一个失效就换下一个。
 
-仓库维护者也可以在 release 流水线中启用可选的 **Cloudflare R2 镜像**同步
-(任务 `mirror-r2`,由仓库 secrets `R2_ACCOUNT_ID` / `R2_API_TOKEN` 开关),
-把每个版本的资产自动镜像到稳定的 R2 地址。
+仓库维护者可启用两个镜像渠道,均为 release 流水线中的可选任务,未配置时静默跳过:
+
+- **Cloudflare R2**(任务 `mirror-r2`):S3 兼容对象存储,出口流量永久免费
+  (10GB 免费额度)。建名为 `dsh-electron-shell` 的桶 + 具备对象读写权限的
+  API token,然后设置仓库变量 `R2_ACCOUNT_ID` 与 secret `R2_API_TOKEN`;
+  此后每个 release 自动镜像到 `dsh-electron-shell/<tag>/`,桶上绑自定义域名
+  (或 r2.dev 开发域名)即得固定下载链接。补传已发布版本:
+  `gh release download <tag>` 下载资产后逐文件
+  `wrangler r2 object put "dsh-electron-shell/<tag>/<文件>" --file <文件>`。
+- **GitCode**(任务 `mirror-gitcode`,骨架):附件由国内华为云 CDN 节点分发。
+  在 gitcode.com 建镜像仓库、签发 personal access token,设置仓库变量
+  `GITCODE_REPO`(`owner/repo`)与 secret `GITCODE_TOKEN`;上传接口细节标了
+  TODO,待真实账号联调。用户侧只能放 GitCode 的 release **页面**链接——
+  `file-cdn.gitcode.com` 直链是签名时效 URL,会过期。
 
 ## 开发
 

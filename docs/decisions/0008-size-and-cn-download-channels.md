@@ -57,3 +57,17 @@ download-and-use goal.
 - Self-hosted CDN (OSS/COS/UPYUN): recurring cost and real-name compliance,
   not free — rejected for now;
 - Gitee release mirror: 100MB per-file cap vs 150-260MB assets — rejected.
+
+## Amendment 2026-08-15: GitCode as the second channel
+
+Field measurement on the maintainer's network: direct github.com downloads ran
+at ~100KB/s, a community proxy at ~4MB/s, and a GitCode-hosted attachment came
+from Huawei Cloud CDN nodes inside China (CNAME `*.cdnhwc*`, OBS S3 headers).
+GitCode's OpenAPI gained release create + attachment `upload_url` endpoints in
+2025-06, so the release workflow gained a `mirror-gitcode` job (gated on
+variable `GITCODE_REPO` + secret `GITCODE_TOKEN`) as a second, China-fast
+channel next to R2. Two caveats are written into the job and the README: the
+upload schema is TODO-unverified until exercised with a live token, and
+user-facing links must point at the GitCode release page because
+`file-cdn.gitcode.com` URLs are time-limited signed URLs. R2 keeps the stable,
+self-controlled, globally fast (outside China) fixed-URL role.

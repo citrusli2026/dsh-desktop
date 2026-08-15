@@ -48,3 +48,15 @@ zip 259MB / exe 184MB / AppImage 248MB / deb 178MB);且国内大量用户无法
 - 通过删除能力(sharp / pi-ai / otel 供应商)瘦身:违背"功能保持不变",否决;
 - 自建 CDN(OSS/COS/又拍云):持续成本与实名合规,不免费,暂缓;
 - Gitee release 镜像:单文件 100MB 上限 vs 150-260MB 资产,否决。
+
+## 修订 2026-08-15:GitCode 作为第二渠道
+
+维护者网络下的实测:github.com 直连约 100KB/s,社区代理约 4MB/s,而
+GitCode 托管的附件由国内华为云 CDN 节点分发(CNAME `*.cdnhwc*`、OBS S3
+响应头)。GitCode OpenAPI 已于 2025-06 补齐 release 创建与附件
+`upload_url` 接口,因此 release 流水线新增 `mirror-gitcode` 任务(仓库
+变量 `GITCODE_REPO` + secret `GITCODE_TOKEN` 开关),作为与 R2 并列的
+国内快速渠道。两条注意已写进任务与 README:上传接口 schema 待真实 token
+联调(标 TODO);用户侧链接必须指向 GitCode 的 release 页面,因为
+`file-cdn.gitcode.com` 直链是签名时效 URL。R2 继续承担稳定、自有、
+(中国以外)全球快的固定 URL 角色。

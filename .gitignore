@@ -8,3 +8,6 @@ resources/harness.tmp/
 .env
 .idea/
 .vscode/
+
+# Local release verification downloads (packed apps, dmgs)
+release-check/
