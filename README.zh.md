@@ -15,7 +15,9 @@
 
 - **开箱即用**:内置独立 Node 运行时与 `@deepseek-ai/dsh` 完整依赖闭包,
   无需预装 Node.js;
-- **与 CLI 互通**:默认共享 `~/.dsh`,会话、设置、API key 与命令行版延续;
+- **环境独立**:桌面版默认使用自己的数据目录(`~/.dsh-desktop`),设置、会话、
+  API key、插件与命令行互不影响;如需与 CLI 共享,设 `DSH_HOME=~/.dsh` 即可
+  (决策记录 0012);
 - **健壮性**:harness 崩溃指数退避自动重启、错误页可手动重试、单实例锁、
   系统托盘(实时状态、重启、日志目录、检查更新)、窗口几何记忆、日志落盘;
 - **更新**:Windows / Linux 应用内自动更新;macOS 在签名前检查新版本并
@@ -104,8 +106,8 @@ docs/decisions/      决策记录:架构选择与实现过程
 
 ## 文档
 
-- [决策记录](docs/decisions/README.md):为什么这么设计(内置 Node、共享 ~/.dsh、
-  unsigned 先发、闭包部署、监督协议、CJS 主进程打包等);
+- [决策记录](docs/decisions/README.md):为什么这么设计(内置 Node、独立
+  ~/.dsh-desktop 数据目录、unsigned 先发、闭包部署、监督协议、CJS 主进程打包等);
 - 架构与实现细节见各决策记录中的背景与备选方案说明。
 
 ## License

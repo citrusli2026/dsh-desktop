@@ -6,9 +6,11 @@
  */
 import { spawn, type ChildProcess } from 'node:child_process'
 import { createWriteStream, mkdirSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import { app } from 'electron'
+import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, nodeBin } from './paths.ts'
 import { decideRestart, exitsInWindow, parseReadyUrl, RESTART_BASE_DELAY_MS } from './restart-policy.ts'
 
@@ -72,9 +74,10 @@ export class HarnessSupervisor {
 
   private spawnOnce(): ChildProcess {
     const child = spawn(nodeBin(), [dshBin(), '--profile', 'web', '--port', '0'], {
-      // Pass the desktop environment through untouched: DSH_HOME stays the
-      // shared default (~/.dsh) unless the user sets it (decision 0003).
-      env: { ...process.env },
+      // Isolate the desktop data home by default (decision 0012): the harness
+      // uses ~/.dsh-desktop unless the user sets DSH_HOME explicitly (e.g.
+      // DSH_HOME=~/.dsh to share with the CLI again).
+      env: { ...process.env, DSH_HOME: resolveDshHome(process.env, homedir()) },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     this.child = child

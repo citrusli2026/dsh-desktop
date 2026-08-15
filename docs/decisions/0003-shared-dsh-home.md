@@ -1,7 +1,7 @@
 # 0003: Share ~/.dsh with the CLI by default
 
 - Date: 2026-02-09
-- Status: accepted
+- Status: superseded by [0012](0012-isolated-dsh-home.md) (desktop home is isolated by default since 2026-08-15)
 - 中文:[0003](0003-shared-dsh-home.zh.md)
 
 ## Context

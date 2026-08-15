@@ -12,7 +12,7 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 ## Features
 
 - **Zero setup**: bundles its own Node.js runtime and the complete `@deepseek-ai/dsh` dependency closure — no Node.js install required;
-- **Interoperates with the CLI**: shares `~/.dsh` by default, so sessions, settings, and API keys carry over from the command line;
+- **Isolated by default**: the desktop app keeps its own data home (`~/.dsh-desktop`) — settings, sessions, API keys, and plugins stay separate from the CLI; set `DSH_HOME=~/.dsh` to share with the CLI again (decision 0012);
 - **Robust**: crash auto-restart with exponential backoff, manual retry on the error page, single-instance lock, system tray with live harness status (restart / logs / update check), persisted window geometry, logs on disk;
 - **Updates**: automatic updates on Windows / Linux; macOS checks for new releases and points at the download page until signing exists (decisions 0004, 0010).
 
@@ -83,7 +83,7 @@ docs/decisions/      decision records (ADR-style)
 
 ## Documentation
 
-- [Decision records](docs/decisions/README.md): why it is built this way (bundled Node, shared `~/.dsh`, unsigned-first, closure deployment, supervision protocol, CJS main bundle, …).
+- [Decision records](docs/decisions/README.md): why it is built this way (bundled Node, isolated `~/.dsh-desktop` home, unsigned-first, closure deployment, supervision protocol, CJS main bundle, …).
 
 ## License
 
