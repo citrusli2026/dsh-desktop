@@ -12,6 +12,7 @@
   /* ══ 文案字典 ══════════════════════════════════════ */
   var I18N = {
     zh: {
+      'a11y.skip': '跳到主要内容',
       'nav.download': '下载', 'nav.workflow': '工作方式', 'nav.features': '特性', 'nav.version': '版本号', 'nav.faq': '常见问题', 'nav.cta': '立即下载',
       'hero.kicker': '// 非官方社区打包 · MIT 开源',
       'hero.h1': '把 DeepSeek Harness<br />变成可靠的 <em>桌面工作台</em>。',
@@ -36,7 +37,6 @@
       'dl.allfiles': '全部文件(含差量更新元数据)',
       'dl.th.file': '文件', 'dl.th.size': '大小', 'dl.th.dl': '下载量',
       'ft.marker': '特性', 'ft.title': '为什么用它',
-      'ft.tab1': '零配置', 'ft.tab2': '独立环境', 'ft.tab3': '稳定守护', 'ft.tab4': '自动更新', 'ft.tab5': '安全边界', 'ft.tab6': '本地诊断',
       'ft.p1': '<h3>无需安装 Node.js</h3><p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本与 SHA-256 逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>',
       'ft.p2': '<h3>独立数据目录,环境隔离</h3><p>桌面版默认使用 <code>~/.dsh-desktop</code>:设置、会话、API Key、插件都是独立的一份,安装卸载都不影响你的命令行工作流。需要共享时,设 <code>DSH_HOME=~/.dsh</code> 即可。</p>',
       'ft.p3': '<h3>崩溃自愈,指数退避</h3><p>进程崩溃自动重启(指数退避),错误页可手动重试并查看日志尾部;单实例锁防止多开,托盘常驻,日志落盘可查。</p>',
@@ -65,6 +65,7 @@
       'copy': '复制', 'copy.link': '复制链接', 'copied': '已复制 ✓',
     },
     en: {
+      'a11y.skip': 'Skip to main content',
       'nav.download': 'DOWNLOAD', 'nav.workflow': 'HOW IT WORKS', 'nav.features': 'FEATURES', 'nav.version': 'VERSIONING', 'nav.faq': 'FAQ', 'nav.cta': 'Download',
       'hero.kicker': '// UNOFFICIAL COMMUNITY PACKAGING · MIT',
       'hero.h1': 'DeepSeek Harness,<br />as a dependable <em>desktop workspace</em>.',
@@ -89,7 +90,6 @@
       'dl.allfiles': 'All files (incl. delta-update metadata)',
       'dl.th.file': 'FILE', 'dl.th.size': 'SIZE', 'dl.th.dl': 'DOWNLOADS',
       'ft.marker': 'FEATURES', 'ft.title': 'Why this shell',
-      'ft.tab1': 'Zero setup', 'ft.tab2': 'Isolated home', 'ft.tab3': 'Supervision', 'ft.tab4': 'Auto-update', 'ft.tab5': 'Security boundary', 'ft.tab6': 'Local diagnostics',
       'ft.p1': '<h3>No Node.js install required</h3><p>The shell bundles a pinned Node.js 22 LTS runtime and the complete <code>@deepseek-ai/dsh</code> dependency closure, SHA-256 locked per platform. Download → double-click → use.</p>',
       'ft.p2': '<h3>Isolated data home</h3><p>The desktop app defaults to <code>~/.dsh-desktop</code>: settings, sessions, API keys, and plugins are its own copy — installing or uninstalling never touches your CLI workflow. Set <code>DSH_HOME=~/.dsh</code> to share again.</p>',
       'ft.p3': '<h3>Crash-proof supervision</h3><p>Auto-restart with exponential backoff, manual retry on the error page with a log tail, single-instance lock, system tray, logs on disk.</p>',
@@ -341,18 +341,6 @@
     })
   }
 
-  function bindTabs() {
-    $all('.tab').forEach(function (tab) {
-      tab.addEventListener('click', function () {
-        $all('.tab').forEach(function (x) { x.classList.remove('is-active'); x.setAttribute('aria-selected', 'false') })
-        $all('.tab-panel').forEach(function (p) { p.classList.remove('is-active') })
-        tab.classList.add('is-active'); tab.setAttribute('aria-selected', 'true')
-        var panel = document.getElementById(tab.getAttribute('data-tab'))
-        if (panel) panel.classList.add('is-active')
-      })
-    })
-  }
-
   /* 滚动 reveal */
   function bindReveal() {
     var els = $all('[data-reveal]')
@@ -398,7 +386,6 @@
   }
 
   /* ══ 启动 ══════════════════════════════════════════ */
-  bindTabs()
   bindReveal()
   bindLangToggle()
   bindCopy(document)

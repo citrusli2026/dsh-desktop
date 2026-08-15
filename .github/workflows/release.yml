@@ -9,7 +9,28 @@ permissions:
   contents: write
 
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm run typecheck
+      - run: pnpm run test
+      - run: pnpm run site:check
+      - run: pnpm run build
+      - name: Verify tag matches package version
+        if: ${{ github.ref_type == 'tag' }}
+        run: test "v$(node -p "require('./package.json').version")" = "${{ github.ref_name }}"
+
   build:
+    needs: verify
     strategy:
       fail-fast: false
       matrix:
@@ -67,10 +88,13 @@ jobs:
     # tag = release. Optional mirrors run independently after this workflow.
     if: ${{ github.ref_type == 'tag' }}
     steps:
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
+      - name: Validate release asset matrix and updater metadata
+        run: node scripts/check-release-assets.mjs artifacts "${{ github.ref_name }}"
       - name: Publish GitHub release (create if missing, upload assets, undraft)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

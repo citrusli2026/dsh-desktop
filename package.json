@@ -1,6 +1,6 @@
 {
   "name": "dsh-desktop",
-  "version": "0.1.0-rc.6.shell.8",
+  "version": "0.1.0-rc.6.shell.9",
   "description": "Unofficial DeepSeek Harness Electron desktop shell: download and use; identical to `dsh web`",
   "author": "dsh-desktop contributors <citrusli@126.com>",
   "license": "MIT",
@@ -20,6 +20,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --test \"test/**/*.test.ts\"",
     "site:check": "node --check site/assets/app.js && node scripts/check-site.mjs",
+    "release:check-assets": "node scripts/check-release-assets.mjs",
     "version:check": "node scripts/version.mjs check",
     "version:bump": "node scripts/version.mjs bump",
     "dev": "pnpm run build && electron .",

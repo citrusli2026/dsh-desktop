@@ -35,3 +35,12 @@ test('loadingPageHtml and errorPageHtml render as data URLs', () => {
   assert.ok(errorPageHtml(6, 'tail').startsWith('data:text/html;charset=utf-8,'))
   assert.ok(decodeURIComponent(errorPageHtml(6, 'tail')).includes('重试启动'))
 })
+
+test('built-in pages carry a restrictive CSP and the error page exposes local diagnostics', () => {
+  const loading = decodeURIComponent(loadingPageHtml())
+  const error = decodeURIComponent(errorPageHtml(6, 'tail'))
+  assert.match(loading, /Content-Security-Policy/)
+  assert.match(loading, /default-src 'none'/)
+  assert.match(error, /导出诊断报告/)
+  assert.match(error, /dshDesktop\.exportDiagnostics/)
+})

@@ -7,7 +7,7 @@
   --border: #262a31;
   --text: #fbfbfb;
   --muted: #b8bcc4;
-  --faint: #69707a;
+  --faint: #858c96;
   --signal: #00f48e;
   --signal-dim: rgba(0, 244, 142, 0.14);
   --signal-glow: rgba(0, 244, 142, 0.22);
@@ -22,7 +22,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-top: 68px; }
 
 body {
   font-family: var(--sans);
@@ -44,6 +44,14 @@ code { font-family: var(--mono); font-size: 0.9em; background: rgba(0, 244, 142,
 
 a { color: inherit; }
 
+.skip-link {
+  position: fixed; top: 8px; left: 8px; z-index: 100;
+  transform: translateY(-150%); padding: 9px 14px; border-radius: 6px;
+  background: var(--signal); color: #04150d; font: 700 12px var(--mono); text-decoration: none;
+}
+.skip-link:focus { transform: none; }
+:where(a, button, summary):focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
 
 /* ══ 入场 reveal(交错)══ */
@@ -56,6 +64,7 @@ a { color: inherit; }
 [data-reveal].is-in { opacity: 1; transform: none; }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   [data-reveal] { opacity: 1; transform: none; transition: none; }
   .hero__grid, .hero__monitor, .btn--glow { animation: none !important; }
 }
@@ -445,28 +454,14 @@ a { color: inherit; }
 .allfiles td a { color: var(--signal); text-decoration: none; }
 .allfiles td a:hover { text-decoration: underline; }
 
-/* ══ 特性 Tabs ══ */
-.tabs {
-  display: flex; gap: 2px;
-  overflow-x: auto;
-  padding: 0 16px;
-  background: var(--panel-2);
-  border-bottom: 1px solid var(--border);
-}
-.tab {
-  font-family: var(--mono); font-size: 12.5px; font-weight: 700; letter-spacing: 0.04em;
-  color: var(--faint); background: none; border: none;
-  padding: 14px 16px 12px; cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color 0.15s ease;
-}
-.tab:hover { color: var(--text); }
-.tab.is-active { color: var(--signal); border-bottom-color: var(--signal); }
-.tab-panels { padding: 28px 24px 32px; }
-.tab-panel { display: none; max-width: 660px; }
-.tab-panel.is-active { display: block; }
-.tab-panel h3 { font-size: 19px; font-weight: 700; margin-bottom: 10px; }
-.tab-panel p { color: var(--muted); font-size: 15px; }
+/* ══ 可扫读能力矩阵 ══ */
+.feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.feature-card { position: relative; min-height: 220px; padding: 30px 28px; background: var(--panel); }
+.feature-card:nth-child(even) { border-left: 1px solid var(--border); }
+.feature-card:nth-child(n + 3) { border-top: 1px solid var(--border); }
+.feature-card::before { content: ""; position: absolute; top: 0; left: 28px; width: 42px; height: 2px; background: var(--signal); }
+.feature-card h3 { max-width: 22ch; margin-bottom: 14px; font-size: 18px; }
+.feature-card p { color: var(--muted); font-size: 14px; line-height: 1.75; }
 
 /* ══ 版本号 ══ */
 .version-display { padding: 8px 0 30px; overflow-x: auto; }
@@ -546,4 +541,31 @@ a { color: inherit; }
   .workflow-grid article + article { border-left: 0; border-top: 1px solid var(--border); }
   .workflow-grid article > span { margin-bottom: 20px; }
   .boundary-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .wrap { padding-left: 18px; padding-right: 18px; }
+  .topbar { padding: 0 16px; }
+  .topbar__right { margin-left: auto; gap: 8px; }
+  .gh-chip, .topbar .btn--sm { display: none; }
+  .hero { padding-top: 96px; padding-bottom: 58px; }
+  .hero__inner { gap: 38px; }
+  .headline { font-size: 2.25rem; }
+  .harness { grid-template-columns: 38px 1fr; min-height: 310px; }
+  .harness__main { padding: 16px 14px; }
+  .msg { font-size: 12px; }
+  .trust-strip__grid { grid-template-columns: 1fr; }
+  .trust-strip__grid div { border-right: 1px solid var(--border); border-top: 1px solid var(--border); }
+  .trust-strip__grid div:first-child { border-top: 0; }
+  .section { padding-top: 68px; }
+  .workflow-grid article, .boundary-grid article { padding: 22px; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .feature-card { min-height: 0; padding: 26px 22px; }
+  .feature-card:nth-child(even) { border-left: 0; }
+  .feature-card:nth-child(n + 2) { border-top: 1px solid var(--border); }
+  .panel__head, .platform-group__head, .asset-row { padding-left: 16px; padding-right: 16px; }
+  .asset-row__actions { flex-wrap: wrap; }
+  .cmdline { margin-left: 16px; margin-right: 16px; }
+  .allfiles { overflow-x: auto; }
+  .allfiles table { min-width: 620px; }
 }

@@ -8,11 +8,17 @@
 <meta property="og:title" content="dsh-desktop — DeepSeek Harness 桌面壳" />
 <meta property="og:description" content="自带运行时、独立环境的 DeepSeek Harness 桌面版。macOS / Windows / Linux。" />
 <meta property="og:type" content="website" />
+<meta property="og:url" content="https://dsh-desktop.com/" />
 <meta name="theme-color" content="#0a0b0d" />
+<meta name="color-scheme" content="dark" />
+<link rel="canonical" href="https://dsh-desktop.com/" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=8" />
+<link rel="stylesheet" href="/assets/style.css?v=9" />
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"dsh-desktop","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","isAccessibleForFree":true,"license":"https://opensource.org/license/mit","url":"https://dsh-desktop.com/","downloadUrl":"https://github.com/citrusli2026/dsh-electron-shell/releases"}</script>
 </head>
 <body>
+
+<a class="skip-link" href="#main-content" data-i18n="a11y.skip">跳到主要内容</a>
 
 <header class="topbar">
   <a class="topbar__brand" href="#top">
@@ -36,7 +42,8 @@
   </div>
 </header>
 
-<main id="top">
+<main id="main-content">
+  <span id="top" aria-hidden="true"></span>
 
   <!-- ══ HERO ══ -->
   <section class="hero">
@@ -163,41 +170,31 @@
       <p class="sec-marker" data-reveal>03 / <span data-i18n="ft.marker">特性</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="ft.title">为什么用它</h2>
 
-      <div class="panel" data-reveal style="--i:2">
-        <div class="tabs" role="tablist">
-          <button class="tab is-active" role="tab" aria-selected="true" data-tab="t1" type="button" data-i18n="ft.tab1">零配置</button>
-          <button class="tab" role="tab" aria-selected="false" data-tab="t2" type="button" data-i18n="ft.tab2">独立环境</button>
-          <button class="tab" role="tab" aria-selected="false" data-tab="t3" type="button" data-i18n="ft.tab3">稳定守护</button>
-          <button class="tab" role="tab" aria-selected="false" data-tab="t4" type="button" data-i18n="ft.tab4">自动更新</button>
-          <button class="tab" role="tab" aria-selected="false" data-tab="t5" type="button" data-i18n="ft.tab5">安全边界</button>
-          <button class="tab" role="tab" aria-selected="false" data-tab="t6" type="button" data-i18n="ft.tab6">本地诊断</button>
-        </div>
-        <div class="tab-panels">
-          <div class="tab-panel is-active" id="t1" role="tabpanel" data-i18n="ft.p1">
+      <div class="feature-grid" data-reveal style="--i:2">
+          <article class="feature-card" data-i18n="ft.p1">
             <h3>无需安装 Node.js</h3>
             <p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本与 SHA-256 逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>
-          </div>
-          <div class="tab-panel" id="t2" role="tabpanel" data-i18n="ft.p2">
+          </article>
+          <article class="feature-card" data-i18n="ft.p2">
             <h3>独立数据目录,环境隔离</h3>
             <p>桌面版默认使用 <code>~/.dsh-desktop</code>:设置、会话、API Key、插件都是独立的一份,安装卸载都不影响你的命令行工作流。需要共享时,设 <code>DSH_HOME=~/.dsh</code> 即可。</p>
-          </div>
-          <div class="tab-panel" id="t3" role="tabpanel" data-i18n="ft.p3">
+          </article>
+          <article class="feature-card" data-i18n="ft.p3">
             <h3>崩溃自愈,指数退避</h3>
             <p>进程崩溃自动重启(指数退避),错误页可手动重试并查看日志尾部;单实例锁防止多开,托盘常驻,日志落盘可查。</p>
-          </div>
-          <div class="tab-panel" id="t4" role="tabpanel" data-i18n="ft.p4">
+          </article>
+          <article class="feature-card" data-i18n="ft.p4">
             <h3>Windows / Linux 自动更新</h3>
             <p>基于 electron-updater 的原地自动更新;macOS 在签名前检查新版本并引导至下载页。每日 <code>dsh-watch</code> 工作流跟踪上游 npm,有新版本自动发起升级 PR。</p>
-          </div>
-          <div class="tab-panel" id="t5" role="tabpanel" data-i18n="ft.p5">
+          </article>
+          <article class="feature-card" data-i18n="ft.p5">
             <h3>渲染层能力默认收敛</h3>
             <p>保持 Electron 沙箱与上下文隔离、关闭 Node 集成并限制页面导航;媒体、定位、通知、屏幕采集和文件系统等额外权限默认拒绝,未来只能按需显式放行。</p>
-          </div>
-          <div class="tab-panel" id="t6" role="tabpanel" data-i18n="ft.p6">
+          </article>
+          <article class="feature-card" data-i18n="ft.p6">
             <h3>问题发生时,带走一份可检查的报告</h3>
             <p>帮助菜单、托盘和启动失败页都能导出本地诊断报告。报告包含版本、系统状态和有上限的日志尾部,自动遮罩常见密钥与主目录,且绝不自动上传。</p>
-          </div>
-        </div>
+          </article>
       </div>
     </div>
   </section>
@@ -275,6 +272,6 @@
   </div>
 </footer>
 
-<script src="/assets/app.js?v=8" defer></script>
+<script src="/assets/app.js?v=9" defer></script>
 </body>
 </html>
