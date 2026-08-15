@@ -1,5 +1,5 @@
 /* dsh-electron-shell 官网脚本 v2:
-   - 中英切换(中文默认;中文模式下载链接走 GitCode 镜像,英文走 GitHub)
+   - 中英切换;macOS DMG / Windows EXE 双端下载与 SHA-256 校验
    - data/release.json 渲染下载矩阵;失败回退 GitHub API;再失败保留静态兜底
    - 平台识别 CTA / 复制 / Tab / 滚动 reveal
    零依赖,渐进增强。 */
@@ -35,14 +35,14 @@
       'wf.adds': '<li>跟随 Harness 的中英菜单与主题</li><li>原生窗口、托盘与单实例</li><li>运行时封装、进程守护与诊断</li><li>Electron 沙箱与导航边界</li>',
       'wf.keeps': '<li>Agent 与工具调用行为</li><li>上游版本和依赖闭包</li><li>模型、账户与插件配置</li><li>CLI 仍可独立并行使用</li>',
       'dl.marker': '下载', 'dl.title': '选择你的平台',
-      'dl.lead': 'macOS 与 Windows 安装包均提供 GitHub 与 GitCode 国内镜像两个下载源;镜像在发版后由维护者手动补齐,页面检测到可用后自动展示。Linux 用户请使用下方命令行方式。',
+      'dl.lead': '每个版本只发布两个安装包:macOS Apple Silicon 的 DMG 与 Windows x64 的 EXE;每个安装包附独立 SHA-256 校验文件。GitCode 镜像可用时与 GitHub 并列展示。',
       'dl.fallback': '版本数据加载失败时,可直接前往 <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> 或 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a> 下载。',
       'dl.note': '命令行方式同样可用;桌面壳功能与其完全一致,但使用独立数据目录 <code>~/.dsh-desktop</code>,互不干扰。',
       'ft.marker': '特性', 'ft.title': '为什么用它',
       'ft.p1': '<h3>无需安装 Node.js</h3><p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本与 SHA-256 逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>',
       'ft.p2': '<h3>独立数据目录,环境隔离</h3><p>桌面版默认使用 <code>~/.dsh-desktop</code>:设置、会话、API Key、插件都是独立的一份,安装卸载都不影响你的命令行工作流。需要共享时,设 <code>DSH_HOME=~/.dsh</code> 即可。</p>',
       'ft.p3': '<h3>原生菜单与 Harness 保持同一种语言</h3><p>首次启动按系统语言选择中文或英文;之后读取同一份 <code>locale.preference</code>,无需重启即可同步应用菜单、托盘、About、恢复页和对话框。主题也跟随 Harness 设置。</p>',
-      'ft.p4': '<h3>持续守护与可靠更新</h3><p>崩溃后按预算退避重启,窗口关闭后可驻留托盘,也可从帮助菜单安全重启 Harness。Windows / Linux 支持原地更新;macOS 检查新版本并引导至精确发布页。</p>',
+      'ft.p4': '<h3>持续守护与可靠更新</h3><p>崩溃后按预算退避重启,窗口关闭后可驻留托盘,也可从帮助菜单安全重启 Harness。Windows 保留应用内自动更新;未签名的 macOS 检查新版本并打开精确发布页。</p>',
       'ft.p5': '<h3>渲染层能力默认收敛</h3><p>保持 Electron 沙箱与上下文隔离、关闭 Node 集成并限制页面导航;媒体、定位、通知、屏幕采集和文件系统等额外权限默认拒绝,未来只能按需显式放行。</p>',
       'ft.p6': '<h3>问题发生时,带走一份可检查的报告</h3><p>帮助菜单、托盘和启动失败页都能导出本地诊断报告。报告包含版本、系统状态和有上限的日志尾部,自动遮罩常见密钥与主目录,且绝不自动上传。</p>',
       'vr.marker': '版本号', 'vr.title': '版本号怎么读',
@@ -92,14 +92,14 @@
       'wf.adds': '<li>Harness-synced bilingual menus and theme</li><li>Native window, tray, and single instance</li><li>Runtime packaging, supervision, and diagnostics</li><li>Electron sandbox and navigation boundary</li>',
       'wf.keeps': '<li>Agent and tool-call behavior</li><li>Upstream version and dependency closure</li><li>Model, account, and plugin configuration</li><li>The CLI remains independently usable</li>',
       'dl.marker': 'DOWNLOAD', 'dl.title': 'Pick your platform',
-      'dl.lead': 'macOS and Windows installers are served from both GitHub and a GitCode (China) mirror; the mirror is topped up by the maintainer after each release and appears once verified. Linux users: use the CLI below.',
+      'dl.lead': 'Every release carries exactly two installers: a DMG for Apple Silicon Macs and an EXE for Windows x64. Each has a separate SHA-256 file. A verified GitCode mirror appears alongside GitHub when available.',
       'dl.fallback': 'If live data fails to load, head to <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> directly.',
       'dl.note': 'The CLI route works too; the shell is functionally identical but keeps its own data home at <code>~/.dsh-desktop</code> — no interference either way.',
       'ft.marker': 'FEATURES', 'ft.title': 'Why this shell',
       'ft.p1': '<h3>No Node.js install required</h3><p>The shell bundles a pinned Node.js 22 LTS runtime and the complete <code>@deepseek-ai/dsh</code> dependency closure, SHA-256 locked per platform. Download → double-click → use.</p>',
       'ft.p2': '<h3>Isolated data home</h3><p>The desktop app defaults to <code>~/.dsh-desktop</code>: settings, sessions, API keys, and plugins are its own copy — installing or uninstalling never touches your CLI workflow. Set <code>DSH_HOME=~/.dsh</code> to share again.</p>',
       'ft.p3': '<h3>Native chrome in the same language as Harness</h3><p>First launch follows the operating-system language. Afterwards the shell reads the same <code>locale.preference</code>, live-syncing the app menu, tray, About, recovery pages, and dialogs without a restart. Theme follows Harness too.</p>',
-      'ft.p4': '<h3>Continuous supervision and reliable updates</h3><p>Budgeted backoff after crashes, close-to-tray behavior, and a safe Harness restart from Help. Windows / Linux update in place; macOS checks for updates and opens the exact release page.</p>',
+      'ft.p4': '<h3>Continuous supervision and reliable updates</h3><p>Budgeted backoff after crashes, close-to-tray behavior, and a safe Harness restart from Help. Windows keeps in-place automatic updates; unsigned macOS checks for updates and opens the exact release page.</p>',
       'ft.p5': '<h3>Renderer capabilities stay constrained</h3><p>Electron sandboxing and context isolation stay on, Node integration stays off, and navigation is guarded. Media, location, notification, capture, and filesystem permissions are denied by default; future exceptions must be explicitly allowlisted.</p>',
       'ft.p6': '<h3>Take an inspectable report when something breaks</h3><p>Export a local diagnostic report from Help, the tray, or the startup error page. It includes versions, system state, and a bounded log tail, masks common secrets and the home path, and is never uploaded automatically.</p>',
       'vr.marker': 'VERSIONING', 'vr.title': 'Reading the version',
@@ -139,12 +139,12 @@
   }
   var OS_NOTE = {
     zh: {
-      mac: '.dmg 拖入"应用程序"即可;.zip 解压后直接运行。',
-      win: '支持 Windows 10 及以上(64 位);安装后自动更新。',
+      mac: '.dmg 拖入“应用程序”即可;下载后可用同列 SHA-256 验证文件完整性。',
+      win: '支持 Windows 10 及以上(64 位)与原地自动更新;可用同列 SHA-256 验证下载。',
     },
     en: {
-      mac: 'Drag the .dmg into Applications; or unzip and run directly.',
-      win: 'Windows 10+ (64-bit); auto-updates after install.',
+      mac: 'Drag the DMG app into Applications; verify it with the SHA-256 shown in the same row.',
+      win: 'Windows 10+ (64-bit) with in-place updates; verify the EXE with the SHA-256 shown here.',
     },
   }
 
@@ -176,10 +176,13 @@
   }
   function platformOf(name) {
     if (/arm64-mac\.dmg$/.test(name)) return { os: 'mac', primary: true, fmt: 'dmg' }
-    if (/arm64-mac\.zip$/.test(name)) return { os: 'mac', primary: false, fmt: 'zip' }
     if (/setup-.*\.exe$/.test(name)) return { os: 'win', primary: true, fmt: 'exe' }
-    if (/x86_64\.AppImage$/.test(name)) return { os: 'linux', primary: true, fmt: 'AppImage' }
-    if (/amd64\.deb$/.test(name)) return { os: 'linux', primary: false, fmt: 'deb' }
+    return null
+  }
+
+  function publicKind(name) {
+    if (platformOf(name)) return 'installer'
+    if (platformOf(name.replace(/\.sha256$/, '')) && name.endsWith('.sha256')) return 'checksum'
     return null
   }
 
@@ -211,11 +214,12 @@
         release: {
           tag: r.tag_name, name: r.name || r.tag_name, html_url: r.html_url,
           published_at: r.published_at, prerelease: r.prerelease,
-          assets: r.assets.map(function (a) {
+          assets: r.assets.filter(function (a) { return publicKind(a.name) }).map(function (a) {
+            var kind = publicKind(a.name)
             return {
               name: a.name, size: a.size, downloads: a.download_count,
               url: a.browser_download_url,
-              kind: a.name.endsWith('.blockmap') ? 'blockmap' : (/^latest.*\.yml$/.test(a.name) ? 'update-meta' : 'installer'),
+              kind: kind, sha256: null,
               gitcode_url: null, gitcode_ok: false,
             }
           }),
@@ -243,7 +247,7 @@
     chip.href = r.html_url
 
     var meta = $('#hero-meta')
-    meta.innerHTML = r.tag + ' · macOS / Windows / Linux · <span data-i18n="hero.meta">' + t('hero.meta') + '</span>'
+    meta.innerHTML = r.tag + ' · macOS / Windows · <span data-i18n="hero.meta">' + t('hero.meta') + '</span>'
 
     var ver = r.tag.replace(/^v/, '')
     var m = ver.match(/^(.*)\.(shell\.\d+)$/)
@@ -274,6 +278,9 @@
       html += '<div class="platform-group__head"><h3>' + labels[os][0] + '</h3><span>' + labels[os][1] + '</span></div>'
       list.forEach(function (a) {
         var links = linksOf(a)
+        var checksum = data.release.assets.filter(function (candidate) {
+          return candidate.kind === 'checksum' && candidate.name === a.name + '.sha256'
+        })[0]
         html += '<div class="asset-row">'
         html += '<span class="asset-row__name" title="' + a.name + '">' + a.name + '</span>'
         html += '<span class="asset-row__meta">' + fmtSize(a.size) + ' · ↓ ' + a.downloads + '</span>'
@@ -285,6 +292,13 @@
         })
         html += '<button class="copybtn" type="button" data-copy="' + links[0].href + '">' + t('copy.link') + '</button>'
         html += '</span></div>'
+        if (checksum && /^[a-f0-9]{64}$/.test(checksum.sha256 || '')) {
+          var checksumText = checksum.sha256
+          var checksumLink = linksOf(checksum)[0]
+          html += '<div class="asset-row__checksum"><span>SHA-256</span><code title="' + checksumText + '">' + checksumText + '</code>'
+          html += '<a href="' + checksumLink.href + '">.sha256</a>'
+          html += '<button class="copybtn" type="button" data-copy="' + checksumText + '">' + t('copy') + '</button></div>'
+        }
       })
       html += '<p class="platform-note">' + notes[os] + '</p>'
       html += '</div>'

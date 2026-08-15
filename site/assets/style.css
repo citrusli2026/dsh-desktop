@@ -417,6 +417,14 @@ a { color: inherit; }
   white-space: nowrap; text-align: right;
 }
 .asset-row__actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.asset-row__checksum {
+  grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center; gap: 9px; margin-top: -5px;
+  font-family: var(--mono); font-size: 10.5px; color: var(--faint);
+}
+.asset-row__checksum code { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.asset-row__checksum a { color: var(--signal); text-decoration: none; }
+.asset-row__checksum a:hover { text-decoration: underline; }
 .dl-btn {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--ink); color: #fff;

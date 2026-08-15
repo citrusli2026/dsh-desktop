@@ -40,11 +40,9 @@ jobs:
       matrix:
         include:
           - os: macos-14
-            targets: --mac
-          - os: ubuntu-24.04
-            targets: --linux
+            targets: --mac dmg
           - os: windows-2022
-            targets: --win
+            targets: --win nsis
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -62,33 +60,25 @@ jobs:
         # insert a literal `--` before these args and turn them positional.
         run: pnpm run build && pnpm exec electron-builder ${{ matrix.targets }} --publish never
         env:
-          # No signing identity on CI: electron-builder falls back to ad-hoc
-          # signing on macOS (required to run on Apple Silicon), and leaves
-          # Windows/Linux unsigned. Unsigned-first per decision 0004.
+          # No distribution identity on CI: macOS uses ad-hoc signing (needed
+          # to run on Apple Silicon) and Windows stays unsigned. Decision 0016.
           # --publish never keeps electron-builder from creating the release
           # itself; the publish job below owns release creation.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Smoke packaged app (macOS / Windows)
-        if: ${{ runner.os != 'Linux' }}
+      - name: Smoke packaged app
         run: node scripts/smoke-packaged.mjs
-      - name: Smoke packaged app (Linux)
-        if: ${{ runner.os == 'Linux' }}
-        run: xvfb-run -a node scripts/smoke-packaged.mjs
-        env:
-          ELECTRON_DISABLE_SANDBOX: "1"
+      - name: Write installer SHA-256
+        run: node scripts/write-release-checksum.mjs dist
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
           name: dsh-electron-shell-${{ matrix.os }}
           path: |
             dist/*.dmg
-            dist/*.zip
             dist/*.exe
-            dist/*.AppImage
-            dist/*.deb
-            # Update metadata electron-updater reads from GitHub Releases.
-            dist/latest*.yml
-            dist/*.blockmap
+            dist/*.sha256
+            dist/*.exe.blockmap
+            dist/latest.yml
           if-no-files-found: error
 
   publish:
@@ -105,7 +95,7 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
-      - name: Validate release asset matrix and updater metadata
+      - name: Validate two installers, hashes, and Windows updater metadata
         run: node scripts/check-release-assets.mjs artifacts "${{ github.ref_name }}"
       - name: Publish GitHub release (create if missing, upload assets, undraft)
         env:

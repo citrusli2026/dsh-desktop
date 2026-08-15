@@ -22,7 +22,7 @@ const shellTest = test.extend<Fixture>({
 
     const server: Server = createServer((_request, response) => {
       response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
-      response.end('<!doctype html><html lang="en"><head><title>Stub Harness</title></head><body><main><h1>Harness test workspace</h1><input aria-label="Prompt"></main></body></html>')
+      response.end('<!doctype html><html lang="en"><head><title>Stub Harness</title></head><body><div data-slot="sidebar"><aside>Brand</aside></div><main><h1>Harness test workspace</h1><input aria-label="Prompt"></main></body></html>')
     })
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject)
@@ -86,12 +86,16 @@ shellTest('native menu and title follow the Harness locale preference @smoke @cr
     return { platform: process.platform, bounds: mainWindow.getBounds(), content: mainWindow.getContentBounds() }
   })
   if (chrome.platform === 'darwin') expect(chrome.content.height).toBe(chrome.bounds.height)
+  if (chrome.platform === 'darwin') {
+    await expect(window.locator('[data-slot="sidebar"] > :first-child')).toHaveCSS('padding-top', '12px')
+  }
   await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.getTitle()))
     .toBe('dsh-desktop — DeepSeek Harness (Community)')
   await expect.poll(() => menuLabels(electronApp)).toContain('Help')
   const english = await menuLabels(electronApp)
-  expect(english).toContain('dsh-desktop Website (Community)')
-  expect(english).toContain('DeepSeek Harness — Official')
+  expect(english).not.toContain('dsh-desktop Website (Community)')
+  expect(english).not.toContain('DeepSeek Harness — Official')
+  expect(english).toContain('Project Repository')
   expect(english).toContain('DeepSeek Official Website')
   expect(await window.evaluate(() => typeof (window as unknown as { require?: unknown }).require)).toBe('undefined')
 

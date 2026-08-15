@@ -39,10 +39,23 @@ async function api(url) {
   return res.json()
 }
 
-function classify(name) {
-  if (name.endsWith('.blockmap')) return 'blockmap'
-  if (/^latest.*\.yml$/.test(name)) return 'update-meta'
-  return 'installer'
+export function classifyPublicAsset(name) {
+  if (/^dsh-desktop-.+-arm64-mac\.dmg$/.test(name) || /^dsh-desktop-setup-.+\.exe$/.test(name)) return 'installer'
+  if (/^dsh-desktop-.+-arm64-mac\.dmg\.sha256$/.test(name) || /^dsh-desktop-setup-.+\.exe\.sha256$/.test(name)) return 'checksum'
+  return null
+}
+
+async function readChecksum(asset) {
+  const response = await fetch(asset.browser_download_url, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'User-Agent': 'dsh-electron-shell-site-generator',
+    },
+  })
+  if (!response.ok) throw new Error(`checksum download ${response.status} for ${asset.name}`)
+  const match = /^([a-f0-9]{64})  ([^\r\n]+)\r?\n$/.exec(await response.text())
+  if (match === null || `${match[2]}.sha256` !== asset.name) throw new Error(`invalid checksum asset ${asset.name}`)
+  return match[1]
 }
 
 /** GitCode redirects to a time-limited signed CDN URL; HEAD is rejected (401),
@@ -70,6 +83,8 @@ if (!release) {
   throw new Error(`no published release found for ${REPO}`)
 }
 
+const publicAssets = release.assets.filter(a => classifyPublicAsset(a.name) !== null)
+
 const data = {
   generated_at: new Date().toISOString(),
   repo: {
@@ -84,14 +99,16 @@ const data = {
     html_url: release.html_url,
     published_at: release.published_at,
     prerelease: release.prerelease,
-    assets: await Promise.all(release.assets.map(async (a) => {
+    assets: await Promise.all(publicAssets.map(async (a) => {
       const gitcodeUrl = `${GITCODE_BASE}/${release.tag_name}/${a.name}`
+      const kind = classifyPublicAsset(a.name)
       return {
         name: a.name,
         size: a.size,
         downloads: a.download_count,
         url: a.browser_download_url,
-        kind: classify(a.name),
+        kind,
+        sha256: kind === 'checksum' ? await readChecksum(a) : null,
         gitcode_url: gitcodeUrl,
         gitcode_ok: await verifyGitCode(gitcodeUrl),
       }
@@ -115,4 +132,4 @@ if (previous && strip(previous) === strip(data)) {
 
 await mkdir(path.dirname(OUT), { recursive: true })
 await writeFile(OUT, JSON.stringify(data, null, 2) + '\n')
-console.log(`wrote ${path.relative(ROOT, OUT)} for ${release.tag_name} (${release.assets.length} assets)`)
+console.log(`wrote ${path.relative(ROOT, OUT)} for ${release.tag_name} (${publicAssets.length} public assets)`)

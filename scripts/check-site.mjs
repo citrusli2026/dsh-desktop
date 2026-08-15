@@ -20,21 +20,30 @@ const data = JSON.parse(releaseRaw)
 JSON.parse(vercelRaw)
 
 requireValue(typeof data.release?.tag === 'string' && data.release.tag.startsWith('v'), 'release tag is missing')
-requireValue(Array.isArray(data.release.assets) && data.release.assets.length > 0, 'release assets are missing')
+requireValue(Array.isArray(data.release.assets), 'release assets are missing')
+requireValue(data.release.assets.length === 2 || data.release.assets.length === 4, 'public asset count must be 2 installers or 2 installers + 2 checksums')
 
 const installers = data.release.assets.filter(asset => asset.kind === 'installer')
+const checksums = data.release.assets.filter(asset => asset.kind === 'checksum')
+requireValue(installers.length === 2, 'exactly two installers are required')
 for (const [platform, pattern] of [
-  ['macOS', /\.(?:dmg|zip)$/],
+  ['macOS', /-arm64-mac\.dmg$/],
   ['Windows', /\.exe$/],
-  ['Linux', /\.(?:AppImage|deb)$/],
 ]) {
-  requireValue(installers.some(asset => pattern.test(asset.name)), `${platform} installer is missing`)
+  requireValue(installers.filter(asset => pattern.test(asset.name)).length === 1, `${platform} must have exactly one installer`)
 }
 for (const asset of data.release.assets) {
+  requireValue(asset.kind === 'installer' || asset.kind === 'checksum', `${asset.name} has an unsupported public kind`)
   requireValue(typeof asset.name === 'string' && asset.name !== '', 'asset name is missing')
   requireValue(typeof asset.size === 'number' && asset.size > 0, `${asset.name} has an invalid size`)
   requireValue(asset.url.includes(`/download/${data.release.tag}/${asset.name}`), `${asset.name} GitHub URL does not match the release`)
   requireValue(typeof asset.gitcode_ok === 'boolean', `${asset.name} GitCode status is not boolean`)
+}
+requireValue(checksums.length === 0 || checksums.length === 2, 'checksums must be absent or complete for both installers')
+for (const checksum of checksums) {
+  const installerName = checksum.name.replace(/\.sha256$/, '')
+  requireValue(installers.some(asset => asset.name === installerName), `${checksum.name} has no matching installer`)
+  requireValue(typeof checksum.sha256 === 'string' && /^[a-f0-9]{64}$/.test(checksum.sha256), `${checksum.name} has an invalid SHA-256`)
 }
 
 const localReferences = [...html.matchAll(/(?:href|src)="(\/(?:assets|data)\/[^"?#]+)[^\"]*"/g)].map(match => match[1])

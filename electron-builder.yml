@@ -38,8 +38,8 @@ extraResources:
 asar: true
 npmRebuild: false
 
-# GitHub Releases feed for electron-updater (Windows/Linux; macOS updates
-# require signing, see docs/decisions/0004).
+# Windows electron-updater reads latest.yml and the NSIS blockmap from the
+# GitHub release. macOS remains check-only because the build is unsigned.
 publish:
   provider: github
   owner: citrusli2026
@@ -49,22 +49,13 @@ mac:
   category: public.app-category.developer-tools
   target:
     - dmg
-    - zip
-  # No spaces in artifact names: upload-artifact replaces them with dots and
-  # electron-updater would never find the files latest*.yml references.
+  # One large installer per supported desktop platform (decision 0016).
   artifactName: ${name}-${version}-${arch}-mac.${ext}
 
 win:
   target:
     - nsis
   artifactName: ${name}-setup-${version}.${ext}
-
-linux:
-  target:
-    - AppImage
-    - deb
-  category: Development
-  artifactName: ${name}-${version}-${arch}.${ext}
 
 nsis:
   oneClick: false

@@ -60,20 +60,21 @@ src/preload/index.ts        仅暴露 retry 与诊断导出两项窄桥
 每次主分支 CI 执行:
 
 1. TypeScript typecheck;
-2. 53 个 `node:test` 单测;
-3. `site:check`(release 数据、三平台安装包、双语键与静态资源);
+2. 55 个 `node:test` 单测;
+3. `site:check`(双端 release 数据、双语键与静态资源);
 4. 主进程/预加载构建;
 5. Harness 闭包与内置 Node bootstrap;
 6. 三条 xvfb 冒烟:正常启动、错误页重试成功、强制重试失败后按钮恢复;
 7. 真实 Electron E2E:无标题栏拖拽区、语言同步、沙箱、close-to-tray 与
    第二实例恢复。
 
-tag Release 在上述基础上再执行质量门禁,并强制:
+shell.11 起,tag Release 在上述基础上再执行质量门禁,并强制:
 
 - tag 等于 `v${package.version}`;
-- 三平台从 unpacked 产物启动内置 Harness 并通过 smoke;
-- macOS / Windows / Linux 11 个预期制品齐全;
-- `latest.yml`、`latest-mac.yml`、`latest-linux.yml` 引用本次版本安装包。
+- macOS / Windows 从 unpacked 产物启动内置 Harness 并通过 smoke;
+- 只有 Apple Silicon DMG 与 Windows x64 EXE 两个大体积安装包;
+- 两个安装包的 SHA-256 实算匹配,且 Windows `latest.yml` 与 `.exe.blockmap`
+  齐全并引用本次 EXE;严格拒绝其余 Release 文件。
 
 shell.9:CI run `31870759765`;Release run `31870835413`;11 个资产发布成功。
 shell.10:CI run `31889803242`;Release run `31889903318`;Site Data Refresh run
@@ -121,10 +122,21 @@ shell.10:CI run `31889803242`;Release run `31889903318`;Site Data Refresh run
 
 完整菜单合同与后续小步路线见 `docs/plans/electron-shell-capabilities.md`。
 
+### shell.11 候选内容（发布完成后回填运行记录）
+
+- 发布面收敛为两个大体积安装包:Apple Silicon DMG 与 Windows x64 EXE;
+  每个安装包附标准 `.sha256`,Windows 自动更新继续保留 `latest.yml` 与
+  `.exe.blockmap`,官网只展示用户需要的双端下载与校验信息。
+- macOS 无标题栏侧栏增加 12 px 安全上边距,使交通灯与 DeepSeek 品牌区保持
+  清晰间隔;仍不引入可见假标题栏。
+- 帮助菜单移除与 About 重复的“社区官网”和“Harness 官方页”,保留项目源代码、
+  问题反馈与 DeepSeek 官方网站;About 继续承担完整社区身份与来源说明。
+
 ## 5. 已知限制
 
 - 公开 macOS Release 仍未完成分发签名/公证,只能检查更新并引导下载;本机审核包
   的 Apple Development 签名不等价于 Developer ID 分发签名或 notarization;
 - 诊断遮罩为尽力而为,界面已要求用户分享前自行检查;
 - GitCode 发行版资产为人工镜像渠道:跨境自动推送/拉取方案均已否决(0008
-  第二修订),发版后由维护者手动上传 dmg/zip/exe 并触发 Site Data Refresh;
+  第二修订),发版后由维护者从国内网络手动上传 dmg/exe 与校验文件并触发
+  Site Data Refresh;

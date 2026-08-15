@@ -1,9 +1,9 @@
 name: GitCode Mirror Backfill
 
-# 把历史 release 的资产回补到 GitCode 镜像(华为云 CDN,国内直连)。
+# 历史/故障恢复工具；日常发版由维护者从国内网络通过浏览器上传两个安装包与校验文件。
 # 仅上传 GitCode 上尚不可下载的文件(range GET 实测),可重复执行。
-# mirror-gitcode 在 release.yml 里只跟随新发版;本工作流用于补齐旧 tag。
-# 前置:仓库变量 GITCODE_REPO + 密钥 GITCODE_TOKEN(与 release.yml 相同)。
+# 跨境上传大文件可能超时,不属于主发布链路。
+# 前置:仓库变量 GITCODE_REPO + 密钥 GITCODE_TOKEN。
 
 on:
   workflow_dispatch:

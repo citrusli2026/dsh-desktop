@@ -1,4 +1,4 @@
-/** Platform update setup and the unsigned-macOS check-only prompt. */
+/** Windows auto-update setup and the unsigned-macOS check-only prompt. */
 import { app, dialog, net, shell } from 'electron'
 import electronUpdater from 'electron-updater'
 import { isNewerVersion, latestPublishedRelease } from './update-check.ts'
@@ -86,7 +86,7 @@ export async function checkForUpdatesInteractively(locale: ShellLocale): Promise
 }
 
 export function configureAutoUpdates(smokeTest: boolean): void {
-  if (!app.isPackaged || smokeTest || process.platform === 'darwin') return
+  if (!app.isPackaged || smokeTest || process.platform !== 'win32') return
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
   autoUpdater.on('update-downloaded', () => console.log('dsh-desktop: update downloaded, will install on quit'))

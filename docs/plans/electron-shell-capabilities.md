@@ -1,6 +1,6 @@
 # Electron Shell 能力规划
 
-> 状态：shell.10 已发布；主分支 CI、三平台 packaged smoke 与官网刷新均通过。
+> 状态：shell.11 发布候选；双端 packaged smoke、严格 Release 门与官网刷新待本轮验证。
 > 原则：原生能力只解决桌面生命周期与可信交付，不复制 Harness 已有业务功能。
 
 ## 1. 产品约定
@@ -9,11 +9,13 @@
 - Shell 与 Harness 共用 `$DSH_HOME/settings.yaml` 中的
   `locale.preference` 和 `ui-theme.preference`，内部切换后无需重启即可同步。
 - 主窗口隐藏操作系统标题栏，让 Harness 使用完整内容高度；macOS 保留交通灯，
-  Windows/Linux 保留透明覆盖式窗口按钮，并提供不遮挡控件的透明拖拽区。
+  并为侧栏品牌区保留 12 px 安全上边距；Windows/Linux 保留透明覆盖式窗口按钮，
+  同时提供不遮挡控件的透明拖拽区。
 - 所有原生界面必须同时具有完整中英文文案；若某项无法可靠同步，英文是唯一
   允许的回退，不能出现同一菜单中中英混杂。
-- 窗口标题、About 与帮助入口持续明确“社区维护、非官方”，并同时提供社区项目、
-  DeepSeek Harness 官方页和 DeepSeek 官方网站，避免来源混淆。
+- 窗口标题与 About 持续明确“社区维护、非官方”；About 提供社区官网、项目源码、
+  Harness 官方页和 DeepSeek 官网。帮助菜单只保留项目源码、问题反馈与 DeepSeek
+  官网，避免重复。
 
 ## 2. 原生菜单合同
 
@@ -24,7 +26,7 @@
 | 编辑 | 撤销/重做、剪切/复制/粘贴、删除、全选 | 同左 | 保留系统熟悉的文本操作 |
 | 视图 | 缩放、全屏；开发包额外提供刷新/开发者工具 | 同左 | 阅读与排障；正式包不暴露开发入口 |
 | 窗口 | 最小化、缩放、全部置前 | 最小化、最大化/还原 | 使用平台原生窗口习惯 |
-| 帮助 | 重启 Harness、日志、诊断、更新与可信链接 | 同左并包含 About | 形成恢复、支持与来源验证闭环 |
+| 帮助 | 重启 Harness、日志、诊断、项目源码/反馈、DeepSeek 官网 | 同左并包含更新与 About | 形成恢复、支持与来源验证闭环，重复来源说明集中到 About |
 
 页面右键菜单只按上下文显示编辑、复制、打开链接和复制链接。托盘只保留高频
 生命周期动作：显示/隐藏、状态、启动/重启、日志、诊断、更新、退出。
@@ -47,8 +49,9 @@
 - 每次提交：typecheck、Node 单测、官网双语/资产检查、主进程构建。
 - Linux CI：三条 Harness xvfb 冒烟，加真实 Electron E2E（菜单、语言同步、
   close-to-tray、第二实例恢复）；失败上传 trace、截图与报告。
-- tag Release：重复 E2E；三平台打包后必须从 unpacked 产物启动内置 Harness；
-  再校验安装包与 updater 元数据矩阵，全部通过才创建 Release。
+- tag Release：重复 E2E；macOS / Windows 打包后必须从 unpacked 产物启动内置
+  Harness；再严格校验两个安装包、两个哈希与 Windows 的两个更新侧文件，全部
+  通过才创建 Release。
 - 发版顺序：人工审核本机候选 → bump shell 版本 → 完整门禁 → 提交/push →
   推 `v${package.version}` tag → Release 完成 → 官网 release 数据自动刷新。
 
@@ -56,10 +59,11 @@
 
 1. shell.10：交付双语菜单、系统首选语言、主题同步、About 可信链接、托盘与重启
    生命周期、真实 Electron/打包产物测试。
-2. shell.11：checksum 清单和下载校验说明；在不扩大采集面的前提下增加诊断摘要
-   预览/复制；补 Windows 进程树退出的真实 CI 断言。
-3. 分发成熟度：Developer ID 签名与 notarization 完成后再启用 macOS 原地更新；
-   Intel macOS 是否增加产物由真实用户需求决定。
+2. shell.11：发布两个大体积安装包与 checksum，保留 Windows updater 所需小文件；
+   修正 macOS 交通灯安全间距并精简重复帮助项。
+3. shell.12：在不扩大采集面的前提下增加诊断摘要预览/复制；补 Windows 进程树
+   退出的真实 CI 断言。
+4. 分发成熟度：Developer ID 签名与 notarization 完成后再启用 macOS 原地更新。
 
 不在近期范围：把 Harness 设置或业务页面重做成 Electron 原生 UI、自动上传日志、
 放宽渲染器权限，或从本仓库直接生成 iOS 包（当前没有 iOS/Xcode 工程）。

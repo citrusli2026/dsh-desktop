@@ -17,13 +17,15 @@ function labels(items: readonly MenuItemConstructorOptions[]): string[] {
   return result
 }
 
-test('macOS Chinese menu is native-shaped and contains community and official trust links', () => {
+test('macOS Chinese menu is native-shaped and avoids links duplicated by About', () => {
   const template = buildAppMenuTemplate({ locale: 'zh', platform: 'darwin', packaged: true, appName: 'dsh-desktop' }, actions)
   assert.deepEqual(template.map(item => item.label), ['dsh-desktop', '文件', '编辑', '视图', '窗口', '帮助'])
   const all = labels(template)
   assert.ok(all.includes('关于 dsh-desktop'))
-  assert.ok(all.includes('DeepSeek Harness 官方页'))
   assert.ok(all.includes('DeepSeek 官方网站'))
+  assert.ok(all.includes('项目源代码'))
+  assert.ok(!all.includes('dsh-desktop 官网（社区）'))
+  assert.ok(!all.includes('DeepSeek Harness 官方页'))
   assert.ok(all.includes('服务'))
   assert.ok(all.includes('关闭窗口'))
   assert.ok(all.includes('删除'))

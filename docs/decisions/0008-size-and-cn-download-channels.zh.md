@@ -72,7 +72,7 @@ PUT URL 在传完前过期返回 502,脚本 fail-fast 使整批中止。曾设�
 放弃:为降级渠道再维护一套跨平台流水线,复杂度不成比例。
 
 现行机制改为**人工上传**:发版后由维护者在 GitCode 发行版页面手动上传
-macOS(dmg/zip)与 Windows(exe)三个面向用户的安装包——维护者处于国内
+macOS(dmg)与 Windows(exe)两个面向用户的安装包及可选校验文件——维护者处于国内
 网络,浏览器上传畅通,这正是其他项目(如 DeepSeek-Harness dmg)采用的方式。
 blockmap / latest*.yml 不镜像:auto-updater 始终直连 GitHub,站点也不展示
 这些工程文件。上传完成后手动触发一次 `Site Data Refresh`,
@@ -81,9 +81,8 @@ blockmap / latest*.yml 不镜像:auto-updater 始终直连 GitHub,站点也不�
 
 官网下载区同步收敛:
 
-- 只渲染 macOS 与 Windows 两组;Linux 资产仍在 GitHub Release 中发布
-  (脚本与 CI 门禁不变),但官网不再展示,文案引导 Linux 用户使用
-  `npx @deepseek-ai/dsh web`;
+- 只渲染 macOS DMG 与 Windows EXE;后续决策 0016 也从 GitHub Release
+  移除了 Linux 包与 macOS ZIP;
 - 每个资产并列两个下载按钮:GitCode 镜像(`gitcode_ok` 时)与 GitHub,
   中文界面镜像在前,英文界面 GitHub 在前;不再按语言硬切换单一来源;
 - 移除“全部文件(含差量更新元数据)”折叠表——更新元数据由

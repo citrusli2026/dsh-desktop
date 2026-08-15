@@ -5,7 +5,7 @@
 > 命名规则:应用与安装包叫 `dsh-desktop`;GitHub 仓库沿用原名 `dsh-electron-shell`。
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)(`dsh`)的 Electron 桌面壳:下载安装即用,功能与
-`npx @deepseek-ai/dsh web` 完全一致——壳只提供窗口、进程监督、托盘与自动更新,
+`npx @deepseek-ai/dsh web` 完全一致——壳只提供窗口、进程监督、托盘与更新,
 不改变任何 agent 功能。壳本身 MIT 开源。
 
 > 非官方社区打包,与 DeepSeek AI 无关联;DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打包。
@@ -24,8 +24,8 @@
   系统托盘(实时状态、重启、日志目录、检查更新)、窗口几何记忆、日志落盘;
 - **渲染层收敛**:保持上下文隔离与沙箱、关闭 Node 集成、限制页面导航,并
   默认拒绝设备、采集、通知和文件系统等额外权限(决策记录 0014);
-- **更新**:Windows / Linux 应用内自动更新;macOS 在签名前检查新版本并
-  引导至下载页(决策记录 0004、0010)。
+- **更新**:Windows 支持原地自动更新;未签名的 macOS 检查新版本并打开精确
+  发布页,由用户明确下载安装(决策记录 0010、0016)。
 
 ## 版本号
 
@@ -40,12 +40,14 @@
 
 | 平台 | 安装包 |
 |---|---|
-| macOS(仅 Apple Silicon,未签名) | `dsh-desktop-<版本>-arm64-mac.dmg` 或 `-arm64-mac.zip` |
+| macOS(仅 Apple Silicon,未签名) | `dsh-desktop-<版本>-arm64-mac.dmg` |
 | Windows | `dsh-desktop-setup-<版本>.exe`(NSIS,可选择安装目录) |
-| Linux | `dsh-desktop-<版本>-x86_64.AppImage`(免安装)或 `dsh-desktop-<版本>-amd64.deb` |
 
 - macOS:首次打开请右键 → 打开(未签名,决策记录 0004);
 - Windows SmartScreen:点「更多信息」→「仍要运行」(未签名)。
+- 每个安装包都有同名 `<安装包>.sha256` 文件,因此面向用户最多展示四个资产。
+  Release 仅额外保留 Windows 原地更新所需的小型 `latest.yml` 与
+  `.exe.blockmap`;不发布 ZIP 或 Linux 包(决策 0016)。
 
 ### GitHub 慢或打不开?下载加速
 
@@ -60,7 +62,7 @@ https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/
 其他可选前缀(随社区维护情况增减):`https://gh-proxy.com/`、`https://ghfast.top/`。
 这些镜像由社区免费运营、与本项目无关,可用性会波动——一个失效就换下一个。
 
-仓库维护者可启用两个镜像渠道,均为 release 流水线中的可选任务,未配置时静默跳过:
+仓库维护者可使用两个可选镜像渠道:
 
 - **Cloudflare R2**(任务 `mirror-r2`):S3 兼容对象存储,出口流量永久免费
   (10GB 免费额度)。建名为 `dsh-electron-shell` 的桶 + 具备对象读写权限的
@@ -69,9 +71,9 @@ https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/
   (或 r2.dev 开发域名)即得固定下载链接。补传已发布版本:
   `gh release download <tag>` 下载资产后逐文件
   `wrangler r2 object put "dsh-electron-shell/<tag>/<文件>" --file <文件>`。
-- **GitCode**(任务 `mirror-gitcode`,2026-08-15 已联调验证):附件由国内华为云
-  CDN 节点分发。在 gitcode.com 建镜像仓库、签发 personal access token,设置
-  仓库变量 `GITCODE_REPO`(`owner/repo`)与 secret `GITCODE_TOKEN` 即可。
+- **GitCode**(人工,2026-08-15 已联调验证):附件由国内华为云 CDN 节点分发。
+  从国内网络人工上传两个安装包(以及可选的两个小型校验文件),随后重跑
+  `Site Data Refresh`。
   稳定附件链接形如
   `https://gitcode.com/<owner>/<repo>/releases/download/<tag>/<文件>`;
   其背后的 `file-cdn.gitcode.com` 直链是签名时效 URL,不要直接对外引用。

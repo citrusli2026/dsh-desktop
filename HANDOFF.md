@@ -8,11 +8,11 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>(备用 <https://dsh-electron-shell.vercel.app>) |
-| 最新版本 | ✅ `v0.1.0-rc.6.shell.10`,macOS / Windows / Linux 共 11 个资产齐全 |
+| 最新版本 | 🔄 `v0.1.0-rc.6.shell.11` 发布候选；仅两个大体积安装包，另有两个哈希与两个 Windows updater 小文件 |
 | 主分支 CI | ✅ run `31889803242`;53 项单测、官网门禁、构建、三条 xvfb 冒烟与真实 Electron E2E 全绿 |
 | 核心发布 | ✅ Release run `31889903318`;tag/版本、三平台 packaged smoke、制品矩阵与更新元数据均通过 |
 | 官网数据 | ✅ refresh run `31890214574`;提交 `292c2a8` 已同步 shell.10 的 11 个资产并部署 |
-| 国内镜像 | 🟡 GitCode 发行版资产为人工渠道;shell.10 的 dmg/zip/exe 待维护者手动补齐 |
+| 国内镜像 | 🔄 GitCode 发行版资产为人工渠道;shell.11 发布后从国内网络上传 dmg/exe 与哈希 |
 
 ## 二、官网浅色体系与声明精简(2026-08-15 已提交部署,无新 tag)
 
@@ -30,7 +30,7 @@
    Development 签名验证通过但未公证;DMG SHA-256 为
    `1ba98e73df9a30a3af50160a004ab565b81c7d927f1cbbb46971cdab16c0a77e`,ZIP 为
    `d1aa8957b61b207693d42c340429b9eb078811ac2fc9bbe3e69f8c624f695108`。
-5. 当前仓库没有 iOS/Xcode 工程;Electron 交付目标是 macOS、Windows、Linux。
+5. 当前仓库没有 iOS/Xcode 工程;Electron 安装包交付目标是 macOS 与 Windows。
    如需 iPhone/iPad 包,必须另立 SwiftUI 或跨平台客户端,不能从现有 Electron
    配置直接生成。
 
@@ -52,18 +52,18 @@
 ```text
 main push → CI + Vercel
 tag push  → Release verify
-             → macOS / Windows / Linux 并行打包
-             → 11 资产 + updater 元数据门禁
+             → macOS / Windows 并行打包并启动自身 Harness
+             → 2 安装包 + 2 哈希 + 2 Windows updater 小文件门禁
              → GitHub Release
                 ├─ Site Data Refresh → main/release.json → Vercel
                 ├─ Release Mirrors → R2(可失败、不中断主发布)
                 └─ GitCode 镜像 = 人工:维护者在发行版页手动上传
-                   dmg / zip / exe,再手动触发一次 Site Data Refresh
+                   dmg / exe / hashes,再手动触发一次 Site Data Refresh
 ```
 
 GitCode 自动推送已在 shell.8/9 连续失败(跨境 ~150 KB/s,预签名 URL 过期
 502);拉取式流水线方案评估后放弃,决策与过程见 docs/decisions/0008 第二
-修订。人工上传只需三个面向用户的安装包;blockmap / latest*.yml 不镜像,
+修订。人工上传只需两个面向用户的安装包与校验文件;blockmap / latest*.yml 不镜像,
 auto-updater 始终直连 GitHub。
 官网数据生成器逐资产用 range GET 探测 GitCode;中文页面在镜像 URL 真实
 可下载时并列展示镜像与 GitHub 两个下载源,否则只展示 GitHub。不要把带
@@ -78,14 +78,14 @@ auto-updater 始终直连 GitHub。
 | 重新生成下载数据 | `node scripts/gen-site-data.mjs` |
 | 校验汇总制品 | `node scripts/check-release-assets.mjs <目录> <v-tag>` |
 | 手动刷新官网数据 | Actions → Site Data Refresh → Run workflow |
-| 补齐 GitCode 镜像 | GitCode 发行版页手动上传 dmg/zip/exe → 再触发一次 Site Data Refresh |
+| 补齐 GitCode 镜像 | GitCode 发行版页手动上传 dmg/exe 与 `.sha256` → 再触发一次 Site Data Refresh |
 | 回补历史版本 | 同上(人工);GitHub 侧 GitCode Mirror Backfill 仅小文件实际可用 |
 | 下次壳发版 | `node scripts/version.mjs bump shell` → CI 绿 → 推 tag |
 | 线上部署 | push `main`;Vercel 项目 root=`site/` 自动部署 |
 
 ## 六、已知事项
 
-- GitCode 资产镜像为人工渠道:发版后维护者在发行版页手动上传 dmg/zip/exe,
+- GitCode 资产镜像为人工渠道:发版后维护者在发行版页手动上传 dmg/exe 与哈希,
   再触发 Site Data Refresh 让官网识别(根因与方案评估见 0008 第二修订:跨境
   推送 ~150 KB/s 且预签名 URL 过期 502;拉取式流水线复杂度不成比例,放弃)。
   自部署 gh-proxy(`GH_PROXY_PREFIX` 思路)仅作备选;公共代理实例实测
@@ -110,3 +110,16 @@ auto-updater 始终直连 GitHub。
 - shell.10 已按“主分支 CI → tag → 三平台 Release → Site Data Refresh”顺序
   发布，正式域名已验证返回本版本和 11 个资产。完整顺序与后续边界见
   `docs/plans/electron-shell-capabilities.md`。
+
+## 八、shell.11 发布候选
+
+- Release 从 11 个资产收敛为严格 6 个文件:只有 Apple Silicon DMG 与 Windows
+  x64 EXE 两个大文件,各附一个 `.sha256`;另保留 Windows 已安装客户端所需的
+  `latest.yml` 与 `.exe.blockmap`。官网与 GitCode 只面向用户展示/镜像前四项。
+- 官网下载区只渲染两端安装包,并直接显示可复制的 SHA-256；历史 shell.10 数据
+  会自动收敛成两个主安装包,新 Release 发布后再同步哈希与 GitCode 可用性。
+- macOS 侧栏增加 12 px 顶部安全间距,使交通灯与 DeepSeek 品牌区分离；帮助菜单
+  删除与 About 重复的社区官网和 Harness 官方页,保留项目源码、反馈与 DeepSeek
+  官网。
+- 发布完成后需在本节/状态表回填 GitHub CI、Release、Site Data Refresh run，
+  GitCode tag 提交与四个面向用户文件的可下载验证结果。

@@ -85,7 +85,7 @@ then rejected by the maintainer: a second cross-platform pipeline is
 disproportionate complexity for a best-effort channel.
 
 The channel is now **manual**: after each release the maintainer uploads the
-three user-facing installers (macOS dmg/zip, Windows exe) through the GitCode
+two user-facing installers (macOS dmg, Windows exe) and their optional checksum files through the GitCode
 release page — the maintainer's domestic network makes browser uploads
 painless, the same approach other projects use. blockmap / latest*.yml are
 not mirrored: auto-updater always talks to GitHub, and the site no longer
@@ -95,9 +95,8 @@ the site starts showing the mirror source.
 
 The download section narrows accordingly:
 
-- only macOS and Windows groups render; Linux assets still ship on GitHub
-  Releases (scripts and CI gates unchanged) but are no longer displayed —
-  the copy points Linux users at `npx @deepseek-ai/dsh web`;
+- only the macOS DMG and Windows EXE render; decision 0016 later removed Linux
+  packages and the secondary macOS ZIP from GitHub Releases as well;
 - every asset shows two buttons side by side: GitCode mirror (when
   `gitcode_ok`) and GitHub — Chinese UI puts the mirror first, English puts
   GitHub first; no more single-source language switching;

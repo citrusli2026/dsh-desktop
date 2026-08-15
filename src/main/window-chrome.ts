@@ -1,5 +1,6 @@
 /** Cross-platform hidden-title-bar options with native window controls retained. */
 export const WINDOW_CONTROLS_OVERLAY_HEIGHT = 36
+export const MACOS_SIDEBAR_SAFE_TOP = 12
 
 export interface HiddenTitleBarOptions {
   titleBarStyle: 'hidden'

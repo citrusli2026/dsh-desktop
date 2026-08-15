@@ -7,6 +7,7 @@
  */
 /// <reference lib="dom" />
 import { contextBridge, ipcRenderer } from 'electron'
+import { MACOS_SIDEBAR_SAFE_TOP } from '../main/window-chrome.ts'
 
 function installWindowDragRegion(): void {
   if (document.querySelector('[data-dsh-window-drag-region]') !== null) return
@@ -28,6 +29,13 @@ function installWindowDragRegion(): void {
   region.style.setProperty('-webkit-app-region', 'drag')
   region.style.setProperty('app-region', 'drag')
   document.body.append(region)
+
+  if (process.platform === 'darwin') {
+    const safeInset = document.createElement('style')
+    safeInset.dataset.dshMacosSidebarSafeInset = ''
+    safeInset.textContent = `[data-slot="sidebar"] > :first-child { padding-top: ${MACOS_SIDEBAR_SAFE_TOP}px !important; }`
+    document.head.append(safeInset)
+  }
 }
 
 if (document.readyState === 'loading') {

@@ -21,3 +21,4 @@ This directory records the architecture decisions made while building dsh-electr
 | 0013 | Product naming: app/artifacts are dsh-desktop, repo keeps dsh-electron-shell / 产品命名:应用与安装包用 dsh-desktop,仓库保持 dsh-electron-shell | [EN](0013-product-naming.md) · [中文](0013-product-naming.zh.md) | Accepted / 已接受 |
 | 0014 | Deny renderer permissions by default / 渲染层权限默认拒绝 | [EN](0014-deny-renderer-permissions-by-default.md) · [中文](0014-deny-renderer-permissions-by-default.zh.md) | Accepted / 已接受 |
 | 0015 | Local-only diagnostics and bounded log retention / 本地诊断报告与有界日志保留 | [EN](0015-local-diagnostics-and-log-retention.md) · [中文](0015-local-diagnostics-and-log-retention.zh.md) | Accepted / 已接受 |
+| 0016 | Minimal dual-platform release surface / 最小双端发布面 | [EN](0016-minimal-dual-platform-release-surface.md) · [中文](0016-minimal-dual-platform-release-surface.zh.md) | Accepted / 已接受 |

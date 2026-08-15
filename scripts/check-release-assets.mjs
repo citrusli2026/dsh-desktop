@@ -1,40 +1,53 @@
 #!/usr/bin/env node
-/** Validate the cross-platform release bundle before GitHub publication. */
+/** Validate two large installers plus hashes and required Windows updater metadata. */
+import { createHash } from 'node:crypto'
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 export function expectedAssetNames(version) {
+  const macInstaller = `dsh-desktop-${version}-arm64-mac.dmg`
+  const windowsInstaller = `dsh-desktop-setup-${version}.exe`
   return [
-    `dsh-desktop-${version}-amd64.deb`,
-    `dsh-desktop-${version}-arm64-mac.dmg`,
-    `dsh-desktop-${version}-arm64-mac.dmg.blockmap`,
-    `dsh-desktop-${version}-arm64-mac.zip`,
-    `dsh-desktop-${version}-arm64-mac.zip.blockmap`,
-    `dsh-desktop-${version}-x86_64.AppImage`,
-    `dsh-desktop-setup-${version}.exe`,
-    `dsh-desktop-setup-${version}.exe.blockmap`,
-    'latest-linux.yml',
-    'latest-mac.yml',
+    macInstaller,
+    `${macInstaller}.sha256`,
+    windowsInstaller,
+    `${windowsInstaller}.sha256`,
+    `${windowsInstaller}.blockmap`,
     'latest.yml',
   ]
 }
 
 export async function validateReleaseAssets(directory, version) {
-  const names = new Set(await readdir(directory))
+  const actual = (await readdir(directory)).sort()
   const expected = expectedAssetNames(version)
-  const missing = expected.filter(name => !names.has(name))
-  if (missing.length > 0) throw new Error(`missing release assets: ${missing.join(', ')}`)
-
-  const metadata = [
-    ['latest.yml', `dsh-desktop-setup-${version}.exe`],
-    ['latest-mac.yml', `dsh-desktop-${version}-arm64-mac.zip`],
-    ['latest-linux.yml', `dsh-desktop-${version}-x86_64.AppImage`],
-  ]
-  for (const [file, installer] of metadata) {
-    const body = await readFile(resolve(directory, file), 'utf8')
-    if (!body.includes(installer)) throw new Error(`${file} does not reference ${installer}`)
+  const missing = expected.filter(name => !actual.includes(name))
+  const unexpected = actual.filter(name => !expected.includes(name))
+  if (missing.length > 0 || unexpected.length > 0) {
+    throw new Error([
+      missing.length > 0 ? `missing: ${missing.join(', ')}` : '',
+      unexpected.length > 0 ? `unexpected: ${unexpected.join(', ')}` : '',
+    ].filter(Boolean).join('; '))
   }
+
+  for (const installer of expected.filter(name => name.endsWith('.dmg') || name.endsWith('.exe'))) {
+    const bytes = await readFile(resolve(directory, installer))
+    const actualHash = createHash('sha256').update(bytes).digest('hex')
+    const checksum = await readFile(resolve(directory, `${installer}.sha256`), 'utf8')
+    const match = /^([a-f0-9]{64})  ([^\r\n]+)\r?\n$/.exec(checksum)
+    if (match === null || match[2] !== installer) {
+      throw new Error(`${installer}.sha256 has an invalid sha256sum format`)
+    }
+    if (match[1] !== actualHash) throw new Error(`${installer}.sha256 does not match ${installer}`)
+  }
+
+  const windowsInstaller = `dsh-desktop-setup-${version}.exe`
+  const updateManifest = await readFile(resolve(directory, 'latest.yml'), 'utf8')
+  if (!updateManifest.includes(windowsInstaller)) {
+    throw new Error(`latest.yml does not reference ${windowsInstaller}`)
+  }
+  const blockmap = await readFile(resolve(directory, `${windowsInstaller}.blockmap`))
+  if (blockmap.byteLength === 0) throw new Error(`${windowsInstaller}.blockmap is empty`)
   return expected.length
 }
 

@@ -7,7 +7,7 @@ name: Release Mirrors
 # GitCode is NOT mirrored from here anymore: pushing 160–220 MB from GitHub's
 # overseas runners to GitCode OBS ran at ~150 KB/s and died on 502 once the
 # pre-signed URL expired mid-transfer (shell.8/shell.9). The maintainer now
-# uploads the three user-facing installers from a domestic connection. The
+# uploads the two user-facing installers and optional checksums from a domestic connection. The
 # GitHub-side backfill remains available for small-file recovery only.
 on:
   workflow_run:

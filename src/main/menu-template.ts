@@ -2,8 +2,6 @@
 import type { MenuItemConstructorOptions } from 'electron'
 import { shellText, type ShellLocale } from './locale.ts'
 import {
-  COMMUNITY_WEBSITE_URL,
-  DEEPSEEK_HARNESS_URL,
   DEEPSEEK_OFFICIAL_URL,
   PROJECT_ISSUES_URL,
   PROJECT_REPO_URL,
@@ -117,11 +115,9 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
     { label: t('menu.openLogs'), click: actions.openLogs },
     { label: t('menu.exportDiagnostics'), click: actions.exportDiagnostics },
     { type: 'separator' },
-    { label: t('menu.communityWebsite'), click: () => actions.openExternal(COMMUNITY_WEBSITE_URL) },
     { label: t('menu.projectRepository'), click: () => actions.openExternal(PROJECT_REPO_URL) },
     { label: t('menu.reportIssue'), click: () => actions.openExternal(PROJECT_ISSUES_URL) },
     { type: 'separator' },
-    { label: t('menu.harnessOfficial'), click: () => actions.openExternal(DEEPSEEK_HARNESS_URL) },
     { label: t('menu.deepseekOfficial'), click: () => actions.openExternal(DEEPSEEK_OFFICIAL_URL) },
   )
   if (!isMac) help.push({ type: 'separator' }, { label: t('app.about'), click: actions.showAbout })

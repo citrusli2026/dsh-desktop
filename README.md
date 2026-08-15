@@ -17,7 +17,7 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 - **Isolated by default**: the desktop app keeps its own data home (`~/.dsh-desktop`) — settings, sessions, API keys, and plugins stay separate from the CLI; set `DSH_HOME=~/.dsh` to share with the CLI again (decision 0012);
 - **Robust**: crash auto-restart with exponential backoff, manual retry on the error page, single-instance lock, system tray with live harness status (restart / logs / update check), persisted window geometry, logs on disk;
 - **Restrained renderer**: context isolation and sandboxing stay enabled, Node integration stays off, navigation is guarded, and unexpected device, capture, notification, or filesystem permissions are denied by default (decision 0014);
-- **Updates**: automatic updates on Windows / Linux; macOS checks for new releases and points at the download page until signing exists (decisions 0004, 0010).
+- **Updates**: Windows updates in place; unsigned macOS checks for new releases and opens the exact release page for a deliberate manual install (decisions 0010, 0016).
 
 ## Versioning
 
@@ -29,12 +29,15 @@ Get the installer for your platform from [GitHub Releases](https://github.com/ci
 
 | Platform | Asset |
 |---|---|
-| macOS (Apple Silicon only, unsigned) | `dsh-desktop-<version>-arm64-mac.dmg` or `-arm64-mac.zip` |
+| macOS (Apple Silicon only, unsigned) | `dsh-desktop-<version>-arm64-mac.dmg` |
 | Windows | `dsh-desktop-setup-<version>.exe` (NSIS) |
-| Linux | `dsh-desktop-<version>-x86_64.AppImage` or `dsh-desktop-<version>-amd64.deb` |
 
 - macOS: right-click → Open on first launch (unsigned, decision 0004);
 - Windows SmartScreen: choose "More info" → "Run anyway" (unsigned).
+- Each installer has a sibling `<installer>.sha256` file, so the user-facing
+  surface is at most four assets. The only other release files are the small
+  `latest.yml` and Windows `.exe.blockmap` required by in-place updates; no ZIP
+  or Linux package is published (decision 0016).
 
 ### Slow or blocked GitHub? Download acceleration
 
@@ -47,10 +50,10 @@ https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/
 
 Other prefixes that come and go over time: `https://gh-proxy.com/`, `https://ghfast.top/`. These are community-run, free, and unaffiliated with this project: availability varies, so try the next one when one is down.
 
-Project owners can enable two mirrors; both are opt-in jobs in the release workflow and skip silently when unconfigured:
+Project owners can use two optional mirror channels:
 
 - **Cloudflare R2** (job `mirror-r2`): S3-compatible object storage with zero egress fees (10 GB free). Create a bucket named `dsh-electron-shell`, create an R2 API token with object read/write on it, then set repository variable `R2_ACCOUNT_ID` and secret `R2_API_TOKEN`. Every release afterwards mirrors automatically under `dsh-electron-shell/<tag>/`; bind a custom domain (or the r2.dev dev URL) on the bucket for stable public links. To backfill an already-published release: download its assets with `gh release download <tag>`, then `wrangler r2 object put "dsh-electron-shell/<tag>/<file>" --file <file>` per asset.
-- **GitCode** (job `mirror-gitcode`, verified 2026-08-15): attachments are served from Huawei Cloud CDN nodes inside China. Create a mirror repository on gitcode.com, mint a personal access token, then set variable `GITCODE_REPO` (`owner/repo`) and secret `GITCODE_TOKEN`. Stable per-asset links exist at `https://gitcode.com/<owner>/<repo>/releases/download/<tag>/<file>`; only the `file-cdn.gitcode.com` host behind them serves time-limited signed URLs, so never paste those.
+- **GitCode** (manual, verified 2026-08-15): attachments are served from Huawei Cloud CDN nodes inside China. Upload the two installers (and optionally their two tiny checksum files) from a domestic connection, then rerun `Site Data Refresh`. Stable per-asset links exist at `https://gitcode.com/<owner>/<repo>/releases/download/<tag>/<file>`; only the `file-cdn.gitcode.com` host behind them serves time-limited signed URLs, so never paste those.
 
 ## Development
 

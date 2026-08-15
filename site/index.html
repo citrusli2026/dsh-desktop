@@ -4,9 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>dsh-desktop — DeepSeek Harness 桌面壳 · 下载</title>
-<meta name="description" content="dsh-desktop:社区维护的 DeepSeek Harness 非官方 Electron 桌面壳。自带 Node.js 运行时,独立数据目录,权限默认拒绝,支持 macOS / Windows / Linux。" />
+<meta name="description" content="dsh-desktop:社区维护的 DeepSeek Harness 非官方 Electron 桌面壳。每版仅发布 macOS DMG 与 Windows EXE,并附 SHA-256 校验。" />
 <meta property="og:title" content="dsh-desktop — DeepSeek Harness 桌面壳" />
-<meta property="og:description" content="社区维护、非官方的 DeepSeek Harness 桌面版。自带运行时与独立环境,支持 macOS / Windows / Linux。" />
+<meta property="og:description" content="社区维护、非官方的 DeepSeek Harness 桌面版。每版仅发布 macOS 与 Windows 两个安装包,并附 SHA-256 校验。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://dsh-desktop.com/" />
 <meta name="theme-color" content="#f9f8f8" />
@@ -16,8 +16,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Host+Grotesk:wght@500;600;700&amp;display=swap" />
-<link rel="stylesheet" href="/assets/style.css?v=13" />
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"dsh-desktop","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","isAccessibleForFree":true,"license":"https://opensource.org/license/mit","url":"https://dsh-desktop.com/","downloadUrl":"https://github.com/citrusli2026/dsh-electron-shell/releases"}</script>
+<link rel="stylesheet" href="/assets/style.css?v=14" />
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"dsh-desktop","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows","isAccessibleForFree":true,"license":"https://opensource.org/license/mit","url":"https://dsh-desktop.com/","downloadUrl":"https://github.com/citrusli2026/dsh-electron-shell/releases"}</script>
 </head>
 <body>
 
@@ -66,7 +66,7 @@
           <a class="btn btn--primary btn--glow" id="cta-primary" href="#download" data-i18n="hero.cta">下载桌面版</a>
           <a class="btn btn--ghost" id="cta-secondary" href="#workflow" data-i18n="hero.secondary">看看桌面壳做了什么 →</a>
         </div>
-        <p class="hero__meta" id="hero-meta">… · macOS / Windows / Linux · <span data-i18n="hero.meta">无需 Node.js</span></p>
+        <p class="hero__meta" id="hero-meta">… · macOS / Windows · <span data-i18n="hero.meta">无需 Node.js</span></p>
       </div>
 
       <div class="hero__monitor" data-reveal style="--i:1">
@@ -136,7 +136,7 @@
     <div class="wrap">
       <p class="sec-marker" data-reveal>02 / <span data-i18n="dl.marker">下载</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="dl.title">选择你的平台</h2>
-      <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">macOS 与 Windows 安装包均提供 GitHub 与 GitCode 国内镜像两个下载源;镜像在发版后由维护者手动补齐,页面检测到可用后自动展示。Linux 用户请使用下方命令行方式。</p>
+      <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">每个版本只发布两个安装包:macOS Apple Silicon 的 DMG 与 Windows x64 的 EXE;每个安装包附独立 SHA-256 校验文件。GitCode 镜像可用时与 GitHub 并列展示。</p>
 
       <div class="panel" data-reveal style="--i:3">
         <span class="tick tick--tl" aria-hidden="true"></span><span class="tick tick--tr" aria-hidden="true"></span>
@@ -184,7 +184,7 @@
           </article>
           <article class="feature-card" data-i18n="ft.p4">
             <h3>持续守护与可靠更新</h3>
-            <p>崩溃后按预算退避重启,窗口关闭后可驻留托盘,也可从帮助菜单安全重启 Harness。Windows / Linux 支持原地更新;macOS 检查新版本并引导至精确发布页。</p>
+            <p>崩溃后按预算退避重启,窗口关闭后可驻留托盘,也可从帮助菜单安全重启 Harness。Windows 保留应用内自动更新;未签名的 macOS 检查新版本并打开精确发布页。</p>
           </article>
           <article class="feature-card" data-i18n="ft.p5">
             <h3>渲染层能力默认收敛</h3>
@@ -275,6 +275,6 @@
   </div>
 </footer>
 
-<script src="/assets/app.js?v=13" defer></script>
+<script src="/assets/app.js?v=14" defer></script>
 </body>
 </html>
