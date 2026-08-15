@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>dsh-desktop — DeepSeek Harness 桌面壳 · 下载</title>
-<meta name="description" content="dsh-desktop:DeepSeek Harness 的非官方 Electron 桌面壳。自带 Node.js 运行时,独立数据目录,下载即用,支持 macOS / Windows / Linux。" />
+<meta name="description" content="dsh-desktop:DeepSeek Harness 的非官方 Electron 桌面壳。自带 Node.js 运行时,独立数据目录,权限默认拒绝,支持 macOS / Windows / Linux。" />
 <meta property="og:title" content="dsh-desktop — DeepSeek Harness 桌面壳" />
 <meta property="og:description" content="自带运行时、独立环境的 DeepSeek Harness 桌面版。macOS / Windows / Linux。" />
 <meta property="og:type" content="website" />
@@ -49,7 +49,7 @@
           <a class="btn btn--primary btn--glow" id="cta-primary" href="#download" data-i18n="hero.cta">下载桌面版</a>
           <a class="btn btn--ghost" id="cta-secondary" href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases →</a>
         </div>
-        <p class="hero__meta" id="hero-meta">v0.1.0-rc.6.shell.3 · macOS / Windows / Linux · <span data-i18n="hero.meta">无需 Node.js</span></p>
+        <p class="hero__meta" id="hero-meta">… · macOS / Windows / Linux · <span data-i18n="hero.meta">无需 Node.js</span></p>
       </div>
 
       <div class="hero__monitor" data-reveal style="--i:1">
@@ -59,7 +59,7 @@
           <div class="window__titlebar">
             <span class="lights" aria-hidden="true"><i class="l1"></i><i class="l2"></i><i class="l3"></i></span>
             <span class="window__title">dsh-desktop</span>
-            <a class="version-chip" id="version-chip" href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">v0.1.0-rc.6.shell.3</a>
+            <a class="version-chip" id="version-chip" href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">…</a>
           </div>
           <div class="window__body harness">
             <div class="harness__scan" aria-hidden="true"></div>
@@ -72,7 +72,7 @@
               <div class="msg msg--agent">好的。我会自带 Node.js 运行时,用户无需任何环境配置。</div>
               <div class="msg msg--tool">$ read_file manifest/harness/deps.json</div>
               <div class="msg msg--tool">$ run pnpm run bootstrap</div>
-              <div class="msg msg--agent">完成。<b>崩溃自动重启、托盘、自动更新</b>都已就位。</div>
+              <div class="msg msg--agent">完成。<b>进程守护、权限默认拒绝、更新检查</b>都已就位。</div>
               <div class="harness__input"><span class="prompt">&gt;</span><span class="cursor"></span></div>
             </div>
           </div>
@@ -86,7 +86,7 @@
     <div class="wrap">
       <p class="sec-marker" data-reveal>01 / <span data-i18n="dl.marker">下载</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="dl.title">选择你的平台</h2>
-      <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">国内用户默认走 GitCode 镜像(华为云 CDN 直连);页面数据随每次发版自动同步。</p>
+      <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">国内镜像可用时自动走 GitCode(华为云 CDN),否则回落 GitHub;页面数据随发版自动同步。</p>
 
       <div class="panel" data-reveal style="--i:3">
         <span class="tick tick--tl" aria-hidden="true"></span><span class="tick tick--tr" aria-hidden="true"></span>
@@ -135,6 +135,7 @@
           <button class="tab" role="tab" aria-selected="false" data-tab="t2" type="button" data-i18n="ft.tab2">独立环境</button>
           <button class="tab" role="tab" aria-selected="false" data-tab="t3" type="button" data-i18n="ft.tab3">稳定守护</button>
           <button class="tab" role="tab" aria-selected="false" data-tab="t4" type="button" data-i18n="ft.tab4">自动更新</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="t5" type="button" data-i18n="ft.tab5">安全边界</button>
         </div>
         <div class="tab-panels">
           <div class="tab-panel is-active" id="t1" role="tabpanel" data-i18n="ft.p1">
@@ -153,6 +154,10 @@
             <h3>Windows / Linux 自动更新</h3>
             <p>基于 electron-updater 的原地自动更新;macOS 在签名前检查新版本并引导至下载页。每日 <code>dsh-watch</code> 工作流跟踪上游 npm,有新版本自动发起升级 PR。</p>
           </div>
+          <div class="tab-panel" id="t5" role="tabpanel" data-i18n="ft.p5">
+            <h3>渲染层能力默认收敛</h3>
+            <p>保持 Electron 沙箱与上下文隔离、关闭 Node 集成并限制页面导航;媒体、定位、通知、屏幕采集和文件系统等额外权限默认拒绝,未来只能按需显式放行。</p>
+          </div>
         </div>
       </div>
     </div>
@@ -164,7 +169,7 @@
       <p class="sec-marker" data-reveal>03 / <span data-i18n="vr.marker">版本号</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="vr.title">版本号怎么读</h2>
       <div class="version-display" data-reveal style="--i:2">
-        <code><span class="v-core" id="v-core">0.1.0-rc.6</span><span class="v-sep">.</span><span class="v-shell" id="v-shell">shell.3</span></code>
+        <code><span class="v-core" id="v-core">…</span><span class="v-sep"></span><span class="v-shell" id="v-shell"></span></code>
       </div>
       <div class="version-legend" data-reveal style="--i:3">
         <div class="legend-row">
@@ -205,6 +210,10 @@
           <summary data-i18n="faq.q5">Apple Silicon 以外的 Mac 可以用吗?</summary>
           <p data-i18n="faq.a5">当前仅提供 Apple Silicon(arm64)安装包。Intel Mac 可暂时使用命令行方式 <code>npx @deepseek-ai/dsh web</code>,功能完全一致。</p>
         </details>
+        <details>
+          <summary data-i18n="faq.q6">桌面版会申请摄像头、定位或文件系统权限吗?</summary>
+          <p data-i18n="faq.a6">不会。当前功能不需要这些 Electron Web 权限,桌面壳默认拒绝媒体、定位、通知、采集和文件系统等额外请求;未来如确有需要,必须经过明确的白名单审查。</p>
+        </details>
       </div>
     </div>
   </section>
@@ -214,8 +223,8 @@
 <footer class="footer">
   <div class="wrap footer__grid">
     <div>
-      <p class="footer__brand">dsh-electron-shell</p>
-      <p class="footer__legal" data-i18n="footer.legal">MIT © 2026 dsh-electron-shell contributors<br />非官方社区打包,与 DeepSeek AI 无关联</p>
+      <p class="footer__brand">dsh-desktop</p>
+      <p class="footer__legal" data-i18n="footer.legal">MIT © 2026 dsh-desktop contributors<br />非官方社区打包,与 DeepSeek AI 无关联</p>
     </div>
     <nav class="footer__links" aria-label="页脚链接">
       <a href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a>

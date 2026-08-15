@@ -16,7 +16,7 @@
     {
       "source": "/assets/(.*)\\.(svg|png|jpg|jpeg|gif|webp|ico|woff2?|css|js)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" }
       ]
     },
     {

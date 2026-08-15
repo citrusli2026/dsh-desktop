@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-15T05:57:23.434Z",
+  "generated_at": "2026-08-15T06:24:28.507Z",
   "repo": {
     "full_name": "citrusli2026/dsh-electron-shell",
     "html_url": "https://github.com/citrusli2026/dsh-electron-shell",
@@ -7,109 +7,109 @@
     "license": "MIT"
   },
   "release": {
-    "tag": "v0.1.0-rc.6.shell.7",
-    "name": "dsh-desktop v0.1.0-rc.6.shell.7",
-    "html_url": "https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.0-rc.6.shell.7",
-    "published_at": "2026-08-15T05:49:43Z",
+    "tag": "v0.1.0-rc.6.shell.8",
+    "name": "dsh-desktop v0.1.0-rc.6.shell.8",
+    "html_url": "https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.0-rc.6.shell.8",
+    "published_at": "2026-08-15T06:22:51Z",
     "prerelease": true,
     "assets": [
       {
-        "name": "dsh-desktop-0.1.0-rc.6.shell.7-amd64.deb",
-        "size": 163069888,
+        "name": "dsh-desktop-0.1.0-rc.6.shell.8-amd64.deb",
+        "size": 163071176,
         "downloads": 0,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-amd64.deb",
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-amd64.deb",
         "kind": "installer",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-amd64.deb",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-amd64.deb",
         "gitcode_ok": false
       },
       {
-        "name": "dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.dmg",
-        "size": 184408070,
+        "name": "dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.dmg",
+        "size": 184403733,
         "downloads": 0,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.dmg",
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.dmg",
         "kind": "installer",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.dmg",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.dmg",
         "gitcode_ok": false
       },
       {
-        "name": "dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.dmg.blockmap",
-        "size": 193676,
+        "name": "dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.dmg.blockmap",
+        "size": 193485,
         "downloads": 0,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.dmg.blockmap",
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.dmg.blockmap",
         "kind": "blockmap",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.dmg.blockmap",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.dmg.blockmap",
         "gitcode_ok": false
       },
       {
-        "name": "dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.zip",
-        "size": 223366012,
+        "name": "dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.zip",
+        "size": 223366839,
         "downloads": 0,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.zip",
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.zip",
         "kind": "installer",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.zip",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.zip",
         "gitcode_ok": false
       },
       {
-        "name": "dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.zip.blockmap",
-        "size": 232535,
+        "name": "dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.zip.blockmap",
+        "size": 232501,
         "downloads": 0,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.zip.blockmap",
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.zip.blockmap",
         "kind": "blockmap",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-arm64-mac.zip.blockmap",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-arm64-mac.zip.blockmap",
         "gitcode_ok": false
       },
       {
-        "name": "dsh-desktop-0.1.0-rc.6.shell.7-x86_64.AppImage",
-        "size": 218893736,
+        "name": "dsh-desktop-0.1.0-rc.6.shell.8-x86_64.AppImage",
+        "size": 218893676,
         "downloads": 0,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-x86_64.AppImage",
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-x86_64.AppImage",
         "kind": "installer",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-0.1.0-rc.6.shell.7-x86_64.AppImage",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-0.1.0-rc.6.shell.8-x86_64.AppImage",
         "gitcode_ok": false
       },
       {
-        "name": "dsh-desktop-setup-0.1.0-rc.6.shell.7.exe",
-        "size": 165333884,
+        "name": "dsh-desktop-setup-0.1.0-rc.6.shell.8.exe",
+        "size": 165334473,
         "downloads": 0,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-setup-0.1.0-rc.6.shell.7.exe",
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-setup-0.1.0-rc.6.shell.8.exe",
         "kind": "installer",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-setup-0.1.0-rc.6.shell.7.exe",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-setup-0.1.0-rc.6.shell.8.exe",
         "gitcode_ok": false
       },
       {
-        "name": "dsh-desktop-setup-0.1.0-rc.6.shell.7.exe.blockmap",
-        "size": 171846,
+        "name": "dsh-desktop-setup-0.1.0-rc.6.shell.8.exe.blockmap",
+        "size": 171974,
         "downloads": 0,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-setup-0.1.0-rc.6.shell.7.exe.blockmap",
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-setup-0.1.0-rc.6.shell.8.exe.blockmap",
         "kind": "blockmap",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/dsh-desktop-setup-0.1.0-rc.6.shell.7.exe.blockmap",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/dsh-desktop-setup-0.1.0-rc.6.shell.8.exe.blockmap",
         "gitcode_ok": false
       },
       {
         "name": "latest-linux.yml",
         "size": 598,
         "downloads": 0,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/latest-linux.yml",
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/latest-linux.yml",
         "kind": "update-meta",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/latest-linux.yml",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/latest-linux.yml",
         "gitcode_ok": false
       },
       {
         "name": "latest-mac.yml",
         "size": 573,
         "downloads": 0,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/latest-mac.yml",
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/latest-mac.yml",
         "kind": "update-meta",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/latest-mac.yml",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/latest-mac.yml",
         "gitcode_ok": false
       },
       {
         "name": "latest.yml",
         "size": 390,
         "downloads": 0,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/latest.yml",
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/latest.yml",
         "kind": "update-meta",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.7/latest.yml",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.8/latest.yml",
         "gitcode_ok": false
       }
     ]

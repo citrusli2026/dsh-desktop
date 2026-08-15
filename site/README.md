@@ -6,12 +6,12 @@
 
 ```
 site/
-  index.html          单页:桌面 Hero / 下载矩阵 / 特性 / 版本号 / 加速 / FAQ
-  assets/style.css    桌面隐喻样式:米色壁纸 + 窗口即产品
-  assets/app.js       数据渲染 + 交互(复制 / Tab / 窗口拖动 / 平台识别)
+  index.html          单页:Hero / 下载矩阵 / 特性 / 版本号 / FAQ
+  assets/style.css    深色工程视觉 + 响应式布局
+  assets/app.js       中英切换 / 下载数据 / 镜像回落 / 平台识别 / 交互
   assets/favicon.svg
   data/release.json   ★ 由 scripts/gen-site-data.mjs 生成,CI 自动同步
-  vercel.json         安全头 + 缓存策略(data/ 5 分钟,assets/ 一年)
+  vercel.json         安全头 + 缓存策略(data/ 5 分钟,assets/ 1 小时)
   robots.txt
 ```
 
@@ -19,12 +19,15 @@ site/
 
 `.github/workflows/site-refresh.yml`:
 
-- `release` 发布/编辑 → 立即重新生成 `site/data/release.json` 并提交;
+- `Release` 工作流成功 → 立即重新生成 `site/data/release.json` 并提交;
+- 外部 `release` 发布/编辑事件同样支持;
 - 每日两次兜底同步(cron `17 2,14 * * *`,北京 10:17 / 22:17);
 - `workflow_dispatch` 支持手动触发;失败自动开 issue 告警。
 
 提交推送 main 后,Vercel Git 集成自动完成部署。
 页面运行时还会读 `data/release.json`;若读取失败则直连 GitHub API 兜底。
+中文模式仅在逐资产 range GET 验证 GitCode 可用时使用国内镜像,否则回落
+GitHub。CI 通过 `pnpm run site:check` 校验数据、资产、双语键和 tab 目标。
 
 手动同步数据:
 
@@ -38,6 +41,9 @@ node scripts/gen-site-data.mjs
 cd site && python3 -m http.server 8080
 # 或 npx serve site
 ```
+
+`assets/` 使用一小时可重新验证缓存,`data/` 使用五分钟缓存。静态文件名未做
+内容哈希,因此不要把 assets 设为 immutable。
 
 ## 域名
 
