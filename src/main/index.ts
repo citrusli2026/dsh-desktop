@@ -1,5 +1,5 @@
 /** Electron lifecycle assembly for the bundled DeepSeek Harness runtime. */
-import { app, dialog, ipcMain, nativeTheme, session, shell, type MessageBoxOptions } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, session, shell, type MessageBoxOptions } from 'electron'
 import { existsSync, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -26,7 +26,7 @@ import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { MenuActions } from './menu-template.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
 import { LanService, qrSvgFromText } from './lan.ts'
-import { showLanPairingWindow } from './lan-window.ts'
+import { closeLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
 
 const DEV_WEB_URL = process.env.DSH_DESKTOP_DEV_WEB_URL
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -171,6 +171,7 @@ async function startLanLink(): Promise<void> {
 }
 
 function stopLanLink(): void {
+  closeLanPairingWindow()
   void lanService.stop().finally(refreshNativeSurfaces)
 }
 
@@ -230,6 +231,14 @@ ipcMain.handle('shell:export-diagnostics', async (event) => {
   return exportDiagnosticReport(lastState, currentLocale)
 })
 
+ipcMain.handle('shell:close-lan-pairing', (event) => {
+  const window = BrowserWindow.fromWebContents(event.sender)
+  if (window === null || window.isDestroyed() || window === windowContext.mainWindow) return false
+  if (event.senderFrame?.url.startsWith('data:') !== true) return false
+  window.close()
+  return true
+})
+
 function verifyHarness(root: string): void {
   const checks: ReadonlyArray<readonly [string, string]> = [['node', nodeBin(root)], ['dsh', dshBin(root)]]
   for (const [label, path] of checks) {
@@ -264,6 +273,7 @@ async function boot(): Promise<string> {
 app.on('before-quit', (event) => {
   if (windowContext.quitInProgress) return
   windowContext.quitInProgress = true
+  closeLanPairingWindow()
   localeController?.dispose()
   destroyTray()
   if (supervisor !== undefined || lanService.isRunning) {

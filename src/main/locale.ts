@@ -38,7 +38,7 @@ const english = {
   'menu.fullScreen': 'Toggle Full Screen',
   'menu.window': 'Window',
   'menu.extensions': 'Extensions',
-  'menu.startLanLink': 'Connect phone / tablet over LAN…',
+  'menu.startLanLink': 'Connect a mobile device…',
   'menu.showLanQr': 'Show LAN pairing QR code…',
   'menu.stopLanLink': 'Stop LAN sharing',
   'menu.minimize': 'Minimize',
@@ -116,6 +116,7 @@ const english = {
   'lan.address': 'Address: {address}',
   'lan.code': 'Code: {code}',
   'lan.expires': 'This pairing code expires in about {minutes} minutes and can be used once.',
+  'lan.close': 'Close',
 } as const
 
 export type CopyKey = keyof typeof english
@@ -148,7 +149,7 @@ const chinese: Record<CopyKey, string> = {
   'menu.fullScreen': '切换全屏',
   'menu.window': '窗口',
   'menu.extensions': '扩展',
-  'menu.startLanLink': '通过局域网连接手机 / 平板…',
+  'menu.startLanLink': '连接移动设备…',
   'menu.showLanQr': '显示局域网配对二维码…',
   'menu.stopLanLink': '停止局域网共享',
   'menu.minimize': '最小化',
@@ -226,6 +227,7 @@ const chinese: Record<CopyKey, string> = {
   'lan.address': '地址：{address}',
   'lan.code': '配对码：{code}',
   'lan.expires': '此配对码约 {minutes} 分钟后过期，且只能使用一次。',
+  'lan.close': '关闭',
 }
 
 export const SHELL_COPY: Readonly<Record<ShellLocale, Readonly<Record<CopyKey, string>>>> = {

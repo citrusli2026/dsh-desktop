@@ -111,11 +111,22 @@ Harness 启动后,打开“扩展 → 通过局域网连接手机 / 平板…”
 扫描后进入 Web 启动页,确认一次性配对码即可连接;代理上游始终保持在回环地址,
 主令牌只存在于桌面代理进程内存/环境中,不会写入桌面设置。
 
-构建时只会从 `/Users/citrus/dsh-mobile-shell` 暂存以下 Web 资源:
-`app/www/index.html`、`proxy/dsh-remote.mjs`、`proxy/pairing-qr.mjs` 和二维码
-算法文件,目标目录为 gitignore 的 `resources/mobile-shell/`。另一个仓库更新后重跑
-构建即可带入新 Web 版本;其他路径可用 `DSH_MOBILE_SHELL_ROOT` 覆盖。也可用
-`DSH_LAN_IP=192.168.1.23` 指定多网卡时的局域网地址。
+构建时只消费 `dsh-mobile-shell/dist/web` 这个独立 Web 产物，目标目录为 gitignore 的
+`resources/mobile-shell/`。先在另一个仓库打包并校验：
+
+```sh
+cd /Users/citrus/dsh-mobile-shell
+npm run package:web
+npm run verify:web
+
+cd /Users/citrus/dsh-desktop
+DSH_MOBILE_SHELL_WEB_ROOT=/Users/citrus/dsh-mobile-shell/dist/web pnpm run build
+```
+
+桌面端依赖 `web-artifact.json` 的格式版本和三个入口，不依赖对方源码目录；更新
+`dsh-mobile-shell` 后重新生成产物，再重新构建桌面端即可。也可用
+`DSH_LAN_IP=192.168.1.23` 指定多网卡时的局域网地址。Android/iOS 工程不会进入
+Electron 安装包。
 
 慢网络/海外环境:仓库默认使用国内镜像(npmmirror)加速下载,可用环境变量覆盖:
 

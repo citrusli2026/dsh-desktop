@@ -55,12 +55,15 @@ test('developer actions appear only in unpackaged builds', () => {
 test('extensions menu exposes LAN pairing controls', () => {
   const stopped = buildAppMenuTemplate({ locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop' }, actions)
   assert.ok(labels(stopped).includes('扩展'))
-  assert.ok(labels(stopped).includes('通过局域网连接手机 / 平板…'))
+  assert.ok(labels(stopped).includes('连接移动设备…'))
+
+  const english = buildAppMenuTemplate({ locale: 'en', platform: 'linux', packaged: true, appName: 'dsh-desktop' }, actions)
+  assert.ok(labels(english).includes('Connect a mobile device…'))
 
   const running = buildAppMenuTemplate({
     locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop', lanRunning: true,
   }, actions)
   assert.ok(labels(running).includes('显示局域网配对二维码…'))
   assert.ok(labels(running).includes('停止局域网共享'))
-  assert.ok(!labels(running).includes('通过局域网连接手机 / 平板…'))
+  assert.ok(!labels(running).includes('连接移动设备…'))
 })

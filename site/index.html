@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Host+Grotesk:wght@500;600;700&amp;display=swap" />
-<link rel="stylesheet" href="/assets/style.css?v=20" />
+<link rel="stylesheet" href="/assets/style.css?v=21" />
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"dsh-desktop","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows","isAccessibleForFree":true,"license":"https://opensource.org/license/mit","url":"https://dsh-desktop.com/","downloadUrl":"https://github.com/citrusli2026/dsh-electron-shell/releases"}</script>
 </head>
 <body>
@@ -113,6 +113,17 @@
           <ul data-i18n="wf.keeps"><li>Agent 与工具调用行为</li><li>上游版本和依赖闭包</li><li>模型、账户与插件配置</li><li>CLI 仍可独立并行使用</li></ul>
         </article>
       </div>
+      <article class="extension-card" data-reveal style="--i:5">
+        <div>
+          <p class="extension-card__eyebrow" data-i18n="ext.marker">扩展功能</p>
+          <h3 data-i18n="ext.title">扫码，把 Harness 带到手机或平板</h3>
+          <p class="extension-card__body" data-i18n="ext.body">桌面端从扩展菜单启动独立的局域网 Web 代理。Harness 继续只监听 loopback，手机浏览器通过一次性配对码获得设备会话。</p>
+        </div>
+        <div class="extension-card__details">
+          <ol data-i18n="ext.steps"><li>扩展 → 通过局域网连接手机 / 平板</li><li>手机与电脑连接同一局域网，扫描二维码</li><li>确认一次性配对码，进入原生 Harness Web 界面</li></ol>
+          <p data-i18n="ext.note">只集成 Web 壳，不需要 Android/iOS；代理与桌面端解耦，可独立产出 Web artifact。</p>
+        </div>
+      </article>
     </div>
   </section>
 
@@ -260,6 +271,6 @@
   </div>
 </footer>
 
-<script src="/assets/app.js?v=20" defer></script>
+<script src="/assets/app.js?v=21" defer></script>
 </body>
 </html>

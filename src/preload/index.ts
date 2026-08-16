@@ -54,4 +54,6 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   retryHarness: (): Promise<boolean> => ipcRenderer.invoke('harness:retry'),
   /** Export a local diagnostic report from the built-in error page. */
   exportDiagnostics: (): Promise<boolean> => ipcRenderer.invoke('shell:export-diagnostics'),
+  /** Close the shell-owned LAN pairing modal. */
+  closeLanPairing: (): Promise<boolean> => ipcRenderer.invoke('shell:close-lan-pairing'),
 })

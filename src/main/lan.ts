@@ -3,9 +3,10 @@ import { spawn, type ChildProcessByStdio } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { createServer } from 'node:net'
 import { networkInterfaces } from 'node:os'
-import { join, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { Readable } from 'node:stream'
+import { readMobileShellArtifact } from './mobile-shell.ts'
 
 export interface LanPairing {
   readonly baseUrl: string
@@ -22,18 +23,6 @@ export interface LanServiceOptions {
   readonly getTargetUrl: () => string | undefined
   readonly onLog?: (line: string) => void
   readonly onStateChanged?: () => void
-}
-
-type QrGenerator = {
-  qrcodegen?: {
-    QrCode?: {
-      Ecc?: { MEDIUM: unknown }
-      encodeText(text: string, errorCorrection: unknown): {
-        size: number
-        getModule(x: number, y: number): boolean
-      }
-    }
-  }
 }
 
 const DEFAULT_LISTEN_PORT = 3081
@@ -169,12 +158,13 @@ export function qrSvgFromCode(qr: {
 }
 
 export async function qrSvgFromText(text: string, mobileShellRoot: string): Promise<string> {
-  const modulePath = join(mobileShellRoot, 'proxy', 'vendor', 'qrcodegen.mjs')
-  const generator = await import(pathToFileURL(modulePath).href) as QrGenerator
-  const qrcode = generator.qrcodegen?.QrCode
-  const ecc = qrcode?.Ecc?.MEDIUM
-  if (qrcode === undefined || ecc === undefined) throw new Error('mobile shell QR generator is unavailable')
-  return qrSvgFromCode(qrcode.encodeText(text, ecc))
+  const artifact = readMobileShellArtifact(mobileShellRoot)
+  const pairingModule = await import(pathToFileURL(artifact.pairingPath).href) as {
+    renderSvgQr?: (value: string) => unknown
+  }
+  const svg = pairingModule.renderSvgQr?.(text)
+  if (typeof svg !== 'string' || !svg.startsWith('<svg ')) throw new Error('mobile shell SVG QR renderer is unavailable')
+  return svg
 }
 
 export class LanService {
@@ -221,11 +211,11 @@ export class LanService {
     const listenPort = await chooseListenPort(lanAddress)
     const token = randomBytes(32).toString('hex')
     const baseUrl = `http://${lanAddress}:${listenPort}/`
-    const mobileShellPath = this.mobileShellPath
-    const proxyPath = join(mobileShellPath, 'proxy', 'dsh-remote.mjs')
-    const launcherPath = join(mobileShellPath, 'app', 'www', 'index.html')
+    const mobileShell = readMobileShellArtifact(this.mobileShellPath)
+    const proxyPath = mobileShell.proxyPath
+    const launcherPath = mobileShell.launcherPath
     const child = spawn(this.options.nodeExecutable?.() ?? process.execPath, [proxyPath], {
-      cwd: mobileShellPath,
+      cwd: mobileShell.root,
       env: proxyEnvironment({
         DSH_REMOTE_TOKEN: token,
         DSH_LISTEN_HOST: lanAddress,

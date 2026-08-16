@@ -354,6 +354,19 @@ a { color: inherit; }
 .boundary-grid__eyebrow { margin-bottom: 16px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--signal); }
 .boundary-grid ul { display: grid; gap: 9px; list-style: none; color: var(--muted); font-size: 14px; }
 .boundary-grid li::before { content: "✓"; margin-right: 10px; color: var(--signal); font-family: var(--mono); }
+.extension-card {
+  display: grid; grid-template-columns: 1fr 1.1fr; gap: 28px; align-items: start;
+  margin-top: 16px; padding: 28px 26px;
+  border: 1px solid var(--signal); border-radius: var(--r-panel);
+  background: var(--panel); box-shadow: var(--shadow-card); backdrop-filter: blur(12px);
+}
+.extension-card__eyebrow { margin-bottom: 12px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--signal); }
+.extension-card h3 { margin-bottom: 10px; font-size: 20px; }
+.extension-card__body, .extension-card__details p { color: var(--muted); font-size: 14px; }
+.extension-card__details { padding-left: 24px; border-left: 1px solid var(--border); }
+.extension-card__details ol { display: grid; gap: 10px; padding-left: 20px; color: var(--text); font-size: 14px; }
+.extension-card__details li::marker { color: var(--signal); font-family: var(--mono); font-weight: 700; }
+.extension-card__details p { margin-top: 16px; }
 
 /* ══ 区块骨架 ══ */
 .section { padding: 84px 0 0; }
@@ -542,6 +555,8 @@ a { color: inherit; }
   .workflow-grid article + article { border-left: 0; border-top: 1px solid var(--border); }
   .workflow-grid article > span { margin-bottom: 20px; }
   .boundary-grid { grid-template-columns: 1fr; }
+  .extension-card { grid-template-columns: 1fr; }
+  .extension-card__details { padding-left: 0; border-left: 0; border-top: 1px solid var(--border); padding-top: 22px; }
 }
 
 @media (max-width: 640px) {
@@ -557,6 +572,7 @@ a { color: inherit; }
   .trust-strip__grid div:first-child { border-top: 0; }
   .section { padding-top: 68px; }
   .workflow-grid article, .boundary-grid article { padding: 22px; }
+  .extension-card { padding: 22px; }
   .feature-grid { grid-template-columns: 1fr; }
   .feature-card { min-height: 0; padding: 26px 22px; }
   .feature-card:nth-child(even) { border-left: 0; }

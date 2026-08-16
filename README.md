@@ -87,12 +87,23 @@ proxy, and shows a QR code. A phone or tablet scans it, confirms the one-time pa
 code, and then uses the host-served Web UI. The proxy always forwards to loopback;
 the master token stays in the proxy process and is never written to desktop settings.
 
-The build stages only `app/www/index.html`, `proxy/dsh-remote.mjs`,
-`proxy/pairing-qr.mjs`, and the QR algorithm from `/Users/citrus/dsh-mobile-shell`
-into the gitignored `resources/mobile-shell/` directory. Rebuilding after that
-repository is updated picks up the new Web version; use `DSH_MOBILE_SHELL_ROOT` to
-override the source path. Set `DSH_LAN_IP=192.168.1.23` when multiple LAN adapters
-need an explicit choice.
+The build consumes the isolated `dsh-mobile-shell/dist/web` artifact and stages it
+into the gitignored `resources/mobile-shell/` directory. Build and verify that
+artifact first:
+
+```sh
+cd /absolute/path/dsh-mobile-shell
+npm run package:web
+npm run verify:web
+
+cd /absolute/path/dsh-desktop
+DSH_MOBILE_SHELL_WEB_ROOT=/absolute/path/dsh-mobile-shell/dist/web pnpm run build
+```
+
+The desktop shell depends only on `web-artifact.json`'s format version and three
+entrypoints, not on the other repository's source layout. Rebuild the Web artifact
+after updating that repository, then rebuild the desktop app. Set
+`DSH_LAN_IP=192.168.1.23` when multiple LAN adapters need an explicit choice.
 
 Mirrors: this repository defaults to npmmirror (fast in China) for npm packages, the Electron binary, electron-builder helpers, and the bundled Node tarball. Override per environment variable if you prefer the official sources:
 

@@ -8,8 +8,15 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      DSH_MOBILE_SHELL_WEB_ROOT: ${{ github.workspace }}/dsh-mobile-shell/dist/web
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: citrusli2026/dsh-mobile-shell
+          ref: main
+          path: dsh-mobile-shell
       - uses: pnpm/action-setup@v6
         with:
           version: 11.7.0
@@ -18,6 +25,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install
+      - name: Package mobile-shell Web artifact
+        run: npm --prefix dsh-mobile-shell run package:web
       - run: pnpm run typecheck
       - run: pnpm run test
       - run: pnpm run site:check
