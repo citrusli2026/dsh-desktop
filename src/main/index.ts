@@ -60,7 +60,7 @@ function restartEnabled(): boolean {
 
 function refreshNativeSurfaces(): void {
   if (windowContext.quitInProgress) return
-  installAppMenu(currentLocale, menuActions, restartEnabled(), lanService.isRunning)
+  installAppMenu(currentLocale, menuActions, restartEnabled(), lanService.isRunning, lanService.isBusy)
   refreshTray()
 }
 

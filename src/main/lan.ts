@@ -87,12 +87,16 @@ async function chooseListenPort(host: string, preferred = DEFAULT_LISTEN_PORT): 
   throw new Error(`no free LAN port found near ${preferred}`)
 }
 
-async function waitForHealth(baseUrl: string, timeoutMs = START_TIMEOUT_MS): Promise<void> {
+async function waitForHealth(baseUrl: string, timeoutMs = START_TIMEOUT_MS, signal?: AbortSignal): Promise<void> {
   const deadline = Date.now() + timeoutMs
   let lastError = 'proxy did not become ready'
   while (Date.now() < deadline) {
+    if (signal?.aborted === true) throw new Error('LAN proxy start cancelled')
     try {
-      const response = await fetch(`${baseUrl}healthz`, { signal: AbortSignal.timeout(750), cache: 'no-store' })
+      const requestSignal = signal === undefined
+        ? AbortSignal.timeout(750)
+        : AbortSignal.any([signal, AbortSignal.timeout(750)])
+      const response = await fetch(`${baseUrl}healthz`, { signal: requestSignal, cache: 'no-store' })
       await response.body?.cancel()
       if (response.ok) return
       lastError = `proxy health check returned HTTP ${response.status}`
@@ -107,11 +111,15 @@ async function waitForHealth(baseUrl: string, timeoutMs = START_TIMEOUT_MS): Pro
 async function requestPairing(
   baseUrl: string,
   token: string,
+  signal?: AbortSignal,
 ): Promise<{ code: string; expiresInSeconds: number; pairingUrl: string }> {
+  const requestSignal = signal === undefined
+    ? AbortSignal.timeout(2_000)
+    : AbortSignal.any([signal, AbortSignal.timeout(2_000)])
   const response = await fetch(`${baseUrl}pair/new`, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}` },
-    signal: AbortSignal.timeout(2_000),
+    signal: requestSignal,
   })
   const body = await response.json() as { code?: unknown; expiresInSeconds?: unknown; pairingUrls?: unknown }
   if (!response.ok || typeof body.code !== 'string' || !/^\d{6}$/.test(body.code)) {
@@ -173,6 +181,9 @@ export class LanService {
   private pairing: LanPairing | undefined
   private targetUrl: string | undefined
   private stopping = false
+  private startInFlight: Promise<LanPairing> | undefined
+  private stopInFlight: Promise<void> | undefined
+  private startAbortController: AbortController | undefined
 
   constructor(options: LanServiceOptions) {
     this.options = options
@@ -189,6 +200,10 @@ export class LanService {
     return this.child !== undefined && this.child.exitCode === null
   }
 
+  get isBusy(): boolean {
+    return this.startInFlight !== undefined || this.stopInFlight !== undefined
+  }
+
   get currentPairing(): LanPairing | undefined {
     return this.pairing
   }
@@ -197,55 +212,90 @@ export class LanService {
     return this.targetUrl
   }
 
-  async start(): Promise<LanPairing> {
-    if (this.isRunning && this.pairing !== undefined) return this.pairing
-    const targetUrl = this.options.getTargetUrl()
-    if (targetUrl === undefined) throw new Error('Harness is not ready yet')
-    const requestedAddress = process.env.DSH_LAN_IP
-    if (requestedAddress !== undefined && !isPrivateLanIPv4(requestedAddress)) {
-      throw new Error(`DSH_LAN_IP must be a private LAN IPv4 address, got ${requestedAddress}`)
+  start(): Promise<LanPairing> {
+    if (this.startInFlight !== undefined) return this.startInFlight
+    if (this.isRunning && this.pairing !== undefined) return Promise.resolve(this.pairing)
+    if (this.stopInFlight !== undefined) {
+      const task = this.stopInFlight.then(() => {
+        this.stopping = false
+        return this.startInternal()
+      })
+      return this.trackStart(task)
     }
-    const lanAddress = requestedAddress ?? listPrivateLanIPv4()[0]
-    if (lanAddress === undefined) throw new Error('No private LAN IPv4 address found; connect to Wi-Fi or Ethernet first')
-    const target = parseTargetUrl(targetUrl)
-    const listenPort = await chooseListenPort(lanAddress)
-    const token = randomBytes(32).toString('hex')
-    const baseUrl = `http://${lanAddress}:${listenPort}/`
-    const mobileShell = readMobileShellArtifact(this.mobileShellPath)
-    const proxyPath = mobileShell.proxyPath
-    const launcherPath = mobileShell.launcherPath
-    const child = spawn(this.options.nodeExecutable?.() ?? process.execPath, [proxyPath], {
-      cwd: mobileShell.root,
-      env: proxyEnvironment({
-        DSH_REMOTE_TOKEN: token,
-        DSH_LISTEN_HOST: lanAddress,
-        DSH_LISTEN_PORT: String(listenPort),
-        DSH_TARGET_HOST: target.host,
-        DSH_TARGET_PORT: String(target.port),
-        DSH_LAUNCHER: launcherPath,
-        DSH_PAIR_QR: 'off',
-      }),
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
-    this.child = child as ChildProcessByStdio<null, Readable, Readable>
-    this.targetUrl = targetUrl
-    this.stopping = false
-    const onLine = (line: string): void => this.options.onLog?.(`mobile-shell: ${line}`)
-    child.stdout.setEncoding('utf8')
-    child.stderr.setEncoding('utf8')
-    child.stdout.on('data', chunk => onLine(String(chunk).trim()))
-    child.stderr.on('data', chunk => onLine(String(chunk).trim()))
-    child.once('exit', () => {
-      if (!this.stopping) this.options.onLog?.('mobile-shell: LAN proxy stopped unexpectedly')
-      this.child = undefined
-      this.pairing = undefined
-      this.options.onStateChanged?.()
-    })
-    child.once('error', error => this.options.onLog?.(`mobile-shell: ${error.message}`))
+    return this.beginStart()
+  }
 
+  private beginStart(): Promise<LanPairing> {
+    this.stopping = false
+    return this.trackStart(this.startInternal())
+  }
+
+  private trackStart(task: Promise<LanPairing>): Promise<LanPairing> {
+    this.startInFlight = task
+    void task.then(
+      () => this.finishStart(task),
+      () => this.finishStart(task),
+    )
+    this.options.onStateChanged?.()
+    return task
+  }
+
+  private finishStart(task: Promise<LanPairing>): void {
+    if (this.startInFlight === task) this.startInFlight = undefined
+    this.options.onStateChanged?.()
+  }
+
+  private async startInternal(): Promise<LanPairing> {
+    const controller = new AbortController()
+    this.startAbortController = controller
     try {
-      await waitForHealth(baseUrl)
-      const result = await requestPairing(baseUrl, token)
+      const targetUrl = this.options.getTargetUrl()
+      if (targetUrl === undefined) throw new Error('Harness is not ready yet')
+      const requestedAddress = process.env.DSH_LAN_IP
+      if (requestedAddress !== undefined && !isPrivateLanIPv4(requestedAddress)) {
+        throw new Error(`DSH_LAN_IP must be a private LAN IPv4 address, got ${requestedAddress}`)
+      }
+      const lanAddress = requestedAddress ?? listPrivateLanIPv4()[0]
+      if (lanAddress === undefined) throw new Error('No private LAN IPv4 address found; connect to Wi-Fi or Ethernet first')
+      const target = parseTargetUrl(targetUrl)
+      const listenPort = await chooseListenPort(lanAddress)
+      if (controller.signal.aborted) throw new Error('LAN proxy start cancelled')
+      const token = randomBytes(32).toString('hex')
+      const baseUrl = `http://${lanAddress}:${listenPort}/`
+      const mobileShell = readMobileShellArtifact(this.mobileShellPath)
+      const proxyPath = mobileShell.proxyPath
+      const launcherPath = mobileShell.launcherPath
+      const child = spawn(this.options.nodeExecutable?.() ?? process.execPath, [proxyPath], {
+        cwd: mobileShell.root,
+        env: proxyEnvironment({
+          DSH_REMOTE_TOKEN: token,
+          DSH_LISTEN_HOST: lanAddress,
+          DSH_LISTEN_PORT: String(listenPort),
+          DSH_TARGET_HOST: target.host,
+          DSH_TARGET_PORT: String(target.port),
+          DSH_LAUNCHER: launcherPath,
+          DSH_PAIR_QR: 'off',
+        }),
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+      this.child = child as ChildProcessByStdio<null, Readable, Readable>
+      this.targetUrl = targetUrl
+      const onLine = (line: string): void => this.options.onLog?.(`mobile-shell: ${line}`)
+      child.stdout.setEncoding('utf8')
+      child.stderr.setEncoding('utf8')
+      child.stdout.on('data', chunk => onLine(String(chunk).trim()))
+      child.stderr.on('data', chunk => onLine(String(chunk).trim()))
+      child.once('exit', () => {
+        if (!this.stopping) this.options.onLog?.('mobile-shell: LAN proxy stopped unexpectedly')
+        this.child = undefined
+        this.pairing = undefined
+        this.targetUrl = undefined
+        this.options.onStateChanged?.()
+      })
+      child.once('error', error => this.options.onLog?.(`mobile-shell: ${error.message}`))
+
+      await waitForHealth(baseUrl, START_TIMEOUT_MS, controller.signal)
+      const result = await requestPairing(baseUrl, token, controller.signal)
       this.pairing = {
         baseUrl,
         pairingUrl: result.pairingUrl,
@@ -258,20 +308,43 @@ export class LanService {
     } catch (error) {
       await this.stop()
       throw error
+    } finally {
+      if (this.startAbortController === controller) this.startAbortController = undefined
     }
   }
 
   async restart(): Promise<LanPairing> {
+    const pendingStart = this.startInFlight
     await this.stop()
+    await pendingStart?.catch(() => {})
     return this.start()
   }
 
-  async stop(): Promise<void> {
-    const child = this.child
-    if (child === undefined) return
+  stop(): Promise<void> {
+    if (this.stopInFlight !== undefined) return this.stopInFlight
+    const task = this.stopInternal()
+    this.stopInFlight = task
+    void task.then(
+      () => this.finishStop(task),
+      () => this.finishStop(task),
+    )
+    this.options.onStateChanged?.()
+    return task
+  }
+
+  private finishStop(task: Promise<void>): void {
+    if (this.stopInFlight === task) this.stopInFlight = undefined
+    this.options.onStateChanged?.()
+  }
+
+  private async stopInternal(): Promise<void> {
     this.stopping = true
-    this.child = undefined
+    this.startAbortController?.abort()
+    const child = this.child
+    this.targetUrl = undefined
     this.pairing = undefined
+    if (child === undefined) return
+    this.child = undefined
     if (child.exitCode !== null) return
     await new Promise<void>(resolve => {
       const timer = setTimeout(() => {

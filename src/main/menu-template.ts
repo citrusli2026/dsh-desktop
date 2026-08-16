@@ -29,10 +29,11 @@ export interface MenuEnvironment {
   appName: string
   restartEnabled?: boolean
   lanRunning?: boolean
+  lanBusy?: boolean
 }
 
 export function buildAppMenuTemplate(environment: MenuEnvironment, actions: MenuActions): MenuItemConstructorOptions[] {
-  const { locale, platform, packaged, appName, restartEnabled = true, lanRunning = false } = environment
+  const { locale, platform, packaged, appName, restartEnabled = true, lanRunning = false, lanBusy = false } = environment
   const t = (key: Parameters<typeof shellText>[1]): string => shellText(locale, key)
   const isMac = platform === 'darwin'
   const template: MenuItemConstructorOptions[] = []
@@ -120,7 +121,7 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
           { type: 'separator' },
           { label: t('menu.stopLanLink'), click: actions.stopLanLink },
         ]
-      : [{ label: t('menu.startLanLink'), click: actions.startLanLink }],
+      : [{ label: t('menu.startLanLink'), enabled: !lanBusy, click: actions.startLanLink }],
   })
 
   const help: MenuItemConstructorOptions[] = []

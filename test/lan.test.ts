@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isPrivateLanIPv4, listPrivateLanIPv4, qrSvgFromCode } from '../src/main/lan.ts'
+import { isPrivateLanIPv4, LanService, listPrivateLanIPv4, qrSvgFromCode } from '../src/main/lan.ts'
 
 test('private LAN address detection rejects loopback and public addresses', () => {
   assert.equal(isPrivateLanIPv4('192.168.1.20'), true)
@@ -27,4 +27,17 @@ test('QR SVG contains a crisp module grid and white quiet zone', () => {
   assert.match(svg, /viewBox="0 0 11 11"/)
   assert.match(svg, /<rect x="4" y="4" width="1" height="1"\/>/)
   assert.match(svg, /fill="#fff"/)
+})
+
+test('LAN start is single-flight and clears its busy state after failure', async () => {
+  const service = new LanService({
+    mobileShellRoot: '/tmp/missing-mobile-shell',
+    getTargetUrl: () => undefined,
+  })
+  const first = service.start()
+  const second = service.start()
+  assert.strictEqual(first, second)
+  assert.equal(service.isBusy, true)
+  await assert.rejects(first, /Harness is not ready yet/)
+  assert.equal(service.isBusy, false)
 })

@@ -64,7 +64,7 @@ export async function showAboutDialog(locale: ShellLocale): Promise<void> {
   if (target !== undefined) await shell.openExternal(target)
 }
 
-export function installAppMenu(locale: ShellLocale, actions: MenuActions, restartEnabled = true, lanRunning = false): void {
+export function installAppMenu(locale: ShellLocale, actions: MenuActions, restartEnabled = true, lanRunning = false, lanBusy = false): void {
   const template = buildAppMenuTemplate({
     locale,
     platform: process.platform,
@@ -72,6 +72,7 @@ export function installAppMenu(locale: ShellLocale, actions: MenuActions, restar
     appName: app.name,
     restartEnabled,
     lanRunning,
+    lanBusy,
   }, actions)
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }

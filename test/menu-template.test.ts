@@ -57,6 +57,13 @@ test('extensions menu exposes LAN pairing controls', () => {
   assert.ok(labels(stopped).includes('扩展'))
   assert.ok(labels(stopped).includes('连接移动设备…'))
 
+  const busy = buildAppMenuTemplate({
+    locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop', lanBusy: true,
+  }, actions)
+  const busyExtensions = busy.find(item => item.label === '扩展')?.submenu
+  assert.ok(Array.isArray(busyExtensions))
+  assert.equal(busyExtensions[0]?.enabled, false)
+
   const english = buildAppMenuTemplate({ locale: 'en', platform: 'linux', packaged: true, appName: 'dsh-desktop' }, actions)
   assert.ok(labels(english).includes('Connect a mobile device…'))
 

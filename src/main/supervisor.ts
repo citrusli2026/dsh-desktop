@@ -72,6 +72,7 @@ export class HarnessSupervisor {
   private readonly args: readonly string[]
   private readonly env: NodeJS.ProcessEnv
   private readonly readyTimeoutMs: number
+  private startInFlight: Promise<string> | undefined
   private stopInFlight: Promise<void> | undefined
 
   constructor(
@@ -190,6 +191,19 @@ export class HarnessSupervisor {
    * @returns the loopback URL the web UI is served at.
    */
   start(): Promise<string> {
+    if (this.startInFlight !== undefined) return this.startInFlight
+    if (this.stopInFlight !== undefined) {
+      return this.trackStart(this.stopInFlight.then(() => this.createStartTask()))
+    }
+    return this.trackStart(this.createStartTask())
+  }
+
+  private createStartTask(): Promise<string> {
+    if (this.child !== undefined && this.resolveReady === undefined) {
+      return Promise.reject(new Error('harness is already running'))
+    }
+    if (this.restartTimer !== undefined) clearTimeout(this.restartTimer)
+    this.restartTimer = undefined
     this.stopping = false
     this.events.onState({ phase: 'starting' })
     return new Promise<string>((resolve, reject) => {
@@ -202,22 +216,40 @@ export class HarnessSupervisor {
     })
   }
 
+  private trackStart(task: Promise<string>): Promise<string> {
+    this.startInFlight = task
+    void task.then(
+      () => this.finishStart(task),
+      () => this.finishStart(task),
+    )
+    return task
+  }
+
+  private finishStart(task: Promise<string>): void {
+    if (this.startInFlight === task) this.startInFlight = undefined
+  }
+
   /**
    * Stop the harness: SIGTERM, then SIGKILL after the grace budget. Safe to
    * call with no child running; never rejects.
    */
   stop(): Promise<void> {
     if (this.stopInFlight !== undefined) return this.stopInFlight
-    this.stopInFlight = new Promise<void>((resolve) => {
+    const task = new Promise<void>((resolve) => {
       const finish = (): void => { void this.logWriter.close().then(resolve) }
       if (this.restartTimer !== undefined) clearTimeout(this.restartTimer)
+      this.restartTimer = undefined
+      this.stopping = true
       const child = this.child
+      const reject = this.rejectReady
+      if (reject !== undefined) {
+        this.clearStartAttempt()
+        reject(new Error('harness stopped before ready'))
+      }
       if (child === undefined) {
-        this.stopping = true
         finish()
         return
       }
-      this.stopping = true
       const killTimer = setTimeout(() => child.kill('SIGKILL'), STOP_TIMEOUT_MS)
       child.once('exit', () => {
         clearTimeout(killTimer)
@@ -231,6 +263,15 @@ export class HarnessSupervisor {
         spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' })
       }
     })
-    return this.stopInFlight
+    this.stopInFlight = task
+    void task.then(
+      () => this.finishStop(task),
+      () => this.finishStop(task),
+    )
+    return task
+  }
+
+  private finishStop(task: Promise<void>): void {
+    if (this.stopInFlight === task) this.stopInFlight = undefined
   }
 }

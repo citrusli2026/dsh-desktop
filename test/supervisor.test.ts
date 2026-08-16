@@ -51,3 +51,14 @@ test('stop is safe before a child is started', async () => {
   const { supervisor } = await fixture(['-e', 'process.exit(0)'])
   await Promise.all([supervisor.stop(), supervisor.stop()])
 })
+
+test('start is single-flight and stop cancels a pending readiness wait', async () => {
+  const { supervisor } = await fixture(['-e', 'setInterval(()=>{},1000)'], 5_000)
+  const first = supervisor.start()
+  const second = supervisor.start()
+  assert.strictEqual(first, second)
+  await new Promise(resolve => setTimeout(resolve, 25))
+  const stopping = supervisor.stop()
+  await assert.rejects(first, /harness stopped before ready/)
+  await stopping
+})
