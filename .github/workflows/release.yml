@@ -114,7 +114,7 @@ jobs:
           path: artifacts
           merge-multiple: true
       - name: Install release validator dependency
-        run: npm install --no-save --no-package-lock --ignore-scripts --omit=dev yaml@2.9.0
+        run: npm install --no-save --no-package-lock --ignore-scripts --omit=dev
       - name: Validate two installers, hashes, and Windows updater metadata
         run: node scripts/check-release-assets.mjs artifacts "${{ github.ref_name }}"
       - name: Publish GitHub release (create if missing, upload assets, undraft)

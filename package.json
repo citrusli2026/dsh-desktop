@@ -12,6 +12,9 @@
   "type": "module",
   "packageManager": "pnpm@11.8.0",
   "main": "lib/main/index.cjs",
+  "dependencies": {
+    "yaml": "^2.9.0"
+  },
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
   },
@@ -47,7 +50,6 @@
     "esbuild": "^0.25.0",
     "sharp": "^0.35.3",
     "tar": "^7.0.0",
-    "typescript": "^7.0.0",
-    "yaml": "^2.9.0"
+    "typescript": "^7.0.0"
   }
 }
