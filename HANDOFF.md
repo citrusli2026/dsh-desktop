@@ -57,14 +57,15 @@ tag push  → Release verify
              → GitHub Release
                 ├─ Site Data Refresh → main/release.json → Vercel
                 ├─ Release Mirrors → R2(可失败、不中断主发布)
-                └─ GitCode 镜像 = 人工:维护者在发行版页手动上传
-                   dmg / exe / hashes,再手动触发一次 Site Data Refresh
+                └─ GitCode 镜像 = 维护者授权:复用已登录浏览器会话
+                   上传 dmg / exe / hashes,再手动触发一次 Site Data Refresh
 ```
 
 GitCode 自动推送已在 shell.8/9 连续失败(跨境 ~150 KB/s,预签名 URL 过期
 502);拉取式流水线方案评估后放弃,决策与过程见 docs/decisions/0008 第二
-修订。人工上传只需两个面向用户的安装包与校验文件;blockmap / latest*.yml 不镜像,
-auto-updater 始终直连 GitHub。
+修订。当前用 `.agents/skills/gitcode-release-publisher/` 复用已登录 GitCode
+浏览器会话完成附件预留、签名存储上传和 Release 创建;只上传两个面向用户的
+安装包与校验文件。blockmap / latest*.yml 不镜像,auto-updater 始终直连 GitHub。
 官网数据生成器逐资产用 range GET 探测 GitCode;中文页面在镜像 URL 真实
 可下载时并列展示镜像与 GitHub 两个下载源,否则只展示 GitHub。不要把带
 时效签名的 CDN URL 写入站点。
@@ -78,15 +79,16 @@ auto-updater 始终直连 GitHub。
 | 重新生成下载数据 | `node scripts/gen-site-data.mjs` |
 | 校验汇总制品 | `node scripts/check-release-assets.mjs <目录> <v-tag>` |
 | 手动刷新官网数据 | Actions → Site Data Refresh → Run workflow |
-| 补齐 GitCode 镜像 | GitCode 发行版页手动上传 dmg/exe 与 `.sha256` → 再触发一次 Site Data Refresh |
-| 回补历史版本 | 同上(人工);GitHub 侧 GitCode Mirror Backfill 仅小文件实际可用 |
+| 补齐 GitCode 镜像 | 使用 `$gitcode-release-publisher` 上传 dmg/exe 与 `.sha256` → 再触发一次 Site Data Refresh |
+| 回补历史版本 | 同上(需维护者已登录 GitCode);GitHub 侧 GitCode Mirror Backfill 仅小文件实际可用 |
 | 下次壳发版 | `node scripts/version.mjs bump shell` → CI 绿 → 推 tag |
 | 线上部署 | push `main`;Vercel 项目 root=`site/` 自动部署 |
 
 ## 六、已知事项
 
-- GitCode 资产镜像为人工渠道:发版后维护者在发行版页手动上传 dmg/exe 与哈希,
-  再触发 Site Data Refresh 让官网识别(根因与方案评估见 0008 第二修订:跨境
+- GitCode 资产镜像为维护者授权渠道:发版后用 `$gitcode-release-publisher` 复用
+  已登录浏览器会话上传 dmg/exe 与哈希,再触发 Site Data Refresh 让官网识别
+  (根因与方案评估见 0008 第二修订:跨境
   推送 ~150 KB/s 且预签名 URL 过期 502;拉取式流水线复杂度不成比例,放弃)。
   自部署 gh-proxy(`GH_PROXY_PREFIX` 思路)仅作备选;公共代理实例实测
   不可靠(mirror.ghproxy.com / ghfast.top 已失联),不进入任何链路。
@@ -125,8 +127,9 @@ auto-updater 始终直连 GitHub。
 - GitHub 主分支 CI run `31893979444`、Release run `31894394693`、首次官网同步
   run `31894723515` 均成功;tag `v0.1.0-rc.6.shell.11` 精确指向
   `cca1a8277e962709b8ddabe80e9941f7135b00a5`。
-- GitCode 国内发行版已发布,同一 tag / commit 下只人工上传 DMG、EXE 与两份
-  `.sha256`;四个稳定下载 URL 均以匿名 `Range: bytes=0-0` 返回 HTTP 206。
+- GitCode 国内发行版已发布,同一 tag / commit 下通过已登录浏览器会话只上传
+  DMG、EXE 与两份 `.sha256`;四个稳定下载 URL 均以匿名
+  `Range: bytes=0-0` 返回 HTTP 206。
 - 国内镜像完成后再次执行 Site Data Refresh run `31898225900`,生成提交
   `74fc28e`;正式域名已验证只渲染两个安装包、两个哈希,并为两端同时展示
   GitCode / GitHub 下载源。Windows updater 所需 `latest.yml` 与 `.exe.blockmap`

@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitCode Release Publisher"
+  short_description: "通过已登录浏览器安全发布 GitCode 大文件 Release"
+  default_prompt: "Use $gitcode-release-publisher to publish verified release assets to GitCode through my logged-in browser session."
