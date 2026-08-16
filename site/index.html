@@ -12,12 +12,22 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9f8f8" />
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c0f16" />
 <meta name="color-scheme" content="light dark" />
+<script>
+/* 首帧前应用主题:手动选择(浅色/深色)优先,未选择时跟随系统 */
+(function () {
+  try {
+    var saved = localStorage.getItem('dsh-site-theme')
+    var dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  } catch (e) {}
+})()
+</script>
 <link rel="canonical" href="https://dsh-desktop.com/" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Host+Grotesk:wght@500;600;700&amp;display=swap" />
-<link rel="stylesheet" href="/assets/style.css?v=15" />
+<link rel="stylesheet" href="/assets/style.css?v=20" />
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"dsh-desktop","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows","isAccessibleForFree":true,"license":"https://opensource.org/license/mit","url":"https://dsh-desktop.com/","downloadUrl":"https://github.com/citrusli2026/dsh-electron-shell/releases"}</script>
 </head>
 <body>
@@ -38,6 +48,7 @@
     <a href="#faq" data-i18n="nav.faq">常见问题</a>
   </nav>
   <div class="topbar__right">
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换明暗主题" title="切换明暗主题"></button>
     <button class="lang-toggle" id="lang-toggle" type="button" aria-label="Switch language">EN</button>
     <a class="gh-chip" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">
       <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
@@ -57,12 +68,11 @@
       <div class="hero__copy" data-reveal>
         <div class="community-notice" role="note">
           <strong data-i18n="community.label">社区维护</strong>
-          <span data-i18n="community.body">社区出品,非 DeepSeek 官方产品</span>
+          <span data-i18n="community.body">非 DeepSeek 官方产品</span>
           <a href="https://www.deepseek.com/" target="_blank" rel="noopener" data-i18n="community.official">访问官方站点 ↗</a>
         </div>
-        <p class="kicker" data-i18n="hero.kicker">COMMUNITY DESKTOP SHELL · MIT</p>
         <h1 class="headline" data-i18n="hero.h1">把 DeepSeek Harness<br />变成可靠的 <em>桌面工作台</em>。</h1>
-        <p class="subhead" data-i18n="hero.sub">零配置启动、独立数据空间、崩溃自愈与本地诊断。dsh-desktop 只增强桌面体验,不改写 Harness 的 Agent 行为。</p>
+        <p class="subhead" data-i18n="hero.sub">零配置启动、独立数据空间、崩溃自愈——只增强桌面体验,不改写 Harness 行为。</p>
         <div class="cta-row">
           <a class="btn btn--primary btn--glow" id="cta-primary" href="#download" data-i18n="hero.cta">下载桌面版</a>
           <a class="btn btn--ghost" id="cta-secondary" href="#workflow" data-i18n="hero.secondary">看看桌面壳做了什么 →</a>
@@ -70,26 +80,6 @@
         <p class="hero__meta" id="hero-meta">… · macOS / Windows · <span data-i18n="hero.meta">无需 Node.js</span></p>
       </div>
 
-      <div class="hero__monitor" data-reveal style="--i:1">
-        <span class="tick tick--tl" aria-hidden="true"></span><span class="tick tick--tr" aria-hidden="true"></span>
-        <span class="tick tick--bl" aria-hidden="true"></span><span class="tick tick--br" aria-hidden="true"></span>
-        <div class="window">
-          <div class="window__titlebar">
-            <span class="lights" aria-hidden="true"><i class="l1"></i><i class="l2"></i><i class="l3"></i></span>
-            <span class="window__title">dsh-desktop</span>
-            <a class="version-chip" id="version-chip" href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">…</a>
-          </div>
-          <div class="window__body window__body--shot">
-            <picture>
-              <source srcset="/assets/shots/app-main-dark.png" media="(prefers-color-scheme: dark)" />
-              <img src="/assets/shots/app-main-light.png" width="1280" height="860" decoding="async"
-                alt="dsh-desktop 真实主界面:DeepSeek Harness 工作区,明暗主题跟随系统"
-                data-alt-zh="dsh-desktop 真实主界面:DeepSeek Harness 工作区,明暗主题跟随系统"
-                data-alt-en="The real dsh-desktop main window: the DeepSeek Harness workspace, following the system light/dark theme" />
-            </picture>
-          </div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -190,17 +180,6 @@
             <p>帮助菜单、托盘和启动失败页都能导出本地诊断报告。报告包含版本、系统状态和有上限的日志尾部,自动遮罩常见密钥与主目录,且绝不自动上传。</p>
           </article>
       </div>
-
-      <figure class="shot-panel" data-reveal style="--i:3">
-        <picture>
-          <source srcset="/assets/shots/app-settings-dark.png" media="(prefers-color-scheme: dark)" />
-          <img src="/assets/shots/app-settings-light.png" width="1280" height="860" loading="lazy" decoding="async"
-            alt="dsh-desktop 真实设置页:语言与外观(浅色 / 深色 / 跟随系统)"
-            data-alt-zh="dsh-desktop 真实设置页:语言与外观(浅色 / 深色 / 跟随系统)"
-            data-alt-en="The real dsh-desktop settings view: language and appearance (light / dark / follow system)" />
-        </picture>
-        <figcaption data-i18n="shots.caption">真实界面实拍 · 设置页 —— 外观可选浅色 / 深色 / 跟随系统</figcaption>
-      </figure>
     </div>
   </section>
 
@@ -233,7 +212,7 @@
       <div class="faq" data-reveal style="--i:2">
         <details>
           <summary data-i18n="faq.q1">macOS 提示"无法打开,因为无法验证开发者"?</summary>
-          <p data-i18n="faq.a1">macOS 版目前未签名(决策记录 0004)。首次启动请 <b>右键 → 打开</b>,在弹窗中确认即可,之后正常双击启动。</p>
+          <p class="faq-answer" data-i18n="faq.a1">macOS 版目前未签名(决策记录 0004)。首次启动请 <b>右键 → 打开</b>。如果仍没有放行选项,且你确认安装包来源可信,可在终端执行:<br /><code class="faq-command">xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"</code><code class="faq-command">open "/Applications/dsh-desktop.app"</code>这会移除下载隔离标记,但不会添加 Apple 签名或公证。</p>
         </details>
         <details>
           <summary data-i18n="faq.q2">Windows SmartScreen 拦截怎么办?</summary>
@@ -281,6 +260,6 @@
   </div>
 </footer>
 
-<script src="/assets/app.js?v=15" defer></script>
+<script src="/assets/app.js?v=20" defer></script>
 </body>
 </html>

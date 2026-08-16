@@ -16,11 +16,10 @@
       'brand.community': '社区版 · 非官方',
       'nav.download': '下载', 'nav.workflow': '工作方式', 'nav.features': '特性', 'nav.version': '版本号', 'nav.faq': '常见问题', 'nav.cta': '立即下载',
       'community.label': '社区维护',
-      'community.body': '社区出品,非 DeepSeek 官方产品',
+      'community.body': '非 DeepSeek 官方产品',
       'community.official': '访问官方站点 ↗',
-      'hero.kicker': 'COMMUNITY DESKTOP SHELL · MIT',
       'hero.h1': '把 DeepSeek Harness<br />变成可靠的 <em>桌面工作台</em>。',
-      'hero.sub': '零配置启动、独立数据空间、崩溃自愈与本地诊断。dsh-desktop 只增强桌面体验,不改写 Harness 的 Agent 行为。',
+      'hero.sub': '零配置启动、独立数据空间、崩溃自愈——只增强桌面体验,不改写 Harness 行为。',
       'hero.cta': '下载桌面版',
       'hero.secondary': '看看桌面壳做了什么 →',
       'hero.meta': '无需 Node.js',
@@ -45,13 +44,13 @@
       'ft.p4': '<h3>持续守护与可靠更新</h3><p>崩溃后按预算退避重启,窗口关闭后可驻留托盘,也可从帮助菜单安全重启 Harness。Windows 保留应用内自动更新;未签名的 macOS 检查新版本并打开精确发布页。</p>',
       'ft.p5': '<h3>渲染层能力默认收敛</h3><p>保持 Electron 沙箱与上下文隔离、关闭 Node 集成并限制页面导航;媒体、定位、通知、屏幕采集和文件系统等额外权限默认拒绝,未来只能按需显式放行。</p>',
       'ft.p6': '<h3>问题发生时,带走一份可检查的报告</h3><p>帮助菜单、托盘和启动失败页都能导出本地诊断报告。报告包含版本、系统状态和有上限的日志尾部,自动遮罩常见密钥与主目录,且绝不自动上传。</p>',
-      'shots.caption': '真实界面实拍 · 设置页 —— 外观可选浅色 / 深色 / 跟随系统',
+      'theme.toggle': '切换明暗主题',
       'vr.marker': '版本号', 'vr.title': '版本号怎么读',
       'vr.core': '<b>内核版本</b> —— 内置的 <code>@deepseek-ai/dsh</code> 版本。每日工作流自动检查 npm 上游,有新版本就开升级 PR。',
       'vr.shell': '<b>壳修订号</b> —— 壳自身(窗口、守护、打包)的修订次数。同一内核可以有多次壳修订。',
       'faq.marker': '常见问题', 'faq.title': '常见问题',
       'faq.q1': 'macOS 提示"无法打开,因为无法验证开发者"?',
-      'faq.a1': 'macOS 版目前未签名(决策记录 0004)。首次启动请 <b>右键 → 打开</b>,在弹窗中确认即可,之后正常双击启动。',
+      'faq.a1': 'macOS 版目前未签名(决策记录 0004)。首次启动请 <b>右键 → 打开</b>。如果仍没有放行选项,且你确认安装包来源可信,可在终端执行:<br><code class="faq-command">xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"</code><code class="faq-command">open "/Applications/dsh-desktop.app"</code>这会移除下载隔离标记,但不会添加 Apple 签名或公证。',
       'faq.q2': 'Windows SmartScreen 拦截怎么办?',
       'faq.a2': '安装包未购买代码签名证书。点击 <b>"更多信息" → "仍要运行"</b> 即可。安装包由 GitHub Actions 从公开源码构建,可全程审计。',
       'faq.q3': '这和 DeepSeek 官方是什么关系?',
@@ -74,11 +73,10 @@
       'brand.community': 'COMMUNITY · UNOFFICIAL',
       'nav.download': 'DOWNLOAD', 'nav.workflow': 'HOW IT WORKS', 'nav.features': 'FEATURES', 'nav.version': 'VERSIONING', 'nav.faq': 'FAQ', 'nav.cta': 'Download',
       'community.label': 'COMMUNITY-MAINTAINED',
-      'community.body': 'Community-built, not an official DeepSeek product',
+      'community.body': 'Not an official DeepSeek product',
       'community.official': 'Visit official site ↗',
-      'hero.kicker': 'COMMUNITY DESKTOP SHELL · MIT',
       'hero.h1': 'DeepSeek Harness,<br />as a dependable <em>desktop workspace</em>.',
-      'hero.sub': 'Zero-setup launch, an isolated data home, crash recovery, and local diagnostics. dsh-desktop improves the desktop experience without rewriting Harness agent behavior.',
+      'hero.sub': 'Zero-setup launch, isolated data, crash recovery — a better desktop experience without changing how Harness works.',
       'hero.cta': 'Download for Desktop',
       'hero.secondary': 'See what the shell adds →',
       'hero.meta': 'NO NODE.JS REQUIRED',
@@ -103,13 +101,13 @@
       'ft.p4': '<h3>Continuous supervision and reliable updates</h3><p>Budgeted backoff after crashes, close-to-tray behavior, and a safe Harness restart from Help. Windows keeps in-place automatic updates; unsigned macOS checks for updates and opens the exact release page.</p>',
       'ft.p5': '<h3>Renderer capabilities stay constrained</h3><p>Electron sandboxing and context isolation stay on, Node integration stays off, and navigation is guarded. Media, location, notification, capture, and filesystem permissions are denied by default; future exceptions must be explicitly allowlisted.</p>',
       'ft.p6': '<h3>Take an inspectable report when something breaks</h3><p>Export a local diagnostic report from Help, the tray, or the startup error page. It includes versions, system state, and a bounded log tail, masks common secrets and the home path, and is never uploaded automatically.</p>',
-      'shots.caption': 'REAL APP CAPTURE · SETTINGS — APPEARANCE: LIGHT / DARK / FOLLOW SYSTEM',
+      'theme.toggle': 'Toggle light/dark theme',
       'vr.marker': 'VERSIONING', 'vr.title': 'Reading the version',
       'vr.core': '<b>Kernel version</b> — the bundled <code>@deepseek-ai/dsh</code> release. A daily workflow checks upstream npm and files an upgrade PR automatically.',
       'vr.shell': '<b>Shell revision</b> — how many times the shell itself (window, supervision, packaging) has been revised on this kernel.',
       'faq.marker': 'FAQ', 'faq.title': 'Frequently asked',
       'faq.q1': 'macOS says "cannot be opened because the developer cannot be verified"?',
-      'faq.a1': 'The macOS build is unsigned for now (decision 0004). <b>Right-click → Open</b> on first launch and confirm; afterwards it starts normally.',
+      'faq.a1': 'The macOS build is unsigned for now (decision 0004). <b>Right-click → Open</b> on first launch. If no override is offered and you trust the installer source, run:<br><code class="faq-command">xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"</code><code class="faq-command">open "/Applications/dsh-desktop.app"</code>This removes the download-quarantine marker, but does not add an Apple signature or notarization.',
       'faq.q2': 'Windows SmartScreen blocks the installer?',
       'faq.a2': 'The installer is unsigned. Choose <b>"More info" → "Run anyway"</b>. Builds are produced by GitHub Actions from public source — fully auditable.',
       'faq.q3': 'Is this affiliated with DeepSeek?',
@@ -148,6 +146,48 @@
       mac: 'Drag the DMG app into Applications to install.',
       win: 'Windows 10+ (64-bit) with in-place updates.',
     },
+  }
+
+  /* ══ 主题状态(默认跟随系统,点按后固定浅色/深色) ═══════ */
+  var themeChoice = (function () {
+    try {
+      var saved = localStorage.getItem('dsh-site-theme')
+      if (saved === 'light' || saved === 'dark') return saved
+    } catch (e) {}
+    return null
+  })()
+  var systemDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : { matches: false }
+  var THEME_COLORS = { light: '#f9f8f8', dark: '#0c0f16' }
+  var THEME_ICONS = {
+    light: '<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><circle cx="8" cy="8" r="3.1" fill="none" stroke="currentColor" stroke-width="1.5"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 1v1.7M8 13.3V15M1 8h1.7M13.3 8H15M3 3l1.2 1.2M11.8 11.8 13 13M13 3l-1.2 1.2M4.2 11.8 3 13"/></g></svg>',
+    dark: '<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M13.4 9.6A5.8 5.8 0 0 1 6.4 2.6a5.8 5.8 0 1 0 7 7Z"/></svg>',
+  }
+
+  function effectiveTheme() {
+    return themeChoice || (systemDark.matches ? 'dark' : 'light')
+  }
+
+  function applyTheme() {
+    var eff = effectiveTheme()
+    document.documentElement.dataset.theme = eff
+    $all('meta[name="theme-color"]').forEach(function (m) { m.content = THEME_COLORS[eff] })
+    var btn = $('#theme-toggle')
+    if (btn) {
+      btn.innerHTML = THEME_ICONS[eff]
+      btn.title = t('theme.toggle')
+      btn.setAttribute('aria-label', t('theme.toggle'))
+    }
+  }
+
+  function bindThemeToggle() {
+    $('#theme-toggle').addEventListener('click', function () {
+      themeChoice = effectiveTheme() === 'dark' ? 'light' : 'dark'
+      try { localStorage.setItem('dsh-site-theme', themeChoice) } catch (e) {}
+      applyTheme()
+    })
+    var onSystemChange = function () { if (!themeChoice) applyTheme() }
+    if (systemDark.addEventListener) systemDark.addEventListener('change', onSystemChange)
+    else if (systemDark.addListener) systemDark.addListener(onSystemChange)
   }
 
   /* ══ 语言状态 ══════════════════════════════════════ */
@@ -243,10 +283,6 @@
   function renderMeta(data) {
     var r = data.release
     $('#release-meta').textContent = r.tag + ' · ' + fmtDate(r.published_at) + (r.prerelease ? ' · PRE' : '')
-
-    var chip = $('#version-chip')
-    chip.textContent = r.tag
-    chip.href = r.html_url
 
     var meta = $('#hero-meta')
     meta.innerHTML = r.tag + ' · macOS / Windows · <span data-i18n="hero.meta">' + t('hero.meta') + '</span>'
@@ -365,9 +401,6 @@
       var key = el.getAttribute('data-i18n')
       if (I18N[lang][key] !== undefined) el.innerHTML = I18N[lang][key]
     })
-    $all('[data-alt-zh]').forEach(function (el) {
-      el.setAttribute('alt', lang === 'zh' ? el.getAttribute('data-alt-zh') : el.getAttribute('data-alt-en'))
-    })
     $('#lang-toggle').textContent = lang === 'zh' ? 'EN' : '中'
     if (siteData) {
       renderMeta(siteData)
@@ -388,7 +421,9 @@
   /* ══ 启动 ══════════════════════════════════════════ */
   bindReveal()
   bindLangToggle()
+  bindThemeToggle()
   bindCopy(document)
+  applyTheme()
   if (lang === 'en') applyLang()
 
   loadData()

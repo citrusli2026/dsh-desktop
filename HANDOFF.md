@@ -34,16 +34,20 @@
    如需 iPhone/iPad 包,必须另立 SwiftUI 或跨平台客户端,不能从现有 Electron
    配置直接生成。
 
-## 二点五、人工审查调整(2026-08-16,缓存键 v=15)
+## 二点五、人工审查调整(2026-08-16,缓存键 v=20)
 
 1. 顶栏 GitHub 链接不再显示星数,只保留图标与 GitHub 文字。
-2. 首屏与特性区的示意图全部换成真实应用截图(`site/assets/shots/`,主界面
-   与设置页各一张),由 `node scripts/capture-site-shots.mjs` 驱动打包好的
-   真实应用拍摄;界面有更新时重跑该脚本即可。
+2. 首屏为纯文案居中 hero,不再放任何截图;截图目录 `site/assets/shots/`
+   与拍摄脚本 `scripts/capture-site-shots.mjs` 已删除。hero 文案精简:
+   去掉 kicker 行、副标题压成一句、社区提示语缩短,宽度与下方区块对齐
+   (约 1080px),标题去掉手写 `<br>` 改由 `text-wrap: balance` 自动折行。
 3. 下载区与特性文案不再展示 SHA-256 及其说明;`.sha256` 资产仍保留在
    release.json 数据里,只是不渲染。
-4. 官网提供明暗两套皮肤并通过 `prefers-color-scheme` 跟随系统;页面内截图
-   也用 `<picture>` 按系统主题自动切换明暗版本。
+4. 官网提供明暗两套皮肤:首次访问跟随系统,顶栏太阳/月亮按钮在浅色/深色
+   两态间切换并记忆(localStorage `dsh-site-theme`);`<head>` 内联脚本在
+   首帧前写入 `data-theme` 避免闪烁,无 JS 时由媒体查询兜底。
+5. 桌面壳顶部拖动区域(preload 注入的 `data-dsh-window-drag-region`)
+   高度从 12px 加高到 24px,随下一次构建/发布生效。
 
 ## 三、shell.9 官网与交付变化
 
