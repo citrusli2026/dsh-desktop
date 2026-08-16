@@ -1,6 +1,6 @@
 # Electron Shell 能力规划
 
-> 状态：shell.11 发布候选；双端 packaged smoke、严格 Release 门与官网刷新待本轮验证。
+> 状态：shell.12 代码基线；双端 packaged smoke、严格 Release 门与官网刷新沿用既有发布链路，签名/公证仍不在本轮范围。
 > 原则：原生能力只解决桌面生命周期与可信交付，不复制 Harness 已有业务功能。
 
 ## 1. 产品约定
@@ -61,9 +61,10 @@
    生命周期、真实 Electron/打包产物测试。
 2. shell.11：发布两个大体积安装包与 checksum，保留 Windows updater 所需小文件；
    修正 macOS 交通灯安全间距并精简重复帮助项。
-3. shell.12：在不扩大采集面的前提下增加诊断摘要预览/复制；补 Windows 进程树
-   退出的真实 CI 断言。
-4. 分发成熟度：Developer ID 签名与 notarization 完成后再启用 macOS 原地更新。
+3. shell.12：完成发布可复现性收敛、LAN/监督器生命周期竞态保护、严格 updater
+   元数据校验与诊断脱敏回归；mobile-shell 固定为 `v1.0.0`。
+4. shell.13：补平台级进程树退出断言、资产 provenance/SBOM 与更完整的 LAN
+   端到端测试；签名/公证另立阶段。
 
 不在近期范围：把 Harness 设置或业务页面重做成 Electron 原生 UI、自动上传日志、
 放宽渲染器权限，或从本仓库直接生成 iOS 包（当前没有 iOS/Xcode 工程）。

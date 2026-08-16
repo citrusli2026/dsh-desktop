@@ -84,7 +84,8 @@ export function redactDiagnosticsLog(text: string, userHome = homedir()): string
     .replace(new RegExp(escapedHome, 'g'), '~')
     .replace(/\b(authorization)(\s*:\s*)Bearer\s+[^\s,;]+/gi, '$1$2Bearer [REDACTED]')
     .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [REDACTED]')
-    .replace(/\b(api[_-]?key|access[_-]?token|secret)(\s*[:=]\s*)[^\s,;]+/gi, '$1$2[REDACTED]')
+    .replace(/(["']?)(api[_-]?key|access[_-]?token|remote[_-]?token|secret|password)(["']?\s*[:=]\s*)["']?[^"',\s}\]]+["']?/gi, '$1$2$3[REDACTED]')
+    .replace(/\bsk-[A-Za-z0-9_-]{16,}\b/g, '[REDACTED]')
 }
 
 export interface DiagnosticFacts {

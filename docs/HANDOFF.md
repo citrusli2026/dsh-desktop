@@ -5,7 +5,7 @@
 > contract, and next iteration boundary. Website and mirror operations live in
 > the root `HANDOFF.md`.
 
-最后更新:2026-08-16 · 已发布版本 `0.1.0-rc.6.shell.11`
+最后更新:2026-08-16 · 当前代码基线 `0.1.0-rc.6.shell.12`
 
 ## 1. 当前结果
 
@@ -23,7 +23,11 @@ shell.9 以三轮迭代完成:
    托盘、错误页可导出最多 256 KiB 的本地诊断报告,遮罩常见凭据和主目录,
    不自动上传(ADR 0015)。官网明确区分壳新增能力与未改变的 Harness 行为。
 3. **设计与持续交付**:加载/错误页与官网统一近黑 + 信号绿视觉;官网能力改为
-   可扫读矩阵并补无障碍/窄屏;Release 增加版本与 11 资产/updater 元数据门禁。
+   可扫读矩阵并补无障碍/窄屏;Release 增加版本与严格 6 文件/updater 元数据门禁。
+
+当前代码基线在 shell.12 之上继续完成三项维护：mobile-shell CI/Release 固定为
+`v1.0.0`，LAN 与 Harness 启停统一单飞并处理停止期间的排队启动，发布校验器解析
+`latest.yml` 的版本、路径、文件列表和 sha512。签名/公证仍明确不在本轮范围内。
 
 ### 官网浅色体系(2026-08-15 已提交部署,无新 tag)
 
@@ -60,7 +64,7 @@ src/preload/index.ts        仅暴露 retry 与诊断导出两项窄桥
 每次主分支 CI 执行:
 
 1. TypeScript typecheck;
-2. 55 个 `node:test` 单测;
+2. 63 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
 3. `site:check`(双端 release 数据、双语键与静态资源);
 4. 主进程/预加载构建;
 5. Harness 闭包与内置 Node bootstrap;
@@ -141,6 +145,15 @@ shell.11:CI run `31893979444`;Release run `31894394693`;发布提交
 - GitCode tag 与 GitHub tag 都指向 `cca1a827`;国内四个下载 URL 匿名 range
   GET 均返回 HTTP 206。官网数据提交 `74fc28e` 已把四项 `gitcode_ok` 更新为
   `true`,正式域名已展示双源下载与最终 SHA-256。
+
+### 当前代码基线 shell.12
+
+- mobile-shell Web 产物固定来自上游 `v1.0.0` tag；CI 与 Release 均使用 frozen lockfile，
+  不再从 `main` 或维护者本机路径取依赖。
+- LAN 代理和 Harness Supervisor 对重复启动、停止中启动、失败清理做单飞保护，菜单在
+  操作进行中禁用重复入口；当前本地测试为 63 项。
+- 发布资产校验器除严格六文件、SHA-256 和 blockmap 外，还解析 `latest.yml` 的版本、
+  Windows 路径、hashed files entry 与顶层 sha512。
 
 ## 5. 已知限制
 

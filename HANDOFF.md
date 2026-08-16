@@ -8,11 +8,11 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>(备用 <https://dsh-electron-shell.vercel.app>) |
-| 最新版本 | ✅ `v0.1.0-rc.6.shell.11`;仅两个大体积安装包，另有两个哈希与两个 Windows updater 小文件 |
-| 主分支 CI | ✅ run `31893979444`;55 项单测、官网门禁、构建、三条 xvfb 冒烟与真实 Electron E2E 全绿 |
-| 核心发布 | ✅ Release run `31894394693`;严格 6 文件门禁、双平台 packaged smoke 与更新元数据均通过 |
-| 官网数据 | ✅ post-GitCode refresh run `31898225900`;提交 `74fc28e` 已发布双端下载、哈希与国内镜像状态 |
-| 国内镜像 | ✅ GitCode tag 指向 `cca1a827`;DMG、EXE 与两个哈希均已上传并通过匿名 1-byte range GET |
+| 最新代码基线 | ✅ `0.1.0-rc.6.shell.12`;仅两个大体积安装包，另有两个哈希与两个 Windows updater 小文件 |
+| 本地门禁 | ✅ 63 项单测、类型检查、官网门禁、构建与 Electron E2E 命令通过；本轮提交后待 CI 重跑 |
+| 核心发布 | ✅ 既有 shell.12 Release 保持严格 6 文件门禁与双平台 packaged smoke；本轮未改签名流程 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.12` |
+| 国内镜像 | ℹ️ 既有 shell.12 镜像状态保留；本轮代码提交后需按发布流程重新刷新 |
 
 ## 二、官网浅色体系与声明精简(2026-08-15 已提交部署,无新 tag)
 
@@ -113,6 +113,14 @@ GitCode 自动推送已在 shell.8/9 连续失败(跨境 ~150 KB/s,预签名 URL
   commit,不能只检查“同名 tag 已存在”。
 - macOS 仍未签名/公证;首次运行需右键打开,应用只检查更新并引导下载。
 - `*.vercel.app` 在国内可能受 DNS 影响;正式域名使用 `dsh-desktop.com`。
+
+## 六点五、本轮工程维护
+
+- CI/Release 固定消费 `dsh-mobile-shell` 的 `v1.0.0` Web 产物；构建脚本不再依赖维护者本机绝对路径。
+- pnpm 固定为 `11.8.0`，安装使用 frozen lockfile；依赖审计显式走官方 npm registry，避免国内镜像缺少 audit endpoint 导致门禁失效。
+- LAN 代理与 Harness 启停均为单飞操作，停止期间的新启动会排队，菜单会禁用重复操作；新增竞态和失败恢复测试。
+- 发布校验器现在解析 `latest.yml`，同时核验版本、EXE 路径、文件列表与 sha512，而不只是字符串包含关系。
+- `verify` 统一执行类型检查、63 项测试、80% 行/75% 分支/70% 函数覆盖率、官网门禁与构建。
 
 ## 七、shell.10 发布内容与官网第二轮
 

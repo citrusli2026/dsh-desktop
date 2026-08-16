@@ -24,6 +24,8 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 
 Version and tag are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.0-rc.6.shell.3` bundles `@deepseek-ai/dsh` 0.1.0-rc.6 at shell revision 3. `scripts/version.mjs` owns the version field (`show` / `check` / `bump`); a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically (decision 0009).
 
+CI and Release consume the mobile-shell Web artifact from the immutable upstream tag `v1.0.0`; update that pin only as an explicit compatibility change.
+
 ## Download
 
 Get the installer for your platform from [GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases):

@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto'
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { parse as parseYaml } from 'yaml'
 
 export function expectedAssetNames(version) {
   const macInstaller = `dsh-desktop-${version}-arm64-mac.dmg`
@@ -16,6 +17,10 @@ export function expectedAssetNames(version) {
     `${windowsInstaller}.blockmap`,
     'latest.yml',
   ]
+}
+
+function isSha512(value) {
+  return typeof value === 'string' && /^[A-Za-z0-9+/]{86}==$/.test(value)
 }
 
 export async function validateReleaseAssets(directory, version) {
@@ -43,8 +48,28 @@ export async function validateReleaseAssets(directory, version) {
 
   const windowsInstaller = `dsh-desktop-setup-${version}.exe`
   const updateManifest = await readFile(resolve(directory, 'latest.yml'), 'utf8')
-  if (!updateManifest.includes(windowsInstaller)) {
-    throw new Error(`latest.yml does not reference ${windowsInstaller}`)
+  let update
+  try {
+    update = parseYaml(updateManifest)
+  } catch (error) {
+    throw new Error(`latest.yml is not valid YAML: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  if (update === null || typeof update !== 'object' || Array.isArray(update)) {
+    throw new Error('latest.yml must contain an object')
+  }
+  if (update.version !== version) throw new Error(`latest.yml version does not match ${version}`)
+  if (update.path !== windowsInstaller) throw new Error(`latest.yml path does not reference ${windowsInstaller}`)
+  if (!isSha512(update.sha512)) {
+    throw new Error('latest.yml is missing a top-level sha512')
+  }
+  if (!Array.isArray(update.files)) throw new Error('latest.yml is missing its files list')
+  const windowsEntry = update.files.find(file => file !== null && typeof file === 'object' && file.url === windowsInstaller)
+  if (windowsEntry === undefined || !isSha512(windowsEntry.sha512)) {
+    throw new Error(`latest.yml files list does not contain a hashed entry for ${windowsInstaller}`)
+  }
+  const windowsSha512 = createHash('sha512').update(await readFile(resolve(directory, windowsInstaller))).digest('base64')
+  if (update.sha512 !== windowsSha512 || windowsEntry.sha512 !== windowsSha512) {
+    throw new Error(`latest.yml sha512 does not match ${windowsInstaller}`)
   }
   const blockmap = await readFile(resolve(directory, `${windowsInstaller}.blockmap`))
   if (blockmap.byteLength === 0) throw new Error(`${windowsInstaller}.blockmap is empty`)

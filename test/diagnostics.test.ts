@@ -8,6 +8,10 @@ import { formatDiagnosticReport, readLogTail, redactDiagnosticsLog, RollingLogWr
 test('redactDiagnosticsLog masks credentials and the home path', () => {
   const redacted = redactDiagnosticsLog('/Users/test/project\nAuthorization: Bearer abc.def\napi_key=secret', '/Users/test')
   assert.equal(redacted, '~/project\nAuthorization: Bearer [REDACTED]\napi_key=[REDACTED]')
+
+  const structured = redactDiagnosticsLog('{"apiKey":"json-secret","DSH_REMOTE_TOKEN":"remote-secret"}\nOPENAI_API_KEY=sk-1234567890abcdef')
+  assert.doesNotMatch(structured, /json-secret|remote-secret|sk-1234567890abcdef/)
+  assert.match(structured, /apiKey.*\[REDACTED\]/)
 })
 
 test('readLogTail bounds the report to the newest complete lines', async () => {

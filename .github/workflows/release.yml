@@ -28,12 +28,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Dependency security audit (official npm registry)
+        run: pnpm run security:audit
       - name: Package mobile-shell Web artifact
         run: npm --prefix dsh-mobile-shell run package:web
-      - run: pnpm run typecheck
-      - run: pnpm run test
-      - run: pnpm run site:check
-      - run: pnpm run build
+      - run: pnpm run verify
       - name: Electron shell E2E release gate
         run: xvfb-run -a pnpm run test:e2e
         env:

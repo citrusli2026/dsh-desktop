@@ -25,12 +25,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Dependency security audit (official npm registry)
+        run: pnpm run security:audit
       - name: Package mobile-shell Web artifact
         run: npm --prefix dsh-mobile-shell run package:web
-      - run: pnpm run typecheck
-      - run: pnpm run test
-      - run: pnpm run site:check
-      - run: pnpm run build
+      - run: pnpm run verify
       - run: pnpm run bootstrap
       - name: Smoke test (headless X server)
         # No `-- --no-sandbox` here: pnpm inserts a literal `--` before extra
