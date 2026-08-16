@@ -34,6 +34,17 @@
    如需 iPhone/iPad 包,必须另立 SwiftUI 或跨平台客户端,不能从现有 Electron
    配置直接生成。
 
+## 二点五、人工审查调整(2026-08-16,缓存键 v=15)
+
+1. 顶栏 GitHub 链接不再显示星数,只保留图标与 GitHub 文字。
+2. 首屏与特性区的示意图全部换成真实应用截图(`site/assets/shots/`,主界面
+   与设置页各一张),由 `node scripts/capture-site-shots.mjs` 驱动打包好的
+   真实应用拍摄;界面有更新时重跑该脚本即可。
+3. 下载区与特性文案不再展示 SHA-256 及其说明;`.sha256` 资产仍保留在
+   release.json 数据里,只是不渲染。
+4. 官网提供明暗两套皮肤并通过 `prefers-color-scheme` 跟随系统;页面内截图
+   也用 `<picture>` 按系统主题自动切换明暗版本。
+
 ## 三、shell.9 官网与交付变化
 
 1. 官网首屏从“有一个桌面窗口”转为“可靠桌面工作台”,新增四项可信基线、
@@ -119,8 +130,8 @@ GitCode 自动推送已在 shell.8/9 连续失败(跨境 ~150 KB/s,预签名 URL
 - Release 从 11 个资产收敛为严格 6 个文件:只有 Apple Silicon DMG 与 Windows
   x64 EXE 两个大文件,各附一个 `.sha256`;另保留 Windows 已安装客户端所需的
   `latest.yml` 与 `.exe.blockmap`。官网与 GitCode 只面向用户展示/镜像前四项。
-- 官网下载区只渲染两端安装包,并直接显示可复制的 SHA-256；历史 shell.10 数据
-  会自动收敛成两个主安装包,新 Release 发布后再同步哈希与 GitCode 可用性。
+- 官网下载区只渲染两端安装包;SHA-256 不再在官网展示(见二点五节人工审查调整),
+  哈希继续随 Release 发布并保留在 release.json 数据中。
 - macOS 侧栏增加 12 px 顶部安全间距,使交通灯与 DeepSeek 品牌区分离；帮助菜单
   删除与 About 重复的社区官网和 Harness 官方页,保留项目源码、反馈与 DeepSeek
   官网。

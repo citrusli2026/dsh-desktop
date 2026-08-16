@@ -1,7 +1,7 @@
 /* dsh-electron-shell 官网脚本 v2:
-   - 中英切换;macOS DMG / Windows EXE 双端下载与 SHA-256 校验
+   - 中英切换;macOS DMG / Windows EXE 双端下载
    - data/release.json 渲染下载矩阵;失败回退 GitHub API;再失败保留静态兜底
-   - 平台识别 CTA / 复制 / Tab / 滚动 reveal
+   - 平台识别 CTA / 复制 / 滚动 reveal
    零依赖,渐进增强。 */
 (function () {
   'use strict'
@@ -35,16 +35,17 @@
       'wf.adds': '<li>跟随 Harness 的中英菜单与主题</li><li>原生窗口、托盘与单实例</li><li>运行时封装、进程守护与诊断</li><li>Electron 沙箱与导航边界</li>',
       'wf.keeps': '<li>Agent 与工具调用行为</li><li>上游版本和依赖闭包</li><li>模型、账户与插件配置</li><li>CLI 仍可独立并行使用</li>',
       'dl.marker': '下载', 'dl.title': '选择你的平台',
-      'dl.lead': '每个版本只发布两个安装包:macOS Apple Silicon 的 DMG 与 Windows x64 的 EXE;每个安装包附独立 SHA-256 校验文件。GitCode 镜像可用时与 GitHub 并列展示。',
+      'dl.lead': '每个版本只发布两个安装包:macOS Apple Silicon 的 DMG 与 Windows x64 的 EXE。GitCode 镜像可用时与 GitHub 并列展示。',
       'dl.fallback': '版本数据加载失败时,可直接前往 <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> 或 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a> 下载。',
       'dl.note': '命令行方式同样可用;桌面壳功能与其完全一致,但使用独立数据目录 <code>~/.dsh-desktop</code>,互不干扰。',
       'ft.marker': '特性', 'ft.title': '为什么用它',
-      'ft.p1': '<h3>无需安装 Node.js</h3><p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本与 SHA-256 逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>',
+      'ft.p1': '<h3>无需安装 Node.js</h3><p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>',
       'ft.p2': '<h3>独立数据目录,环境隔离</h3><p>桌面版默认使用 <code>~/.dsh-desktop</code>:设置、会话、API Key、插件都是独立的一份,安装卸载都不影响你的命令行工作流。需要共享时,设 <code>DSH_HOME=~/.dsh</code> 即可。</p>',
       'ft.p3': '<h3>原生菜单与 Harness 保持同一种语言</h3><p>首次启动按系统语言选择中文或英文;之后读取同一份 <code>locale.preference</code>,无需重启即可同步应用菜单、托盘、About、恢复页和对话框。主题也跟随 Harness 设置。</p>',
       'ft.p4': '<h3>持续守护与可靠更新</h3><p>崩溃后按预算退避重启,窗口关闭后可驻留托盘,也可从帮助菜单安全重启 Harness。Windows 保留应用内自动更新;未签名的 macOS 检查新版本并打开精确发布页。</p>',
       'ft.p5': '<h3>渲染层能力默认收敛</h3><p>保持 Electron 沙箱与上下文隔离、关闭 Node 集成并限制页面导航;媒体、定位、通知、屏幕采集和文件系统等额外权限默认拒绝,未来只能按需显式放行。</p>',
       'ft.p6': '<h3>问题发生时,带走一份可检查的报告</h3><p>帮助菜单、托盘和启动失败页都能导出本地诊断报告。报告包含版本、系统状态和有上限的日志尾部,自动遮罩常见密钥与主目录,且绝不自动上传。</p>',
+      'shots.caption': '真实界面实拍 · 设置页 —— 外观可选浅色 / 深色 / 跟随系统',
       'vr.marker': '版本号', 'vr.title': '版本号怎么读',
       'vr.core': '<b>内核版本</b> —— 内置的 <code>@deepseek-ai/dsh</code> 版本。每日工作流自动检查 npm 上游,有新版本就开升级 PR。',
       'vr.shell': '<b>壳修订号</b> —— 壳自身(窗口、守护、打包)的修订次数。同一内核可以有多次壳修订。',
@@ -92,16 +93,17 @@
       'wf.adds': '<li>Harness-synced bilingual menus and theme</li><li>Native window, tray, and single instance</li><li>Runtime packaging, supervision, and diagnostics</li><li>Electron sandbox and navigation boundary</li>',
       'wf.keeps': '<li>Agent and tool-call behavior</li><li>Upstream version and dependency closure</li><li>Model, account, and plugin configuration</li><li>The CLI remains independently usable</li>',
       'dl.marker': 'DOWNLOAD', 'dl.title': 'Pick your platform',
-      'dl.lead': 'Every release carries exactly two installers: a DMG for Apple Silicon Macs and an EXE for Windows x64. Each has a separate SHA-256 file. A verified GitCode mirror appears alongside GitHub when available.',
+      'dl.lead': 'Every release carries exactly two installers: a DMG for Apple Silicon Macs and an EXE for Windows x64. A verified GitCode mirror appears alongside GitHub when available.',
       'dl.fallback': 'If live data fails to load, head to <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> directly.',
       'dl.note': 'The CLI route works too; the shell is functionally identical but keeps its own data home at <code>~/.dsh-desktop</code> — no interference either way.',
       'ft.marker': 'FEATURES', 'ft.title': 'Why this shell',
-      'ft.p1': '<h3>No Node.js install required</h3><p>The shell bundles a pinned Node.js 22 LTS runtime and the complete <code>@deepseek-ai/dsh</code> dependency closure, SHA-256 locked per platform. Download → double-click → use.</p>',
+      'ft.p1': '<h3>No Node.js install required</h3><p>The shell bundles a pinned Node.js 22 LTS runtime and the complete <code>@deepseek-ai/dsh</code> dependency closure, pinned per platform. Download → double-click → use.</p>',
       'ft.p2': '<h3>Isolated data home</h3><p>The desktop app defaults to <code>~/.dsh-desktop</code>: settings, sessions, API keys, and plugins are its own copy — installing or uninstalling never touches your CLI workflow. Set <code>DSH_HOME=~/.dsh</code> to share again.</p>',
       'ft.p3': '<h3>Native chrome in the same language as Harness</h3><p>First launch follows the operating-system language. Afterwards the shell reads the same <code>locale.preference</code>, live-syncing the app menu, tray, About, recovery pages, and dialogs without a restart. Theme follows Harness too.</p>',
       'ft.p4': '<h3>Continuous supervision and reliable updates</h3><p>Budgeted backoff after crashes, close-to-tray behavior, and a safe Harness restart from Help. Windows keeps in-place automatic updates; unsigned macOS checks for updates and opens the exact release page.</p>',
       'ft.p5': '<h3>Renderer capabilities stay constrained</h3><p>Electron sandboxing and context isolation stay on, Node integration stays off, and navigation is guarded. Media, location, notification, capture, and filesystem permissions are denied by default; future exceptions must be explicitly allowlisted.</p>',
       'ft.p6': '<h3>Take an inspectable report when something breaks</h3><p>Export a local diagnostic report from Help, the tray, or the startup error page. It includes versions, system state, and a bounded log tail, masks common secrets and the home path, and is never uploaded automatically.</p>',
+      'shots.caption': 'REAL APP CAPTURE · SETTINGS — APPEARANCE: LIGHT / DARK / FOLLOW SYSTEM',
       'vr.marker': 'VERSIONING', 'vr.title': 'Reading the version',
       'vr.core': '<b>Kernel version</b> — the bundled <code>@deepseek-ai/dsh</code> release. A daily workflow checks upstream npm and files an upgrade PR automatically.',
       'vr.shell': '<b>Shell revision</b> — how many times the shell itself (window, supervision, packaging) has been revised on this kernel.',
@@ -139,12 +141,12 @@
   }
   var OS_NOTE = {
     zh: {
-      mac: '.dmg 拖入“应用程序”即可;下载后可用同列 SHA-256 验证文件完整性。',
-      win: '支持 Windows 10 及以上(64 位)与原地自动更新;可用同列 SHA-256 验证下载。',
+      mac: '.dmg 拖入“应用程序”即可使用。',
+      win: '支持 Windows 10 及以上(64 位)与原地自动更新。',
     },
     en: {
-      mac: 'Drag the DMG app into Applications; verify it with the SHA-256 shown in the same row.',
-      win: 'Windows 10+ (64-bit) with in-place updates; verify the EXE with the SHA-256 shown here.',
+      mac: 'Drag the DMG app into Applications to install.',
+      win: 'Windows 10+ (64-bit) with in-place updates.',
     },
   }
 
@@ -253,7 +255,6 @@
     var m = ver.match(/^(.*)\.(shell\.\d+)$/)
     if (m) { $('#v-core').textContent = m[1]; $('#v-shell').textContent = m[2] }
 
-    if (data.repo && typeof data.repo.stars === 'number') $('#stars').textContent = '★ ' + data.repo.stars
     $('#sync-time').textContent = data.generated_at
       ? (lang === 'zh' ? '数据同步于 ' : 'data synced ') + fmtDate(data.generated_at) + ' ' + data.generated_at.slice(11, 16) + ' UTC'
       : (lang === 'zh' ? '数据来自 GitHub API 实时拉取' : 'live data via GitHub API')
@@ -278,9 +279,6 @@
       html += '<div class="platform-group__head"><h3>' + labels[os][0] + '</h3><span>' + labels[os][1] + '</span></div>'
       list.forEach(function (a) {
         var links = linksOf(a)
-        var checksum = data.release.assets.filter(function (candidate) {
-          return candidate.kind === 'checksum' && candidate.name === a.name + '.sha256'
-        })[0]
         html += '<div class="asset-row">'
         html += '<span class="asset-row__name" title="' + a.name + '">' + a.name + '</span>'
         html += '<span class="asset-row__meta">' + fmtSize(a.size) + ' · ↓ ' + a.downloads + '</span>'
@@ -292,13 +290,6 @@
         })
         html += '<button class="copybtn" type="button" data-copy="' + links[0].href + '">' + t('copy.link') + '</button>'
         html += '</span></div>'
-        if (checksum && /^[a-f0-9]{64}$/.test(checksum.sha256 || '')) {
-          var checksumText = checksum.sha256
-          var checksumLink = linksOf(checksum)[0]
-          html += '<div class="asset-row__checksum"><span>SHA-256</span><code title="' + checksumText + '">' + checksumText + '</code>'
-          html += '<a href="' + checksumLink.href + '">.sha256</a>'
-          html += '<button class="copybtn" type="button" data-copy="' + checksumText + '">' + t('copy') + '</button></div>'
-        }
       })
       html += '<p class="platform-note">' + notes[os] + '</p>'
       html += '</div>'
@@ -373,6 +364,9 @@
     $all('[data-i18n]').forEach(function (el) {
       var key = el.getAttribute('data-i18n')
       if (I18N[lang][key] !== undefined) el.innerHTML = I18N[lang][key]
+    })
+    $all('[data-alt-zh]').forEach(function (el) {
+      el.setAttribute('alt', lang === 'zh' ? el.getAttribute('data-alt-zh') : el.getAttribute('data-alt-en'))
     })
     $('#lang-toggle').textContent = lang === 'zh' ? 'EN' : '中'
     if (siteData) {

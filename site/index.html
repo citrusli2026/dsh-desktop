@@ -4,19 +4,20 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>dsh-desktop — DeepSeek Harness 桌面壳 · 下载</title>
-<meta name="description" content="dsh-desktop:社区维护的 DeepSeek Harness 非官方 Electron 桌面壳。每版仅发布 macOS DMG 与 Windows EXE,并附 SHA-256 校验。" />
+<meta name="description" content="dsh-desktop:社区维护的 DeepSeek Harness 非官方 Electron 桌面壳。每版仅发布 macOS DMG 与 Windows EXE 两个安装包。" />
 <meta property="og:title" content="dsh-desktop — DeepSeek Harness 桌面壳" />
-<meta property="og:description" content="社区维护、非官方的 DeepSeek Harness 桌面版。每版仅发布 macOS 与 Windows 两个安装包,并附 SHA-256 校验。" />
+<meta property="og:description" content="社区维护、非官方的 DeepSeek Harness 桌面版。每版仅发布 macOS 与 Windows 两个安装包。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://dsh-desktop.com/" />
-<meta name="theme-color" content="#f9f8f8" />
-<meta name="color-scheme" content="light" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9f8f8" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c0f16" />
+<meta name="color-scheme" content="light dark" />
 <link rel="canonical" href="https://dsh-desktop.com/" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Host+Grotesk:wght@500;600;700&amp;display=swap" />
-<link rel="stylesheet" href="/assets/style.css?v=14" />
+<link rel="stylesheet" href="/assets/style.css?v=15" />
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"dsh-desktop","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows","isAccessibleForFree":true,"license":"https://opensource.org/license/mit","url":"https://dsh-desktop.com/","downloadUrl":"https://github.com/citrusli2026/dsh-electron-shell/releases"}</script>
 </head>
 <body>
@@ -40,7 +41,7 @@
     <button class="lang-toggle" id="lang-toggle" type="button" aria-label="Switch language">EN</button>
     <a class="gh-chip" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">
       <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-      <span id="stars">★</span>
+      <span>GitHub</span>
     </a>
     <a class="btn btn--primary btn--sm" href="#download" data-i18n="nav.cta">立即下载</a>
   </div>
@@ -78,20 +79,14 @@
             <span class="window__title">dsh-desktop</span>
             <a class="version-chip" id="version-chip" href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">…</a>
           </div>
-          <div class="window__body harness">
-            <div class="harness__scan" aria-hidden="true"></div>
-            <div class="harness__rail" aria-hidden="true">
-              <i></i><i></i><i></i>
-            </div>
-            <div class="harness__main" aria-hidden="true">
-              <div class="harness__header">DEEPSEEK HARNESS <span>· WEB</span></div>
-              <div class="msg msg--user">帮我把这个命令行工具打包成桌面应用</div>
-              <div class="msg msg--agent">好的。我会自带 Node.js 运行时,用户无需任何环境配置。</div>
-              <div class="msg msg--tool">$ read_file manifest/harness/deps.json</div>
-              <div class="msg msg--tool">$ run pnpm run bootstrap</div>
-              <div class="msg msg--agent">完成。<b>原生双语菜单、进程守护、权限默认拒绝</b>都已就位。</div>
-              <div class="harness__input"><span class="prompt">&gt;</span><span class="cursor"></span></div>
-            </div>
+          <div class="window__body window__body--shot">
+            <picture>
+              <source srcset="/assets/shots/app-main-dark.png" media="(prefers-color-scheme: dark)" />
+              <img src="/assets/shots/app-main-light.png" width="1280" height="860" decoding="async"
+                alt="dsh-desktop 真实主界面:DeepSeek Harness 工作区,明暗主题跟随系统"
+                data-alt-zh="dsh-desktop 真实主界面:DeepSeek Harness 工作区,明暗主题跟随系统"
+                data-alt-en="The real dsh-desktop main window: the DeepSeek Harness workspace, following the system light/dark theme" />
+            </picture>
           </div>
         </div>
       </div>
@@ -136,7 +131,7 @@
     <div class="wrap">
       <p class="sec-marker" data-reveal>02 / <span data-i18n="dl.marker">下载</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="dl.title">选择你的平台</h2>
-      <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">每个版本只发布两个安装包:macOS Apple Silicon 的 DMG 与 Windows x64 的 EXE;每个安装包附独立 SHA-256 校验文件。GitCode 镜像可用时与 GitHub 并列展示。</p>
+      <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">每个版本只发布两个安装包:macOS Apple Silicon 的 DMG 与 Windows x64 的 EXE。GitCode 镜像可用时与 GitHub 并列展示。</p>
 
       <div class="panel" data-reveal style="--i:3">
         <span class="tick tick--tl" aria-hidden="true"></span><span class="tick tick--tr" aria-hidden="true"></span>
@@ -172,7 +167,7 @@
       <div class="feature-grid" data-reveal style="--i:2">
           <article class="feature-card" data-i18n="ft.p1">
             <h3>无需安装 Node.js</h3>
-            <p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本与 SHA-256 逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>
+            <p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>
           </article>
           <article class="feature-card" data-i18n="ft.p2">
             <h3>独立数据目录,环境隔离</h3>
@@ -195,6 +190,17 @@
             <p>帮助菜单、托盘和启动失败页都能导出本地诊断报告。报告包含版本、系统状态和有上限的日志尾部,自动遮罩常见密钥与主目录,且绝不自动上传。</p>
           </article>
       </div>
+
+      <figure class="shot-panel" data-reveal style="--i:3">
+        <picture>
+          <source srcset="/assets/shots/app-settings-dark.png" media="(prefers-color-scheme: dark)" />
+          <img src="/assets/shots/app-settings-light.png" width="1280" height="860" loading="lazy" decoding="async"
+            alt="dsh-desktop 真实设置页:语言与外观(浅色 / 深色 / 跟随系统)"
+            data-alt-zh="dsh-desktop 真实设置页:语言与外观(浅色 / 深色 / 跟随系统)"
+            data-alt-en="The real dsh-desktop settings view: language and appearance (light / dark / follow system)" />
+        </picture>
+        <figcaption data-i18n="shots.caption">真实界面实拍 · 设置页 —— 外观可选浅色 / 深色 / 跟随系统</figcaption>
+      </figure>
     </div>
   </section>
 
@@ -275,6 +281,6 @@
   </div>
 </footer>
 
-<script src="/assets/app.js?v=14" defer></script>
+<script src="/assets/app.js?v=15" defer></script>
 </body>
 </html>
