@@ -115,12 +115,12 @@ Harness 启动后,打开“扩展 → 通过局域网连接手机 / 平板…”
 `resources/mobile-shell/`。先在另一个仓库打包并校验：
 
 ```sh
-cd /Users/citrus/dsh-mobile-shell
+cd /absolute/path/dsh-mobile-shell
 npm run package:web
 npm run verify:web
 
 cd /Users/citrus/dsh-desktop
-DSH_MOBILE_SHELL_WEB_ROOT=/Users/citrus/dsh-mobile-shell/dist/web pnpm run build
+DSH_MOBILE_SHELL_WEB_ROOT=/absolute/path/dsh-mobile-shell/dist/web pnpm run build
 ```
 
 桌面端依赖 `web-artifact.json` 的格式版本和三个入口，不依赖对方源码目录；更新

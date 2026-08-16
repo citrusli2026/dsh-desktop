@@ -247,7 +247,7 @@ function verifyHarness(root: string): void {
 }
 
 async function boot(): Promise<string> {
-  if (DEV_WEB_URL !== undefined) {
+  if (!app.isPackaged && DEV_WEB_URL !== undefined) {
     console.log(`dsh-desktop: dev mode, loading ${DEV_WEB_URL}`)
     applyState({ phase: 'ready', url: DEV_WEB_URL })
     return DEV_WEB_URL

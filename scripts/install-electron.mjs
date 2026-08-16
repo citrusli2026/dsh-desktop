@@ -8,8 +8,8 @@
  *   2. Reuse a project-local zip cache under node_modules/.cache/electron
  *      when its sha256 matches the electron package's checksums.json.
  *   3. Download with curl (retry + resume) from ELECTRON_MIRROR
- *      (default npmmirror, see .npmrc), verify sha256, extract with
- *      extract-zip, write path.txt.
+ *      (default npmmirror, see .npmrc), verify sha256, extract with the
+ *      platform ZIP tool, and write path.txt.
  * electron-builder reuses the same dist via `electronDist` in
  * electron-builder.yml, so the zip is downloaded exactly once per version.
  * @module scripts/install-electron
@@ -19,7 +19,6 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import extractZip from 'extract-zip'
 
 const ROOT = process.cwd()
 const PKG_DIR = join(ROOT, 'node_modules', 'electron')
@@ -39,6 +38,28 @@ if (platform === undefined || arch === undefined) fail(`unsupported platform/arc
 const platformPath = { darwin: 'Electron.app/Contents/MacOS/Electron', linux: 'electron', win32: 'electron.exe' }[platform]
 
 const sha256 = buffer => createHash('sha256').update(buffer).digest('hex')
+
+/**
+ * Extract the checksum-verified Electron archive with a platform tool. The
+ * project-local extract-zip dependency was removed because its latest npm
+ * release is affected by a symlink traversal advisory.
+ */
+function extractElectronZip(zipPath, destination) {
+  const result = process.platform === 'win32'
+    ? spawnSync('powershell', [
+        '-NoProfile', '-NonInteractive', '-Command',
+        'Expand-Archive -LiteralPath $env:DSH_ELECTRON_ARCHIVE -DestinationPath $env:DSH_ELECTRON_DESTINATION -Force',
+      ], {
+        env: {
+          ...process.env,
+          DSH_ELECTRON_ARCHIVE: zipPath,
+          DSH_ELECTRON_DESTINATION: destination,
+        },
+        stdio: 'inherit',
+      })
+    : spawnSync('unzip', ['-q', '-o', zipPath, '-d', destination], { stdio: 'inherit' })
+  if (result.status !== 0) fail('Electron archive extraction failed')
+}
 
 async function main() {
   if (!existsSync(PKG_DIR)) {
@@ -87,7 +108,8 @@ async function main() {
 
   console.log('install-electron: extracting electron dist')
   rmSync(DIST_DIR, { recursive: true, force: true })
-  await extractZip(zipPath, { dir: DIST_DIR })
+  await mkdir(DIST_DIR, { recursive: true })
+  extractElectronZip(zipPath, DIST_DIR)
   await writeFile(pathTxt, platformPath)
   console.log(`install-electron: staged Electron ${version} at ${DIST_DIR}`)
 }

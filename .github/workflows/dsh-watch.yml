@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
         with:
-          version: 11.7.0
+          version: 11.8.0
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -47,7 +47,7 @@ jobs:
       - name: Fail on inconsistent version state or registry outage
         if: steps.check.outputs.code != '0' && steps.check.outputs.code != '3'
         run: exit 1
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
         if: steps.check.outputs.code == '3'
       - name: Bump dsh pin + composite version
         if: steps.check.outputs.code == '3'

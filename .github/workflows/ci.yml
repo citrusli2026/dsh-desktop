@@ -15,16 +15,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: citrusli2026/dsh-mobile-shell
-          ref: main
+          ref: v1.0.0
           path: dsh-mobile-shell
       - uses: pnpm/action-setup@v6
         with:
-          version: 11.7.0
+          version: 11.8.0
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
       - name: Package mobile-shell Web artifact
         run: npm --prefix dsh-mobile-shell run package:web
       - run: pnpm run typecheck

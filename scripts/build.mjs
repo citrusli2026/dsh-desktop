@@ -12,7 +12,7 @@ rmSync('lib', { recursive: true, force: true })
 
 const configuredMobileShell = process.env.DSH_MOBILE_SHELL_WEB_ROOT
 const mobileShellCandidates = configuredMobileShell === undefined
-  ? [resolve('../dsh-mobile-shell/dist/web'), '/Users/citrus/dsh-mobile-shell/dist/web']
+  ? [resolve('../dsh-mobile-shell/dist/web')]
   : [resolve(configuredMobileShell)]
 const mobileShellArtifact = mobileShellCandidates.find(path => existsSync(join(path, 'web-artifact.json')))
 if (mobileShellArtifact === undefined) {
