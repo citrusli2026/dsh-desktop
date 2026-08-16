@@ -34,6 +34,10 @@ extraResources:
       - "**/*"
   - from: resources/harness/package.json
     to: harness/package.json
+  - from: resources/mobile-shell
+    to: mobile-shell
+    filter:
+      - "**/*"
 
 asar: true
 npmRebuild: false
@@ -47,6 +51,10 @@ publish:
 
 mac:
   category: public.app-category.developer-tools
+  # No Apple Developer certificate is required for this ad-hoc build. It is
+  # intentionally not notarized and still needs a first-launch confirmation.
+  identity: "-"
+  hardenedRuntime: false
   target:
     - dmg
   # One large installer per supported desktop platform (decision 0016).

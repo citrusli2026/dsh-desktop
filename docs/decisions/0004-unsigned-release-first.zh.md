@@ -16,6 +16,9 @@ Windows SmartScreen 信誉、electron-updater 在 macOS 上的可用性
 
 - CI 三平台构建产物直接发布到 GitHub Releases;
 - macOS 用户首次启动需右键 → 打开(README 明确说明);
+- 如果右键 → 打开仍未提供放行选项,README 提供可信来源前提下的应急命令:
+  `xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"` 然后
+  `open "/Applications/dsh-desktop.app"`;
 - macOS 上自动更新暂不启用,Windows / Linux 的 electron-updater 正常工作;
 - 仓库结构与 CI 预留签名位(证书走 CI secrets,签名步骤以后置开关开启),
   拿到证书后补上公证与 mac 自动更新,不改变其他设计。

@@ -17,6 +17,7 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 - **Isolated by default**: the desktop app keeps its own data home (`~/.dsh-desktop`) — settings, sessions, API keys, and plugins stay separate from the CLI; set `DSH_HOME=~/.dsh` to share with the CLI again (decision 0012);
 - **Robust**: crash auto-restart with exponential backoff, manual retry on the error page, single-instance lock, system tray with live harness status (restart / logs / update check), persisted window geometry, logs on disk;
 - **Restrained renderer**: context isolation and sandboxing stay enabled, Node integration stays off, navigation is guarded, and unexpected device, capture, notification, or filesystem permissions are denied by default (decision 0014);
+- **Web mobile connection**: “Extensions → Connect phone / tablet over LAN” starts an isolated mobile-shell Web proxy and shows a one-time pairing QR code. Only the other repository’s Web launcher and proxy are staged; Android/iOS projects are not included in the Electron installer;
 - **Updates**: Windows updates in place; unsigned macOS checks for new releases and opens the exact release page for a deliberate manual install (decisions 0010, 0016).
 
 ## Versioning
@@ -38,6 +39,17 @@ Get the installer for your platform from [GitHub Releases](https://github.com/ci
   surface is at most four assets. The only other release files are the small
   `latest.yml` and Windows `.exe.blockmap` required by in-place updates; no ZIP
   or Linux package is published (decision 0016).
+
+### If macOS still refuses to open
+
+If right-click → Open still provides no way to continue, and you trust the source of the installer, run:
+
+```sh
+xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"
+open "/Applications/dsh-desktop.app"
+```
+
+This removes the app's download-quarantine marker and launches it again. It does not add an Apple developer signature or notarization; use it only for an installer whose source you have verified. You may need to repeat it after downloading or replacing the app.
 
 ### Slow or blocked GitHub? Download acceleration
 
@@ -67,6 +79,21 @@ pnpm run smoke       # smoke: harness ready → window loads → verify page →
 pnpm run dist        # build installers for the current platform (into dist/)
 ```
 
+### LAN Web connection
+
+After Harness is ready, choose “Extensions → Connect phone / tablet over LAN”. The
+desktop app selects a private LAN IPv4 address, starts a separate mobile-shell Web
+proxy, and shows a QR code. A phone or tablet scans it, confirms the one-time pairing
+code, and then uses the host-served Web UI. The proxy always forwards to loopback;
+the master token stays in the proxy process and is never written to desktop settings.
+
+The build stages only `app/www/index.html`, `proxy/dsh-remote.mjs`,
+`proxy/pairing-qr.mjs`, and the QR algorithm from `/Users/citrus/dsh-mobile-shell`
+into the gitignored `resources/mobile-shell/` directory. Rebuilding after that
+repository is updated picks up the new Web version; use `DSH_MOBILE_SHELL_ROOT` to
+override the source path. Set `DSH_LAN_IP=192.168.1.23` when multiple LAN adapters
+need an explicit choice.
+
 Mirrors: this repository defaults to npmmirror (fast in China) for npm packages, the Electron binary, electron-builder helpers, and the bundled Node tarball. Override per environment variable if you prefer the official sources:
 
 - `NPM_CONFIG_REGISTRY`
@@ -84,6 +111,7 @@ src/preload/         sandboxed bridge (manual harness retry for the error page)
 scripts/             fetch-node / deploy-harness / install-electron / build / gen-icons
 manifest/harness/    pure dependency manifest pinning @deepseek-ai/dsh and its closure
 resources/harness/   bootstrap output (gitignored)
+resources/mobile-shell/  staged mobile-shell Web resources (gitignored)
 docs/decisions/      decision records (ADR-style)
 ```
 

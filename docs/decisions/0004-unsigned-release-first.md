@@ -18,6 +18,10 @@ Ship **unsigned** in the first phase:
 
 - CI builds all three platforms and publishes to GitHub Releases;
 - macOS users right-click → Open on first launch (documented in the README);
+- If right-click → Open still provides no override, the README documents a
+  trusted-source fallback: `xattr -dr com.apple.quarantine
+  "/Applications/dsh-desktop.app"`, followed by `open
+  "/Applications/dsh-desktop.app"`;
 - Automatic updates are disabled on macOS; Windows / Linux electron-updater
   works normally;
 - The repo layout and CI reserve signing slots (certificates via CI secrets,

@@ -6,6 +6,7 @@ import { buildAppMenuTemplate, type MenuActions } from '../src/main/menu-templat
 const actions: MenuActions = {
   closeWindow() {}, quit() {}, toggleMaximize() {}, restartHarness() {}, openLogs() {},
   exportDiagnostics() {}, checkForUpdates() {}, showAbout() {}, openExternal() {},
+  startLanLink() {}, showLanQr() {}, stopLanLink() {},
 }
 
 function labels(items: readonly MenuItemConstructorOptions[]): string[] {
@@ -19,7 +20,7 @@ function labels(items: readonly MenuItemConstructorOptions[]): string[] {
 
 test('macOS Chinese menu is native-shaped and avoids links duplicated by About', () => {
   const template = buildAppMenuTemplate({ locale: 'zh', platform: 'darwin', packaged: true, appName: 'dsh-desktop' }, actions)
-  assert.deepEqual(template.map(item => item.label), ['dsh-desktop', '文件', '编辑', '视图', '窗口', '帮助'])
+  assert.deepEqual(template.map(item => item.label), ['dsh-desktop', '文件', '编辑', '视图', '窗口', '扩展', '帮助'])
   const all = labels(template)
   assert.ok(all.includes('关于 dsh-desktop'))
   assert.ok(all.includes('DeepSeek 官方网站'))
@@ -36,7 +37,7 @@ test('Windows English menu has a reliable quit path and disables restart while u
   const template = buildAppMenuTemplate({
     locale: 'en', platform: 'win32', packaged: true, appName: 'dsh-desktop', restartEnabled: false,
   }, actions)
-  assert.deepEqual(template.map(item => item.label), ['File', 'Edit', 'View', 'Window', 'Help'])
+  assert.deepEqual(template.map(item => item.label), ['File', 'Edit', 'View', 'Window', 'Extensions', 'Help'])
   const all = labels(template)
   assert.ok(all.includes('Quit dsh-desktop'))
   assert.ok(all.includes('Close Window'))
@@ -49,4 +50,17 @@ test('developer actions appear only in unpackaged builds', () => {
   const template = buildAppMenuTemplate({ locale: 'en', platform: 'linux', packaged: false, appName: 'dsh-desktop' }, actions)
   assert.ok(labels(template).includes('Developer Tools'))
   assert.ok(labels(template).includes('Reload'))
+})
+
+test('extensions menu exposes LAN pairing controls', () => {
+  const stopped = buildAppMenuTemplate({ locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop' }, actions)
+  assert.ok(labels(stopped).includes('扩展'))
+  assert.ok(labels(stopped).includes('通过局域网连接手机 / 平板…'))
+
+  const running = buildAppMenuTemplate({
+    locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop', lanRunning: true,
+  }, actions)
+  assert.ok(labels(running).includes('显示局域网配对二维码…'))
+  assert.ok(labels(running).includes('停止局域网共享'))
+  assert.ok(!labels(running).includes('通过局域网连接手机 / 平板…'))
 })

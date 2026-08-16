@@ -4,6 +4,7 @@ dist/
 dist-review/
 resources/harness/
 resources/harness.tmp/
+resources/mobile-shell/
 *.log
 .DS_Store
 .env

@@ -18,6 +18,14 @@ export function harnessRoot(): string {
     : join(electron.app.getAppPath(), 'resources', 'harness')
 }
 
+/** Root of the staged dsh-mobile-shell assets used by the LAN bridge. */
+export function mobileShellRoot(): string {
+  if (electron.app === undefined) throw new Error('Electron app is unavailable; provide a mobile shell root')
+  return electron.app.isPackaged
+    ? join(process.resourcesPath, 'mobile-shell')
+    : join(electron.app.getAppPath(), 'resources', 'mobile-shell')
+}
+
 /**
  * Absolute path of the bundled Node executable inside the closure.
  * @param root - harness root, defaulting to {@link harnessRoot}.

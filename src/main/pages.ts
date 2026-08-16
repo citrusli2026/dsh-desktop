@@ -37,15 +37,17 @@ const STYLE = `
                                   border-radius: 2px; background: var(--signal); box-shadow: 0 0 14px rgba(77,107,254,.42); }
   .status { color: var(--signal); font-weight: 500; }
   .status--error { color: var(--danger); }
+  .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+             color: var(--muted); font-size: 14px; line-height: 1.5; }
+  .loading-line { width: 116px; height: 2px; overflow: hidden; border-radius: 2px; background: var(--line); }
+  .loading-line::after { content: ""; display: block; width: 32%; height: 100%; background: var(--signal);
+                         box-shadow: 0 0 12px rgba(77,107,254,.38); animation: travel 1.2s ease-in-out infinite; }
   h1 { font-size: clamp(22px, 4vw, 30px); line-height: 1.2; letter-spacing: -.02em; margin: 0 0 12px; }
   p { font-size: 14px; line-height: 1.7; color: var(--muted); margin: 8px 0; }
-  .progress { height: 3px; margin-top: 30px; overflow: hidden; border-radius: 3px; background: var(--line); }
-  .progress::after { content: ""; display: block; width: 34%; height: 100%; background: var(--signal);
-                    box-shadow: 0 0 14px rgba(77,107,254,.38); animation: travel 1.4s ease-in-out infinite; }
   .log-label { margin-top: 28px; font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace;
                letter-spacing: .12em; color: var(--muted); }
   .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
-  @keyframes travel { 0% { transform: translateX(-110%); } 100% { transform: translateX(310%); } }
+  @keyframes travel { 0% { transform: translateX(-120%); } 100% { transform: translateX(340%); } }
   pre { margin: 8px 0 0; text-align: left; background: var(--bg); color: var(--text); padding: 16px;
         border: 1px solid var(--line); border-radius: 8px; font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
         max-height: 260px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -57,7 +59,7 @@ const STYLE = `
   button.secondary:hover { color: var(--text); background: var(--signal-soft); }
   button:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
   #hint { min-height: 1.2em; margin: 14px 0 0; color: var(--danger); }
-  @media (prefers-reduced-motion: reduce) { .progress::after { animation: none; width: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .loading-line::after { animation: none; width: 100%; } }
   @media (max-width: 520px) { body { padding: 16px; } .card { padding: 24px; } .brand { margin-bottom: 30px; } }
 `
 
@@ -66,11 +68,8 @@ export function loadingPageHtml(locale: ShellLocale = 'en'): string {
   const lang = locale === 'zh' ? 'zh-CN' : 'en'
   return asDataUrl(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>dsh-desktop</title>
     <meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
-    <style>${STYLE}</style></head><body><main class="card" aria-live="polite">
-    <div class="brand"><span>DSH-DESKTOP</span><span class="status">${escapeHtml(shellText(locale, 'page.startingStatus'))}</span></div>
-    <h1>${escapeHtml(shellText(locale, 'page.startingTitle'))}</h1>
-    <p>${escapeHtml(shellText(locale, 'page.startingBody'))}</p>
-    <div class="progress" aria-hidden="true"></div>
+    <style>${STYLE}</style></head><body><main class="loading" aria-live="polite">
+    <span class="loading-line" aria-hidden="true"></span><span>${escapeHtml(shellText(locale, 'page.startingTitle'))}</span>
     </main>
     </body></html>`)
 }

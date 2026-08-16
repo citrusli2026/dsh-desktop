@@ -33,6 +33,11 @@ test('errorPageHtml retry script restores the button when the bridge is missing'
 test('loadingPageHtml and errorPageHtml render as data URLs', () => {
   assert.ok(loadingPageHtml().startsWith('data:text/html;charset=utf-8,'))
   assert.ok(errorPageHtml(6, 'tail').startsWith('data:text/html;charset=utf-8,'))
+  const loading = decodeURIComponent(loadingPageHtml('zh'))
+  assert.ok(loading.includes('框架加载中…'))
+  assert.ok(loading.includes('class="loading-line"'))
+  assert.ok(!loading.includes('class="spinner"'))
+  assert.ok(!loading.includes('class="progress"'))
   assert.ok(decodeURIComponent(errorPageHtml(6, 'tail')).includes('Start again'))
   assert.ok(decodeURIComponent(errorPageHtml(6, 'tail', 'zh')).includes('再次启动'))
 })

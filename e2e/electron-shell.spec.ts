@@ -87,7 +87,10 @@ shellTest('native menu and title follow the Harness locale preference @smoke @cr
   })
   if (chrome.platform === 'darwin') expect(chrome.content.height).toBe(chrome.bounds.height)
   if (chrome.platform === 'darwin') {
-    await expect(window.locator('[data-slot="sidebar"] > :first-child')).toHaveCSS('padding-top', '12px')
+    const sidebarRoot = window.locator('[data-slot="sidebar"] > :first-child')
+    await expect(sidebarRoot).toHaveCSS('padding-top', '12px')
+    await sidebarRoot.evaluate(element => element.classList.add('fixture-collapsed'))
+    await expect(sidebarRoot).toHaveCSS('padding-top', '25px')
   }
   await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.getTitle()))
     .toBe('dsh-desktop — DeepSeek Harness (Community)')

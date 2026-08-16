@@ -24,6 +24,9 @@
   系统托盘(实时状态、重启、日志目录、检查更新)、窗口几何记忆、日志落盘;
 - **渲染层收敛**:保持上下文隔离与沙箱、关闭 Node 集成、限制页面导航,并
   默认拒绝设备、采集、通知和文件系统等额外权限(决策记录 0014);
+- **Web 移动连接**:通过“扩展 → 通过局域网连接手机 / 平板”启动独立的
+  mobile-shell Web 代理,显示一次性二维码;只集成另一个仓库的 Web 启动页和
+  代理,不把 Android/iOS 工程打进 Electron 安装包;
 - **更新**:Windows 支持原地自动更新;未签名的 macOS 检查新版本并打开精确
   发布页,由用户明确下载安装(决策记录 0010、0016)。
 
@@ -48,6 +51,17 @@
 - 每个安装包都有同名 `<安装包>.sha256` 文件,因此面向用户最多展示四个资产。
   Release 仅额外保留 Windows 原地更新所需的小型 `latest.yml` 与
   `.exe.blockmap`;不发布 ZIP 或 Linux 包(决策 0016)。
+
+### macOS 仍然无法打开
+
+如果右键「打开」后仍没有出现放行选项,并且你确认安装包来自可信来源,可以在终端执行:
+
+```sh
+xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"
+open "/Applications/dsh-desktop.app"
+```
+
+这会移除该 App 的下载隔离标记并重新启动它。此操作不会给 App 添加 Apple 开发者签名或公证,只应对确认来源可信的安装包执行;以后重新下载或替换 App 后可能需要再次执行。
 
 ### GitHub 慢或打不开?下载加速
 
@@ -90,6 +104,19 @@ pnpm run smoke       # 冒烟:harness 就绪 → 窗口加载 → 校验页面 �
 pnpm run dist        # 打当前平台的安装包(产物在 dist/)
 ```
 
+### 局域网 Web 连接
+
+Harness 启动后,打开“扩展 → 通过局域网连接手机 / 平板…”。桌面端会选择
+私有局域网 IPv4、启动独立的 mobile-shell Web 代理并显示二维码。手机或平板
+扫描后进入 Web 启动页,确认一次性配对码即可连接;代理上游始终保持在回环地址,
+主令牌只存在于桌面代理进程内存/环境中,不会写入桌面设置。
+
+构建时只会从 `/Users/citrus/dsh-mobile-shell` 暂存以下 Web 资源:
+`app/www/index.html`、`proxy/dsh-remote.mjs`、`proxy/pairing-qr.mjs` 和二维码
+算法文件,目标目录为 gitignore 的 `resources/mobile-shell/`。另一个仓库更新后重跑
+构建即可带入新 Web 版本;其他路径可用 `DSH_MOBILE_SHELL_ROOT` 覆盖。也可用
+`DSH_LAN_IP=192.168.1.23` 指定多网卡时的局域网地址。
+
 慢网络/海外环境:仓库默认使用国内镜像(npmmirror)加速下载,可用环境变量覆盖:
 
 - `NPM_CONFIG_REGISTRY` — npm 包源
@@ -107,6 +134,7 @@ src/preload/         沙箱桥接(错误页的"重试启动"按钮)
 scripts/             fetch-node / deploy-harness / install-electron / build / gen-icons
 manifest/harness/    纯依赖 manifest:精确 pin @deepseek-ai/dsh 及其闭包
 resources/harness/   bootstrap 产物(gitignore,不入库)
+resources/mobile-shell/  构建时暂存的 mobile-shell Web 资源(gitignore,不入库)
 docs/decisions/      决策记录:架构选择与实现过程
 ```
 

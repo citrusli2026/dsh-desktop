@@ -17,6 +17,9 @@ export interface MenuActions {
   checkForUpdates(): void
   showAbout(): void
   openExternal(url: string): void
+  startLanLink(): void
+  showLanQr(): void
+  stopLanLink(): void
 }
 
 export interface MenuEnvironment {
@@ -25,10 +28,11 @@ export interface MenuEnvironment {
   packaged: boolean
   appName: string
   restartEnabled?: boolean
+  lanRunning?: boolean
 }
 
 export function buildAppMenuTemplate(environment: MenuEnvironment, actions: MenuActions): MenuItemConstructorOptions[] {
-  const { locale, platform, packaged, appName, restartEnabled = true } = environment
+  const { locale, platform, packaged, appName, restartEnabled = true, lanRunning = false } = environment
   const t = (key: Parameters<typeof shellText>[1]): string => shellText(locale, key)
   const isMac = platform === 'darwin'
   const template: MenuItemConstructorOptions[] = []
@@ -106,6 +110,17 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
           ]
         : [{ label: t('menu.maximize'), click: actions.toggleMaximize }]),
     ],
+  })
+
+  template.push({
+    label: t('menu.extensions'),
+    submenu: lanRunning
+      ? [
+          { label: t('menu.showLanQr'), click: actions.showLanQr },
+          { type: 'separator' },
+          { label: t('menu.stopLanLink'), click: actions.stopLanLink },
+        ]
+      : [{ label: t('menu.startLanLink'), click: actions.startLanLink }],
   })
 
   const help: MenuItemConstructorOptions[] = []

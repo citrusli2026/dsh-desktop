@@ -5,7 +5,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
-import { dshBin, harnessRoot, nodeBin } from './paths.ts'
+import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
 import { installAppMenu, showAboutDialog } from './menu.ts'
 import { denyUnexpectedPermissions } from './permissions.ts'
 import {
@@ -25,6 +25,8 @@ import { exportDiagnosticReport } from './diagnostics.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { MenuActions } from './menu-template.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
+import { LanService, qrSvgFromText } from './lan.ts'
+import { showLanPairingWindow } from './lan-window.ts'
 
 const DEV_WEB_URL = process.env.DSH_DESKTOP_DEV_WEB_URL
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -35,6 +37,14 @@ let supervisor: HarnessSupervisor | undefined
 let lastState: HarnessState | undefined
 let restartInFlight: Promise<boolean> | undefined
 let closeNoticeClaimed = false
+
+const lanService = new LanService({
+  mobileShellRoot,
+  nodeExecutable: () => nodeBin(),
+  getTargetUrl: () => lastState?.phase === 'ready' ? lastState.url : undefined,
+  onLog: line => console.log(`dsh-desktop: ${line}`),
+  onStateChanged: () => refreshNativeSurfaces(),
+})
 
 const windowContext: WindowContext = {
   quitInProgress: false,
@@ -50,12 +60,16 @@ function restartEnabled(): boolean {
 
 function refreshNativeSurfaces(): void {
   if (windowContext.quitInProgress) return
-  installAppMenu(currentLocale, menuActions, restartEnabled())
+  installAppMenu(currentLocale, menuActions, restartEnabled(), lanService.isRunning)
   refreshTray()
 }
 
 function applyState(state: HarnessState): void {
+  const previousTarget = lastState?.phase === 'ready' ? lastState.url : undefined
   lastState = state
+  if (state.phase === 'ready' && lanService.isRunning && previousTarget !== undefined && previousTarget !== state.url) {
+    void lanService.restart().catch(error => console.warn(`dsh-desktop: LAN proxy restart failed: ${error instanceof Error ? error.message : String(error)}`))
+  }
   refreshNativeSurfaces()
   if (state.phase === 'ready') void loadHarnessUrl(windowContext, state.url)
   else if (state.phase === 'crashed') void loadErrorPage(windowContext, state.attempts, state.logTail)
@@ -124,6 +138,42 @@ async function openLogsFolder(): Promise<void> {
   if (error !== '') console.warn(`dsh-desktop: opening logs failed: ${error}`)
 }
 
+async function showLanQr(): Promise<void> {
+  const pairing = lanService.currentPairing
+  if (pairing === undefined) return
+  try {
+    const qrSvg = await qrSvgFromText(pairing.pairingUrl, mobileShellRoot())
+    showLanPairingWindow(windowContext.mainWindow, pairing, qrSvg, currentLocale)
+  } catch (error) {
+    await dialog.showMessageBox({
+      type: 'error',
+      title: shellText(currentLocale, 'menu.extensions'),
+      message: error instanceof Error ? error.message : String(error),
+      buttons: [shellText(currentLocale, 'common.ok')],
+    })
+  }
+}
+
+async function startLanLink(): Promise<void> {
+  try {
+    const pairing = await lanService.start()
+    refreshNativeSurfaces()
+    const qrSvg = await qrSvgFromText(pairing.pairingUrl, mobileShellRoot())
+    showLanPairingWindow(windowContext.mainWindow, pairing, qrSvg, currentLocale)
+  } catch (error) {
+    await dialog.showMessageBox({
+      type: 'error',
+      title: shellText(currentLocale, 'menu.extensions'),
+      message: error instanceof Error ? error.message : String(error),
+      buttons: [shellText(currentLocale, 'common.ok')],
+    })
+  }
+}
+
+function stopLanLink(): void {
+  void lanService.stop().finally(refreshNativeSurfaces)
+}
+
 function toggleMainWindow(): void {
   const window = windowContext.mainWindow
   if (window !== undefined && !window.isDestroyed() && window.isVisible()) window.hide()
@@ -147,6 +197,9 @@ const menuActions: MenuActions = {
   checkForUpdates: () => { void checkForUpdatesInteractively(currentLocale) },
   showAbout: () => { void showAboutDialog(currentLocale) },
   openExternal: url => { void shell.openExternal(url) },
+  startLanLink: () => { void startLanLink() },
+  showLanQr: () => { void showLanQr() },
+  stopLanLink,
 }
 
 const trayActions = {
@@ -213,9 +266,9 @@ app.on('before-quit', (event) => {
   windowContext.quitInProgress = true
   localeController?.dispose()
   destroyTray()
-  if (supervisor !== undefined) {
+  if (supervisor !== undefined || lanService.isRunning) {
     event.preventDefault()
-    void supervisor.stop().finally(() => app.quit())
+    void Promise.all([supervisor?.stop(), lanService.stop()]).finally(() => app.quit())
   }
 })
 
@@ -247,7 +300,7 @@ if (!gotLock) {
     })
 
     createMainWindow(windowContext)
-    installAppMenu(currentLocale, menuActions, false)
+    installAppMenu(currentLocale, menuActions, false, false)
     if (!SMOKE_TEST) {
       try {
         createTray(trayActions)

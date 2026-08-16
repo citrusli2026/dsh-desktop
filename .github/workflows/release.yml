@@ -60,8 +60,9 @@ jobs:
         # insert a literal `--` before these args and turn them positional.
         run: pnpm run build && pnpm exec electron-builder ${{ matrix.targets }} --publish never
         env:
-          # No distribution identity on CI: macOS uses ad-hoc signing (needed
-          # to run on Apple Silicon) and Windows stays unsigned. Decision 0016.
+          # No Apple Developer distribution identity on CI: macOS uses an
+          # ad-hoc signature and Windows stays unsigned. Decision 0016.
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
           # --publish never keeps electron-builder from creating the release
           # itself; the publish job below owns release creation.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
