@@ -57,7 +57,7 @@ tag Release 在上述基础上再执行质量门禁，并强制:
 
 ## 4. 已发布版本摘要
 
-> 完整发布记录见 `docs/HANDOFF-archive.md`（shell.10–14 详情）和根 `HANDOFF.md`（shell.14–15 运维记录）。
+> 完整发布记录见 `docs/HANDOFF-archive.md`（shell.10–14 详情）和根 `HANDOFF.md`（shell.14–15 运维记录）。发布元数据（CI/Release/Refresh run ID、tag commit）以根 `HANDOFF.md` 为准。
 
 ### shell.15（已发布 2026-08-17）
 
@@ -71,9 +71,7 @@ tag Release 在上述基础上再执行质量门禁，并强制:
 本地门禁全绿：typecheck、67 项单测、覆盖率（lines 84.61% / branches 79.45% /
 functions 78.74%）、`site:check`、`build`。无新 ADR。
 
-- CI run `31992896301`；Release run `31994766855`；
-- tag `v0.1.0-rc.6.shell.15` 指向 `e7792dace377d57f8624e301b2fdcb9bde385d39`；
-- Site Data Refresh run `31995175898`，提交 `1346abb`。
+> 发布元数据见根 `HANDOFF.md` 第七节。
 
 ## 5. 已知限制
 

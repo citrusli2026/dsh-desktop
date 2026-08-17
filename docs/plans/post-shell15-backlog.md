@@ -85,4 +85,3 @@
 如需继续其他迭代项，推荐：
 - **#E `fs.watch` 可靠性** — 30min 低投入，解决 vim 编辑器兼容问题
 - **#F SBOM / Provenance** — 中期工程价值，与 CLI 校验器方向一致
-- **#F SBOM / Provenance** — 中期工程价值，与 CLI 校验器方向一致

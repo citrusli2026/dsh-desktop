@@ -47,8 +47,8 @@
 ## 4. 最小持续交付门禁
 
 - 每次提交：typecheck、Node 单测、官网双语/资产检查、主进程构建。
-- Linux CI：三条 Harness xvfb 冒烟，加真实 Electron E2E（菜单、语言同步、
-  close-to-tray、第二实例恢复）；失败上传 trace、截图与报告。
+- CI runner（Linux）：三条 Harness xvfb 冒烟，加真实 Electron E2E（菜单、语言同步、
+  close-to-tray、第二实例恢复）；失败上传 trace、截图与报告。仅用于执行测试，不产出 Linux 安装包。
 - tag Release：重复 E2E；macOS / Windows 打包后必须从 unpacked 产物启动内置
   Harness；再严格校验两个安装包、两个哈希与 Windows 的两个更新侧文件，全部
   通过才创建 Release。

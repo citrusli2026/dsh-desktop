@@ -117,7 +117,7 @@ cd /absolute/path/dsh-mobile-shell
 npm run package:web
 npm run verify:web
 
-cd /Users/citrus/dsh-desktop
+cd /absolute/path/dsh-desktop
 DSH_MOBILE_SHELL_WEB_ROOT=/absolute/path/dsh-mobile-shell/dist/web pnpm run build
 ```
 

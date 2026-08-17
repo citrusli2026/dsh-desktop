@@ -27,16 +27,11 @@
 3. 下载区按人工审核意见收敛为 macOS / Windows 双平台：每个资产并列 GitCode
    镜像（可用时）与 GitHub 两个下载按钮，中文界面镜像在前；Linux 不再展示，
    引导至命令行；"全部文件"折叠表随更新元数据一并移除。
-4. Apple Silicon 本地产物已生成：
-   `dist/dsh-desktop-0.1.0-rc.6.shell.9-arm64-mac.{dmg,zip}`。本机 Apple
-   Development 签名验证通过但未公证；DMG SHA-256 为
-   `1ba98e73df9a30a3af50160a004ab565b81c7d927f1cbbb46971cdab16c0a77e`，ZIP 为
-   `d1aa8957b61b207693d42c340429b9eb078811ac2fc9bbe3e69f8c624f695108`。
-5. 当前仓库没有 iOS/Xcode 工程；Electron 安装包交付目标是 macOS 与 Windows。
+4. 当前仓库没有 iOS/Xcode 工程；Electron 安装包交付目标是 macOS 与 Windows。
    如需 iPhone/iPad 包，必须另立 SwiftUI 或跨平台客户端，不能从现有 Electron
    配置直接生成。
 
-## 二点五、人工审查调整（2026-08-16，缓存键 v=20）
+## 三、人工审查调整（2026-08-16，缓存键 v=20）
 
 1. 顶栏 GitHub 链接不再显示星数，只保留图标与 GitHub 文字。
 2. 首屏为纯文案居中 hero，不再放任何截图；截图目录 `site/assets/shots/`
@@ -51,7 +46,7 @@
 5. 桌面壳顶部拖动区域（preload 注入的 `data-dsh-window-drag-region`）
    高度从 12px 加高到 24px，随下一次构建/发布生效。
 
-## 三、发布与官网数据流
+## 四、发布与官网数据流
 
 ```text
 main push → CI + Vercel
@@ -74,7 +69,7 @@ GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名
 可下载时并列展示镜像与 GitHub 两个下载源，否则只展示 GitHub。不要把带
 时效签名的 CDN URL 写入站点。
 
-## 四、运维速查
+## 五、运维速查
 
 | 操作 | 命令 / 入口 |
 |---|---|
@@ -104,7 +99,7 @@ GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名
 5. **HANDOFF 回填**：把 CI/Release/Refresh run id、tag peeled commit、镜像状态
    写入 HANDOFF 对应小节，把"当前代码基线"改为"已发布"。
 
-## 五、已知事项
+## 六、已知事项
 
 - GitCode 资产镜像为维护者授权渠道：发版后用 `$gitcode-release-publisher` 复用
   已登录浏览器会话上传 dmg/exe 与哈希，再触发 Site Data Refresh 让官网识别
@@ -119,7 +114,7 @@ GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名
 - macOS 仍未签名/公证；首次运行需右键打开，应用只检查更新并引导下载。
 - `*.vercel.app` 在国内可能受 DNS 影响；正式域名使用 `dsh-desktop.com`。
 
-## 六、shell.14（已发布 2026-08-17）
+## 七、shell.14（已发布 2026-08-17）
 
 > 完整记录见 `docs/HANDOFF-archive.md`。此处保留摘要供速查。
 
@@ -131,9 +126,9 @@ GitHub token 支持更新检查、`before-quit` 绝对超时兜底。
 - CI run `31991608477`；Release run `31991741108`；
 - tag `v0.1.0-rc.6.shell.14` → `7e26d6888bb8a214b5b2d0305145f8b38a1e37ed`；
 - Site Data Refresh run `31992088063`，提交 `ea4ea05`。
-- GitCode 镜像待补齐。
+- GitCode 镜像状态：shell.14 镜像已随 shell.15 一并补齐（2026-08-17）。
 
-## 七、shell.15（已发布 2026-08-17）
+## 八、shell.15（已发布 2026-08-17）
 
 近期迭代三项：
 
@@ -164,47 +159,15 @@ functions 78.74%）、`site:check`、`build`。无新 ADR：测试加固与可�
 - GitCode 国内镜像已补齐（维护者手动上传 dmg/exe 与 `.sha256`），Site Data Refresh
   已重新触发，`gitcode_ok` 已标为 `true`。
 
-## 八、2026-08-17 维护日汇总
+## 九、2026-08-17 维护日汇总
 
-本日围绕"文档可维护性 + GitCode 镜像补齐 + 实时下载统计"三条线推进：
+本日围绕"文档可维护性 + GitCode 镜像补齐 + 实时下载统计 + 网站安全加固"推进：
 
-### 8.1 文档可维护性提升
-
-- **HANDOFF 整理**：创建 `docs/HANDOFF-archive.md` 收纳 shell.10–14 完整记录；
-  根 `HANDOFF.md` 精简为最近两版 + 运维速查 + 发布后 checklist。
-- **过期文档清理**：删除 `.zcode/plans/*.md`（IDE 临时文件）、
-  `docs/plans/next-iteration-refactor-tests.md`（shell.9 已完成）。
-- **状态修正**：`docs/HANDOFF.md` 和 `electron-shell-capabilities.md` 中 shell.15
-  从"待发布"修正为"已发布"；`post-shell15-backlog.md` 标记 #1.1、#1.2、#D 已完成。
-- **README 风险提示**：社区代理（ghproxy.net 等）加"部分已失联"可用性警告。
-
-### 8.2 GitCode 镜像补齐（shell.15）
-
-- 问题：shell.15 发布后 GitCode 代码同步延迟（最新 commit 停留在 shell.13）。
-- 解决：手动 `git push gitcode main` + `git push gitcode v0.1.0-rc.6.shell.15`
-  绕过同步延迟，直接推送代码和 tag。
-- 结果：4 个文件上传 → release 创建 → Range GET 4×206 → Site Data Refresh
-  run `32009084065` 成功 → 官网 `gitcode_ok` 全部 `true`。
-
-### 8.3 实时下载统计（方案 C，已完成）
-
-- 目标：让官网显示接近实时的 GitHub Release 下载数。
-- 实现：
-  - `site/api/downloads.js` — Vercel Serverless Function，代理 GitHub API，
-    Edge 缓存 5min（`s-maxage=300`）。
-  - `site/assets/app.js` — 页面加载后异步 fetch `/api/downloads`，
-    成功后刷新下载数字和同步时间文案。
-  - `site/vercel.json` — 添加 `/api/*` 路由缓存头。
-- 修复：ES Module 导致 `FUNCTION_INVOCATION_FAILED`，改为 CommonJS
-  (`module.exports`)；GitCode remote 推送冲突通过 rebase 解决；补充
-  `site/package.json` 指定 Node.js 运行时。
-- 验证：`GET /api/downloads` 返回 shell.15 资产下载数（DMG: 4, EXE: 8），
-  前端异步刷新逻辑已就绪。
-
-### 8.4 校验器 CLI 独立化（#D 已完成）
-
-- 新建 `bin/dsh-validate-release.mjs`，`package.json` 注册 `bin` 字段。
-- 官网 FAQ 新增"如何校验下载完整性"条目（中英双语），`site:check` 通过。
+**文档**：HANDOFF 整理（archive 折叠）、过期文档清理、状态修正、README 风险提示。
+**GitCode**：shell.15 镜像补齐（手动 push 绕过同步延迟，4 文件上传，Range GET 4×206）。
+**实时统计**：Vercel Serverless Function `/api/downloads` 部署（CommonJS 修复 + package.json 补充）。
+**安全**：downloads.js SSRF 防护（移除 repo 参数）+ 错误泄露修复（移除 body）+ sitemap + apple-touch-icon。
+**文档清理**：修复硬编码路径、去重、加注、统一节编号、更新过期状态。
 
 ---
 _更新于 2026-08-17_

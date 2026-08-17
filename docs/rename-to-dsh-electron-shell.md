@@ -3,6 +3,9 @@
 > 状态:已执行(2026-02-09,第 2 轮)。GitHub 仓库已从 `citrusli2026/dsh-desktop`
 > 改名为 `citrusli2026/dsh-electron-shell`(旧 URL 自动 301),全部文案按第 4 节
 > 完成改造,新名字下发布了 v0.1.1-pre.0。执行备注见第 7 节。
+>
+> **注意**:最终决策与本计划有偏差——appId 已变更为 `io.github.citrusli2026.dsh-electron-shell`，
+> productName 已恢复为 `dsh-desktop`（应用与安装包名）。详见 ADR 0013。
 
 ## 1. 背景与目标
 

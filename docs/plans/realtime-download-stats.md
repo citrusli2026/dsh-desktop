@@ -1,6 +1,7 @@
 # 迭代计划：实时下载统计（服务端代理 + 缓存）
 
 > 创建日期：2026-08-17
+> **状态：已完成 2026-08-17**
 > 目标：让官网显示接近实时的 GitHub Release 下载数
 
 ## 背景
@@ -56,10 +57,10 @@ GET /api/downloads?repo=citrusli2026/dsh-electron-shell
 
 ## 实现步骤
 
-1. [ ] 创建 `site/api/downloads.js` — Serverless Function
-2. [ ] 修改 `site/assets/app.js` — 前端实时拉取
-3. [ ] 修改 `site/vercel.json` — API 路由和缓存头
-4. [ ] 本地测试 + 部署验证
+1. [x] 创建 `site/api/downloads.js` — Serverless Function（CommonJS 格式，SSRF 防护）
+2. [x] 修改 `site/assets/app.js` — 前端实时拉取（fetchRealTimeDownloads）
+3. [x] 修改 `site/vercel.json` — API 路由和缓存头
+4. [x] 本地测试 + 部署验证（site/package.json 补充 Node.js 运行时）
 
 ## 预估
 
