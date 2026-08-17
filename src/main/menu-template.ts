@@ -31,10 +31,11 @@ export interface MenuEnvironment {
   restartEnabled?: boolean
   lanRunning?: boolean
   lanBusy?: boolean
+  visionStatus?: string
 }
 
 export function buildAppMenuTemplate(environment: MenuEnvironment, actions: MenuActions): MenuItemConstructorOptions[] {
-  const { locale, platform, packaged, appName, restartEnabled = true, lanRunning = false, lanBusy = false } = environment
+  const { locale, platform, packaged, appName, restartEnabled = true, lanRunning = false, lanBusy = false, visionStatus = '' } = environment
   const t = (key: Parameters<typeof shellText>[1]): string => shellText(locale, key)
   const isMac = platform === 'darwin'
   const template: MenuItemConstructorOptions[] = []
@@ -116,13 +117,24 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
 
   template.push({
     label: t('menu.extensions'),
-    submenu: lanRunning
-      ? [
-          { label: t('menu.showLanQr'), click: actions.showLanQr },
+    submenu: [
+      {
+        label: t('menu.vision'),
+        submenu: [
+          { label: t('menu.visionSettings'), click: actions.showSettings },
           { type: 'separator' },
-          { label: t('menu.stopLanLink'), click: actions.stopLanLink },
-        ]
-      : [{ label: t('menu.startLanLink'), enabled: !lanBusy, click: actions.startLanLink }],
+          { label: visionStatus, enabled: false },
+        ],
+      },
+      { type: 'separator' },
+      ...(lanRunning
+        ? [
+            { label: t('menu.showLanQr'), click: actions.showLanQr } as MenuItemConstructorOptions,
+            { type: 'separator' } as MenuItemConstructorOptions,
+            { label: t('menu.stopLanLink'), click: actions.stopLanLink } as MenuItemConstructorOptions,
+          ]
+        : [{ label: t('menu.startLanLink'), enabled: !lanBusy, click: actions.startLanLink } as MenuItemConstructorOptions]),
+    ],
   })
 
   const help: MenuItemConstructorOptions[] = []
@@ -131,8 +143,6 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
     { label: t('menu.restartHarness'), enabled: restartEnabled, click: actions.restartHarness },
     { label: t('menu.openLogs'), click: actions.openLogs },
     { label: t('menu.exportDiagnostics'), click: actions.exportDiagnostics },
-    { type: 'separator' },
-    { label: t('menu.settings'), click: actions.showSettings },
     { type: 'separator' },
     { label: t('menu.projectRepository'), click: () => actions.openExternal(PROJECT_REPO_URL) },
     { label: t('menu.reportIssue'), click: () => actions.openExternal(PROJECT_ISSUES_URL) },

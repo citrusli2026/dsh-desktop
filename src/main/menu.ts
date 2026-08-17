@@ -77,6 +77,10 @@ export async function showAboutDialog(locale: ShellLocale): Promise<void> {
 }
 
 export function installAppMenu(locale: ShellLocale, actions: MenuActions, restartEnabled = true, lanRunning = false, lanBusy = false): void {
+  const vision = getVisionPluginInfo()
+  const visionStatus = vision.installed
+    ? `${vision.name} v${vision.version}`
+    : (locale === 'zh' ? '未安装' : 'Not installed')
   const template = buildAppMenuTemplate({
     locale,
     platform: process.platform,
@@ -85,6 +89,7 @@ export function installAppMenu(locale: ShellLocale, actions: MenuActions, restar
     restartEnabled,
     lanRunning,
     lanBusy,
+    visionStatus,
   }, actions)
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
