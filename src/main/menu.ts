@@ -10,10 +10,12 @@ import {
   PROJECT_REPO_URL,
 } from './links.ts'
 import { splitCompositeVersion } from './update-check.ts'
+import { getVisionPluginInfo } from './vision.ts'
 
 function aboutDetail(locale: ShellLocale): string {
   const version = app.getVersion()
   const composite = splitCompositeVersion(version)
+  const vision = getVisionPluginInfo()
   const lines = [shellText(locale, 'about.version', { version })]
   if (composite !== undefined) {
     lines.push(shellText(locale, 'about.harnessVersion', {
@@ -24,6 +26,16 @@ function aboutDetail(locale: ShellLocale): string {
   lines.push(
     `Electron ${process.versions.electron} · Chromium ${process.versions.chrome} · Node ${process.versions.node}`,
     '',
+  )
+  if (vision.installed) {
+    lines.push(
+      locale === 'zh'
+        ? `预装扩展：${vision.name} v${vision.version} — ${vision.description}`
+        : `Pre-installed: ${vision.name} v${vision.version} — ${vision.description}`,
+      '',
+    )
+  }
+  lines.push(
     shellText(locale, 'about.community'),
     shellText(locale, 'about.unaffiliated'),
     shellText(locale, 'about.license'),

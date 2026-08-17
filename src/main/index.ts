@@ -27,6 +27,7 @@ import type { MenuActions } from './menu-template.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
 import { LanService, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
+import { showSettingsWindow } from './settings-window.ts'
 
 const DEV_WEB_URL = process.env.DSH_DESKTOP_DEV_WEB_URL
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -197,6 +198,7 @@ const menuActions: MenuActions = {
   exportDiagnostics: () => { void exportDiagnosticReport(lastState, currentLocale) },
   checkForUpdates: () => { void checkForUpdatesInteractively(currentLocale) },
   showAbout: () => { void showAboutDialog(currentLocale) },
+  showSettings: () => { showSettingsWindow(windowContext.mainWindow, currentLocale) },
   openExternal: url => { void shell.openExternal(url) },
   startLanLink: () => { void startLanLink() },
   showLanQr: () => { void showLanQr() },

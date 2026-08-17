@@ -17,7 +17,8 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 - **Isolated by default**: the desktop app keeps its own data home (`~/.dsh-desktop`) — settings, sessions, API keys, and plugins stay separate from the CLI; set `DSH_HOME=~/.dsh` to share with the CLI again (decision 0012);
 - **Robust**: crash auto-restart with exponential backoff, manual retry on the error page, single-instance lock, system tray with live harness status (restart / logs / update check), persisted window geometry, logs on disk;
 - **Restrained renderer**: context isolation and sandboxing stay enabled, Node integration stays off, navigation is guarded, and unexpected device, capture, notification, or filesystem permissions are denied by default (decision 0014);
-- **Web mobile connection**: “Extensions → Connect phone / tablet over LAN” starts an isolated mobile-shell Web proxy and shows a one-time pairing QR code. Only the other repository’s Web launcher and proxy are staged; Android/iOS projects are not included in the Electron installer;
+- **Pre-installed vision**: [ModLens](https://github.com/liustack/modlens) visual recognition plugin is bundled — paste an image in chat and the AI can understand it (OCR, layout analysis, semantic structuring). Requires a vision engine API key on first use;
+- **Web mobile connection**: "Extensions → Connect phone / tablet over LAN" starts an isolated mobile-shell Web proxy and shows a one-time pairing QR code. Only the other repository's Web launcher and proxy are staged; Android/iOS projects are not included in the Electron installer;
 - **Updates**: Windows updates in place; unsigned macOS checks for new releases and opens the exact release page for a deliberate manual install (decisions 0010, 0016).
 
 ## Versioning

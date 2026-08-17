@@ -16,6 +16,7 @@ export interface MenuActions {
   exportDiagnostics(): void
   checkForUpdates(): void
   showAbout(): void
+  showSettings(): void
   openExternal(url: string): void
   startLanLink(): void
   showLanQr(): void
@@ -130,6 +131,8 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
     { label: t('menu.restartHarness'), enabled: restartEnabled, click: actions.restartHarness },
     { label: t('menu.openLogs'), click: actions.openLogs },
     { label: t('menu.exportDiagnostics'), click: actions.exportDiagnostics },
+    { type: 'separator' },
+    { label: t('menu.settings'), click: actions.showSettings },
     { type: 'separator' },
     { label: t('menu.projectRepository'), click: () => actions.openExternal(PROJECT_REPO_URL) },
     { label: t('menu.reportIssue'), click: () => actions.openExternal(PROJECT_ISSUES_URL) },

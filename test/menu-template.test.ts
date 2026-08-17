@@ -5,7 +5,7 @@ import { buildAppMenuTemplate, type MenuActions } from '../src/main/menu-templat
 
 const actions: MenuActions = {
   closeWindow() {}, quit() {}, toggleMaximize() {}, restartHarness() {}, openLogs() {},
-  exportDiagnostics() {}, checkForUpdates() {}, showAbout() {}, openExternal() {},
+  exportDiagnostics() {}, checkForUpdates() {}, showAbout() {}, showSettings() {}, openExternal() {},
   startLanLink() {}, showLanQr() {}, stopLanLink() {},
 }
 
