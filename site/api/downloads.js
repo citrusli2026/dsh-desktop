@@ -5,22 +5,10 @@
  * Query: ?repo=owner/name (default: citrusli2026/dsh-electron-shell)
  *
  * Caches at Vercel Edge for 5 minutes (s-maxage=300).
- * On cache miss or expiration, fetches from GitHub API.
- *
- * Response:
- * {
- *   tag: "v0.1.0-rc.6.shell.15",
- *   generated_at: "2026-08-17T09:00:00Z",
- *   source: "github",
- *   assets: [
- *     { name: "...dmg", downloads: 12 },
- *     { name: "...exe", downloads: 25 }
- *   ]
- * }
  */
 
 const DEFAULT_REPO = 'citrusli2026/dsh-electron-shell'
-const CACHE_MAX_AGE = 300 // 5 minutes
+const CACHE_MAX_AGE = 300
 
 function classifyAsset(name) {
   if (/^dsh-desktop-.+\.(dmg|exe)$/.test(name)) return 'installer'
@@ -28,8 +16,7 @@ function classifyAsset(name) {
   return null
 }
 
-export default async function handler(req, res) {
-  // CORS
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
@@ -38,7 +25,6 @@ export default async function handler(req, res) {
     res.status(200).end()
     return
   }
-
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' })
     return
@@ -80,18 +66,14 @@ export default async function handler(req, res) {
         kind: classifyAsset(a.name),
       }))
 
-    const payload = {
+    res.setHeader('Cache-Control', `public, s-maxage=${CACHE_MAX_AGE}, stale-while-revalidate=600`)
+    res.setHeader('Content-Type', 'application/json')
+    res.status(200).json({
       tag: latest.tag_name,
       generated_at: new Date().toISOString(),
       source: 'github',
       assets: publicAssets,
-    }
-
-    // Edge cache: Vercel CDN caches for 5 minutes
-    res.setHeader('Cache-Control', `public, s-maxage=${CACHE_MAX_AGE}, stale-while-revalidate=600`)
-    res.setHeader('Content-Type', 'application/json')
-    res.status(200).json(payload)
-
+    })
   } catch (err) {
     res.status(500).json({ error: 'Internal error', message: err.message })
   }
