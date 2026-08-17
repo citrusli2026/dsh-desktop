@@ -29,9 +29,11 @@ function aboutDetail(locale: ShellLocale): string {
   )
   if (vision.installed) {
     lines.push(
-      locale === 'zh'
-        ? `预装扩展：${vision.name} v${vision.version} — ${vision.description}`
-        : `Pre-installed: ${vision.name} v${vision.version} — ${vision.description}`,
+      shellText(locale, 'about.visionInstalled', {
+        name: vision.name,
+        version: vision.version,
+        description: vision.description,
+      }),
       '',
     )
   }
@@ -79,8 +81,8 @@ export async function showAboutDialog(locale: ShellLocale): Promise<void> {
 export function installAppMenu(locale: ShellLocale, actions: MenuActions, restartEnabled = true, lanRunning = false, lanBusy = false): void {
   const vision = getVisionPluginInfo()
   const visionStatus = vision.installed
-    ? `${vision.name} v${vision.version}`
-    : (locale === 'zh' ? '未安装' : 'Not installed')
+    ? shellText(locale, 'menu.visionInstalled', { name: vision.name, version: vision.version })
+    : shellText(locale, 'menu.visionNotInstalled')
   const template = buildAppMenuTemplate({
     locale,
     platform: process.platform,

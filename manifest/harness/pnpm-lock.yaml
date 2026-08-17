@@ -68,6 +68,9 @@ importers:
       '@deepseek-ai/dsh-workflow':
         specifier: ^0.1.0-rc.6
         version: 0.1.0-rc.6(e4b85be78b99e33196048eadd46cc140)
+      '@liustack/modlens':
+        specifier: 3.17.2
+        version: 3.17.2
       pnpm:
         specifier: 11.8.0
         version: 11.8.0
@@ -2435,6 +2438,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@liustack/modlens@3.17.2':
+    resolution: {integrity: sha512-0bZW6F4Oii0sr35KgOv8C7g7/2Q0oWAXUXEvmxXkJvgX8wmBEVADNjyOWtstfgQCEM3dzMYfqWwBoSjNuVBSQw==}
+    engines: {node: '>=22.19'}
+    hasBin: true
+
   '@mistralai/mistralai@2.2.6':
     resolution: {integrity: sha512-W8pX7zHxjJvMIpw8JMxeJEleapXX0Q9NPszdNzqkM3MIEoIGPObdodujj+WHteXEvGfaP/AMwlNyRfEzSY6dQQ==}
     peerDependencies:
@@ -2811,6 +2819,10 @@ packages:
 
   comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
+
+  commander@13.1.0:
+    resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
+    engines: {node: '>=18'}
 
   commander@15.0.0:
     resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
@@ -3553,6 +3565,10 @@ packages:
 
   undici-types@8.3.0:
     resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
+
+  undici@8.10.0:
+    resolution: {integrity: sha512-HvltHd7avK13QIw/oLe4qoOLyoVSoafqJ2jYOrtMRBkbYT31eiBQ8O0ehRKZiEZCMEyLFQNIADpgCWC5fALvYQ==}
+    engines: {node: '>=22.19.0'}
 
   unist-util-is@6.0.1:
     resolution: {integrity: sha512-LsiILbtBETkDz8I9p1dQ0uyRUWuaQzd/cuEeS1hoRSyW5E5XGmTzlwY1OrNzzakGowI9Dr/I8HVaw4hTtnxy8g==}
@@ -6590,6 +6606,11 @@ snapshots:
   '@koromix/koffi-win32-x64@3.1.4':
     optional: true
 
+  '@liustack/modlens@3.17.2':
+    dependencies:
+      commander: 13.1.0
+      undici: 8.10.0
+
   '@mistralai/mistralai@2.2.6(@opentelemetry/api@1.9.0)':
     dependencies:
       '@opentelemetry/semantic-conventions': 1.43.0
@@ -6979,6 +7000,8 @@ snapshots:
   clsx@2.1.1: {}
 
   comma-separated-tokens@2.0.3: {}
+
+  commander@13.1.0: {}
 
   commander@15.0.0: {}
 
@@ -7984,6 +8007,8 @@ snapshots:
   typebox@1.1.38: {}
 
   undici-types@8.3.0: {}
+
+  undici@8.10.0: {}
 
   unist-util-is@6.0.1:
     dependencies:

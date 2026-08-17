@@ -1,5 +1,5 @@
 /** Settings window for vision plugin configuration. */
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
 import { shellText, type ShellLocale } from './locale.ts'
 import { getVisionPluginInfo } from './vision.ts'
@@ -111,7 +111,7 @@ export function showSettingsWindow(parent: BrowserWindow | undefined, locale: Sh
   })
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) {
-      require('electron').shell.openExternal(url)
+      void shell.openExternal(url)
     }
     return { action: 'deny' }
   })
