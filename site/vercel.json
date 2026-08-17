@@ -26,6 +26,12 @@
       ]
     },
     {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, s-maxage=300, stale-while-revalidate=600" }
+      ]
+    },
+    {
       "source": "/robots.txt",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=86400" }

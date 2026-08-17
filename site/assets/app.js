@@ -347,6 +347,34 @@
     if (html) $('#platform-rows').innerHTML = html
   }
 
+  function fetchRealTimeDownloads(data) {
+    fetch('/api/downloads')
+      .then(function (res) { return res.json() })
+      .then(function (live) {
+        if (!live || !live.assets || !live.assets.length) return
+        var updated = false
+        live.assets.forEach(function (la) {
+          var found = data.release.assets.find(function (a) { return a.name === la.name })
+          if (found && found.downloads !== la.downloads) {
+            found.downloads = la.downloads
+            updated = true
+          }
+        })
+        if (updated) {
+          renderPlatforms(data)
+          bindCopy($('#platform-rows'))
+        }
+        // 更新同步时间文案为实时模式
+        var syncEl = $('#sync-time')
+        if (syncEl) {
+          syncEl.textContent = (lang === 'zh'
+            ? '下载数实时同步于 GitHub · ' + live.generated_at.slice(11, 16) + ' UTC'
+            : 'download count live-synced from GitHub · ' + live.generated_at.slice(11, 16) + ' UTC')
+        }
+      })
+      .catch(function () { /* silent fallback */ })
+  }
+
   function tunePrimaryCta(data) {
     var ua = navigator.userAgent
     var os = /Mac/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : null
@@ -447,6 +475,7 @@
       renderPlatforms(data)
       tunePrimaryCta(data)
       bindCopy($('#platform-rows'))
+      fetchRealTimeDownloads(data)
     })
     .catch(function () {
       $('#release-meta').textContent = 'OFFLINE → GITHUB'
