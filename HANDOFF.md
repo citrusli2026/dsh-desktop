@@ -87,6 +87,8 @@ GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名
 | 回补历史版本 | 同上（需维护者已登录 GitCode）；GitHub 侧 GitCode Mirror Backfill 仅小文件实际可用 |
 | 下次壳发版 | `node scripts/version.mjs bump shell` → CI 绿 → 推 tag |
 | 线上部署 | push `main`；Vercel 项目 root=`site/` 自动部署 |
+| **推送代码到两个远端** | `git push origin main && git push gitcode main`（保持 GitHub/GitCode 同步，避免分叉冲突） |
+| **推送 tag 到两个远端** | `git push origin v<tag> && git push gitcode v<tag>`（GitCode Release 需要 tag 存在） |
 
 ### 发布后 checklist（每次打 tag 后逐项确认）
 
