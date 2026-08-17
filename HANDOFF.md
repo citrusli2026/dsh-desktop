@@ -8,9 +8,9 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>(备用 <https://dsh-electron-shell.vercel.app>) |
-| 最新代码基线 / 已发布 | ✅ `0.1.0-rc.6.shell.14`（已发布 2026-08-17） |
-| 本地门禁 | ✅ 63 项单测、类型检查、覆盖率门槛、官网门禁、构建通过 |
-| 核心发布 | ✅ shell.14 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
+| 最新代码基线 | ✅ `0.1.0-rc.6.shell.15`（最新已发布 `0.1.0-rc.6.shell.14`） |
+| 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛（lines 84.61%）、官网门禁、构建通过；shell.15 待 CI/Release 验证 |
+| 核心发布 | ✅ shell.14 Release 严格 6 文件门禁与双平台 packaged smoke 通过；shell.15 未发版 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.14`（提交 `ea4ea05`） |
 | 国内镜像 | ℹ️ shell.14 的 GitCode 镜像尚未在 `release.json` 中标为可用；需按流程补齐后刷新 |
 
@@ -98,6 +98,20 @@ GitCode 自动推送已在 shell.8/9 连续失败(跨境 ~150 KB/s,预签名 URL
 | 回补历史版本 | 同上(需维护者已登录 GitCode);GitHub 侧 GitCode Mirror Backfill 仅小文件实际可用 |
 | 下次壳发版 | `node scripts/version.mjs bump shell` → CI 绿 → 推 tag |
 | 线上部署 | push `main`;Vercel 项目 root=`site/` 自动部署 |
+
+### 发布后 checklist（每次打 tag 后逐项确认）
+
+1. **GitHub Release**：`gh release view v<tag>` 确认严格 6 文件（DMG + DMG.sha256 +
+   EXE + EXE.sha256 + EXE.blockmap + latest.yml），`isDraft=false`。
+2. **Site Data Refresh**：Release 完成会自动触发；确认 run 成功且 `site/data/release.json`
+   指向新 tag。若未触发，Actions → Site Data Refresh → Run workflow 手动跑。
+3. **GitCode 镜像**（国内下载源）：用 `$gitcode-release-publisher` 上传 DMG、EXE
+   与两份 `.sha256`（不镜像 blockmap/latest.yml），再用 range GET 校验四个稳定 URL
+   返回 206，然后再次触发 Site Data Refresh 让官网把 `gitcode_ok` 标为 true。
+   **此项最易遗漏**：shell.13/14 均因未及时补齐导致国内镜像滞后。
+4. **官网验证**：访问 <https://dsh-desktop.com>，确认下载区显示新版本双源按钮。
+5. **HANDOFF 回填**：把 CI/Release/Refresh run id、tag peeled commit、镜像状态
+   写入 HANDOFF 对应小节，把"当前代码基线"改为"已发布"。
 
 ## 六、已知事项
 
@@ -222,3 +236,26 @@ functions 74.68%）、`site:check`、`build`。无新 ADR：本轮为既有决�
   已指向 shell.14 的两个安装包与哈希。
 - GitCode 国内镜像待维护者从国内网络手动上传 dmg/exe 与 `.sha256`，再触发一次
   Site Data Refresh 让官网识别镜像源。
+
+## 十二、shell.15 当前代码基线（待发布）
+
+近期迭代三项：
+
+1. **redactDiagnosticsLog 边界测试加固**（`test/diagnostics.test.ts`）：审查时
+   疑似 Bearer 正则不匹配 base64 padding `==`，实测字符类已含 `=`，原判断有误。
+   但仍补 2 项边界测试（base64 padding、JWT 形状、OpenAI key 尾部 `-`/`_`）锁定
+   行为，防止未来回归。
+2. **LAN 端到端测试**（`test/lan.test.ts`）：`LanService` 此前只有 4 项纯函数/单飞
+   测试，`start/restart/stop` 真实子进程路径无覆盖。新增 2 项 E2E：
+   - 起 stub mobile-shell proxy + 假 harness target，验证 start→pairing→restart→stop
+     全流程，pairing code 格式、运行状态、currentPairing 清理均断言。
+   - stub 返回外域 origin 的 pairing URL，验证 shell.14 加的 host 校验拒绝它。
+   为支持测试注入，`LanServiceOptions` 加 `lanAddress?: () => string`，注入地址
+   跳过 private-LAN 发现与校验；生产路径不变。
+3. **GitCode 镜像发布 checklist**（`HANDOFF.md`）：在"五、运维速查"后加显式
+   发布后 checklist（5 步），把 GitCode 上传作为第 3 步并标注"最易遗漏"，
+   引用 shell.13/14 的滞后教训。
+
+本地门禁全绿：typecheck、67 项单测、覆盖率（lines 84.61% / branches 79.45% /
+functions 78.74%）、`site:check`、`build`。无新 ADR：测试加固与可注入选项不改变
+生产边界。

@@ -1,6 +1,6 @@
 # Electron Shell 能力规划
 
-> 状态：shell.14 已发布（2026-08-17）；双端 packaged smoke、严格 Release 门与官网刷新沿用既有发布链路，签名/公证仍不在本轮范围。
+> 状态：shell.15 代码基线（最新已发布 shell.14）；双端 packaged smoke、严格 Release 门与官网刷新沿用既有发布链路，签名/公证仍不在本轮范围。
 > 原则：原生能力只解决桌面生命周期与可信交付，不复制 Harness 已有业务功能。
 
 ## 1. 产品约定
@@ -69,8 +69,10 @@
 5. shell.14：代码审查后的针对性加固——LAN Windows 进程树清理、pairing URL
    host 校验、spawn `windowsHide`、supervisor 显式 cwd、IPC 校验抽函数注释、
    macOS 更新检查可选 token、`before-quit` 绝对超时兜底。（已发布 2026-08-17）
-6. 后续：补平台级进程树退出断言、资产 provenance/SBOM 与更完整的 LAN
-   端到端测试；签名/公证另立阶段。
+6. shell.15：redactDiagnosticsLog 边界测试加固、LAN 端到端测试（stub proxy
+   覆盖 start/restart/stop + 外域 pairing URL 拒绝）、GitCode 发布 checklist。
+   `LanServiceOptions.lanAddress` 测试钩子。（当前代码基线，待发布）
+7. 后续：补平台级进程树退出断言、资产 provenance/SBOM；签名/公证另立阶段。
 
 不在近期范围：把 Harness 设置或业务页面重做成 Electron 原生 UI、自动上传日志、
 放宽渲染器权限，或从本仓库直接生成 iOS 包（当前没有 iOS/Xcode 工程）。

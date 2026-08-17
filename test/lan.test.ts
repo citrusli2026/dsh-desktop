@@ -1,5 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdtemp, writeFile, rm } from 'node:fs/promises'
+import { createServer, type Server } from 'node:http'
+import type { AddressInfo } from 'node:net'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { isPrivateLanIPv4, LanService, listPrivateLanIPv4, qrSvgFromCode } from '../src/main/lan.ts'
 
 test('private LAN address detection rejects loopback and public addresses', () => {
@@ -40,4 +45,141 @@ test('LAN start is single-flight and clears its busy state after failure', async
   assert.equal(service.isBusy, true)
   await assert.rejects(first, /Harness is not ready yet/)
   assert.equal(service.isBusy, false)
+})
+
+test('LAN service starts, pairs, restarts, and stops against a stub proxy', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dsh-lan-e2e-'))
+  // Minimal mobile-shell manifest pointing at a stub proxy script.
+  await writeFile(join(root, 'web-artifact.json'), JSON.stringify({
+    format: 'dsh-mobile-shell-web',
+    formatVersion: 1,
+    version: 'test-1.0.0',
+    entrypoints: { proxy: 'proxy.mjs', launcher: 'launcher.mjs', pairing: 'pairing.mjs' },
+  }))
+  await writeFile(join(root, 'launcher.mjs'), '')
+  await writeFile(join(root, 'pairing.mjs'), '')
+  await writeFile(join(root, 'proxy.mjs'), `
+import { createServer } from 'node:http'
+const token = process.env.DSH_REMOTE_TOKEN
+const host = process.env.DSH_LISTEN_HOST
+const port = Number(process.env.DSH_LISTEN_PORT)
+const server = createServer((req, res) => {
+  if (req.url === '/healthz') {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    res.end('{"ok":true}')
+    return
+  }
+  if (req.url === '/pair/new' && req.method === 'POST') {
+    if (req.headers.authorization !== 'Bearer ' + token) {
+      res.writeHead(401); res.end('{}'); return
+    }
+    res.writeHead(200, { 'content-type': 'application/json' })
+    res.end(JSON.stringify({
+      code: '123456',
+      expiresInSeconds: 600,
+      pairingUrls: ['http://' + host + ':' + port + '/pair?token=' + token],
+    }))
+    return
+  }
+  res.writeHead(404); res.end('{}')
+})
+server.listen(port, host)
+`)
+
+  // Fake harness target on loopback.
+  const target: Server = createServer((_req, res) => { res.writeHead(200); res.end('harness') })
+  await new Promise<void>(resolve => target.listen(0, '127.0.0.1', resolve))
+  const targetPort = (target.address() as AddressInfo).port
+
+  let stateChanges = 0
+  const service = new LanService({
+    mobileShellRoot: root,
+    nodeExecutable: () => process.execPath,
+    getTargetUrl: () => `http://127.0.0.1:${targetPort}`,
+    lanAddress: () => '127.0.0.1',
+    onStateChanged: () => { stateChanges += 1 },
+  })
+
+  try {
+    assert.equal(service.isRunning, false)
+    const pairing = await service.start()
+    assert.match(pairing.code, /^\d{6}$/)
+    assert.equal(pairing.lanAddress, '127.0.0.1')
+    assert.equal(pairing.listenPort > 0, true)
+    assert.equal(service.isRunning, true)
+    assert.equal(service.currentPairing?.code, pairing.code)
+    assert.ok(stateChanges > 0, 'start should have notified state changes')
+
+    // Restart: stop + start, yielding a fresh pairing.
+    const restarted = await service.restart()
+    assert.match(restarted.code, /^\d{6}$/)
+    assert.equal(service.isRunning, true)
+    assert.equal(service.currentPairing?.code, restarted.code)
+
+    // Stop clears runtime state.
+    await service.stop()
+    assert.equal(service.isRunning, false)
+    assert.equal(service.currentPairing, undefined)
+    assert.equal(service.currentTargetUrl, undefined)
+
+    // Second stop is a safe no-op.
+    await service.stop()
+  } finally {
+    await service.stop().catch(() => {})
+    await new Promise<void>(resolve => target.close(() => resolve()))
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('LAN service start rejects a pairing URL whose origin does not match the proxy', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dsh-lan-e2e-bad-'))
+  await writeFile(join(root, 'web-artifact.json'), JSON.stringify({
+    format: 'dsh-mobile-shell-web',
+    formatVersion: 1,
+    version: 'test-1.0.0',
+    entrypoints: { proxy: 'proxy.mjs', launcher: 'launcher.mjs', pairing: 'pairing.mjs' },
+  }))
+  await writeFile(join(root, 'launcher.mjs'), '')
+  await writeFile(join(root, 'pairing.mjs'), '')
+  // Stub that returns a pairing URL on a foreign origin — the service must
+  // reject it instead of handing the QR code to the user.
+  await writeFile(join(root, 'proxy.mjs'), `
+import { createServer } from 'node:http'
+const token = process.env.DSH_REMOTE_TOKEN
+const host = process.env.DSH_LISTEN_HOST
+const port = Number(process.env.DSH_LISTEN_PORT)
+const server = createServer((req, res) => {
+  if (req.url === '/healthz') {
+    res.writeHead(200); res.end('{"ok":true}'); return
+  }
+  if (req.url === '/pair/new' && req.method === 'POST') {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    res.end(JSON.stringify({ code: '654321', expiresInSeconds: 600,
+      pairingUrls: ['http://evil.example.com:9999/pair?token=' + token] }))
+    return
+  }
+  res.writeHead(404); res.end('{}')
+})
+server.listen(port, host)
+`)
+
+  const target: Server = createServer((_req, res) => { res.writeHead(200); res.end('harness') })
+  await new Promise<void>(resolve => target.listen(0, '127.0.0.1', resolve))
+  const targetPort = (target.address() as AddressInfo).port
+
+  const service = new LanService({
+    mobileShellRoot: root,
+    nodeExecutable: () => process.execPath,
+    getTargetUrl: () => `http://127.0.0.1:${targetPort}`,
+    lanAddress: () => '127.0.0.1',
+  })
+
+  try {
+    await assert.rejects(service.start(), /no LAN pairing URL on the expected origin/)
+    assert.equal(service.isRunning, false)
+  } finally {
+    await service.stop().catch(() => {})
+    await new Promise<void>(resolve => target.close(() => resolve()))
+    await rm(root, { recursive: true, force: true })
+  }
 })

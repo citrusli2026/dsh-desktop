@@ -5,7 +5,7 @@
 > contract, and next iteration boundary. Website and mirror operations live in
 > the root `HANDOFF.md`.
 
-最后更新:2026-08-17 · 当前代码基线 `0.1.0-rc.6.shell.14` · 最新已发布 `0.1.0-rc.6.shell.14`
+最后更新:2026-08-17 · 当前代码基线 `0.1.0-rc.6.shell.15` · 最新已发布 `0.1.0-rc.6.shell.14`
 
 ## 1. 当前结果
 
@@ -190,6 +190,23 @@ shell.11:CI run `31893979444`;Release run `31894394693`;发布提交
 发布元数据：CI run `31991608477`；Release run `31991741108`；
 tag `v0.1.0-rc.6.shell.14` 指向 `7e26d68`；Site Data Refresh run `31992088063`，
 官网数据提交 `ea4ea05`。GitCode 镜像待手动补齐。
+
+### shell.15 当前代码基线（待发布）
+
+近期迭代三项：
+
+1. `redactDiagnosticsLog` 边界测试加固：审查时疑似 Bearer 正则不匹配 base64
+   padding `==`，实测字符类已含 `=`，原判断有误。补 2 项边界测试（base64 padding、
+   JWT 形状、OpenAI key 尾部字符）锁定行为。
+2. LAN 端到端测试：`LanService` 此前只有 4 项纯函数/单飞测试，新增 2 项 E2E
+   （stub proxy + 假 target，覆盖 start/restart/stop 全流程 + 外域 pairing URL
+   拒绝）。`LanServiceOptions` 加 `lanAddress?: () => string` 测试钩子，注入地址
+   跳过 private-LAN 发现；生产路径不变。
+3. GitCode 镜像发布 checklist：HANDOFF 加显式发布后 5 步 checklist，把 GitCode
+   上传标为"最易遗漏"。
+
+本地门禁全绿：typecheck、67 项单测、覆盖率（lines 84.61% / branches 79.45% /
+functions 78.74%）、`site:check`、`build`。无新 ADR。
 
 ## 5. 已知限制
 

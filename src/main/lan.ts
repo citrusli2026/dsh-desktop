@@ -24,6 +24,8 @@ export interface LanServiceOptions {
   readonly getTargetUrl: () => string | undefined
   readonly onLog?: (line: string) => void
   readonly onStateChanged?: () => void
+  /** Test hook: inject a fixed LAN address to skip private-LAN discovery. */
+  readonly lanAddress?: () => string
 }
 
 const DEFAULT_LISTEN_PORT = 3081
@@ -262,12 +264,21 @@ export class LanService {
     try {
       const targetUrl = this.options.getTargetUrl()
       if (targetUrl === undefined) throw new Error('Harness is not ready yet')
-      const requestedAddress = process.env.DSH_LAN_IP
-      if (requestedAddress !== undefined && !isPrivateLanIPv4(requestedAddress)) {
-        throw new Error(`DSH_LAN_IP must be a private LAN IPv4 address, got ${requestedAddress}`)
+      // Injected address (tests) bypasses discovery and the private-LAN guard;
+      // production still walks DSH_LAN_IP and network interfaces.
+      const injectedAddress = this.options.lanAddress?.()
+      let lanAddress: string
+      if (injectedAddress !== undefined) {
+        lanAddress = injectedAddress
+      } else {
+        const requestedAddress = process.env.DSH_LAN_IP
+        if (requestedAddress !== undefined && !isPrivateLanIPv4(requestedAddress)) {
+          throw new Error(`DSH_LAN_IP must be a private LAN IPv4 address, got ${requestedAddress}`)
+        }
+        const discovered = requestedAddress ?? listPrivateLanIPv4()[0]
+        if (discovered === undefined) throw new Error('No private LAN IPv4 address found; connect to Wi-Fi or Ethernet first')
+        lanAddress = discovered
       }
-      const lanAddress = requestedAddress ?? listPrivateLanIPv4()[0]
-      if (lanAddress === undefined) throw new Error('No private LAN IPv4 address found; connect to Wi-Fi or Ethernet first')
       const target = parseTargetUrl(targetUrl)
       const listenPort = await chooseListenPort(lanAddress)
       if (controller.signal.aborted) throw new Error('LAN proxy start cancelled')

@@ -14,6 +14,30 @@ test('redactDiagnosticsLog masks credentials and the home path', () => {
   assert.match(structured, /apiKey.*\[REDACTED\]/)
 })
 
+test('redactDiagnosticsLog masks Bearer tokens with base64 padding and JWT shapes', () => {
+  // The Bearer character class must include '=' so base64-padded tokens
+  // (e.g. "abc==") and JWTs are fully redacted, not truncated at the padding.
+  const cases = [
+    'Authorization: Bearer abc==',
+    'Authorization: Bearer aaa.bbb.ccc==',
+    'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.SflKxw==',
+    'token=Bearer dQw4w9WgXcQ',
+  ]
+  for (const raw of cases) {
+    const redacted = redactDiagnosticsLog(raw, '/nonexistent')
+    assert.doesNotMatch(redacted, /abc==|aaa\.bbb\.ccc==|eyJhbGci|dQw4w9WgXcQ/, `leak in: ${raw}`)
+    assert.match(redacted, /\[REDACTED\]/, `no redaction marker in: ${raw}`)
+  }
+})
+
+test('redactDiagnosticsLog masks OpenAI-style keys spanning word boundaries', () => {
+  // sk- keys use [A-Za-z0-9_-]; ensure trailing dashes or underscores do not
+  // leave a fragment unmasked.
+  const redacted = redactDiagnosticsLog('sk-1234567890abcdef-ABCD', '/nonexistent')
+  assert.doesNotMatch(redacted, /1234567890abcdef-ABCD/)
+  assert.match(redacted, /\[REDACTED\]/)
+})
+
 test('readLogTail bounds the report to the newest complete lines', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'dsh-diagnostics-'))
   const path = join(dir, 'harness.log')
