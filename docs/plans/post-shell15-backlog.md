@@ -5,30 +5,14 @@
 
 ## 1. 遗留事项
 
-### 1.1 GitCode 国内镜像补齐（shell.14 + shell.15）
+### 1.1 GitCode 国内镜像补齐（shell.15）
 
 | 项 | 值 |
 |---|---|
 | 优先级 | 高（用户可见，影响国内下载体验） |
-| 预估 | 每个版本 ~15 分钟（维护者手动） |
+| 预估 | ~15 分钟（维护者手动） |
 | 前置 | 维护者需已登录 gitcode.com 的 Edge/Chromium 浏览器会话 |
-| 状态 | 未执行 |
-
-**执行步骤**（每个 tag 重复一次）：
-
-1. 用 `$gitcode-release-publisher` skill 上传 4 个文件：
-   - `dsh-desktop-<ver>-arm64-mac.dmg`
-   - `dsh-desktop-<ver>-arm64-mac.dmg.sha256`
-   - `dsh-desktop-setup-<ver>.exe`
-   - `dsh-desktop-setup-<ver>.exe.sha256`
-2. 不上传 `latest.yml` 和 `.exe.blockmap`（它们只服务 electron-updater，直连 GitHub）。
-3. 用 range GET 校验四个稳定 URL 返回 HTTP 206。
-4. 触发 `Site Data Refresh` workflow，等 `gitcode_ok` 标为 `true`。
-5. 访问 <https://dsh-desktop.com> 确认中文下载区展示双源按钮。
-
-**长期改进方向**（可选）：
-- 评估用 GitHub Actions 的 self-hosted runner（国内 IP）做自动镜像推送，绕开跨境速率问题。
-- 或用 GitCode 的 CI webhook 在 Release 创建后自动拉取，但当前 GitCode API 限制较多。
+| 状态 | ✅ 已补齐（2026-08-17） |
 
 ### 1.2 HANDOFF 文档结构整理
 
@@ -36,15 +20,9 @@
 |---|---|
 | 优先级 | 中 |
 | 预估 | 30 分钟 |
-| 状态 | 未执行 |
+| 状态 | ✅ 已完成（2026-08-17） |
 
-HANDOFF.md（root）当前从 shell.9 到 shell.15 追加小节，但顺序不严格（六点五
-插在十之前），新维护者容易困惑。建议：
-
-1. 把"六点五、shell.13 工程维护"的内容合并到"十、shell.13 工程维护基线"。
-2. 把"七、shell.10 发布内容与官网第二轮"移到"十"之前，使 shell 编号递增。
-3. 或把历史 shell 小节折叠到 `docs/HANDOFF-archive.md`，root HANDOFF 只保留
-   最近两个版本和运维速查。
+历史 shell 小节已折叠到 `docs/HANDOFF-archive.md`，根 HANDOFF 精简为最近两版 + 运维速查。同步清理了 `docs/HANDOFF.md` 中的重复内容。
 
 ---
 
@@ -62,7 +40,7 @@ HANDOFF.md（root）当前从 shell.9 到 shell.15 追加小节，但顺序不�
 
 | # | 项 | 优先级 | 预估 | 说明 |
 |---|---|---|---|---|
-| D | 发布资产校验器 CLI 独立化 | 中 | 1h | 把 `check-release-assets.mjs` 的 `validateReleaseAssets()` 拆成独立包/命令，方便用户下载后自行校验；官网加"如何校验下载完整性"小节 |
+| D | 发布资产校验器 CLI 独立化 | 中 | 1h | 把 `check-release-assets.mjs` 的 `validateReleaseAssets()` 拆成独立包/命令，方便用户下载后自行校验；官网加"如何校验下载完整性"小节。✅ 已完成（2026-08-17）：`bin/dsh-validate-release.mjs` + `package.json` bin 注册 + FAQ 新增校验说明 |
 | E | `fs.watch` 可靠性改进 | 中 | 30min | `locale.ts` 用 `fs.watch` 监听 settings.yaml，vim 等编辑器临时文件替换会丢事件；改用 chokidar 或加 1-2s stat 兜底轮询。需先完整读 locale.ts 确认是否已有兜底 |
 | F | 资产 provenance / SBOM | 中-高 | 2-4h | bundled Node 有 SHA-256 pin，harness closure 来自 pnpm lockfile；可生成 SLSA provenance 或 CycloneDX SBOM 随 Release 发布。需新 ADR |
 | G | GitHub API rate limit 持久化 token | 低 | 30min | `DSH_DESKTOP_GH_TOKEN` 已支持环境变量注入；可扩展为 settings.yaml 配置项，UI 提示未认证时的 rate limit 风险 |

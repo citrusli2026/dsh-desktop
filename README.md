@@ -55,14 +55,13 @@ This removes the app's download-quarantine marker and launches it again. It does
 
 ### Slow or blocked GitHub? Download acceleration
 
-If github.com is slow or unreachable from your network, try prefixing the release URL with a community proxy. For example, with the GitHub URL
-`https://github.com/citrusli2026/dsh-electron-shell/releases/download/vX.Y.Z/<file>`:
+If github.com is slow or unreachable from your network, a community proxy prefix may help. For example:
 
 ```
 https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/download/vX.Y.Z/<file>
 ```
 
-Other prefixes that come and go over time: `https://gh-proxy.com/`, `https://ghfast.top/`. These are community-run, free, and unaffiliated with this project: availability varies, so try the next one when one is down.
+Other community proxies (`https://gh-proxy.com/`, `https://ghfast.top/`) have been observed to come and go; **some are currently unreachable**. These are third-party, free, and unaffiliated with this project — availability is not guaranteed. If one fails, try another or use the GitCode mirror when available (Chinese interface shows it automatically when verified).
 
 Project owners can use two optional mirror channels:
 

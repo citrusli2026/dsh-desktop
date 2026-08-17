@@ -1,6 +1,6 @@
 # Electron Shell 能力规划
 
-> 状态：shell.15 已发布（2026-08-17）；双端 packaged smoke、严格 Release 门与官网刷新沿用既有发布链路，签名/公证仍不在本轮范围。
+> 状态：shell.15 已发布（2026-08-17）；签名/公证仍不在近期范围。
 > 原则：原生能力只解决桌面生命周期与可信交付，不复制 Harness 已有业务功能。
 
 ## 1. 产品约定
@@ -13,7 +13,7 @@
   同时提供不遮挡控件的透明拖拽区。
 - 所有原生界面必须同时具有完整中英文文案；若某项无法可靠同步，英文是唯一
   允许的回退，不能出现同一菜单中中英混杂。
-- 窗口标题与 About 持续明确“社区维护、非官方”；About 提供社区官网、项目源码、
+- 窗口标题与 About 持续明确"社区维护、非官方"；About 提供社区官网、项目源码、
   Harness 官方页和 DeepSeek 官网。帮助菜单只保留项目源码、问题反馈与 DeepSeek
   官网，避免重复。
 
@@ -22,7 +22,7 @@
 | 菜单 | macOS | Windows / Linux | 用户目的 |
 |---|---|---|---|
 | 应用 | About、检查更新、服务、隐藏、退出 | — | 确认版本与来源，控制应用生命周期 |
-| 文件 | 关闭窗口 | 关闭窗口、退出 | 区分“隐藏到托盘”和“完全退出” |
+| 文件 | 关闭窗口 | 关闭窗口、退出 | 区分"隐藏到托盘"和"完全退出" |
 | 编辑 | 撤销/重做、剪切/复制/粘贴、删除、全选 | 同左 | 保留系统熟悉的文本操作 |
 | 视图 | 缩放、全屏；开发包额外提供刷新/开发者工具 | 同左 | 阅读与排障；正式包不暴露开发入口 |
 | 窗口 | 最小化、缩放、全部置前 | 最小化、最大化/还原 | 使用平台原生窗口习惯 |
@@ -55,24 +55,24 @@
 - 发版顺序：人工审核本机候选 → bump shell 版本 → 完整门禁 → 提交/push →
   推 `v${package.version}` tag → Release 完成 → 官网 release 数据自动刷新。
 
-## 5. 后续小步迭代
+## 5. 迭代历史
 
-1. shell.10：交付双语菜单、系统首选语言、主题同步、About 可信链接、托盘与重启
-   生命周期、真实 Electron/打包产物测试。（已发布）
-2. shell.11：发布两个大体积安装包与 checksum，保留 Windows updater 所需小文件；
-   修正 macOS 交通灯安全间距并精简重复帮助项。（已发布）
-3. shell.12：新增 LAN 手机/平板连接、mobile-shell Web 代理、GitCode 发布技能与
-   官网下载/明暗主题收尾。（已发布）
-4. shell.13：完成发布可复现性收敛、LAN/监督器生命周期竞态保护、严格 updater
-   元数据校验、依赖与安装脚本加固；mobile-shell 固定为 `v1.0.0`，pnpm 11.8，
-   `verify` 统一门禁。（已发布 2026-08-16）
-5. shell.14：代码审查后的针对性加固——LAN Windows 进程树清理、pairing URL
-   host 校验、spawn `windowsHide`、supervisor 显式 cwd、IPC 校验抽函数注释、
-   macOS 更新检查可选 token、`before-quit` 绝对超时兜底。（已发布 2026-08-17）
-6. shell.15：redactDiagnosticsLog 边界测试加固、LAN 端到端测试（stub proxy
-   覆盖 start/restart/stop + 外域 pairing URL 拒绝）、GitCode 发布 checklist。
-   `LanServiceOptions.lanAddress` 测试钩子。（当前代码基线，待发布）
-7. 后续：补平台级进程树退出断言、资产 provenance/SBOM；签名/公证另立阶段。
+| Shell | 状态 | 关键交付 |
+|---|---|---|
+| 10 | 已发布 | 双语菜单、系统首选语言、主题同步、About 可信链接、托盘与重启生命周期、真实 E2E |
+| 11 | 已发布 | 发布面收敛为 DMG+EXE+双校验；macOS 交通灯安全间距；帮助菜单精简 |
+| 12 | 已发布 | LAN 手机/平板连接、mobile-shell Web 代理、GitCode 发布技能、官网浅色体系/明暗主题 |
+| 13 | 已发布 | 发布可复现性收敛、LAN/监督器竞态保护、updater 元数据校验、依赖加固；pnpm 11.8 |
+| 14 | 已发布 | 代码审查加固：LAN Windows 进程树清理、pairing URL host 校验、spawn `windowsHide`、supervisor cwd、IPC 校验函数化、macOS 可选 GH token、before-quit 超时兜底 |
+| 15 | 已发布 | redactDiagnosticsLog 边界测试、LAN E2E（stub proxy）、GitCode 发布 checklist |
+
+> 详细记录见 `docs/HANDOFF-archive.md`（shell.10–14）和 `HANDOFF.md`（shell.14–15）。
+
+### 后续方向（未排期）
+
+- 平台级进程树退出断言
+- 资产 provenance / SBOM
+- macOS 签名/公证（另立阶段，需 Apple Developer ID）
 
 不在近期范围：把 Harness 设置或业务页面重做成 Electron 原生 UI、自动上传日志、
 放宽渲染器权限，或从本仓库直接生成 iOS 包（当前没有 iOS/Xcode 工程）。

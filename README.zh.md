@@ -66,16 +66,13 @@ open "/Applications/dsh-desktop.app"
 
 ### GitHub 慢或打不开?下载加速
 
-如果 github.com 在你的网络下很慢或不可达,可以在下载地址前加社区加速前缀。
-例如原地址为
-`https://github.com/citrusli2026/dsh-electron-shell/releases/download/vX.Y.Z/<文件>`:
+如果 github.com 在你的网络下很慢或不可达，可以尝试在社区代理前缀后访问下载地址：
 
 ```
 https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/download/vX.Y.Z/<文件>
 ```
 
-其他可选前缀(随社区维护情况增减):`https://gh-proxy.com/`、`https://ghfast.top/`。
-这些镜像由社区免费运营、与本项目无关,可用性会波动——一个失效就换下一个。
+其他社区代理（`https://gh-proxy.com/`、`https://ghfast.top/`）历史上时有时无，**部分目前已失联**。这些服务由第三方免费运营、与本项目无关，可用性不保证。一个失效就换下一个，或优先使用 GitCode 国内镜像（中文界面在验证通过后会自动展示）。
 
 仓库维护者可使用两个可选镜像渠道:
 
