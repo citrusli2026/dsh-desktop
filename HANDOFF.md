@@ -1,8 +1,7 @@
-# HANDOFF — 官网与交付链路
+# HANDOFF — 运维核心
 
-> 更新于 2026-08-17。产品架构与后续迭代见 `docs/plans/`；
-> 历史版本记录见 `docs/HANDOFF-archive.md`。本文只记录最近两版、
-> 官网、发布、镜像和日常运维的当前事实。
+> 更新于 2026-08-17。产品架构见 `docs/ARCHITECTURE.md`；
+> 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
 
@@ -115,8 +114,6 @@ GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名
 - `*.vercel.app` 在国内可能受 DNS 影响；正式域名使用 `dsh-desktop.com`。
 
 ## 七、shell.14（已发布 2026-08-17）
-
-> 完整记录见 `docs/HANDOFF-archive.md`。此处保留摘要供速查。
 
 本轮为代码审查后的针对性加固，不引入新功能：
 LAN 代理 Windows 进程树清理、pairing URL host 校验、子进程输出 readline 化、
