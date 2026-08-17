@@ -1,6 +1,6 @@
 # Electron Shell 能力规划
 
-> 状态：shell.15 代码基线（最新已发布 shell.14）；双端 packaged smoke、严格 Release 门与官网刷新沿用既有发布链路，签名/公证仍不在本轮范围。
+> 状态：shell.15 已发布（2026-08-17）；双端 packaged smoke、严格 Release 门与官网刷新沿用既有发布链路，签名/公证仍不在本轮范围。
 > 原则：原生能力只解决桌面生命周期与可信交付，不复制 Harness 已有业务功能。
 
 ## 1. 产品约定

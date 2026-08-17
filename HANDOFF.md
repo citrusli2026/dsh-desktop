@@ -8,11 +8,11 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>(备用 <https://dsh-electron-shell.vercel.app>) |
-| 最新代码基线 | ✅ `0.1.0-rc.6.shell.15`（最新已发布 `0.1.0-rc.6.shell.14`） |
-| 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛（lines 84.61%）、官网门禁、构建通过；shell.15 待 CI/Release 验证 |
-| 核心发布 | ✅ shell.14 Release 严格 6 文件门禁与双平台 packaged smoke 通过；shell.15 未发版 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.14`（提交 `ea4ea05`） |
-| 国内镜像 | ℹ️ shell.14 的 GitCode 镜像尚未在 `release.json` 中标为可用；需按流程补齐后刷新 |
+| 最新代码基线 / 已发布 | ✅ `0.1.0-rc.6.shell.15`（已发布 2026-08-17） |
+| 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛（lines 84.61%）、官网门禁、构建通过 |
+| 核心发布 | ✅ shell.15 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.15`（提交 `1346abb`） |
+| 国内镜像 | ℹ️ shell.14/15 的 GitCode 镜像尚未在 `release.json` 中标为可用；需按流程补齐后刷新 |
 
 ## 二、官网浅色体系与声明精简(2026-08-15 已提交部署,无新 tag)
 
@@ -237,7 +237,7 @@ functions 74.68%）、`site:check`、`build`。无新 ADR：本轮为既有决�
 - GitCode 国内镜像待维护者从国内网络手动上传 dmg/exe 与 `.sha256`，再触发一次
   Site Data Refresh 让官网识别镜像源。
 
-## 十二、shell.15 当前代码基线（待发布）
+## 十二、shell.15 当前代码基线（已发布 2026-08-17）
 
 近期迭代三项：
 
@@ -259,3 +259,11 @@ functions 74.68%）、`site:check`、`build`。无新 ADR：本轮为既有决�
 本地门禁全绿：typecheck、67 项单测、覆盖率（lines 84.61% / branches 79.45% /
 functions 78.74%）、`site:check`、`build`。无新 ADR：测试加固与可注入选项不改变
 生产边界。
+
+发布元数据：
+- CI run `31992896301`（成功，1m28s）；Release run `31994766855`（成功，6m59s）；
+- tag `v0.1.0-rc.6.shell.15` 精确指向 `e7792dace377d57f8624e301b2fdcb9bde385d39`；
+- Site Data Refresh run `31995175898`（成功，16s），官网数据提交 `1346abb`，正式域名
+  已指向 shell.15 的两个安装包与哈希。
+- GitCode 国内镜像待维护者从国内网络手动上传 dmg/exe 与 `.sha256`，再触发一次
+  Site Data Refresh 让官网识别镜像源。

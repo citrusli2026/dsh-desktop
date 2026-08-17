@@ -5,7 +5,7 @@
 > contract, and next iteration boundary. Website and mirror operations live in
 > the root `HANDOFF.md`.
 
-最后更新:2026-08-17 · 当前代码基线 `0.1.0-rc.6.shell.15` · 最新已发布 `0.1.0-rc.6.shell.14`
+最后更新:2026-08-17 · 当前代码基线 `0.1.0-rc.6.shell.15` · 最新已发布 `0.1.0-rc.6.shell.15`
 
 ## 1. 当前结果
 
