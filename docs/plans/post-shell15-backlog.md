@@ -77,12 +77,12 @@
 
 ## 4. 下一步行动建议
 
-GitCode 同步完成后，立即执行剩余步骤：
-1. 创建 release 关联 4 个 attachment
-2. Range GET 验证 4 个稳定 URL（206）
-3. 触发 Site Data Refresh workflow
-4. 更新 HANDOFF 记录 GitCode 镜像状态
+遗留阻塞项已全部解决：
+- ✅ GitCode 镜像补齐（shell.15）
+- ✅ HANDOFF 文档结构整理
+- ✅ 实时下载统计（Vercel Serverless Function 部署成功，CommonJS 修复 + package.json 补充）
 
 如需继续其他迭代项，推荐：
 - **#E `fs.watch` 可靠性** — 30min 低投入，解决 vim 编辑器兼容问题
+- **#F SBOM / Provenance** — 中期工程价值，与 CLI 校验器方向一致
 - **#F SBOM / Provenance** — 中期工程价值，与 CLI 校验器方向一致

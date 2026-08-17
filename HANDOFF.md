@@ -14,7 +14,7 @@
 | 核心发布 | ✅ shell.15 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.15`（提交 `1346abb`） |
 | 国内镜像 | ✅ shell.15 GitCode 镜像已补齐（2026-08-17） |
-| 实时下载统计 | ⏳ 开发中 — `site/api/downloads.js` Vercel Function 已创建，CommonJS 修复待验证（推送冲突未解决） |
+| 实时下载统计 | ✅ 已完成 — `site/api/downloads.js` Vercel Serverless Function 部署成功，Edge 缓存 5min，前端异步刷新下载数 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -184,7 +184,7 @@ functions 78.74%）、`site:check`、`build`。无新 ADR：测试加固与可�
 - 结果：4 个文件上传 → release 创建 → Range GET 4×206 → Site Data Refresh
   run `32009084065` 成功 → 官网 `gitcode_ok` 全部 `true`。
 
-### 8.3 实时下载统计（方案 C，开发中）
+### 8.3 实时下载统计（方案 C，已完成）
 
 - 目标：让官网显示接近实时的 GitHub Release 下载数。
 - 实现：
@@ -193,10 +193,11 @@ functions 78.74%）、`site:check`、`build`。无新 ADR：测试加固与可�
   - `site/assets/app.js` — 页面加载后异步 fetch `/api/downloads`，
     成功后刷新下载数字和同步时间文案。
   - `site/vercel.json` — 添加 `/api/*` 路由缓存头。
-- 阻塞：首次部署使用 ES Module (`export default`) 导致 `FUNCTION_INVOCATION_FAILED`；
-  已改为 CommonJS (`module.exports`)，但推送时与 GitCode remote 冲突，
-  尚未验证修复是否生效。
-- 遗留：验证 Vercel Function 部署 → 确认下载数实时刷新 → 更新此 HANDOFF。
+- 修复：ES Module 导致 `FUNCTION_INVOCATION_FAILED`，改为 CommonJS
+  (`module.exports`)；GitCode remote 推送冲突通过 rebase 解决；补充
+  `site/package.json` 指定 Node.js 运行时。
+- 验证：`GET /api/downloads` 返回 shell.15 资产下载数（DMG: 4, EXE: 8），
+  前端异步刷新逻辑已就绪。
 
 ### 8.4 校验器 CLI 独立化（#D 已完成）
 
