@@ -13,7 +13,7 @@
 | 核心发布 | ✅ shell.15 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.15`（提交 `1346abb`） |
 | 国内镜像 | ✅ shell.15 GitCode 镜像已补齐（2026-08-17） |
-| 实时下载统计 | ✅ 已完成 — `site/api/downloads.js` Vercel Serverless Function 部署成功，Edge 缓存 5min，前端异步刷新下载数 |
+| 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
