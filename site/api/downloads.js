@@ -2,12 +2,14 @@
  * Vercel Serverless Function — proxy GitHub Release download counts.
  *
  * Route: GET /api/downloads
- * Query: ?repo=owner/name (default: citrusli2026/dsh-electron-shell)
- *
  * Caches at Vercel Edge for 5 minutes (s-maxage=300).
+ *
+ * Security: repo is hardcoded to prevent SSRF. Only the owning repository's
+ * public release metadata is ever proxied; no user-supplied repo parameter
+ * is accepted.
  */
 
-const DEFAULT_REPO = 'citrusli2026/dsh-electron-shell'
+const REPO = 'citrusli2026/dsh-electron-shell'
 const CACHE_MAX_AGE = 300
 
 function classifyAsset(name) {
@@ -30,11 +32,9 @@ module.exports = async function handler(req, res) {
     return
   }
 
-  const repo = req.query.repo || DEFAULT_REPO
-
   try {
     const ghRes = await fetch(
-      `https://api.github.com/repos/${repo}/releases?per_page=5`,
+      `https://api.github.com/repos/${REPO}/releases?per_page=5`,
       {
         headers: {
           Accept: 'application/vnd.github+json',
@@ -45,8 +45,7 @@ module.exports = async function handler(req, res) {
     )
 
     if (!ghRes.ok) {
-      const body = await ghRes.text()
-      res.status(502).json({ error: 'GitHub API error', status: ghRes.status, body: body.slice(0, 200) })
+      res.status(502).json({ error: 'GitHub API error', status: ghRes.status })
       return
     }
 
@@ -75,6 +74,6 @@ module.exports = async function handler(req, res) {
       assets: publicAssets,
     })
   } catch (err) {
-    res.status(500).json({ error: 'Internal error', message: err.message })
+    res.status(500).json({ error: 'Internal error' })
   }
 }
