@@ -14,6 +14,7 @@
 | 核心发布 | ✅ shell.15 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.15`（提交 `1346abb`） |
 | 国内镜像 | ✅ shell.15 GitCode 镜像已补齐（2026-08-17） |
+| 实时下载统计 | ⏳ 开发中 — `site/api/downloads.js` Vercel Function 已创建，CommonJS 修复待验证（推送冲突未解决） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -160,3 +161,47 @@ functions 78.74%）、`site:check`、`build`。无新 ADR：测试加固与可�
   已指向 shell.15 的两个安装包与哈希。
 - GitCode 国内镜像已补齐（维护者手动上传 dmg/exe 与 `.sha256`），Site Data Refresh
   已重新触发，`gitcode_ok` 已标为 `true`。
+
+## 八、2026-08-17 维护日汇总
+
+本日围绕"文档可维护性 + GitCode 镜像补齐 + 实时下载统计"三条线推进：
+
+### 8.1 文档可维护性提升
+
+- **HANDOFF 整理**：创建 `docs/HANDOFF-archive.md` 收纳 shell.10–14 完整记录；
+  根 `HANDOFF.md` 精简为最近两版 + 运维速查 + 发布后 checklist。
+- **过期文档清理**：删除 `.zcode/plans/*.md`（IDE 临时文件）、
+  `docs/plans/next-iteration-refactor-tests.md`（shell.9 已完成）。
+- **状态修正**：`docs/HANDOFF.md` 和 `electron-shell-capabilities.md` 中 shell.15
+  从"待发布"修正为"已发布"；`post-shell15-backlog.md` 标记 #1.1、#1.2、#D 已完成。
+- **README 风险提示**：社区代理（ghproxy.net 等）加"部分已失联"可用性警告。
+
+### 8.2 GitCode 镜像补齐（shell.15）
+
+- 问题：shell.15 发布后 GitCode 代码同步延迟（最新 commit 停留在 shell.13）。
+- 解决：手动 `git push gitcode main` + `git push gitcode v0.1.0-rc.6.shell.15`
+  绕过同步延迟，直接推送代码和 tag。
+- 结果：4 个文件上传 → release 创建 → Range GET 4×206 → Site Data Refresh
+  run `32009084065` 成功 → 官网 `gitcode_ok` 全部 `true`。
+
+### 8.3 实时下载统计（方案 C，开发中）
+
+- 目标：让官网显示接近实时的 GitHub Release 下载数。
+- 实现：
+  - `site/api/downloads.js` — Vercel Serverless Function，代理 GitHub API，
+    Edge 缓存 5min（`s-maxage=300`）。
+  - `site/assets/app.js` — 页面加载后异步 fetch `/api/downloads`，
+    成功后刷新下载数字和同步时间文案。
+  - `site/vercel.json` — 添加 `/api/*` 路由缓存头。
+- 阻塞：首次部署使用 ES Module (`export default`) 导致 `FUNCTION_INVOCATION_FAILED`；
+  已改为 CommonJS (`module.exports`)，但推送时与 GitCode remote 冲突，
+  尚未验证修复是否生效。
+- 遗留：验证 Vercel Function 部署 → 确认下载数实时刷新 → 更新此 HANDOFF。
+
+### 8.4 校验器 CLI 独立化（#D 已完成）
+
+- 新建 `bin/dsh-validate-release.mjs`，`package.json` 注册 `bin` 字段。
+- 官网 FAQ 新增"如何校验下载完整性"条目（中英双语），`site:check` 通过。
+
+---
+_更新于 2026-08-17_
