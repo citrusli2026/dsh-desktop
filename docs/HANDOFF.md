@@ -5,7 +5,7 @@
 > contract, and next iteration boundary. Website and mirror operations live in
 > the root `HANDOFF.md`.
 
-最后更新:2026-08-17 · 当前代码基线 `0.1.0-rc.6.shell.14` · 最新已发布 `0.1.0-rc.6.shell.13`
+最后更新:2026-08-17 · 当前代码基线 `0.1.0-rc.6.shell.14` · 最新已发布 `0.1.0-rc.6.shell.14`
 
 ## 1. 当前结果
 
@@ -167,7 +167,7 @@ shell.11:CI run `31893979444`;Release run `31894394693`;发布提交
 - 构建与运行时依赖加固：移除不再使用的 `extract-zip`，将 `yaml` 改为生产依赖，
   更新 Electron/Node 安装脚本。
 
-### shell.14 当前代码基线（待发布）
+### shell.14 当前代码基线（已发布 2026-08-17）
 
 代码审查后的针对性加固，不引入新功能，全部向后兼容：
 
@@ -187,9 +187,9 @@ shell.11:CI run `31893979444`;Release run `31894394693`;发布提交
    兜底，防止 promise 不 resolve 导致 app 卡死。
 9. `page-title-updated` 加注释说明屏蔽 harness 标题更新的意图。
 
-本地门禁全绿：typecheck、63 项单测、覆盖率（lines 80.17% / branches 78.77% /
-functions 74.68%）、`site:check`、`build`。无新 ADR：本轮为既有决策的工程加固，
-不改变任何边界。
+发布元数据：CI run `31991608477`；Release run `31991741108`；
+tag `v0.1.0-rc.6.shell.14` 指向 `7e26d68`；Site Data Refresh run `31992088063`，
+官网数据提交 `ea4ea05`。GitCode 镜像待手动补齐。
 
 ## 5. 已知限制
 

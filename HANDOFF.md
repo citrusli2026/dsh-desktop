@@ -8,11 +8,11 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>(备用 <https://dsh-electron-shell.vercel.app>) |
-| 最新代码基线 | ✅ `0.1.0-rc.6.shell.14`（最新已发布 `0.1.0-rc.6.shell.13`） |
-| 本地门禁 | ✅ 63 项单测、类型检查、覆盖率门槛、官网门禁、构建通过；shell.14 待 CI/Release 验证 |
-| 核心发布 | ✅ 既有 shell.13 Release 保持严格 6 文件门禁与双平台 packaged smoke；shell.14 未发版 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.13` |
-| 国内镜像 | ℹ️ shell.13 的 GitCode 镜像尚未在 `release.json` 中标为可用；需按流程补齐后刷新 |
+| 最新代码基线 / 已发布 | ✅ `0.1.0-rc.6.shell.14`（已发布 2026-08-17） |
+| 本地门禁 | ✅ 63 项单测、类型检查、覆盖率门槛、官网门禁、构建通过 |
+| 核心发布 | ✅ shell.14 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.14`（提交 `ea4ea05`） |
+| 国内镜像 | ℹ️ shell.14 的 GitCode 镜像尚未在 `release.json` 中标为可用；需按流程补齐后刷新 |
 
 ## 二、官网浅色体系与声明精简(2026-08-15 已提交部署,无新 tag)
 
@@ -182,7 +182,7 @@ GitCode 自动推送已在 shell.8/9 连续失败(跨境 ~150 KB/s,预签名 URL
 - 构建与运行时依赖加固：移除不再使用的 `extract-zip`，将 `yaml` 改为生产依赖，
   更新 Electron/Node 安装脚本。
 
-## 十一、shell.14 当前代码基线（待发布）
+## 十一、shell.14 当前代码基线（已发布 2026-08-17）
 
 本轮为代码审查后的针对性加固，不引入新功能，全部向后兼容：
 
@@ -211,6 +211,14 @@ GitCode 自动推送已在 shell.8/9 连续失败(跨境 ~150 KB/s,预签名 URL
 9. **`page-title-updated` 加注释**（`src/main/window.ts`）：说明为何屏蔽 harness 的
    标题更新（保留壳标题的 "Community" 后缀）。
 
-本地门禁全绿：typecheck、63 项单测、覆盖率（lines 80.17% / branches 78.77% /
+本地门禁全绿：typecheck、63 项单测、覆盖率（lines 80.17% / branches 79.00% /
 functions 74.68%）、`site:check`、`build`。无新 ADR：本轮为既有决策的工程加固，
 不改变任何边界。
+
+发布元数据：
+- CI run `31991608477`（成功）；Release run `31991741108`（成功）；
+- tag `v0.1.0-rc.6.shell.14` 精确指向 `7e26d6888bb8a214b5b2d0305145f8b38a1e37ed`；
+- Site Data Refresh run `31992088063`（成功），官网数据提交 `ea4ea05`，正式域名
+  已指向 shell.14 的两个安装包与哈希。
+- GitCode 国内镜像待维护者从国内网络手动上传 dmg/exe 与 `.sha256`，再触发一次
+  Site Data Refresh 让官网识别镜像源。
