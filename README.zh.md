@@ -152,6 +152,7 @@ docs/decisions/      决策记录:架构选择与实现过程
 
 ## 文档
 
+- [文档索引与治理](docs/README.md):文档组织方式与维护约定;
 - [决策记录](docs/decisions/README.md):为什么这么设计(内置 Node、独立
   ~/.dsh-desktop 数据目录、unsigned 先发、闭包部署、监督协议、CJS 主进程打包等);
 - 架构与实现细节见各决策记录中的背景与备选方案说明。

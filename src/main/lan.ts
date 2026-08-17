@@ -3,6 +3,7 @@ import { spawn, type ChildProcessByStdio } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { createServer } from 'node:net'
 import { networkInterfaces } from 'node:os'
+import { createInterface } from 'node:readline'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { Readable } from 'node:stream'
@@ -128,8 +129,18 @@ async function requestPairing(
   const pairingUrls = Array.isArray(body.pairingUrls)
     ? body.pairingUrls.filter((url): url is string => typeof url === 'string')
     : []
-  const pairingUrl = pairingUrls[0]
-  if (pairingUrl === undefined) throw new Error('proxy returned no LAN pairing URL')
+  // Pairing URLs are untrusted proxy output: keep only those whose origin
+  // matches the proxy we just spoke to. A compromised or buggy proxy must
+  // not redirect the QR code at an arbitrary host.
+  const expectedOrigin = new URL(baseUrl).origin
+  const pairingUrl = pairingUrls.find(url => {
+    try {
+      return new URL(url).origin === expectedOrigin
+    } catch {
+      return false
+    }
+  })
+  if (pairingUrl === undefined) throw new Error('proxy returned no LAN pairing URL on the expected origin')
   return {
     code: body.code,
     expiresInSeconds: typeof body.expiresInSeconds === 'number' ? body.expiresInSeconds : 600,
@@ -277,14 +288,16 @@ export class LanService {
           DSH_PAIR_QR: 'off',
         }),
         stdio: ['ignore', 'pipe', 'pipe'],
+        windowsHide: true,
       })
       this.child = child as ChildProcessByStdio<null, Readable, Readable>
       this.targetUrl = targetUrl
       const onLine = (line: string): void => this.options.onLog?.(`mobile-shell: ${line}`)
       child.stdout.setEncoding('utf8')
       child.stderr.setEncoding('utf8')
-      child.stdout.on('data', chunk => onLine(String(chunk).trim()))
-      child.stderr.on('data', chunk => onLine(String(chunk).trim()))
+      for (const stream of [child.stdout, child.stderr]) {
+        createInterface({ input: stream }).on('line', onLine)
+      }
       child.once('exit', () => {
         if (!this.stopping) this.options.onLog?.('mobile-shell: LAN proxy stopped unexpectedly')
         this.child = undefined
@@ -357,6 +370,12 @@ export class LanService {
         resolve()
       })
       child.kill('SIGTERM')
+      // The mobile-shell proxy may have spawned a launcher grandchild; on
+      // Windows SIGTERM/TerminateProcess only reaches the direct child, so
+      // sweep the whole tree the same way the harness supervisor does.
+      if (process.platform === 'win32' && child.pid !== undefined) {
+        spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true })
+      }
     })
   }
 }

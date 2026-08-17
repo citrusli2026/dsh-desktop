@@ -5,7 +5,7 @@
 > contract, and next iteration boundary. Website and mirror operations live in
 > the root `HANDOFF.md`.
 
-最后更新:2026-08-16 · 当前代码基线 `0.1.0-rc.6.shell.12`
+最后更新:2026-08-17 · 当前代码基线 `0.1.0-rc.6.shell.14` · 最新已发布 `0.1.0-rc.6.shell.13`
 
 ## 1. 当前结果
 
@@ -25,9 +25,7 @@ shell.9 以三轮迭代完成:
 3. **设计与持续交付**:加载/错误页与官网统一近黑 + 信号绿视觉;官网能力改为
    可扫读矩阵并补无障碍/窄屏;Release 增加版本与严格 6 文件/updater 元数据门禁。
 
-当前代码基线在 shell.12 之上继续完成三项维护：mobile-shell CI/Release 固定为
-`v1.0.0`，LAN 与 Harness 启停统一单飞并处理停止期间的排队启动，发布校验器解析
-`latest.yml` 的版本、路径、文件列表和 sha512。签名/公证仍明确不在本轮范围内。
+当前代码基线已升至 shell.14。与已发布的 shell.13 相比，shell.14 是代码审查后的针对性加固（LAN Windows 进程树清理、pairing URL host 校验、spawn 加 `windowsHide`、supervisor 显式 cwd、IPC 校验抽函数并注释、macOS 更新检查支持可选 token、`before-quit` 绝对超时兜底）。签名/公证仍明确不在本轮范围内。
 
 ### 官网浅色体系(2026-08-15 已提交部署,无新 tag)
 
@@ -63,6 +61,7 @@ src/preload/index.ts        仅暴露 retry 与诊断导出两项窄桥
 
 每次主分支 CI 执行:
 
+0. 依赖安全审计（官方 npm registry）;
 1. TypeScript typecheck;
 2. 63 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
 3. `site:check`(双端 release 数据、双语键与静态资源);
@@ -146,14 +145,51 @@ shell.11:CI run `31893979444`;Release run `31894394693`;发布提交
   GET 均返回 HTTP 206。官网数据提交 `74fc28e` 已把四项 `gitcode_ok` 更新为
   `true`,正式域名已展示双源下载与最终 SHA-256。
 
-### 当前代码基线 shell.12
+### shell.12 已发布内容
+
+- 新增“扩展 → 通过局域网连接手机 / 平板”：启动独立 mobile-shell Web 代理并显示
+  一次性配对二维码；代理只转发到 loopback，主令牌不写入桌面设置。
+- 构建与文档补齐 LAN Web 连接流程，固定消费 `dsh-mobile-shell/dist/web` 产物；
+  同时加入 GitCode 发布技能与人工镜像工作流。
+- macOS 增加 quarantine 解除说明、顶部拖拽区加高到 24px；官网完成浅色体系、
+  明暗主题、纯文案 hero 与双平台下载收敛。
+
+### shell.13 工程维护基线（已发布 2026-08-16）
 
 - mobile-shell Web 产物固定来自上游 `v1.0.0` tag；CI 与 Release 均使用 frozen lockfile，
   不再从 `main` 或维护者本机路径取依赖。
+- pnpm 固定为 `11.8.0`；`verify` 统一执行 typecheck、63 项测试、覆盖率门槛、
+  `site:check` 与构建；CI 增加官方 npm registry 的依赖安全审计。
 - LAN 代理和 Harness Supervisor 对重复启动、停止中启动、失败清理做单飞保护，菜单在
   操作进行中禁用重复入口；当前本地测试为 63 项。
 - 发布资产校验器除严格六文件、SHA-256 和 blockmap 外，还解析 `latest.yml` 的版本、
-  Windows 路径、hashed files entry 与顶层 sha512。
+  Windows 路径、hashed files entry 与顶层 sha512；并修复 Release 校验依赖安装。
+- 构建与运行时依赖加固：移除不再使用的 `extract-zip`，将 `yaml` 改为生产依赖，
+  更新 Electron/Node 安装脚本。
+
+### shell.14 当前代码基线（待发布）
+
+代码审查后的针对性加固，不引入新功能，全部向后兼容：
+
+1. LAN 代理 `stopInternal` 在 Windows 上加 `taskkill /T /F`，清理 mobile-shell
+   启动的 launcher 孙进程，避免退出后残留占端口。
+2. LAN `requestPairing` 只接受 origin 与代理监听地址一致的 pairing URL，
+   防止异常代理把 QR 码指向其他主机。
+3. LAN 子进程输出改用 `readline.createInterface` 按行拆分，保留日志结构。
+4. LAN/supervisor 的 `spawn` 加 `windowsHide: true`，避免 Windows 上控制台闪现。
+5. supervisor `spawnOnce` 显式 `cwd: harnessRoot()`（测试环境回退继承父进程），
+   让 dsh 的 cwd-relative 查找落在 bundled closure 内。
+6. IPC senderFrame 校验抽成 `isShellOwnedFrame` 并加注释，说明只允许壳自有
+   data: URL 页面调用 retry/diagnostics/close-lan-pairing。
+7. macOS 更新检查支持 `DSH_DESKTOP_GH_TOKEN` 环境变量注入可选 PAT，缓解共享
+   NAT 下 60/小时 rate limit；不写入设置，不外发。
+8. `before-quit` 在 `supervisor.stop()` / `lanService.stop()` 之外加 8s 绝对超时
+   兜底，防止 promise 不 resolve 导致 app 卡死。
+9. `page-title-updated` 加注释说明屏蔽 harness 标题更新的意图。
+
+本地门禁全绿：typecheck、63 项单测、覆盖率（lines 80.17% / branches 78.77% /
+functions 74.68%）、`site:check`、`build`。无新 ADR：本轮为既有决策的工程加固，
+不改变任何边界。
 
 ## 5. 已知限制
 

@@ -96,6 +96,10 @@ export function createMainWindow(context: WindowContext): BrowserWindow {
   window.on('closed', () => {
     if (context.mainWindow === window) context.mainWindow = undefined
   })
+  // The harness UI emits page-title-updated on every navigation, which would
+  // overwrite our shell-owned window title (including the "Community" suffix).
+  // Suppress those updates and keep the shell title authoritative; the
+  // harness workspace name is still visible inside its own UI.
   window.webContents.on('page-title-updated', (event) => {
     event.preventDefault()
     window.setTitle(shellText(context.getLocale(), 'window.title'))

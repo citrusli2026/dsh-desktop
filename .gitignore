@@ -10,6 +10,7 @@ resources/mobile-shell/
 .env
 .idea/
 .vscode/
+.zcode/
 
 # Local release verification downloads (packed apps, dmgs)
 release-check/

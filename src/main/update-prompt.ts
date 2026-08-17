@@ -7,11 +7,23 @@ import { shellText, type ShellLocale } from './locale.ts'
 const { autoUpdater } = electronUpdater
 const RELEASES_API_URL = 'https://api.github.com/repos/citrusli2026/dsh-electron-shell/releases?per_page=20'
 
+/**
+ * Optional GitHub token for the macOS update check. Unauthenticated requests
+ * are rate-limited to 60/hour/IP, which is tight on shared NATs. Set
+ * DSH_DESKTOP_GH_TOKEN in the environment (e.g. a fine-grained PAT with
+ * public-read on the repo) to lift it. The token never leaves the update
+ * check; it is not written to settings or sent anywhere else.
+ */
+function githubAuthHeaders(): Record<string, string> {
+  const token = process.env.DSH_DESKTOP_GH_TOKEN
+  const headers: Record<string, string> = { Accept: 'application/vnd.github+json', 'User-Agent': 'dsh-desktop' }
+  if (token !== undefined && token !== '') headers.Authorization = `Bearer ${token}`
+  return headers
+}
+
 export async function checkMacUpdate(manual: boolean, locale: ShellLocale): Promise<void> {
   try {
-    const response = await net.fetch(RELEASES_API_URL, {
-      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'dsh-desktop' },
-    })
+    const response = await net.fetch(RELEASES_API_URL, { headers: githubAuthHeaders() })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const payload: unknown = await response.json()
     const latest = latestPublishedRelease(payload)

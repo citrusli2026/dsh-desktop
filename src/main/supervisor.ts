@@ -11,7 +11,7 @@ import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import * as electron from 'electron'
 import { resolveDshHome } from './dsh-home.ts'
-import { dshBin, nodeBin } from './paths.ts'
+import { dshBin, harnessRoot, nodeBin } from './paths.ts'
 import { decideRestart, exitsInWindow, parseReadyUrl, RESTART_BASE_DELAY_MS } from './restart-policy.ts'
 import { RollingLogWriter } from './diagnostics.ts'
 
@@ -42,11 +42,19 @@ export interface SupervisorOptions {
   logDir?: string
   env?: NodeJS.ProcessEnv
   readyTimeoutMs?: number
+  cwd?: string
 }
 
 function defaultLogDir(): string {
   if (electron.app === undefined) throw new Error('Electron app is unavailable; provide logDir')
   return join(electron.app.getPath('userData'), 'logs')
+}
+
+function defaultCwd(): string | undefined {
+  // In tests (no Electron app) there is no packaged harness root; spawn then
+  // inherits the parent cwd, which is what the fixtures already expect.
+  if (electron.app === undefined) return undefined
+  return harnessRoot()
 }
 
 /**
@@ -72,6 +80,7 @@ export class HarnessSupervisor {
   private readonly args: readonly string[]
   private readonly env: NodeJS.ProcessEnv
   private readonly readyTimeoutMs: number
+  private readonly cwd: string | undefined
   private startInFlight: Promise<string> | undefined
   private stopInFlight: Promise<void> | undefined
 
@@ -86,6 +95,7 @@ export class HarnessSupervisor {
     const baseEnv = options.env ?? process.env
     this.env = { ...baseEnv, DSH_HOME: resolveDshHome(baseEnv, homedir()) }
     this.readyTimeoutMs = options.readyTimeoutMs ?? READY_TIMEOUT_MS
+    this.cwd = options.cwd ?? defaultCwd()
     mkdirSync(logDir, { recursive: true })
     const logPath = join(logDir, 'harness.log')
     this.logWriter = new RollingLogWriter(logPath)
@@ -106,11 +116,16 @@ export class HarnessSupervisor {
 
   private spawnOnce(): ChildProcess {
     const child = spawn(this.command, [...this.args], {
+      // Run from the harness root so dsh's own cwd-relative lookups (if any)
+      // resolve against its bundled closure, not the Electron app directory.
+      // In tests this is undefined and spawn inherits the parent cwd.
+      ...(this.cwd !== undefined ? { cwd: this.cwd } : {}),
       // Isolate the desktop data home by default (decision 0012): the harness
       // uses ~/.dsh-desktop unless the user sets DSH_HOME explicitly (e.g.
       // DSH_HOME=~/.dsh to share with the CLI again).
       env: this.env,
       stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
     })
     this.child = child
     for (const stream of [child.stdout, child.stderr]) {

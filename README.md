@@ -130,6 +130,7 @@ docs/decisions/      decision records (ADR-style)
 
 ## Documentation
 
+- [Documentation index & governance](docs/README.md): how the docs are organized and kept current.
 - [Decision records](docs/decisions/README.md): why it is built this way (bundled Node, isolated `~/.dsh-desktop` home, unsigned-first, closure deployment, supervision protocol, CJS main bundle, …).
 
 ## License

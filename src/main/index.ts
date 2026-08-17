@@ -216,10 +216,21 @@ const trayActions = {
   quit: (): void => app.quit(),
 }
 
+// Shell-owned IPC handlers (retry, diagnostics, LAN pairing close) are exposed
+// to the renderer only through the sandboxed preload. They must accept calls
+// only from shell-owned pages, which we render as data: URLs (loading/error/
+// LAN QR). The harness UI itself (served from http://127.0.0.1) never needs
+// these channels, so we reject any frame whose URL is not a data: URL — this
+// keeps a compromised or curious harness page from invoking shell restarts or
+// opening the diagnostic dialog. See src/preload/index.ts for the bridge.
+function isShellOwnedFrame(url: string | undefined): boolean {
+  return typeof url === 'string' && url.startsWith('data:')
+}
+
 ipcMain.handle('harness:retry', async (event) => {
   const window = windowContext.mainWindow
   if (window === undefined || window.isDestroyed()) return false
-  if (event.sender !== window.webContents || event.senderFrame?.url.startsWith('data:') !== true) return false
+  if (event.sender !== window.webContents || !isShellOwnedFrame(event.senderFrame?.url)) return false
   if (SMOKE_TEST && process.env.DSH_DESKTOP_TEST_RETRY_FAIL === '1') return false
   return runHarnessRestart()
 })
@@ -227,14 +238,14 @@ ipcMain.handle('harness:retry', async (event) => {
 ipcMain.handle('shell:export-diagnostics', async (event) => {
   const window = windowContext.mainWindow
   if (window === undefined || window.isDestroyed()) return false
-  if (event.sender !== window.webContents || event.senderFrame?.url.startsWith('data:') !== true) return false
+  if (event.sender !== window.webContents || !isShellOwnedFrame(event.senderFrame?.url)) return false
   return exportDiagnosticReport(lastState, currentLocale)
 })
 
 ipcMain.handle('shell:close-lan-pairing', (event) => {
   const window = BrowserWindow.fromWebContents(event.sender)
   if (window === null || window.isDestroyed() || window === windowContext.mainWindow) return false
-  if (event.senderFrame?.url.startsWith('data:') !== true) return false
+  if (!isShellOwnedFrame(event.senderFrame?.url)) return false
   window.close()
   return true
 })
@@ -278,7 +289,15 @@ app.on('before-quit', (event) => {
   destroyTray()
   if (supervisor !== undefined || lanService.isRunning) {
     event.preventDefault()
-    void Promise.all([supervisor?.stop(), lanService.stop()]).finally(() => app.quit())
+    // Absolute quit guard: each stop() already has a SIGKILL fallback, but if
+    // something unexpected leaves a promise pending we still force-quit
+    // within 8s instead of hanging the app on exit.
+    const forceQuitTimer = setTimeout(() => app.quit(), 8_000)
+    forceQuitTimer.unref()
+    void Promise.all([supervisor?.stop(), lanService.stop()]).finally(() => {
+      clearTimeout(forceQuitTimer)
+      app.quit()
+    })
   }
 })
 
