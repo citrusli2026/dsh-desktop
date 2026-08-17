@@ -13,7 +13,7 @@
 | 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛（lines 84.61%）、官网门禁、构建通过 |
 | 核心发布 | ✅ shell.15 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.15`（提交 `1346abb`） |
-| 国内镜像 | ℹ️ shell.15 的 GitCode 镜像已补齐（见十二节）；历史版本见 archive |
+| 国内镜像 | ✅ shell.15 GitCode 镜像已补齐（2026-08-17） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 

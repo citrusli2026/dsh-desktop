@@ -12,7 +12,17 @@
 | 优先级 | 高（用户可见，影响国内下载体验） |
 | 预估 | ~15 分钟（维护者手动） |
 | 前置 | 维护者需已登录 gitcode.com 的 Edge/Chromium 浏览器会话 |
-| 状态 | ✅ 已补齐（2026-08-17） |
+| 状态 | ✅ **已完成**（2026-08-17） |
+
+**执行步骤**：
+1. ✅ VPN 启动，GitHub 资产下载完成（DMG 177MB + EXE 158MB）
+2. ✅ SHA-256 校验通过
+3. ✅ 4 个文件上传至 GitCode（attachment_id 已获取）
+4. ✅ 代码和 tag 手动 push 到 GitCode（绕过定时同步延迟）
+5. ✅ Release 创建成功，4 个 attachment 关联
+6. ✅ Range GET 验证 4 个稳定 URL 返回 206
+7. ✅ Site Data Refresh run `32009084065` 成功
+8. ✅ 官网 `gitcode_ok` 已全部标为 `true`
 
 ### 1.2 HANDOFF 文档结构整理
 
@@ -40,7 +50,7 @@
 
 | # | 项 | 优先级 | 预估 | 说明 |
 |---|---|---|---|---|
-| D | 发布资产校验器 CLI 独立化 | 中 | 1h | 把 `check-release-assets.mjs` 的 `validateReleaseAssets()` 拆成独立包/命令，方便用户下载后自行校验；官网加"如何校验下载完整性"小节。✅ 已完成（2026-08-17）：`bin/dsh-validate-release.mjs` + `package.json` bin 注册 + FAQ 新增校验说明 |
+| D | 发布资产校验器 CLI 独立化 | 中 | 1h | ✅ 已完成（2026-08-17）：`bin/dsh-validate-release.mjs` + `package.json` bin 注册 + FAQ 新增校验说明 |
 | E | `fs.watch` 可靠性改进 | 中 | 30min | `locale.ts` 用 `fs.watch` 监听 settings.yaml，vim 等编辑器临时文件替换会丢事件；改用 chokidar 或加 1-2s stat 兜底轮询。需先完整读 locale.ts 确认是否已有兜底 |
 | F | 资产 provenance / SBOM | 中-高 | 2-4h | bundled Node 有 SHA-256 pin，harness closure 来自 pnpm lockfile；可生成 SLSA provenance 或 CycloneDX SBOM 随 Release 发布。需新 ADR |
 | G | GitHub API rate limit 持久化 token | 低 | 30min | `DSH_DESKTOP_GH_TOKEN` 已支持环境变量注入；可扩展为 settings.yaml 配置项，UI 提示未认证时的 rate limit 风险 |
@@ -60,7 +70,6 @@
 | 决策 | 选项 | 影响 |
 |---|---|---|
 | GitCode 镜像自动化 | A) 维持手动 B) 国内 self-hosted runner C) GitCode webhook 拉取 | 手动最简单但易遗漏；runner 有成本；webhook 受限于 GitCode API |
-| HANDOFF 结构 | A) 维持追加式 B) 折叠历史 C) 只保留最近两版 | A 最省力但越来越乱；B/C 需一次性整理 |
 | macOS 签名时机 | A) 现在 B) 累计 100+ 用户后 C) 社区赞助后 | $99/年成本；A 最快解锁原地更新；B/C 等需求确认 |
 | SBOM 格式 | A) CycloneDX B) SPDX C) SLSA provenance only | C 最轻量；A/B 更完整但维护成本高 |
 
@@ -68,12 +77,12 @@
 
 ## 4. 下一步行动建议
 
-如果继续迭代，推荐按以下顺序：
+GitCode 同步完成后，立即执行剩余步骤：
+1. 创建 release 关联 4 个 attachment
+2. Range GET 验证 4 个稳定 URL（206）
+3. 触发 Site Data Refresh workflow
+4. 更新 HANDOFF 记录 GitCode 镜像状态
 
-1. **GitCode 镜像补齐**（#1.1）— 这是用户可见的交付缺口，shell.13/14/15 三个版本
-   都没镜像。越早补越好。
-2. **HANDOFF 整理**（#1.2）— 30 分钟内可完成，降低新维护者上手成本。
-3. **#D 发布资产校验器 CLI 独立化** — 中等工作量，提升供应链透明度，和 SBOM 方向一致。
-4. **#H macOS 签名** — 如果社区有明确需求量，这是最有产品价值的单一改进。
-
-要执行哪一项告诉我。
+如需继续其他迭代项，推荐：
+- **#E `fs.watch` 可靠性** — 30min 低投入，解决 vim 编辑器兼容问题
+- **#F SBOM / Provenance** — 中期工程价值，与 CLI 校验器方向一致
