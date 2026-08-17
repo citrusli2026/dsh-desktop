@@ -18,6 +18,9 @@
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
   },
+  "bin": {
+    "dsh-validate-release": "./bin/dsh-validate-release.mjs"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc -p tsconfig.json",
