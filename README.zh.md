@@ -25,8 +25,8 @@
 - **渲染层收敛**:保持上下文隔离与沙箱、关闭 Node 集成、限制页面导航,并
   默认拒绝设备、采集、通知和文件系统等额外权限(决策记录 0014);
 - **预装视觉识别**：内置 [ModLens](https://github.com/liustack/modlens) 视觉插件,
-  在对话中粘贴图片即可让 AI 识别内容（OCR、布局分析、语义结构化）;
-  首次使用需配置视觉引擎 API Key;
+  在对话中粘贴图片即可让 AI 识别内容（OCR、布局分析、语义结构化）,
+  详见 [视觉识别(ModLens)](#视觉识别modlens);
 - **Web 移动连接**:通过"扩展 → 通过局域网连接手机 / 平板"启动独立的
   mobile-shell Web 代理,显示一次性二维码;只集成另一个仓库的 Web 启动页和
   代理,不把 Android/iOS 工程打进 Electron 安装包;
@@ -92,6 +92,15 @@ https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/
   稳定附件链接形如
   `https://gitcode.com/<owner>/<repo>/releases/download/<tag>/<文件>`;
   其背后的 `file-cdn.gitcode.com` 直链是签名时效 URL,不要直接对外引用。
+
+## 视觉识别(ModLens)
+
+每个安装包都内置 [ModLens](https://github.com/liustack/modlens) 视觉插件,让纯文本模型也能读图:在对话中粘贴截图或照片,agent 就会通过 `modlens_read_image` 工具自动识别(OCR、布局分析、语义结构化)。
+
+- **无需安装**:插件每次启动自动挂载进 harness;万一挂载失败,harness 照常启动,只是暂时没有视觉能力;
+- **首次使用**:粘贴图片时会弹出三步向导——复用本机已有引擎登录 → 添加免费 Gemini API Key → 用内置示例图做一次真实识别测试;
+- **引擎**:Gemini API、任意 OpenAI 兼容端点(自定义接口地址)、Anthropic、Antigravity CLI、Claude Code CLI、Kimi Code CLI;也可以复用你在 Claude Code、Codex、OpenCode、Pi、Grok 里已有的登录。凭据只存 `~/.modlens/config.json`(mode 600),不进桌面设置;
+- **管理入口**:「扩展 → Vision (ModLens) → Settings…」打开引擎表单,可随时用示例图做识别测试,并有一键本地诊断(`modlens doctor`,不联网、不耗配额)。
 
 ## 开发
 

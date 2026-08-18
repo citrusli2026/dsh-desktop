@@ -8,11 +8,12 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 / 已发布 | ✅ `0.1.0-rc.6.shell.16`（已发布 2026-08-18） |
+| 最新代码基线 | 🚧 `0.1.0-rc.6.shell.17`（vision 官网/README 介绍，待发布） |
+| 已发布 | ✅ `0.1.0-rc.6.shell.16`（已发布 2026-08-18） |
 | 本地门禁 | ✅ 78 项单测、类型检查、覆盖率门槛（lines 89.58%）、官网门禁、构建通过 |
 | 核心发布 | ✅ shell.16 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.15`（提交 `1346abb`） |
-| 国内镜像 | ✅ shell.15 GitCode 镜像已补齐（2026-08-17） |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.16`（四个资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ shell.16 GitCode 镜像已补齐（2026-08-18，Release id `41723`，匿名 Range GET 4×206） |
 | 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）

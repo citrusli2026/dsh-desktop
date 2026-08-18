@@ -17,7 +17,7 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 - **Isolated by default**: the desktop app keeps its own data home (`~/.dsh-desktop`) — settings, sessions, API keys, and plugins stay separate from the CLI; set `DSH_HOME=~/.dsh` to share with the CLI again (decision 0012);
 - **Robust**: crash auto-restart with exponential backoff, manual retry on the error page, single-instance lock, system tray with live harness status (restart / logs / update check), persisted window geometry, logs on disk;
 - **Restrained renderer**: context isolation and sandboxing stay enabled, Node integration stays off, navigation is guarded, and unexpected device, capture, notification, or filesystem permissions are denied by default (decision 0014);
-- **Pre-installed vision**: [ModLens](https://github.com/liustack/modlens) visual recognition plugin is bundled — paste an image in chat and the AI can understand it (OCR, layout analysis, semantic structuring). Requires a vision engine API key on first use;
+- **Pre-installed vision**: [ModLens](https://github.com/liustack/modlens) visual recognition plugin is bundled — paste an image in chat and the AI can understand it (OCR, layout analysis, semantic structuring); see [Vision (ModLens)](#vision-modlens);
 - **Web mobile connection**: "Extensions → Connect phone / tablet over LAN" starts an isolated mobile-shell Web proxy and shows a one-time pairing QR code. Only the other repository's Web launcher and proxy are staged; Android/iOS projects are not included in the Electron installer;
 - **Updates**: Windows updates in place; unsigned macOS checks for new releases and opens the exact release page for a deliberate manual install (decisions 0010, 0016).
 
@@ -68,6 +68,15 @@ Project owners can use two optional mirror channels:
 
 - **Cloudflare R2** (job `mirror-r2`): S3-compatible object storage with zero egress fees (10 GB free). Create a bucket named `dsh-electron-shell`, create an R2 API token with object read/write on it, then set repository variable `R2_ACCOUNT_ID` and secret `R2_API_TOKEN`. Every release afterwards mirrors automatically under `dsh-electron-shell/<tag>/`; bind a custom domain (or the r2.dev dev URL) on the bucket for stable public links. To backfill an already-published release: download its assets with `gh release download <tag>`, then `wrangler r2 object put "dsh-electron-shell/<tag>/<file>" --file <file>` per asset.
 - **GitCode** (manual, verified 2026-08-15): attachments are served from Huawei Cloud CDN nodes inside China. Upload the two installers (and optionally their two tiny checksum files) from a domestic connection, then rerun `Site Data Refresh`. Stable per-asset links exist at `https://gitcode.com/<owner>/<repo>/releases/download/<tag>/<file>`; only the `file-cdn.gitcode.com` host behind them serves time-limited signed URLs, so never paste those.
+
+## Vision (ModLens)
+
+Every build bundles the [ModLens](https://github.com/liustack/modlens) vision plugin so text-only models can read images: paste a screenshot or photo into the chat and the agent analyzes it through `modlens_read_image` (OCR, layout analysis, semantic structuring).
+
+- **No install step**: the plugin is mounted into the harness on every boot; if it can't be mounted, the harness still starts — just without vision.
+- **First run**: pasting an image offers a three-step wizard — reuse a local engine login → add a free Gemini API key → run a real recognition test against a bundled sample image.
+- **Engines**: Gemini API, any OpenAI-compatible endpoint (custom base URL), Anthropic, Antigravity CLI, Claude Code CLI, Kimi Code CLI — or reuse the logins you already have in Claude Code, Codex, OpenCode, Pi, or Grok. Credentials stay in `~/.modlens/config.json` (mode 600), never in shell settings.
+- **Manage it**: "Extensions → Vision (ModLens) → Settings…" opens the engine form, with an on-demand recognition test and a local-only `modlens doctor` diagnosis (no network, no quota).
 
 ## Development
 
