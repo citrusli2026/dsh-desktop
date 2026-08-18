@@ -27,7 +27,7 @@
     "test": "node --test \"test/**/*.test.ts\"",
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=75 --test-coverage-functions=70 \"test/**/*.test.ts\"",
     "test:e2e": "pnpm run build && playwright test",
-    "site:check": "node --check site/assets/app.js && node scripts/check-site.mjs",
+    "site:check": "node --check site/assets/app.js && node scripts/check-site.mjs && node scripts/check-api-downloads.mjs",
     "verify": "pnpm run typecheck && pnpm run test:coverage && pnpm run site:check && pnpm run build",
     "security:audit": "pnpm --registry=https://registry.npmjs.org audit && pnpm --dir manifest/harness --registry=https://registry.npmjs.org audit --prod",
     "release:check-assets": "node scripts/check-release-assets.mjs",

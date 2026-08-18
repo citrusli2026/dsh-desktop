@@ -34,7 +34,7 @@ function makeReq(method = 'GET', host = 'dsh-desktop.com') {
   return { method, headers: { host, 'x-forwarded-proto': 'https' } }
 }
 
-function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts }) {
+function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, req }) {
   const originalFetch = globalThis.fetch
   globalThis.fetch = async (url, opts) => {
     const result = fetchImpl(String(url), opts)
@@ -48,7 +48,7 @@ function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts }) 
   }
 
   const res = makeRes()
-  return handler(makeReq(), res).then(() => {
+  return handler(req || makeReq(), res).then(() => {
     globalThis.fetch = originalFetch
     const ok = res.statusCode === expectStatus
     let detail = `status=${res.statusCode} (expect ${expectStatus})`
@@ -100,6 +100,18 @@ await runCase('static fallback when GitHub tag endpoint fails', {
     if (dataUrl.test(url)) return { status: 200, body: releaseJson }
     return { status: 500, body: { message: 'boom' } }
   },
+  expectStatus: 200,
+  expectSource: 'release-data',
+  expectCounts: releaseJson.release.assets.map(a => a.downloads || 0),
+})
+
+await runCase('malicious Host header cannot redirect same-site fetch', {
+  fetchImpl(url) {
+    if (url.includes('evil.example')) throw new Error('SSRF: fetched attacker-controlled host')
+    if (dataUrl.test(url)) return { status: 200, body: releaseJson }
+    return { status: 500, body: { message: 'boom' } }
+  },
+  req: makeReq('GET', 'evil.example'),
   expectStatus: 200,
   expectSource: 'release-data',
   expectCounts: releaseJson.release.assets.map(a => a.downloads || 0),

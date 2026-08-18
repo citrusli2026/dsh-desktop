@@ -17,6 +17,7 @@
  */
 
 const REPO = 'citrusli2026/dsh-electron-shell'
+const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://dsh-desktop.com'
 const CACHE_MAX_AGE = 300
 const GH_HEADERS = {
   Accept: 'application/vnd.github+json',
@@ -30,10 +31,11 @@ function classifyAsset(name) {
   return null
 }
 
-async function fetchLocalReleaseData(req) {
-  const base = req.headers['x-forwarded-proto'] === 'http' ? 'http' : 'https'
-  const host = req.headers.host || req.headers['x-forwarded-host'] || REPO.replace('/', '-')
-  const res = await fetch(`${base}://${host}/data/release.json`, {
+async function fetchLocalReleaseData() {
+  // Always read the same-site manifest from a fixed origin. Never trust the
+  // incoming Host / X-Forwarded-Host header: that would let a caller point the
+  // function at an arbitrary URL and turn this into an SSRF vector.
+  const res = await fetch(`${SITE_ORIGIN}/data/release.json`, {
     headers: { Accept: 'application/json' },
   })
   if (!res.ok) return null
@@ -94,7 +96,7 @@ module.exports = async function handler(req, res) {
 
   try {
     // 1) Same-site release manifest — authoritative for "a release exists".
-    const local = await fetchLocalReleaseData(req)
+    const local = await fetchLocalReleaseData()
     if (!local) {
       // 2) Legacy path — anonymous list endpoint (stable releases only).
       const legacy = await fetchLegacyGitHubList()
