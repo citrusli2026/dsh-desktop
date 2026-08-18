@@ -32,7 +32,7 @@ function aboutDetail(locale: ShellLocale): string {
       shellText(locale, 'about.visionInstalled', {
         name: vision.name,
         version: vision.version,
-        description: vision.description,
+        description: shellText(locale, 'vision.description'),
       }),
       '',
     )

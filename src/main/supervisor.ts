@@ -14,6 +14,7 @@ import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, nodeBin } from './paths.ts'
 import { decideRestart, exitsInWindow, parseReadyUrl, RESTART_BASE_DELAY_MS } from './restart-policy.ts'
 import { RollingLogWriter } from './diagnostics.ts'
+import { prepareModlensMount } from './vision.ts'
 
 /** Give a broken first boot room before declaring failure. */
 const READY_TIMEOUT_MS = 90_000
@@ -78,6 +79,8 @@ export class HarnessSupervisor {
   private readonly logWriter: RollingLogWriter
   private readonly command: string
   private readonly args: readonly string[]
+  private readonly defaultArgs: boolean
+  private readonly dshHome: string
   private readonly env: NodeJS.ProcessEnv
   private readonly readyTimeoutMs: number
   private readonly cwd: string | undefined
@@ -91,9 +94,11 @@ export class HarnessSupervisor {
     this.events = events
     const logDir = options.logDir ?? defaultLogDir()
     this.command = options.command ?? nodeBin()
+    this.defaultArgs = options.args === undefined
     this.args = options.args ?? [dshBin(), '--profile', 'web', '--port', '0']
     const baseEnv = options.env ?? process.env
-    this.env = { ...baseEnv, DSH_HOME: resolveDshHome(baseEnv, homedir()) }
+    this.dshHome = resolveDshHome(baseEnv, homedir())
+    this.env = { ...baseEnv, DSH_HOME: this.dshHome }
     this.readyTimeoutMs = options.readyTimeoutMs ?? READY_TIMEOUT_MS
     this.cwd = options.cwd ?? defaultCwd()
     mkdirSync(logDir, { recursive: true })
@@ -114,8 +119,33 @@ export class HarnessSupervisor {
     this.logWriter.write(line)
   }
 
+  /**
+   * Final spawn arguments: with the default harness invocation, mount the
+   * pre-installed modlens vision plugin through a `--patch` overlay when the
+   * bundle can be made resolvable from the dsh profile (see vision.ts).
+   * A missing/unmountable bundle degrades to a stock harness instead of
+   * failing the boot. Fixture args are passed through untouched.
+   */
+  private resolvedArgs(): readonly string[] {
+    if (!this.defaultArgs) return this.args
+    let patch: string | undefined
+    try {
+      // The mount check touches $DSH_HOME (mkdir + symlink); an unwritable
+      // home must degrade to a stock harness, never fail the boot.
+      patch = prepareModlensMount(this.dshHome)
+    } catch (error) {
+      console.warn(`dsh-desktop: modlens mount check failed, booting without vision: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    if (patch === undefined) return this.args
+    // Launcher flags must precede the web app's own flags; the default
+    // invocation marks that boundary with --port.
+    const index = this.args.indexOf('--port')
+    if (index < 0) return this.args
+    return [...this.args.slice(0, index), '--patch', patch, ...this.args.slice(index)]
+  }
+
   private spawnOnce(): ChildProcess {
-    const child = spawn(this.command, [...this.args], {
+    const child = spawn(this.command, [...this.resolvedArgs()], {
       // Run from the harness root so dsh's own cwd-relative lookups (if any)
       // resolve against its bundled closure, not the Electron app directory.
       // In tests this is undefined and spawn inherits the parent cwd.

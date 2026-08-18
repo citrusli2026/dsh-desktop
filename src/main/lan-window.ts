@@ -64,6 +64,10 @@ export function showLanPairingWindow(parent: BrowserWindow | undefined, pairing:
   return window
 }
 
+export function isLanPairingWindow(window: BrowserWindow | undefined | null): window is BrowserWindow {
+  return window !== undefined && window !== null && !window.isDestroyed() && window === pairingWindow
+}
+
 export function closeLanPairingWindow(): void {
   if (pairingWindow !== undefined && !pairingWindow.isDestroyed()) pairingWindow.close()
   pairingWindow = undefined

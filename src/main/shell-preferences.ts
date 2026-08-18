@@ -5,6 +5,7 @@ import { join } from 'node:path'
 
 interface ShellPreferences {
   closeToTrayExplained?: boolean
+  visionGuideCompleted?: boolean
 }
 
 function preferencesPath(): string {
@@ -27,6 +28,18 @@ export function shouldExplainCloseToTray(): boolean {
 export function markCloseToTrayExplained(): void {
   try {
     writeFileSync(preferencesPath(), `${JSON.stringify({ ...readPreferences(), closeToTrayExplained: true })}\n`, { mode: 0o600 })
+  } catch (error) {
+    console.warn(`dsh-desktop: saving shell preferences failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+export function shouldShowVisionGuide(): boolean {
+  return readPreferences().visionGuideCompleted !== true
+}
+
+export function markVisionGuideCompleted(): void {
+  try {
+    writeFileSync(preferencesPath(), `${JSON.stringify({ ...readPreferences(), visionGuideCompleted: true })}\n`, { mode: 0o600 })
   } catch (error) {
     console.warn(`dsh-desktop: saving shell preferences failed: ${error instanceof Error ? error.message : String(error)}`)
   }
