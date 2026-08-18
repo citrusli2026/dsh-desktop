@@ -8,9 +8,9 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 / 已发布 | ✅ `0.1.0-rc.6.shell.15`（已发布 2026-08-17） |
-| 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛（lines 84.61%）、官网门禁、构建通过 |
-| 核心发布 | ✅ shell.15 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
+| 最新代码基线 / 已发布 | ✅ `0.1.0-rc.6.shell.16`（已发布 2026-08-18） |
+| 本地门禁 | ✅ 78 项单测、类型检查、覆盖率门槛（lines 89.58%）、官网门禁、构建通过 |
+| 核心发布 | ✅ shell.16 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.15`（提交 `1346abb`） |
 | 国内镜像 | ✅ shell.15 GitCode 镜像已补齐（2026-08-17） |
 | 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
@@ -166,5 +166,43 @@ functions 78.74%）、`site:check`、`build`。无新 ADR：测试加固与可�
 **安全**：downloads.js SSRF 防护（移除 repo 参数）+ 错误泄露修复（移除 body）+ sitemap + apple-touch-icon。
 **文档清理**：修复硬编码路径、去重、加注、统一节编号、更新过期状态。
 
+## 十、shell.16（2026-08-18）
+
+Extensions → Vision (ModLens) 功能完整落地并发布：
+
+1. **插件挂载**：supervisor 在默认 harness 启动参数上通过 `dsh --patch` 挂载预置
+   的 `@liustack/modlens` 插件（overlay + profile 模块软链）；挂载不可行时降级为
+   裸 harness，`$DSH_HOME` 不可写也不会拖垮启动。
+2. **设置窗口**（Extensions → Vision (ModLens) → Settings…）：引擎表单（API 密钥/
+   接口地址/模型）、Auto 复用模式、打开配置文件、真实识别测试（失败按配额/
+   agy 未装/密钥缺失/pi 登录/claude 登录分类给中文提示）、诊断按钮（本地
+   modlens doctor，不耗配额）、Escape 关闭。
+3. **首次运行向导**（三步：复用本机引擎 → 添加免费 Gemini Key → 测试识别），
+   配置加载失败显示"重试"而非误导性的"未探测到引擎"。
+4. **粘贴引导卡**：harness 页面粘贴图片且向导未完成时左下角浮出配置卡；
+   preload 隔离世界看不到 contextBridge 暴露面，必须直接用 ipcRenderer
+   （e2e 发现并锁定）。
+5. **识别测试预算**：per-provider 超时 × 链长 + 余量，多引擎 failover 不再被
+   总预算中途 SIGKILL（此前 per-provider 60s 即总预算 60s）。
+6. **IPC 安全**：settings/vision 通道只应答设置窗口（data: URL）；LAN 关闭校验
+   精确窗口；官网 downloads API 固定 SITE_ORIGIN 防 Host 头 SSRF，并加入门禁。
+7. **测试**：78 项单测（含 runModlensTest 成功/失败/预算、失败提示分类）、
+   6 条 e2e（向导、表单、粘贴卡、加载失败重试、IPC 门禁、close-to-tray）、
+   真实 harness 手动验证脚本 `e2e/manual-vision-check.mjs`。
+8. **发版修正**：release.yml 的 e2e 门禁此前不跑 bootstrap，视觉诊断 spawn
+   `resources/harness/node` ENOENT 导致首次 tag 发布失败；已补 bootstrap 并
+   重打 tag（见"发布元数据"）。
+
+发布元数据：
+- CI run `32086348289`（成功）；Release run `32086357298`（成功，bootstrap 修复后重跑）；
+- tag `v0.1.0-rc.6.shell.16` → `612e08dc76ea7f6479a307c134de0e6d7f9435c4`
+  （首次打在 `e54c545` 未产生 Release，已 force 移动）；
+- Site Data Refresh run `32086769499`（Release 自动触发，成功）指向 shell.16，
+  镜像后手动刷新 run `32086957912`（成功）把四个资产 `gitcode_ok` 标为 `true`；
+- GitCode 国内镜像：shell.16 已补齐（浏览器会话上传 dmg/exe 与两份 `.sha256`，
+  Release id `41723`，匿名 Range GET 4×206）；Release Mirrors 工作流按设计跳过
+  （无 R2 配置，不中断主发布）。
+
 ---
-_更新于 2026-08-17_
+
+_更新于 2026-08-18_
