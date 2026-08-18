@@ -239,7 +239,7 @@ shellTest('vision settings window loads ModLens config from the harness @critica
   expect(forbidden.close).toBe(false)
   await expect(settingsWindow.getByRole('heading', { name: 'Vision Setup Wizard' })).toBeVisible()
 
-  await settingsWindow.getByRole('button', { name: 'Close' }).click()
+  await settingsWindow.getByRole('button', { name: 'Close' }).click().catch(() => {}) // window destroys itself mid-click on Linux; the poll below is the real assertion
   await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1)
 })
 
@@ -288,7 +288,7 @@ shellTest('vision settings form opens once the guide is completed @critical', as
   await expect(settingsWindow.locator('#apiKey')).toHaveCount(0)
   await expect(settingsWindow.locator('#cli-note')).toBeVisible()
 
-  await settingsWindow.getByRole('button', { name: 'Close' }).click()
+  await settingsWindow.getByRole('button', { name: 'Close' }).click().catch(() => {}) // window destroys itself mid-click on Linux; the poll below is the real assertion
   await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1)
 })
 
@@ -321,7 +321,7 @@ shellTest('pasting an image into the harness surfaces the first-run vision guide
   const settingsWindow = await electronApp.waitForEvent('window')
   await settingsWindow.waitForLoadState('domcontentloaded')
   await expect(settingsWindow.getByRole('heading', { name: 'Vision Setup Wizard' })).toBeVisible()
-  await settingsWindow.getByRole('button', { name: 'Close' }).click()
+  await settingsWindow.getByRole('button', { name: 'Close' }).click().catch(() => {}) // window destroys itself mid-click on Linux; the poll below is the real assertion
   await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1)
 })
 
@@ -340,7 +340,7 @@ shellTest('vision wizard surfaces a config load failure and recovers via retry @
   await settingsWindow.getByRole('button', { name: 'Retry' }).click()
   await expect(settingsWindow.locator('#reuse-list .row')).toHaveCount(2)
   await expect(settingsWindow.locator('#step1-error')).toBeHidden()
-  await settingsWindow.getByRole('button', { name: 'Close' }).click()
+  await settingsWindow.getByRole('button', { name: 'Close' }).click().catch(() => {}) // window destroys itself mid-click on Linux; the poll below is the real assertion
   await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1)
 })
 
