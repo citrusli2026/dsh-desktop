@@ -8,12 +8,12 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | 🚧 `0.1.0-rc.6.shell.17`（vision 官网/README 介绍，待发布） |
-| 已发布 | ✅ `0.1.0-rc.6.shell.16`（已发布 2026-08-18） |
+| 最新代码基线 | ✅ `0.1.0-rc.6.shell.17`（已发布 2026-08-18） |
+| 已发布 | ✅ `0.1.0-rc.6.shell.17`（2026-08-18） |
 | 本地门禁 | ✅ 78 项单测、类型检查、覆盖率门槛（lines 89.58%）、官网门禁、构建通过 |
 | 核心发布 | ✅ shell.16 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.16`（四个资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ shell.16 GitCode 镜像已补齐（2026-08-18，Release id `41723`，匿名 Range GET 4×206） |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.17`（四个资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ shell.17 GitCode 镜像已补齐（2026-08-18，匿名 Range GET 4×206） |
 | 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -203,6 +203,29 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
 - GitCode 国内镜像：shell.16 已补齐（浏览器会话上传 dmg/exe 与两份 `.sha256`，
   Release id `41723`，匿名 Range GET 4×206）；Release Mirrors 工作流按设计跳过
   （无 R2 配置，不中断主发布）。
+
+## 十一、shell.17（2026-08-18）
+
+本轮为文档与官网发布：把 ModLens 视觉扩展正式写进面向用户的材料，无代码行为变更。
+
+1. **官网**（缓存键 v=22）：新增「扩展功能 · 视觉」卡片（粘贴图片即识别、三步向导、
+   引擎列表、本地诊断）、特性卡 `ft.p7`、FAQ「图片识别需要什么引擎」，双语字典
+   82 → 90 键，`site:check` 校验通过。
+2. **README（中英）**：新增「Vision (ModLens) / 视觉识别(ModLens)」专节——
+   自动挂载、首次运行向导、引擎清单、`~/.modlens/config.json` 凭据边界与设置入口。
+3. **ARCHITECTURE.md**：补 vision/settings/guide 模块图、验证契约更新为 78 单测
+   与视觉 e2e；HANDOFF 状态表与官网数据行校正。
+
+发布元数据：
+- CI run `32087753485`（成功）；Release run `32087869972`（成功，~7m）；
+- tag `v0.1.0-rc.6.shell.17` → `7af7f96ae6d958e9a677888dd785941e47273517`；
+- Site Data Refresh 自动 run `32088272673`（提交 `4922b64`）指向 shell.17，
+  镜像后手动刷新 run `32088536716`（提交 `bac8cd9`）把四个资产 `gitcode_ok`
+  标为 `true`；
+- GitCode 国内镜像：shell.17 已补齐（`gitcode-release-publisher` 浏览器会话上传
+  dmg/exe 与两份 `.sha256`，匿名 Range GET 4×206，发布 commit 与 tag 一致）；
+- 线上验证：`/data/release.json` 指向 shell.17、`/api/downloads` 200（实时计数），
+  首页含新视觉卡片（日志断言，未依赖截图）。
 
 ---
 
