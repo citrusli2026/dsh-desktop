@@ -7,6 +7,11 @@ on:
 
 permissions:
   contents: write
+  # Build provenance: OIDC + attestations let actions/attest@v4 sign the
+  # installers with GitHub's key; users can then verify them with
+  # `gh attestation verify <file> -R citrusli2026/dsh-electron-shell`.
+  id-token: write
+  attestations: write
 
 jobs:
   verify:
@@ -91,6 +96,16 @@ jobs:
         run: node scripts/smoke-packaged.mjs
       - name: Write installer SHA-256
         run: node scripts/write-release-checksum.mjs dist
+      - name: Attest macOS installer (build provenance)
+        if: matrix.os == 'macos-14'
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/*.dmg
+      - name: Attest Windows installer (build provenance)
+        if: matrix.os == 'windows-2022'
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/*.exe
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -121,6 +136,17 @@ jobs:
         run: npm install --no-save --no-package-lock --ignore-scripts --omit=dev
       - name: Validate two installers, hashes, and Windows updater metadata
         run: node scripts/check-release-assets.mjs artifacts "${{ github.ref_name }}"
+      - name: Verify installer build provenance (attestations)
+        # Each installer carries a GitHub-signed attestation from the build
+        # job; refuse to publish if it does not verify against this repo.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for F in artifacts/*.dmg artifacts/*.exe; do
+            [ -f "$F" ] || continue
+            echo "verifying $F"
+            gh attestation verify "$F" -R "${{ github.repository }}"
+          done
       - name: Publish GitHub release (create if missing, upload assets, undraft)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -129,7 +155,21 @@ jobs:
           REPO="${{ github.repository }}"
           gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || \
             gh release create "$TAG" --prerelease --repo "$REPO" \
-              --title "dsh-desktop $TAG" --generate-notes
+              --title "dsh-desktop ${{ github.ref_name }}" --notes "$(cat <<'EOF'
+          **dsh-desktop ${{ github.ref_name }}**
+
+          - macOS: `dsh-desktop-<版本>-arm64-mac.dmg`（Apple Silicon）。首次打开如遇 Gatekeeper 提示，请 **右键点击 → 打开**。
+          - Windows: `dsh-desktop-setup-<版本>.exe`。如遇 SmartScreen 提示，点 **更多信息 → 仍要运行**。
+          - 每个安装包均附带 `.sha256` 校验文件。
+
+          **验证安装包来源（可选但推荐）**
+          ```sh
+          gh attestation verify <下载的安装包> -R citrusli2026/dsh-electron-shell
+          shasum -a 256 -c <安装包>.sha256
+          ```
+          安装包由公开 CI（GitHub Actions）构建，来源证明可随时验证。
+          EOF
+          )"
           # Wipe stale assets so renamed artifacts never linger side by side.
           for A in $(gh release view "$TAG" --repo "$REPO" --json assets --jq '.assets[].name'); do
             gh release delete-asset "$TAG" "$A" -y --repo "$REPO"

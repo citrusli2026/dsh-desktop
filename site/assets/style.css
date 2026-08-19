@@ -443,6 +443,30 @@ a { color: inherit; }
 .asset-fallback { padding: 26px 22px; color: var(--muted); }
 .asset-fallback a { color: var(--signal); }
 
+/* 首次打开主动引导(下载按钮下方,按访问者平台显示) */
+.first-run {
+  margin: 4px 22px 6px;
+  padding: 14px 16px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-panel);
+  background: var(--alt-hover-bg);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.first-run__card h4 { font-size: 13.5px; font-weight: 700; margin: 0 0 6px; }
+.first-run__card ol { margin: 0; padding-left: 18px; }
+.first-run__card li { font-size: 13px; color: var(--muted); line-height: 1.7; }
+.first-run__card code { font-size: 12px; }
+.first-run__verify {
+  margin: 10px 0 0; padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px; color: var(--faint); line-height: 1.6;
+}
+.first-run__verify code { font-size: 12px; }
+.first-run.is-flash {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal) 22%, transparent);
+}
+
 /* 命令行块(深浅主题均为深色终端) */
 .cmdline {
   margin: 20px 22px 6px;

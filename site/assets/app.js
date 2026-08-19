@@ -47,6 +47,11 @@
       'dl.lead': '每个版本只发布两个安装包:macOS Apple Silicon 的 DMG 与 Windows x64 的 EXE。GitCode 镜像可用时与 GitHub 并列展示。',
       'dl.fallback': '版本数据加载失败时,可直接前往 <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> 或 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a> 下载。',
       'dl.note': '命令行方式同样可用;桌面壳功能与其完全一致,但使用独立数据目录 <code>~/.dsh-desktop</code>,互不干扰。',
+      'guide.mac.title': 'macOS 首次打开',
+      'guide.mac.steps': '<ol><li>双击 <code>.dmg</code> 打开,把 dsh-desktop 拖入「应用程序」</li><li>如提示「无法验证开发者」:<b>右键点击</b> App 图标 → <b>打开</b> → 弹窗中再点 <b>打开</b></li><li>以后从启动台正常打开即可</li></ol>',
+      'guide.win.title': 'Windows 首次打开',
+      'guide.win.steps': '<ol><li>双击 <code>.exe</code> 启动安装向导</li><li>如出现 SmartScreen 蓝色提示:点 <b>更多信息</b> → <b>仍要运行</b></li><li>完成安装后从开始菜单启动</li></ol>',
+      'guide.verify': '安装包未购买商业签名证书,但<strong>来源可验证</strong>:每个包附带 <code>.sha256</code> 校验文件,且 CI 为每个包签发 GitHub 来源证明(见常见问题「如何校验下载文件」)。',
       'ft.marker': '特性', 'ft.title': '为什么用它',
       'ft.p1': '<h3>无需安装 Node.js</h3><p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>',
       'ft.p2': '<h3>独立数据目录,环境隔离</h3><p>桌面版默认使用 <code>~/.dsh-desktop</code>:设置、会话、API Key、插件都是独立的一份,安装卸载都不影响你的命令行工作流。需要共享时,设 <code>DSH_HOME=~/.dsh</code> 即可。</p>',
@@ -61,9 +66,9 @@
       'vr.shell': '<b>壳修订号</b> —— 壳自身(窗口、守护、打包)的修订次数。同一内核可以有多次壳修订。',
       'faq.marker': '常见问题', 'faq.title': '常见问题',
       'faq.q1': 'macOS 提示"无法打开,因为无法验证开发者"?',
-      'faq.a1': 'macOS 版目前未签名(决策记录 0004)。首次启动请 <b>右键 → 打开</b>。如果仍没有放行选项,且你确认安装包来源可信,可在终端执行:<br><code class="faq-command">xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"</code><code class="faq-command">open "/Applications/dsh-desktop.app"</code>这会移除下载隔离标记,但不会添加 Apple 签名或公证。',
+      'faq.a1': 'macOS 版未购买 Apple 开发者证书(决策记录 0004),首次启动请 <b>右键 → 打开</b>。如果仍没有放行选项,且你确认安装包来源可信,可在终端执行:<br><code class="faq-command">xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"</code><code class="faq-command">open "/Applications/dsh-desktop.app"</code>这会移除下载隔离标记,但不会添加 Apple 签名或公证。<br><br>安装包由公开 CI 构建,可用来源证明验证真伪:<br><code class="faq-command">gh attestation verify /path/to/dsh-desktop-&lt;版本&gt;-arm64-mac.dmg -R citrusli2026/dsh-electron-shell</code>',
       'faq.q2': 'Windows SmartScreen 拦截怎么办?',
-      'faq.a2': '安装包未购买代码签名证书。点击 <b>"更多信息" → "仍要运行"</b> 即可。安装包由 GitHub Actions 从公开源码构建,可全程审计。',
+      'faq.a2': '安装包未购买代码签名证书。点击 <b>"更多信息" → "仍要运行"</b> 即可。安装包由 GitHub Actions 从公开源码构建,可全程审计;也可用以下命令验证来源:<br><code class="faq-command">gh attestation verify /path/to/dsh-desktop-setup-&lt;版本&gt;.exe -R citrusli2026/dsh-electron-shell</code>',
       'faq.q3': '这和 DeepSeek 官方是什么关系?',
       'faq.a3': '非官方社区打包,与 DeepSeek AI 无关联。DeepSeek Harness 是 DeepSeek 的商标;本仓库仅在 MIT 许可下再打包 <a href="https://www.npmjs.com/package/@deepseek-ai/dsh" target="_blank" rel="noopener">@deepseek-ai/dsh</a>,不改变其任何行为。',
       'faq.q4': '我在用 npx @deepseek-ai/dsh web,配置会带过来吗?',
@@ -119,6 +124,11 @@
       'dl.lead': 'Every release carries exactly two installers: a DMG for Apple Silicon Macs and an EXE for Windows x64. A verified GitCode mirror appears alongside GitHub when available.',
       'dl.fallback': 'If live data fails to load, head to <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> directly.',
       'dl.note': 'The CLI route works too; the shell is functionally identical but keeps its own data home at <code>~/.dsh-desktop</code> — no interference either way.',
+      'guide.mac.title': 'First launch on macOS',
+      'guide.mac.steps': '<ol><li>Open the <code>.dmg</code> and drag dsh-desktop into Applications</li><li>If you see "cannot be verified": <b>right-click</b> the app icon → <b>Open</b> → click <b>Open</b> again in the dialog</li><li>Launch normally from Launchpad afterwards</li></ol>',
+      'guide.win.title': 'First launch on Windows',
+      'guide.win.steps': '<ol><li>Double-click the <code>.exe</code> to start the installer</li><li>If SmartScreen shows a blue prompt: click <b>More info</b> → <b>Run anyway</b></li><li>Launch from the Start menu after install</li></ol>',
+      'guide.verify': 'Installers are not commercially code-signed, but <strong>provenance is verifiable</strong>: every package ships a <code>.sha256</code> checksum and CI attaches a GitHub-signed build attestation (see FAQ "How do I verify downloads").',
       'ft.marker': 'FEATURES', 'ft.title': 'Why this shell',
       'ft.p1': '<h3>No Node.js install required</h3><p>The shell bundles a pinned Node.js 22 LTS runtime and the complete <code>@deepseek-ai/dsh</code> dependency closure, pinned per platform. Download → double-click → use.</p>',
       'ft.p2': '<h3>Isolated data home</h3><p>The desktop app defaults to <code>~/.dsh-desktop</code>: settings, sessions, API keys, and plugins are its own copy — installing or uninstalling never touches your CLI workflow. Set <code>DSH_HOME=~/.dsh</code> to share again.</p>',
@@ -133,9 +143,9 @@
       'vr.shell': '<b>Shell revision</b> — how many times the shell itself (window, supervision, packaging) has been revised on this kernel.',
       'faq.marker': 'FAQ', 'faq.title': 'Frequently asked',
       'faq.q1': 'macOS says "cannot be opened because the developer cannot be verified"?',
-      'faq.a1': 'The macOS build is unsigned for now (decision 0004). <b>Right-click → Open</b> on first launch. If no override is offered and you trust the installer source, run:<br><code class="faq-command">xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"</code><code class="faq-command">open "/Applications/dsh-desktop.app"</code>This removes the download-quarantine marker, but does not add an Apple signature or notarization.',
+      'faq.a1': 'The macOS build is unsigned (decision 0004). <b>Right-click → Open</b> on first launch. If no override is offered and you trust the installer source, run:<br><code class="faq-command">xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"</code><code class="faq-command">open "/Applications/dsh-desktop.app"</code>This removes the download-quarantine marker, but does not add an Apple signature or notarization.<br><br>Builds come from public CI; verify provenance with:<br><code class="faq-command">gh attestation verify /path/to/dsh-desktop-&lt;version&gt;-arm64-mac.dmg -R citrusli2026/dsh-electron-shell</code>',
       'faq.q2': 'Windows SmartScreen blocks the installer?',
-      'faq.a2': 'The installer is unsigned. Choose <b>"More info" → "Run anyway"</b>. Builds are produced by GitHub Actions from public source — fully auditable.',
+      'faq.a2': 'The installer is unsigned. Choose <b>"More info" → "Run anyway"</b>. Builds are produced by GitHub Actions from public source — fully auditable. You can also verify provenance:<br><code class="faq-command">gh attestation verify /path/to/dsh-desktop-setup-&lt;version&gt;.exe -R citrusli2026/dsh-electron-shell</code>',
       'faq.q3': 'Is this affiliated with DeepSeek?',
       'faq.a3': 'No. Unofficial community packaging, not affiliated with DeepSeek AI. DeepSeek Harness is a trademark of DeepSeek; this repo only repackages <a href="https://www.npmjs.com/package/@deepseek-ai/dsh" target="_blank" rel="noopener">@deepseek-ai/dsh</a> under MIT without changing its behavior.',
       'faq.q4': 'I use npx @deepseek-ai/dsh web — will my config carry over?',
@@ -350,7 +360,7 @@
         html += '<span class="asset-row__meta">' + fmtSize(a.size) + ' · ↓ ' + a.downloads + '</span>'
         html += '<span class="asset-row__actions">'
         links.forEach(function (link, i) {
-          html += '<a class="dl-btn' + (i === 0 && a.primary ? '' : ' dl-btn--alt') + '" href="' + link.href + '">'
+          html += '<a class="dl-btn' + (i === 0 && a.primary ? '' : ' dl-btn--alt') + '" data-platform="' + os + '" href="' + link.href + '">'
             + '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M8 11.5 3.5 7l1.4-1.4L7 7.7V1h2v6.7l2.1-2.1L12.5 7 8 11.5ZM2 13.5h12V15H2v-1.5Z"/></svg>'
             + a.fmt + ' · ' + link.src + '</a>'
         })
@@ -379,6 +389,7 @@
         if (updated) {
           renderPlatforms(data)
           bindCopy($('#platform-rows'))
+          bindDownloadGuide()
         }
         // 更新同步时间文案为实时模式
         var syncEl = $('#sync-time')
@@ -406,6 +417,42 @@
     cta.textContent = (lang === 'zh'
       ? '下载 ' + OS_LABEL.zh[os][0] + ' 版'
       : 'Download for ' + OS_LABEL.en[os][0]) + ' · ' + fmtSize(hit.size)
+  }
+
+  /* ══ 首次打开主动引导 ═════════════════════════════ */
+  var uaOs = (function () {
+    var ua = navigator.userAgent
+    return /Mac/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : null
+  })()
+
+  function renderFirstRun() {
+    var el = $('#first-run')
+    if (!el || !uaOs) return
+    var os = uaOs
+    el.innerHTML =
+      '<div class="first-run__card first-run__card--' + os + '">'
+      + '<h4>' + t('guide.' + os + '.title') + '</h4>'
+      + t('guide.' + os + '.steps')
+      + '</div>'
+      + '<p class="first-run__verify">' + t('guide.verify') + '</p>'
+    el.hidden = false
+  }
+
+  /* 点下载按钮时,若用户平台匹配,滚动到引导卡并短暂高亮 */
+  function bindDownloadGuide() {
+    var guide = $('#first-run')
+    if (!guide) return
+    $all('.dl-btn').forEach(function (btn) {
+      if (btn.__guideBound) return
+      btn.__guideBound = true
+      btn.addEventListener('click', function () {
+        if (btn.getAttribute('data-platform') !== uaOs) return
+        guide.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        guide.classList.remove('is-flash')
+        void guide.offsetWidth
+        guide.classList.add('is-flash')
+      })
+    })
   }
 
   /* ══ 交互 ══════════════════════════════════════════ */
@@ -460,11 +507,13 @@
       if (I18N[lang][key] !== undefined) el.innerHTML = I18N[lang][key]
     })
     $('#lang-toggle').textContent = lang === 'zh' ? 'EN' : '中'
+    renderFirstRun()
     if (siteData) {
       renderMeta(siteData)
       renderPlatforms(siteData)
       tunePrimaryCta(siteData)
       bindCopy($('#platform-rows'))
+      bindDownloadGuide()
     }
   }
 
@@ -490,7 +539,9 @@
       renderMeta(data)
       renderPlatforms(data)
       tunePrimaryCta(data)
+      renderFirstRun()
       bindCopy($('#platform-rows'))
+      bindDownloadGuide()
       fetchRealTimeDownloads(data)
     })
     .catch(function () {
