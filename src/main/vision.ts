@@ -8,7 +8,7 @@
  * @module main/vision
  */
 import { spawn } from 'node:child_process'
-import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, rmSync, symlinkSync } from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, symlinkSync, unlinkSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -224,7 +224,10 @@ function ensureModlensModuleLink(dshHome: string, harnessDir: string): void {
         current = undefined
       }
       if (current === target) return
-      rmSync(link)
+      // unlinkSync, not rmSync: on Linux, rmSync() on a symlink that points
+      // at a directory throws ERR_FS_EISDIR unless recursive is set, which
+      // would swallow the retarget and silently disable the vision mount.
+      unlinkSync(link)
     } else {
       // A real directory is a user-managed install; never clobber it.
       return
