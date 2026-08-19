@@ -77,7 +77,11 @@ async function uploadOne(path) {
 }
 
 let failed = 0
-for (const file of files) {
+// Upload small files first: a cross-border run may exhaust its job timeout
+// on a large installer, so checksums/updater metadata should land before
+// the big binaries instead of waiting behind them.
+const ordered = [...files].sort((a, b) => statSync(a).size - statSync(b).size)
+for (const file of ordered) {
   if (!(await uploadOne(file))) failed++
 }
 if (failed > 0) {
