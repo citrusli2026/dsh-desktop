@@ -36,7 +36,8 @@ const ATTEMPTS = 3
 
 async function getUploadTarget(name) {
   const metaResponse = await fetch(
-    `${API}/releases/${encodeURIComponent(tag)}/upload_url?access_token=${TOKEN}&file_name=${encodeURIComponent(name)}`)
+    `${API}/releases/${encodeURIComponent(tag)}/upload_url?file_name=${encodeURIComponent(name)}`,
+    { headers: { 'PRIVATE-TOKEN': TOKEN } })
   if (!metaResponse.ok) throw new Error(`upload_url for ${name} -> HTTP ${metaResponse.status}`)
   const { url, headers } = await metaResponse.json()
   if (typeof url !== 'string' || headers === undefined) throw new Error(`upload_url for ${name}: unexpected response shape`)

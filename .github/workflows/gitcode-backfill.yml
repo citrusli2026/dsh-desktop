@@ -39,10 +39,11 @@ jobs:
       - name: Create the GitCode release if missing
         run: |
           API="https://api.gitcode.com/api/v5/repos/$GITCODE_REPO"
-          curl -sf "$API/releases/$TAG?access_token=$GITCODE_TOKEN" >/dev/null || \
+          curl -sf -H "PRIVATE-TOKEN: $GITCODE_TOKEN" "$API/releases/$TAG" >/dev/null || \
             curl -sf -X POST "$API/releases" \
+              -H "PRIVATE-TOKEN: $GITCODE_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"access_token\": \"$GITCODE_TOKEN\", \"tag_name\": \"$TAG\", \"name\": \"dsh-electron-shell $TAG\", \"prerelease\": true, \"body\": \"Mirrored from https://github.com/citrusli2026/dsh-electron-shell/releases\"}"
+              -d "{\"tag_name\": \"$TAG\", \"name\": \"dsh-electron-shell $TAG\", \"prerelease\": true, \"body\": \"Mirrored from https://github.com/citrusli2026/dsh-electron-shell/releases\"}"
 
       - name: Upload only assets missing on GitCode
         run: |
