@@ -8,12 +8,12 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.0-rc.8.shell.0`（未发布 2026-08-20 提升：内核 rc.6 → rc.8，壳修订归零；同步移除 ModLens） |
-| 已发布 | ✅ `0.1.0-rc.6.shell.18`（2026-08-19） |
+| 最新代码基线 | ✅ `0.1.0-rc.8.shell.0`（已发布 2026-08-20；内核 rc.6 → rc.8，壳修订归零；同步移除 ModLens） |
+| 已发布 | ✅ `0.1.0-rc.8.shell.0`（2026-08-20） |
 | 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛、官网门禁、构建通过 |
-| 核心发布 | ✅ shell.18 Release 严格 6 文件门禁、attestation 核验与双平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.18`（四个资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ shell.18 GitCode 镜像已补齐（2026-08-19，匿名 Range GET 4×206） |
+| 核心发布 | ✅ rc.8.shell.0 Release 严格 6 文件门禁、attestation 核验与双平台 packaged smoke 通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.8.shell.0`（四个资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ rc.8.shell.0 GitCode 镜像已补齐（2026-08-20，匿名 Range GET 4×206） |
 | 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -282,6 +282,26 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
 4. **CI**：移除 verify job 中为 vision e2e 准备的 `pnpm run bootstrap`
    （e2e 门禁现为 dev-web stub 模式，不 spawn 闭包；build job 打包前仍会
    bootstrap 自己的闭包）。
+
+---
+
+## 十四、shell.19 发布（2026-08-20）
+
+发布 `v0.1.0-rc.8.shell.0`（内核 rc.8 首个发布，壳修订从 0 起）：
+
+发布元数据：
+- Release run `32381262841`（成功）：verify → build（macos-14 / windows-2022）→
+  publish 全绿；6 文件门禁（dmg/exe + 两份 `.sha256` + blockmap + latest.yml）
+  与 attestation 逐包核验通过；
+- tag `v0.1.0-rc.8.shell.0` → `8e38ce0769a3`（基线同步后的 rebase 提交）；
+- Site Data Refresh 自动 run `32383103151`（提交 `b155835`）指向 rc.8.shell.0，
+  `gitcode_ok` 初始 `false`；镜像补齐后本机重跑 `gen-site-data.mjs` 提交刷新为
+  `true`；
+- GitCode 国内镜像：backfill 三跑补齐（run `32382045877` 取消：dmg 超时；
+  run `32393765882`：dmg 一次成功 173M、exe 3×20min 超时失败；run
+  `32401213335` 补传 exe 成功）。匿名 Range GET 4×206（用户下载四资产）；
+- 线上验证：`/data/release.json` 与 `/api/downloads` 指向 rc.8.shell.0、
+  四个资产 `gitcode_ok=true`。
 
 ---
 
