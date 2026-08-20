@@ -8,7 +8,7 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.0-rc.6.shell.18`（已发布 2026-08-19） |
+| 最新代码基线 | ✅ `0.1.0-rc.8.shell.0`（未发布 2026-08-20 提升：内核 rc.6 → rc.8，壳修订归零；同步移除 ModLens） |
 | 已发布 | ✅ `0.1.0-rc.6.shell.18`（2026-08-19） |
 | 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛、官网门禁、构建通过 |
 | 核心发布 | ✅ shell.18 Release 严格 6 文件门禁、attestation 核验与双平台 packaged smoke 通过 |
@@ -264,7 +264,9 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
 
 ## 十三、shell.19（2026-08-20）
 
-移除视觉扩展（ModLens），不与官方 dsh 原生多模态重叠：
+内核升级 `@deepseek-ai/dsh` 0.1.0-rc.6 → 0.1.0-rc.8（壳修订归零，版本
+`0.1.0-rc.8.shell.0`）；同时移除视觉扩展（ModLens），不与官方 dsh 原生
+多模态（rc.8 起支持模型级 `inputModalities` 图片输入）重叠：
 
 1. **源码移除**：删除 `src/main/vision.ts`、`guide-page.ts`、`settings-window.ts`、
    `settings-style.ts`；清理 `index.ts` 的 6 个 vision/settings IPC 与
