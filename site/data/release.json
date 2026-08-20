@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-20T18:26:38.981Z",
+  "generated_at": "2026-08-20T18:27:53.643Z",
   "repo": {
     "full_name": "citrusli2026/dsh-electron-shell",
     "html_url": "https://github.com/citrusli2026/dsh-electron-shell",
@@ -36,7 +36,7 @@
       {
         "name": "dsh-desktop-setup-0.1.0-rc.8.shell.0.exe",
         "size": 157606968,
-        "downloads": 3,
+        "downloads": 5,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.8.shell.0/dsh-desktop-setup-0.1.0-rc.8.shell.0.exe",
         "kind": "installer",
         "sha256": null,
