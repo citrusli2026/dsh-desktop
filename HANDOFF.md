@@ -8,12 +8,12 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.0-rc.6.shell.17`（已发布 2026-08-18） |
-| 已发布 | ✅ `0.1.0-rc.6.shell.17`（2026-08-18） |
+| 最新代码基线 | ✅ `0.1.0-rc.6.shell.18`（已发布 2026-08-19） |
+| 已发布 | ✅ `0.1.0-rc.6.shell.18`（2026-08-19） |
 | 本地门禁 | ✅ 78 项单测、类型检查、覆盖率门槛（lines 89.58%）、官网门禁、构建通过 |
-| 核心发布 | ✅ shell.16 Release 严格 6 文件门禁与双平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.17`（四个资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ shell.17 GitCode 镜像已补齐（2026-08-18，匿名 Range GET 4×206） |
+| 核心发布 | ✅ shell.18 Release 严格 6 文件门禁、attestation 核验与双平台 packaged smoke 通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.18`（四个资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ shell.18 GitCode 镜像已补齐（2026-08-19，匿名 Range GET 4×206） |
 | 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -229,4 +229,37 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
 
 ---
 
-_更新于 2026-08-18_
+## 十二、shell.18（2026-08-19）
+
+本轮为修复与信任建设发布：vision Linux 挂载修复 + 安装包构建来源证明 + 官网首次打开引导。
+
+1. **vision 修复**（`src/main/vision.ts`）：`rmSync` → `unlinkSync` 重定向 symlink。
+   Linux 上 `rmSync` 对指向目录的 symlink 抛 `ERR_FS_EISDIR`（除非 `recursive`），
+   会吞掉重定向逻辑、静默禁用 vision 挂载。
+2. **构建来源证明**（`.github/workflows/release.yml`）：新增 `id-token`/`attestations`
+   权限，`actions/attest@v4` 为 DMG/EXE 签发 GitHub 签名来源证明，publish 前
+   `gh attestation verify` 逐包核验，release notes 模板加入下载与验证指引
+   （`gh attestation verify … -R citrusli2026/dsh-electron-shell` + `shasum -c`）。
+3. **官网首次打开引导**（`site/`）：新增 `#first-run` 引导卡，按访问者平台
+   （mac/win）显示首次打开步骤；下载按钮带 `data-platform`，平台匹配时点击
+   滚动并高亮引导卡；FAQ 补充来源证明验证命令；中英双语。
+4. **GitCode API 认证修复**：GitCode v5 API 认证从 `access_token` 查询参数改为
+   `PRIVATE-TOKEN` 请求头，`gitcode-backfill.yml` 与 `scripts/gitcode-upload.mjs`
+   旧调用返回 HTTP 400 导致镜像失败；已修复并实测通过。上传改为小文件优先
+   （排序按字节），job 超时上限提到 120 分钟适配跨境带宽。
+
+发布元数据：
+- CI run `32273210978`（成功，1m34s）；Release run `32273216024`（成功，~8m）；
+- tag `v0.1.0-rc.6.shell.18` → `63b3aa200a3a3b3a242bcabcb74bd8a02f028586`；
+- Site Data Refresh 自动 run `32274021914`（提交 `135712d`）指向 shell.18；
+  镜像完成后手动刷新 run `32316013475`（提交 `770de2b`）把四个资产 `gitcode_ok`
+  标为 `true`；
+- GitCode 国内镜像：shell.18 自动化 backfill 补齐（6/6 资产 206：dmg/exe/
+  blockmap/latest.yml 与两份 `.sha256`；dmg 一次成功、exe 首次 3×20min 超时后
+  重跑补传成功），匿名 Range GET 4×206（用户下载四资产）；
+- 线上验证：`/data/release.json` 指向 shell.18、四个资产 `gitcode_ok=true`，
+  首页含首次打开引导卡（数据断言）。
+
+---
+
+_更新于 2026-08-20_
