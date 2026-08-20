@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-20T03:10:54.527Z",
+  "generated_at": "2026-08-20T14:44:49.079Z",
   "repo": {
     "full_name": "citrusli2026/dsh-electron-shell",
     "html_url": "https://github.com/citrusli2026/dsh-electron-shell",
@@ -7,51 +7,51 @@
     "license": "MIT"
   },
   "release": {
-    "tag": "v0.1.0-rc.6.shell.18",
-    "name": "dsh-desktop v0.1.0-rc.6.shell.18",
-    "html_url": "https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.0-rc.6.shell.18",
-    "published_at": "2026-08-19T16:06:21Z",
+    "tag": "v0.1.0-rc.8.shell.0",
+    "name": "dsh-desktop v0.1.0-rc.8.shell.0",
+    "html_url": "https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.0-rc.8.shell.0",
+    "published_at": "2026-08-20T14:44:23Z",
     "prerelease": true,
     "assets": [
       {
-        "name": "dsh-desktop-0.1.0-rc.6.shell.18-arm64-mac.dmg",
-        "size": 187072854,
-        "downloads": 4,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.18/dsh-desktop-0.1.0-rc.6.shell.18-arm64-mac.dmg",
+        "name": "dsh-desktop-0.1.0-rc.8.shell.0-arm64-mac.dmg",
+        "size": 181721366,
+        "downloads": 0,
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.8.shell.0/dsh-desktop-0.1.0-rc.8.shell.0-arm64-mac.dmg",
         "kind": "installer",
         "sha256": null,
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.18/dsh-desktop-0.1.0-rc.6.shell.18-arm64-mac.dmg",
-        "gitcode_ok": true
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.8.shell.0/dsh-desktop-0.1.0-rc.8.shell.0-arm64-mac.dmg",
+        "gitcode_ok": false
       },
       {
-        "name": "dsh-desktop-0.1.0-rc.6.shell.18-arm64-mac.dmg.sha256",
-        "size": 112,
-        "downloads": 6,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.18/dsh-desktop-0.1.0-rc.6.shell.18-arm64-mac.dmg.sha256",
+        "name": "dsh-desktop-0.1.0-rc.8.shell.0-arm64-mac.dmg.sha256",
+        "size": 111,
+        "downloads": 0,
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.8.shell.0/dsh-desktop-0.1.0-rc.8.shell.0-arm64-mac.dmg.sha256",
         "kind": "checksum",
-        "sha256": "1083039ad2770287d7cca8ace4503865e3bbc7b5f51ff513192d54baf7bcc21b",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.18/dsh-desktop-0.1.0-rc.6.shell.18-arm64-mac.dmg.sha256",
-        "gitcode_ok": true
+        "sha256": "9534b5479b7eb7c94d34b41cc9e715e26805dbd714d817bd54ff185fa323ca42",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.8.shell.0/dsh-desktop-0.1.0-rc.8.shell.0-arm64-mac.dmg.sha256",
+        "gitcode_ok": false
       },
       {
-        "name": "dsh-desktop-setup-0.1.0-rc.6.shell.18.exe",
-        "size": 163622841,
-        "downloads": 5,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.18/dsh-desktop-setup-0.1.0-rc.6.shell.18.exe",
+        "name": "dsh-desktop-setup-0.1.0-rc.8.shell.0.exe",
+        "size": 157606968,
+        "downloads": 0,
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.8.shell.0/dsh-desktop-setup-0.1.0-rc.8.shell.0.exe",
         "kind": "installer",
         "sha256": null,
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.18/dsh-desktop-setup-0.1.0-rc.6.shell.18.exe",
-        "gitcode_ok": true
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.8.shell.0/dsh-desktop-setup-0.1.0-rc.8.shell.0.exe",
+        "gitcode_ok": false
       },
       {
-        "name": "dsh-desktop-setup-0.1.0-rc.6.shell.18.exe.sha256",
-        "size": 108,
-        "downloads": 6,
-        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.18/dsh-desktop-setup-0.1.0-rc.6.shell.18.exe.sha256",
+        "name": "dsh-desktop-setup-0.1.0-rc.8.shell.0.exe.sha256",
+        "size": 107,
+        "downloads": 0,
+        "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.8.shell.0/dsh-desktop-setup-0.1.0-rc.8.shell.0.exe.sha256",
         "kind": "checksum",
-        "sha256": "dbc7e5bf7cde51b5d167179b5b07d6fe9bbf92221cbe6bf945a3719a80961040",
-        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.6.shell.18/dsh-desktop-setup-0.1.0-rc.6.shell.18.exe.sha256",
-        "gitcode_ok": true
+        "sha256": "9c72118972305a7913278f22e326f61a9bb5adffca1d2f1f2e8774b904528cba",
+        "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.0-rc.8.shell.0/dsh-desktop-setup-0.1.0-rc.8.shell.0.exe.sha256",
+        "gitcode_ok": false
       }
     ]
   }
