@@ -24,11 +24,9 @@ import { armSmokeTimeout, quitGracefully, SMOKE_TEST, smokeVerify, verifySmokeFa
 import { exportDiagnosticReport } from './diagnostics.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { MenuActions } from './menu-template.ts'
-import { markCloseToTrayExplained, markVisionGuideCompleted, shouldExplainCloseToTray, shouldShowVisionGuide } from './shell-preferences.ts'
+import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
 import { LanService, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
-import { closeSettingsWindow, isSettingsWindow, showSettingsWindow } from './settings-window.ts'
-import { runModlensDoctor, runModlensTest } from './vision.ts'
 
 const DEV_WEB_URL = process.env.DSH_DESKTOP_DEV_WEB_URL
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -199,7 +197,6 @@ const menuActions: MenuActions = {
   exportDiagnostics: () => { void exportDiagnosticReport(lastState, currentLocale) },
   checkForUpdates: () => { void checkForUpdatesInteractively(currentLocale) },
   showAbout: () => { void showAboutDialog(currentLocale) },
-  showSettings: () => { showSettingsWindow(windowContext.mainWindow, currentLocale) },
   openExternal: url => { void shell.openExternal(url) },
   startLanLink: () => { void startLanLink() },
   showLanQr: () => { void showLanQr() },
@@ -219,15 +216,15 @@ const trayActions = {
   quit: (): void => app.quit(),
 }
 
-// Shell-owned IPC handlers (retry, diagnostics, LAN pairing close, settings,
-// ModLens config) are exposed to the renderer only through the sandboxed
-// preload. They must accept calls only from shell-owned pages, which we render
-// as data: URLs (loading/error/LAN QR/settings). The harness UI itself (served
-// from http://127.0.0.1) never needs these channels, so we reject any frame
-// whose URL is not a data: URL and, where a specific modal is involved, verify
-// the sender is exactly that modal window. This keeps a compromised or curious
-// harness page from invoking shell restarts, opening dialogs, closing other
-// modals, or proxying ModLens config. See src/preload/index.ts for the bridge.
+// Shell-owned IPC handlers (retry, diagnostics, LAN pairing close) are
+// exposed to the renderer only through the sandboxed preload. They must
+// accept calls only from shell-owned pages, which we render as data: URLs
+// (loading/error/LAN QR). The harness UI itself (served from
+// http://127.0.0.1) never needs these channels, so we reject any frame
+// whose URL is not a data: URL and, where a specific modal is involved,
+// verify the sender is exactly that modal window. This keeps a compromised
+// or curious harness page from invoking shell restarts, opening dialogs, or
+// closing other modals. See src/preload/index.ts for the bridge.
 function isShellOwnedFrame(url: string | undefined): boolean {
   return typeof url === 'string' && url.startsWith('data:')
 }
@@ -253,93 +250,6 @@ ipcMain.handle('shell:close-lan-pairing', (event) => {
   if (!isShellOwnedFrame(event.senderFrame?.url)) return false
   window.close()
   return true
-})
-
-ipcMain.handle('shell:close-settings', (event) => {
-  const window = BrowserWindow.fromWebContents(event.sender)
-  if (!isSettingsWindow(window)) return false
-  if (!isShellOwnedFrame(event.senderFrame?.url)) return false
-  closeSettingsWindow()
-  return true
-})
-
-// The route's discovery probe (modlens doctor over the local CLIs) can take
-// up to 30s on a cold cache, so the proxy budget must outlast it.
-const MODLENS_CONFIG_TIMEOUT_MS = 35_000
-
-ipcMain.handle('shell:modlens-config', async (event, method: string, body?: string) => {
-  const window = BrowserWindow.fromWebContents(event.sender)
-  if (!isSettingsWindow(window) || !isShellOwnedFrame(event.senderFrame?.url)) {
-    return { status: 403, data: { error: 'Forbidden' } }
-  }
-  if (method !== 'GET' && method !== 'POST') {
-    return { status: 400, data: { error: 'Method not allowed' } }
-  }
-  if (body !== undefined && typeof body !== 'string') {
-    return { status: 400, data: { error: 'Invalid body' } }
-  }
-  const url = lastState?.phase === 'ready' ? lastState.url : undefined
-  if (url === undefined) return { status: 503, data: { error: 'Harness not ready' } }
-  // GET asks for the reuse-probe discovery section, which the route only
-  // includes when explicitly requested (`?discover`); POST stays plain.
-  const endpoint = method === 'GET' ? `${url}/modlens/config?discover` : `${url}/modlens/config`
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), MODLENS_CONFIG_TIMEOUT_MS)
-  timer.unref?.()
-  try {
-    const init: RequestInit = {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-    }
-    if (body !== undefined && method !== 'GET') init.body = body
-    const res = await fetch(endpoint, init)
-    const data = await res.json()
-    return { status: res.status, data }
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return { status: 504, data: { error: 'ModLens config request timed out' } }
-    }
-    return { status: 502, data: { error: String(error instanceof Error ? error.message : error) } }
-  } finally {
-    clearTimeout(timer)
-  }
-})
-
-ipcMain.handle('shell:vision-needs-guide', (event) => {
-  const window = BrowserWindow.fromWebContents(event.sender)
-  if (window !== windowContext.mainWindow) return false
-  return shouldShowVisionGuide()
-})
-
-ipcMain.handle('shell:open-vision-settings', (event) => {
-  const window = BrowserWindow.fromWebContents(event.sender)
-  if (window !== windowContext.mainWindow) return false
-  showSettingsWindow(windowContext.mainWindow, currentLocale)
-  return true
-})
-
-ipcMain.handle('shell:vision-guide-complete', (event) => {
-  const window = BrowserWindow.fromWebContents(event.sender)
-  if (!isSettingsWindow(window) || !isShellOwnedFrame(event.senderFrame?.url)) return false
-  markVisionGuideCompleted()
-  return true
-})
-
-ipcMain.handle('shell:vision-test', async (event) => {
-  const window = BrowserWindow.fromWebContents(event.sender)
-  if (!isSettingsWindow(window) || !isShellOwnedFrame(event.senderFrame?.url)) {
-    return { ok: false, error: 'Forbidden' }
-  }
-  return runModlensTest()
-})
-
-ipcMain.handle('shell:vision-doctor', async (event) => {
-  const window = BrowserWindow.fromWebContents(event.sender)
-  if (!isSettingsWindow(window) || !isShellOwnedFrame(event.senderFrame?.url)) {
-    return { ok: false, error: 'Forbidden' }
-  }
-  return runModlensDoctor()
 })
 
 function verifyHarness(root: string): void {

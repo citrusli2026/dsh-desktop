@@ -10,12 +10,10 @@ import {
   PROJECT_REPO_URL,
 } from './links.ts'
 import { splitCompositeVersion } from './update-check.ts'
-import { getVisionPluginInfo } from './vision.ts'
 
 function aboutDetail(locale: ShellLocale): string {
   const version = app.getVersion()
   const composite = splitCompositeVersion(version)
-  const vision = getVisionPluginInfo()
   const lines = [shellText(locale, 'about.version', { version })]
   if (composite !== undefined) {
     lines.push(shellText(locale, 'about.harnessVersion', {
@@ -26,18 +24,6 @@ function aboutDetail(locale: ShellLocale): string {
   lines.push(
     `Electron ${process.versions.electron} · Chromium ${process.versions.chrome} · Node ${process.versions.node}`,
     '',
-  )
-  if (vision.installed) {
-    lines.push(
-      shellText(locale, 'about.visionInstalled', {
-        name: vision.name,
-        version: vision.version,
-        description: shellText(locale, 'vision.description'),
-      }),
-      '',
-    )
-  }
-  lines.push(
     shellText(locale, 'about.community'),
     shellText(locale, 'about.unaffiliated'),
     shellText(locale, 'about.license'),
@@ -79,10 +65,6 @@ export async function showAboutDialog(locale: ShellLocale): Promise<void> {
 }
 
 export function installAppMenu(locale: ShellLocale, actions: MenuActions, restartEnabled = true, lanRunning = false, lanBusy = false): void {
-  const vision = getVisionPluginInfo()
-  const visionStatus = vision.installed
-    ? shellText(locale, 'menu.visionInstalled', { name: vision.name, version: vision.version })
-    : shellText(locale, 'menu.visionNotInstalled')
   const template = buildAppMenuTemplate({
     locale,
     platform: process.platform,
@@ -91,7 +73,6 @@ export function installAppMenu(locale: ShellLocale, actions: MenuActions, restar
     restartEnabled,
     lanRunning,
     lanBusy,
-    visionStatus,
   }, actions)
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }

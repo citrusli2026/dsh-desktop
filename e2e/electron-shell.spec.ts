@@ -8,84 +8,19 @@ interface Fixture {
   electronApp: ElectronApplication
   window: Page
   settingsPath: string
-  /** Mutable knobs read by the stub harness between requests. */
-  harness: { failConfigOnce: boolean }
 }
 
 const shellTest = test.extend<Fixture>({
-  // One mutable object per test, shared between the stub HTTP handler (which
-  // reads it per request) and the test body (which sets it).
-  harness: async ({}, use) => {
-    await use({ failConfigOnce: false })
-  },
-
-  electronApp: async ({ harness }, use, testInfo) => {
+  electronApp: async ({}, use, testInfo) => {
     const root = await mkdtemp(join(tmpdir(), 'dsh-electron-e2e-'))
     const dshHome = join(root, 'dsh-home')
     const userData = join(root, 'electron-data')
     await mkdir(dshHome, { recursive: true })
     await mkdir(userData, { recursive: true })
     await writeFile(join(dshHome, 'settings.yaml'), 'locale:\n  preference: en\nui-theme:\n  preference: system\n')
-    await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true,"visionGuideCompleted":false}\n')
+    await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
 
-    const server: Server = createServer((request, response) => {
-      const url = new URL(request.url ?? '/', 'http://127.0.0.1')
-      if (url.pathname === '/modlens/config') {
-        const sendJson = (status: number, body: unknown): void => {
-          response.writeHead(status, { 'content-type': 'application/json' })
-          response.end(JSON.stringify(body))
-        }
-        // Mirror the real route's contract: the discovery section costs a CLI
-        // probe, so it is only included when the client asks with ?discover.
-        const summary = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
-          provider: '',
-          engines: {
-            'gemini-api': { baseUrl: '', model: '', hasKey: false, source: '' },
-          },
-          keyless: ['antigravity-cli', 'claude-cli'],
-          reuse: { claude: false, codex: false, opencode: false, pi: false, grok: false },
-          ...(url.searchParams.has('discover')
-            ? {
-                discovery: [
-                  { harness: 'claude', cliFound: true, loggedIn: true },
-                  { harness: 'codex', cliFound: false, loggedIn: false },
-                ],
-              }
-            : {}),
-          ...overrides,
-        })
-        if (harness.failConfigOnce) {
-          harness.failConfigOnce = false
-          sendJson(503, { error: 'Harness not ready' })
-          return
-        }
-        if (request.method === 'GET') {
-          sendJson(200, summary())
-          return
-        }
-        if (request.method === 'POST') {
-          let body = ''
-          request.on('data', chunk => { body += String(chunk) })
-          request.on('end', () => {
-            try {
-              const parsed = body === '' ? {} : JSON.parse(body)
-              if (parsed?.open === true) {
-                sendJson(200, { opened: true })
-                return
-              }
-              sendJson(200, summary({
-                provider: typeof parsed.provider === 'string' ? parsed.provider : '',
-                reuse: { claude: false, codex: false, opencode: false, pi: false, grok: false, ...(parsed.reuse ?? {}) },
-              }))
-            } catch {
-              sendJson(400, { error: 'Invalid JSON' })
-            }
-          })
-          return
-        }
-        sendJson(405, { error: 'Method not allowed' })
-        return
-      }
+    const server: Server = createServer((_request, response) => {
       response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
       response.end('<!doctype html><html lang="en"><head><title>Stub Harness</title></head><body><div data-slot="sidebar"><aside>Brand</aside></div><main><h1>Harness test workspace</h1><input aria-label="Prompt"></main></body></html>')
     })
@@ -142,24 +77,6 @@ async function menuLabels(app: ElectronApplication): Promise<string[]> {
   })
 }
 
-async function clickMenuItem(app: ElectronApplication, label: string): Promise<void> {
-  await app.evaluate(({ Menu }, targetLabel) => {
-    const find = (items: Electron.MenuItem[]): Electron.MenuItem | undefined => {
-      for (const item of items) {
-        if (item.label === targetLabel) return item
-        if (item.submenu != null) {
-          const found = find(item.submenu.items)
-          if (found !== undefined) return found
-        }
-      }
-      return undefined
-    }
-    const item = find(Menu.getApplicationMenu()?.items ?? [])
-    if (item === undefined) throw new Error(`menu item not found: ${targetLabel}`)
-    item.click()
-  }, label)
-}
-
 shellTest('native menu and title follow the Harness locale preference @smoke @critical', async ({ electronApp, window, settingsPath }) => {
   await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
   const dragRegion = window.locator('[data-dsh-window-drag-region]')
@@ -191,157 +108,6 @@ shellTest('native menu and title follow the Harness locale preference @smoke @cr
   await expect.poll(() => menuLabels(electronApp)).toContain('帮助')
   await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.getTitle()))
     .toBe('dsh-desktop — DeepSeek Harness（社区版）')
-})
-
-shellTest('vision settings window loads ModLens config from the harness @critical', async ({ electronApp, window }) => {
-  await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
-  await expect.poll(() => menuLabels(electronApp)).toContain('Vision Settings…')
-  await clickMenuItem(electronApp, 'Vision Settings…')
-  const settingsWindow = await electronApp.waitForEvent('window')
-  await settingsWindow.waitForLoadState('domcontentloaded')
-  // The guide preference is incomplete, so the wizard opens (not the form).
-  await expect(settingsWindow.getByRole('heading', { name: 'Vision Setup Wizard' })).toBeVisible()
-  await expect(settingsWindow.locator('#step-1')).toBeVisible()
-  // The reuse rows only render when the proxy asked the route for ?discover.
-  await expect(settingsWindow.locator('#reuse-list .row')).toHaveCount(2)
-  await expect(settingsWindow.locator('#reuse-list .row').first()).toContainText('claude')
-  await expect(settingsWindow.locator('#reuse-list .row').first()).toContainText('Found')
-  await expect(settingsWindow.locator('#reuse-list .row').nth(1)).toContainText('codex')
-  await expect(settingsWindow.locator('#reuse-list .row').nth(1)).toContainText('Not installed')
-
-  // Wizard navigation: nothing reusable selected → step 2 (add a key).
-  await settingsWindow.getByRole('button', { name: 'Next' }).click()
-  await expect(settingsWindow.locator('#step-2')).toBeVisible()
-  await settingsWindow.getByRole('button', { name: 'Skip' }).click()
-  await expect(settingsWindow.locator('#step-3')).toBeVisible()
-  await expect(settingsWindow.getByRole('button', { name: 'Run test' })).toBeVisible()
-  // The diagnosis button runs the local-only modlens doctor (fast, no network
-  // or quota) and always prints the per-engine report.
-  await settingsWindow.getByRole('button', { name: 'Diagnosis' }).click()
-  await expect(settingsWindow.locator('#step3-diagnosis-report')).toContainText('Providers', { timeout: 15_000 })
-  await settingsWindow.getByRole('button', { name: 'Back' }).click()
-  await expect(settingsWindow.locator('#step-2')).toBeVisible()
-
-  // The main harness window must not be able to proxy ModLens config or close
-  // the settings modal; only the settings window itself is allowed.
-  const forbidden = await window.evaluate(async () => {
-    const bridge = (window as unknown as {
-      dshDesktop?: {
-        modlensConfig(method: string, body?: string): Promise<{ status: number }>
-        closeSettings(): Promise<boolean>
-      }
-    }).dshDesktop
-    const modlens = await bridge!.modlensConfig('GET')
-    const close = await bridge!.closeSettings()
-    return { modlensStatus: modlens.status, close }
-  })
-  expect(forbidden.modlensStatus).toBe(403)
-  expect(forbidden.close).toBe(false)
-  await expect(settingsWindow.getByRole('heading', { name: 'Vision Setup Wizard' })).toBeVisible()
-
-  await settingsWindow.getByRole('button', { name: 'Close' }).click().catch(() => {}) // window destroys itself mid-click on Linux; the poll below is the real assertion
-  await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1)
-})
-
-shellTest('vision settings form opens once the guide is completed @critical', async ({ electronApp, window }) => {
-  await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
-  const userData = await electronApp.evaluate(({ app }) => app.getPath('userData'))
-  await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true,"visionGuideCompleted":true}\n')
-  await clickMenuItem(electronApp, 'Vision Settings…')
-  const settingsWindow = await electronApp.waitForEvent('window')
-  await settingsWindow.waitForLoadState('domcontentloaded')
-  await expect(settingsWindow.getByRole('heading', { name: 'Vision Settings' })).toBeVisible()
-  await expect(settingsWindow.locator('#provider')).toBeVisible()
-  // The form offers a real recognition test (not clicked here: it runs the
-  // bundled CLI against live engines, which is machine-dependent).
-  await expect(settingsWindow.getByRole('button', { name: 'Test vision' })).toBeVisible()
-  // Auto-mode card renders from the ?discover section of the config payload.
-  await expect(settingsWindow.locator('#auto-card')).toBeVisible()
-  await expect(settingsWindow.locator('#reuse-list .row')).toHaveCount(2)
-
-  // Dirty tracking: a reuse toggle enables Save, and saving persists via POST.
-  const save = settingsWindow.getByRole('button', { name: 'Save' })
-  await expect(save).toBeDisabled()
-  await settingsWindow.locator('#reuse-list .row').first().getByRole('checkbox').check()
-  await expect(save).toBeEnabled()
-  await save.click()
-  await expect(settingsWindow.locator('#status')).toContainText('Saved')
-
-  // Selecting an API-key engine must render its fields (regression: the
-  // page script once called a main-process-only escapeHtml helper here).
-  await settingsWindow.locator('#provider').selectOption('gemini-api')
-  await expect(settingsWindow.locator('#apiKey')).toBeVisible()
-  await expect(settingsWindow.locator('#baseUrl')).toBeVisible()
-  await expect(settingsWindow.locator('#model')).toBeVisible()
-  await expect(settingsWindow.locator('#cli-note')).toBeHidden()
-  // A provider switch alone is a pending change.
-  await expect(save).toBeEnabled()
-  await save.click()
-  await expect(settingsWindow.locator('#status')).toContainText('Saved')
-  await expect(save).toBeDisabled()
-  await settingsWindow.locator('#apiKey').fill('test-key')
-  await expect(save).toBeEnabled()
-  await save.click()
-  await expect(settingsWindow.locator('#status')).toContainText('Saved')
-  // Keyless engines show the CLI note instead of key fields.
-  await settingsWindow.locator('#provider').selectOption('claude-cli')
-  await expect(settingsWindow.locator('#apiKey')).toHaveCount(0)
-  await expect(settingsWindow.locator('#cli-note')).toBeVisible()
-
-  await settingsWindow.getByRole('button', { name: 'Close' }).click().catch(() => {}) // window destroys itself mid-click on Linux; the poll below is the real assertion
-  await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1)
-})
-
-shellTest('pasting an image into the harness surfaces the first-run vision guide card @critical', async ({ electronApp, window }) => {
-  await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
-  await expect(window.locator('[data-dsh-vision-guide-card]')).toHaveCount(0)
-
-  // A plain text paste must not trigger the card.
-  await window.evaluate(() => {
-    const data = new DataTransfer()
-    data.setData('text/plain', 'hello')
-    document.body.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true }))
-  })
-  await expect(window.locator('[data-dsh-vision-guide-card]')).toHaveCount(0)
-
-  // An image paste asks the main process whether the guide is still pending
-  // and, when it is, shows the inline card.
-  await window.evaluate(() => {
-    const data = new DataTransfer()
-    data.items.add(new File([new Uint8Array([137, 80, 78, 71])], 'screenshot.png', { type: 'image/png' }))
-    document.body.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true }))
-  })
-  const card = window.locator('[data-dsh-vision-guide-card]')
-  await expect(card).toBeVisible()
-  await expect(card).toContainText('Configure')
-  await card.getByRole('button', { name: 'Configure' }).click()
-
-  // Configure opens the shell-owned settings modal (the wizard, since the
-  // guide preference is still incomplete).
-  const settingsWindow = await electronApp.waitForEvent('window')
-  await settingsWindow.waitForLoadState('domcontentloaded')
-  await expect(settingsWindow.getByRole('heading', { name: 'Vision Setup Wizard' })).toBeVisible()
-  await settingsWindow.getByRole('button', { name: 'Close' }).click().catch(() => {}) // window destroys itself mid-click on Linux; the poll below is the real assertion
-  await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1)
-})
-
-shellTest('vision wizard surfaces a config load failure and recovers via retry @critical', async ({ electronApp, window, harness }) => {
-  await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
-  harness.failConfigOnce = true
-  await clickMenuItem(electronApp, 'Vision Settings…')
-  const settingsWindow = await electronApp.waitForEvent('window')
-  await settingsWindow.waitForLoadState('domcontentloaded')
-  await expect(settingsWindow.getByRole('heading', { name: 'Vision Setup Wizard' })).toBeVisible()
-  // The failed GET must read as a load error with a retry, not as "no
-  // engines found".
-  await expect(settingsWindow.locator('#step1-error')).toBeVisible()
-  await expect(settingsWindow.locator('#step1-error-text')).toContainText('Harness not ready')
-  await expect(settingsWindow.locator('#reuse-list .row')).toHaveCount(0)
-  await settingsWindow.getByRole('button', { name: 'Retry' }).click()
-  await expect(settingsWindow.locator('#reuse-list .row')).toHaveCount(2)
-  await expect(settingsWindow.locator('#step1-error')).toBeHidden()
-  await settingsWindow.getByRole('button', { name: 'Close' }).click().catch(() => {}) // window destroys itself mid-click on Linux; the poll below is the real assertion
-  await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1)
 })
 
 shellTest('closing hides to tray and a second-instance activation restores the window @critical', async ({ electronApp, window }) => {

@@ -114,12 +114,18 @@ async function pruneClosure() {
 async function main() {
   await rm(HARNESS_ROOT, { recursive: true, force: true })
 
-  runPnpm(['install', '--frozen-lockfile'])
+  runPnpm(['install', '--frozen-lockfile', '--config.safe-delete=false'])
+  // safe-delete=false: pnpm 11 asks for confirmation before emptying a
+  // non-empty target — both here (replacing stale closure entries under
+  // node_modules) and in deploy below, which is exactly what this script
+  // does on purpose (it rm'd HARNESS_ROOT above); interactive prompts
+  // cannot run in CI.
   runPnpm([
     'deploy', '--filter', '.', '--prod', '--legacy',
     '--config.node-linker=hoisted',
     '--config.auto-install-peers=false',
     '--config.link-workspace-packages=true',
+    '--config.safe-delete=false',
     HARNESS_ROOT,
   ])
 

@@ -125,17 +125,6 @@
           <p data-i18n="ext.note">只集成 Web 壳，不需要 Android/iOS；代理与桌面端解耦，可独立产出 Web artifact。</p>
         </div>
       </article>
-      <article class="extension-card" data-reveal style="--i:6">
-        <div>
-          <p class="extension-card__eyebrow" data-i18n="vision.marker">扩展功能 · 视觉</p>
-          <h3 data-i18n="vision.title">粘贴图片，纯文本模型也能「看见」</h3>
-          <p class="extension-card__body" data-i18n="vision.body">内置 ModLens 视觉插件随安装包预装、开机自动挂载。在对话里粘贴截图或照片，agent 就会自动调用识别工具输出 OCR、布局与语义结构——专为没有原生视觉的模型准备。</p>
-        </div>
-        <div class="extension-card__details">
-          <ol data-i18n="vision.steps"><li>首次粘贴图片 → 三步向导：复用本机引擎登录或添加免费 Gemini Key</li><li>向导用内置示例图做一次真实识别测试，成功即完成配置</li><li>扩展 → Vision (ModLens) → Settings… 随时改引擎、重测或查看本地诊断</li></ol>
-          <p data-i18n="vision.note">引擎凭据只保存在 ~/.modlens/config.json（mode 600）；诊断完全本地运行，不联网、不耗配额。</p>
-        </div>
-      </article>
     </div>
   </section>
 
@@ -205,10 +194,6 @@
             <h3>问题发生时,带走一份可检查的报告</h3>
             <p>帮助菜单、托盘和启动失败页都能导出本地诊断报告。报告包含版本、系统状态和有上限的日志尾部,自动遮罩常见密钥与主目录,且绝不自动上传。</p>
           </article>
-          <article class="feature-card" data-i18n="ft.p7">
-            <h3>粘贴即识图,视觉开箱即用</h3>
-            <p>内置 ModLens 视觉插件,粘贴截图或照片后 agent 自动调用 <code>modlens_read_image</code> 输出 OCR、布局与语义结构。首次粘贴有三步向导,支持 Gemini、任意 OpenAI 兼容端点、本地 CLI 登录复用等引擎。</p>
-          </article>
       </div>
     </div>
   </section>
@@ -271,10 +256,6 @@
         <details>
           <summary data-i18n="faq.q8">如何校验下载文件的完整性?</summary>
           <p class="faq-answer" data-i18n="faq.a8">每个安装包都附带同名的 <code>.sha256</code> 校验文件。下载后可用以下命令验证:<br /><code class="faq-command">shasum -a 256 -c dsh-desktop-&lt;版本&gt;-arm64-mac.dmg.sha256</code><br />Windows 用户可用:<br /><code class="faq-command">CertUtil -hashfile dsh-desktop-setup-&lt;版本&gt;.exe SHA256</code><br />校验值应与 <code>.sha256</code> 文件内容一致。也可使用 <code>npx dsh-validate-release</code> 自动校验整个 Release 目录。</p>
-        </details>
-        <details>
-          <summary data-i18n="faq.q9">图片识别(ModLens)需要什么引擎?</summary>
-          <p class="faq-answer" data-i18n="faq.a9">内置的 ModLens 视觉插件支持多种引擎:Gemini API(可免费申请)、任意 OpenAI 兼容端点、Anthropic、Antigravity CLI、Claude Code CLI、Kimi Code CLI,或复用你本机 Claude Code / Codex / OpenCode / Pi / Grok 的登录。首次粘贴图片会弹出三步向导;凭据只保存在 <code>~/.modlens/config.json</code>(mode 600),识别失败时设置窗口可一键运行本地诊断,查看每个引擎的状态与修复建议。</p>
         </details>
       </div>
     </div>

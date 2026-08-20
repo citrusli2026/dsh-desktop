@@ -38,10 +38,6 @@ jobs:
       - name: Package mobile-shell Web artifact
         run: npm --prefix dsh-mobile-shell run package:web
       - run: pnpm run verify
-      # The E2E gate exercises the bundled modlens CLI through the shell IPC
-      # (vision test + doctor), which spawns the harness closure's own node
-      # binary — materialize the closure like CI does before running it.
-      - run: pnpm run bootstrap
       - name: Electron shell E2E release gate
         run: xvfb-run -a pnpm run test:e2e
         env:

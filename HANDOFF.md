@@ -10,7 +10,7 @@
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 最新代码基线 | ✅ `0.1.0-rc.6.shell.18`（已发布 2026-08-19） |
 | 已发布 | ✅ `0.1.0-rc.6.shell.18`（2026-08-19） |
-| 本地门禁 | ✅ 78 项单测、类型检查、覆盖率门槛（lines 89.58%）、官网门禁、构建通过 |
+| 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛、官网门禁、构建通过 |
 | 核心发布 | ✅ shell.18 Release 严格 6 文件门禁、attestation 核验与双平台 packaged smoke 通过 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.6.shell.18`（四个资产 `gitcode_ok=true`） |
 | 国内镜像 | ✅ shell.18 GitCode 镜像已补齐（2026-08-19，匿名 Range GET 4×206） |
@@ -259,6 +259,27 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
   重跑补传成功），匿名 Range GET 4×206（用户下载四资产）；
 - 线上验证：`/data/release.json` 指向 shell.18、四个资产 `gitcode_ok=true`，
   首页含首次打开引导卡（数据断言）。
+
+---
+
+## 十三、shell.19（2026-08-20）
+
+移除视觉扩展（ModLens），不与官方 dsh 原生多模态重叠：
+
+1. **源码移除**：删除 `src/main/vision.ts`、`guide-page.ts`、`settings-window.ts`、
+   `settings-style.ts`；清理 `index.ts` 的 6 个 vision/settings IPC 与
+   `shell:close-settings`、`menu.ts`/`menu-template.ts` 的 Vision 子菜单与
+   `showSettings` action、`supervisor.ts` 的 `--patch` 挂载、`shell-preferences.ts`
+   的 `visionGuideCompleted`、`locale.ts` 中 8 个 vision 键、`preload/index.ts`
+   的粘贴引导卡与 6 个 bridge 方法。
+2. **依赖与测试**：`manifest/harness/package.json` 移除 `@liustack/modlens`；
+   删除 `test/vision.test.ts`（11 项）与 `e2e/manual-vision-check.mjs`；清理
+   e2e 中 4 条 vision 测试与 `/modlens/config` stub；单测 78 → 67 项。
+3. **文档与官网**：ARCHITECTURE.md 模块图与验证契约、README（中英）Vision
+   专节、官网视觉卡片/FAQ 同步移除。
+4. **CI**：移除 verify job 中为 vision e2e 准备的 `pnpm run bootstrap`
+   （e2e 门禁现为 dev-web stub 模式，不 spawn 闭包；build job 打包前仍会
+   bootstrap 自己的闭包）。
 
 ---
 

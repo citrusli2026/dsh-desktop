@@ -17,7 +17,6 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 - **Isolated by default**: the desktop app keeps its own data home (`~/.dsh-desktop`) — settings, sessions, API keys, and plugins stay separate from the CLI; set `DSH_HOME=~/.dsh` to share with the CLI again (decision 0012);
 - **Robust**: crash auto-restart with exponential backoff, manual retry on the error page, single-instance lock, system tray with live harness status (restart / logs / update check), persisted window geometry, logs on disk;
 - **Restrained renderer**: context isolation and sandboxing stay enabled, Node integration stays off, navigation is guarded, and unexpected device, capture, notification, or filesystem permissions are denied by default (decision 0014);
-- **Pre-installed vision**: [ModLens](https://github.com/liustack/modlens) visual recognition plugin is bundled — paste an image in chat and the AI can understand it (OCR, layout analysis, semantic structuring); see [Vision (ModLens)](#vision-modlens);
 - **Web mobile connection**: "Extensions → Connect phone / tablet over LAN" starts an isolated mobile-shell Web proxy and shows a one-time pairing QR code. Only the other repository's Web launcher and proxy are staged; Android/iOS projects are not included in the Electron installer;
 - **Updates**: Windows updates in place; unsigned macOS checks for new releases and opens the exact release page for a deliberate manual install (decisions 0010, 0016).
 
@@ -71,12 +70,7 @@ Project owners can use two optional mirror channels:
 
 ## Vision (ModLens)
 
-Every build bundles the [ModLens](https://github.com/liustack/modlens) vision plugin so text-only models can read images: paste a screenshot or photo into the chat and the agent analyzes it through `modlens_read_image` (OCR, layout analysis, semantic structuring).
-
-- **No install step**: the plugin is mounted into the harness on every boot; if it can't be mounted, the harness still starts — just without vision.
-- **First run**: pasting an image offers a three-step wizard — reuse a local engine login → add a free Gemini API key → run a real recognition test against a bundled sample image.
-- **Engines**: Gemini API, any OpenAI-compatible endpoint (custom base URL), Anthropic, Antigravity CLI, Claude Code CLI, Kimi Code CLI — or reuse the logins you already have in Claude Code, Codex, OpenCode, Pi, or Grok. Credentials stay in `~/.modlens/config.json` (mode 600), never in shell settings.
-- **Manage it**: "Extensions → Vision (ModLens) → Settings…" opens the engine form, with an on-demand recognition test and a local-only `modlens doctor` diagnosis (no network, no quota).
+No longer bundled. Upstream DeepSeek Harness added native image support for DeepSeek models (`inputModalities` with image, opt-in per model) in `0.1.0-rc.8`, so the shell's ModLens bridge was removed to avoid overlapping with the official feature. Image handling is entirely upstream's now.
 
 ## Development
 
