@@ -32,8 +32,8 @@
 
 ## 版本号
 
-版本号与 tag 为复合式:`<dsh 版本>.shell.<壳修订号>`——如 `0.1.0-rc.8.shell.3`
-表示打包 `@deepseek-ai/dsh` 0.1.0-rc.8、壳第 3 次修订。版本字段由
+版本号与 tag 为复合式:`<dsh 版本>.shell.<壳修订号>`——如 `0.1.1-rc.1.shell.3`
+表示打包 `@deepseek-ai/dsh` 0.1.1-rc.1、壳第 3 次修订。版本字段由
 `scripts/version.mjs` 统一管理(`show` / `check` / `bump`);`dsh-watch`
 工作流每日检查上游 npm,发现新版自动开经验证的 bump PR(决策记录 0009)。
 CI 与 Release 使用 mobile-shell 上游不可变 tag `v1.0.0` 的 Web 产物;只有经过兼容性变更评估后才更新该 pin。
