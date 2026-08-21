@@ -8,12 +8,12 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.0-rc.8.shell.0`（已发布 2026-08-20；内核 rc.6 → rc.8，壳修订归零；同步移除 ModLens） |
-| 已发布 | ✅ `0.1.0-rc.8.shell.0`（2026-08-20） |
+| 最新代码基线 | ✅ `0.1.1-rc.1.shell.0`（已发布 2026-08-21；内核 0.1.0-rc.8 → 0.1.1-rc.1，壳修订归零） |
+| 已发布 | ✅ `0.1.1-rc.1.shell.0`（2026-08-21） |
 | 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛、官网门禁、构建通过 |
-| 核心发布 | ✅ rc.8.shell.0 Release 严格 6 文件门禁、attestation 核验与双平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.0-rc.8.shell.0`（四个资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ rc.8.shell.0 GitCode 镜像已补齐（2026-08-20，匿名 Range GET 4×206） |
+| 核心发布 | ✅ 0.1.1-rc.1.shell.0 Release 严格 6 文件门禁、attestation 核验与双平台 packaged smoke 通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.1.shell.0`（四个资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ 0.1.1-rc.1.shell.0 GitCode 镜像已补齐（2026-08-22 浏览器会话 + API 绑定，匿名 Range GET 4×206） |
 | 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -324,14 +324,18 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
   windows-2022）→ publish 全绿，6 文件门禁与 attestation 核验通过；
 - tag `v0.1.1-rc.1.shell.0` → `f05ab7c`（rebase 后提交）；
 - Site Data Refresh 自动 run（提交 `c364f6c`）指向 rc.8.shell.0；
-- GitCode 国内镜像：**自动化 backfill 持续失败**——2026-08-21 晚间
-  runner→OBS 跨境带宽极差，dmg/exe 各 20min 超时（run `32482864902`
-  取消、`32488149003` 超时、`32497268546` 保底重跑），小文件
-  （sha256/blockmap/latest.yml）已传齐；待维护者国内网络本地上传两个
-  安装包（本机上海 → GitCode 延迟约 50ms，需 GITCODE_TOKEN）或浏览器
-  会话上传（`gitcode-release-publisher` skill）；
+- GitCode 国内镜像：**自动化 backfill 失败后改用浏览器会话补齐**——
+  runner→OBS 跨境带宽极差（2026-08-21 晚间连续 4 run、11 次 20min 超时，
+  run `32482864902` 取消、`32488149003` 超时、`32497268546` 保底），
+  小文件（sha256/blockmap/latest.yml）由 backfill 传齐；两个安装包经
+  Edge 已登录会话用 `gitcode-release-publisher` skill 上传（本机上海直连
+  GitCode，数分钟完成），随后用 `PUT /api/v2/.../releases/{tag}` 将
+  attachment 绑定到镜像 release（id 42854，`action:"keep"` 保留已有
+  4 资产 + `action:"create"` 新增 dmg/exe，6 links 全部生效）；
 - 线上验证：GitHub Release 6 资产齐全、`/api/downloads` 实时计数可用；
-  `gitcode_ok` 待镜像补齐后重跑 `gen-site-data.mjs` 刷新为 `true`。
+  稳定 URL 匿名 Range GET 4×206、dmg 头 1MB 哈希与本地一致；
+  `gitcode_ok` 已刷新为 `true`（GitHub API 网络超时期间手动置位，
+  下次 site-refresh 会重新探测确认）。
 
 ---
 

@@ -21,7 +21,7 @@
         "kind": "installer",
         "sha256": null,
         "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.1-rc.1.shell.0/dsh-desktop-0.1.1-rc.1.shell.0-arm64-mac.dmg",
-        "gitcode_ok": false
+        "gitcode_ok": true
       },
       {
         "name": "dsh-desktop-0.1.1-rc.1.shell.0-arm64-mac.dmg.sha256",
@@ -41,7 +41,7 @@
         "kind": "installer",
         "sha256": null,
         "gitcode_url": "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.1-rc.1.shell.0/dsh-desktop-setup-0.1.1-rc.1.shell.0.exe",
-        "gitcode_ok": false
+        "gitcode_ok": true
       },
       {
         "name": "dsh-desktop-setup-0.1.1-rc.1.shell.0.exe.sha256",
