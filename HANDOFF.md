@@ -305,4 +305,34 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
 
 ---
 
-_更新于 2026-08-20_
+## 十五、shell.20 发布（2026-08-21）
+
+内核升级发布 `v0.1.1-rc.1.shell.0`（上游 `0.1.1-rc.1`，壳修订从 0 起）：
+
+1. **内核升级**：`version.mjs bump dsh 0.1.1-rc.1`；`pnpm-workspace.yaml` 全部
+   192 处 dsh-* release-age pins 同步替换；lockfile 重新生成（pnpm 自动将新包
+   `dsh-authorization@0.1.1-rc.1` 加入 supply-chain 白名单）。
+2. **peer 缺口修复**：bootstrap 的 `audit-harness-peers` 门禁报缺
+   `@deepseek-ai/dsh-authorization`（新内核 `dsh-llm-pi-ai` 的非可选 peer），
+   已补入 manifest 依赖后通过。
+3. **流程沉淀**：发布全流程整理为 skill
+   `.agents/skills/release-dsh-desktop/SKILL.md`（bump → peers → 门禁 →
+   文档基线 → tag → CI → 镜像 → 官网数据 → HANDOFF，含现场故障表）。
+
+发布元数据：
+- Release run `32482248816`（成功）：verify → build（macos-14 /
+  windows-2022）→ publish 全绿，6 文件门禁与 attestation 核验通过；
+- tag `v0.1.1-rc.1.shell.0` → `f05ab7c`（rebase 后提交）；
+- Site Data Refresh 自动 run（提交 `c364f6c`）指向 rc.8.shell.0；
+- GitCode 国内镜像：**自动化 backfill 持续失败**——2026-08-21 晚间
+  runner→OBS 跨境带宽极差，dmg/exe 各 20min 超时（run `32482864902`
+  取消、`32488149003` 超时、`32497268546` 保底重跑），小文件
+  （sha256/blockmap/latest.yml）已传齐；待维护者国内网络本地上传两个
+  安装包（本机上海 → GitCode 延迟约 50ms，需 GITCODE_TOKEN）或浏览器
+  会话上传（`gitcode-release-publisher` skill）；
+- 线上验证：GitHub Release 6 资产齐全、`/api/downloads` 实时计数可用；
+  `gitcode_ok` 待镜像补齐后重跑 `gen-site-data.mjs` 刷新为 `true`。
+
+---
+
+_更新于 2026-08-21_
