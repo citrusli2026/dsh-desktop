@@ -42,12 +42,6 @@ async function api(url) {
   return res.json()
 }
 
-export function classifyPublicAsset(name) {
-  if (/^dsh-desktop-.+-arm64-mac\.dmg$/.test(name) || /^dsh-desktop-setup-.+\.exe$/.test(name) || /^dsh-desktop-.+\.deb$/.test(name)) return 'installer'
-  if (/^dsh-desktop-.+-arm64-mac\.dmg\.sha256$/.test(name) || /^dsh-desktop-setup-.+\.exe\.sha256$/.test(name) || /^dsh-desktop-.+\.deb\.sha256$/.test(name)) return 'checksum'
-  return null
-}
-
 async function readChecksum(asset) {
   const response = await fetch(asset.browser_download_url, {
     headers: {
