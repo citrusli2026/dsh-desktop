@@ -54,7 +54,7 @@
     "electron": "^43.4.0",
     "electron-builder": "^26.0.0",
     "electron-updater": "^6.8.9",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.2",
     "sharp": "^0.35.3",
     "tar": "^7.0.0",
     "typescript": "^7.0.0"
