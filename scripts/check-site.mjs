@@ -54,7 +54,7 @@ for (const asset of data.release.assets) {
   requireValue(asset.url.includes(`/download/${data.release.tag}/${asset.name}`), `${asset.name} GitHub URL does not match the release`)
   requireValue(typeof asset.gitcode_ok === 'boolean', `${asset.name} GitCode status is not boolean`)
 }
-requireValue(checksums.length === 0 || checksums.length === 2, 'checksums must be absent or complete for both installers')
+requireValue(checksums.length === 0 || checksums.length === installers.length, 'checksums must be absent or complete for every installer')
 for (const checksum of checksums) {
   const installerName = checksum.name.replace(/\.sha256$/, '')
   requireValue(installers.some(asset => asset.name === installerName), `${checksum.name} has no matching installer`)
