@@ -20,8 +20,8 @@ import {
 } from './window.ts'
 import { createTray, destroyTray, refreshTray } from './tray.ts'
 import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } from './update-prompt.ts'
-import { armSmokeTimeout, quitGracefully, SMOKE_TEST, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
-import { DEV_WEB_URL_ENV, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
+import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
+import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport } from './diagnostics.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { MenuActions } from './menu-template.ts'
@@ -303,7 +303,17 @@ if (!gotLock) {
         }
       } else {
         armSmokeTimeout()
-        await smokeVerify(url)
+        if (SMOKE_UI_TEST) {
+          const mainWindow = windowContext.mainWindow
+          if (mainWindow === undefined || mainWindow.isDestroyed()) {
+            console.error('dsh-desktop: smoke-ui: no main window')
+            quitGracefully(SMOKE_EXIT_FAIL)
+          } else {
+            await smokeUiRender(url, mainWindow)
+          }
+        } else {
+          await smokeVerify(url)
+        }
       }
     } catch (error) {
       console.error('dsh-desktop: boot failed:', error instanceof Error ? error.message : error)

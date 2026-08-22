@@ -12,6 +12,7 @@
 | `HANDOFF.md` | **运维核心**：当前状态、发布流程、速查、版本记录 | 每次发布、镜像或官网调整后 |
 | `docs/ARCHITECTURE.md` | 产品架构、源码职责、验证契约 | 架构或门禁变化时 |
 | `docs/decisions/README.md` | ADR 索引 | 新增决策记录时 |
+| `docs/test-hardening-plan.md` | 测试完善迭代规划（v0.1.1-rc.2.shell.2，P0/P1/P2 工作项） | 测试门禁变化或迭代推进时 |
 | `site/README.md` | 官网维护与部署 | 官网结构或部署方式变化时 |
 
 ## 版本术语

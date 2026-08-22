@@ -10,6 +10,9 @@
 /** Command-line flag that puts the app into headless smoke mode. */
 export const SMOKE_FLAG = '--smoke-test'
 
+/** Smoke-mode variant: additionally verify the real Harness UI renders. */
+export const SMOKE_UI_FLAG = '--smoke-ui'
+
 /** Exit code when smoke assertions pass. */
 export const SMOKE_EXIT_OK = 0
 

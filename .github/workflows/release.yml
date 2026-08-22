@@ -114,6 +114,55 @@ jobs:
       - name: Smoke packaged app (headless)
         if: matrix.os == 'ubuntu-24.04'
         run: xvfb-run -a node scripts/smoke-packaged.mjs
+      # ── Test-harding gates (S1/S2/S2.5): a user-downloaded installer must
+      # boot, render the real Harness UI, and survive its error paths before
+      # the release proceeds to publish. ──────────────────────────────────
+      - name: Smoke packaged app — real Harness render (S2.5)
+        if: matrix.os != 'ubuntu-24.04'
+        env:
+          DSH_SMOKE_UI: "1"
+        run: node scripts/smoke-packaged.mjs
+      - name: Smoke packaged app — real Harness render (S2.5, headless)
+        if: matrix.os == 'ubuntu-24.04'
+        env:
+          DSH_SMOKE_UI: "1"
+        run: xvfb-run -a node scripts/smoke-packaged.mjs
+      - name: "Smoke packaged app — fault injection: harness start failure (S1)"
+        if: matrix.os != 'ubuntu-24.04'
+        env:
+          DSH_DESKTOP_TEST_FAIL_HARNESS: "1"
+        run: node scripts/smoke-packaged.mjs
+      - name: "Smoke packaged app — fault injection: harness start failure (S1, headless)"
+        if: matrix.os == 'ubuntu-24.04'
+        env:
+          DSH_DESKTOP_TEST_FAIL_HARNESS: "1"
+        run: xvfb-run -a node scripts/smoke-packaged.mjs
+      - name: "Smoke packaged app — fault injection: retry recovery (S1)"
+        if: matrix.os != 'ubuntu-24.04'
+        env:
+          DSH_DESKTOP_TEST_FAIL_HARNESS: "1"
+          DSH_DESKTOP_TEST_RETRY_FAIL: "1"
+        run: node scripts/smoke-packaged.mjs
+      - name: "Smoke packaged app — fault injection: retry recovery (S1, headless)"
+        if: matrix.os == 'ubuntu-24.04'
+        env:
+          DSH_DESKTOP_TEST_FAIL_HARNESS: "1"
+          DSH_DESKTOP_TEST_RETRY_FAIL: "1"
+        run: xvfb-run -a node scripts/smoke-packaged.mjs
+      - name: E2E on packaged app (@smoke gate, S1)
+        if: matrix.os != 'ubuntu-24.04'
+        run: pnpm run test:e2e:packaged
+      - name: E2E on packaged app (@smoke gate, S1, headless)
+        if: matrix.os == 'ubuntu-24.04'
+        run: xvfb-run -a pnpm run test:e2e:packaged
+      - name: Install deb and smoke the installed app with real sandbox (S2)
+        if: matrix.os == 'ubuntu-24.04'
+        run: |
+          sudo dpkg -i dist/dsh-desktop-*.deb
+          xvfb-run -a node scripts/smoke-installed.mjs dpkg
+      - name: NSIS silent install smoke (S2)
+        if: matrix.os == 'windows-2022'
+        run: node scripts/smoke-installed.mjs nsis dist
       - name: Write installer SHA-256
         run: node scripts/write-release-checksum.mjs dist
       - name: Attest macOS installer (build provenance)
