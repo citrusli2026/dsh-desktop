@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-08-17。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-08-22。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -8,12 +8,12 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.1.shell.0`（已发布 2026-08-21；内核 0.1.0-rc.8 → 0.1.1-rc.1，壳修订归零） |
-| 已发布 | ✅ `0.1.1-rc.1.shell.0`（2026-08-21） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.0`（已发布 2026-08-22；内核 0.1.1-rc.1 → 0.1.1-rc.2，壳修订归零） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.0`（2026-08-22，三端 dmg/exe/deb/AppImage） |
 | 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛、官网门禁、构建通过 |
-| 核心发布 | ✅ 0.1.1-rc.1.shell.0 Release 严格 6 文件门禁、attestation 核验与双平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.1.shell.0`（四个资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.1.shell.0 GitCode 镜像已补齐（2026-08-22 浏览器会话 + API 绑定，匿名 Range GET 4×206） |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.0 Release 严格 10 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.0`（6 个用户资产 `gitcode_ok=true`；AppImage 不镜像） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.0 GitCode 镜像：dmg/exe/deb + 3×sha256（2026-08-22 浏览器会话上传 + PUT 绑定，匿名 Range GET 6×206） |
 | 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -339,4 +339,45 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
 
 ---
 
-_更新于 2026-08-21_
+## 十六、shell.21 发布（2026-08-22）
+
+内核升级发布 `v0.1.1-rc.2.shell.0`（上游 `0.1.1-rc.2`，壳修订从 0 起），
+并修复 dsh-watch 连续失败（8-18/8-19/8-20/8-22）：
+
+1. **dsh-watch 失败根因与修复**：上游发布 rc 全家桶当天，pnpm 的 24h
+   `minimumReleaseAge` 供应链策略会拦住新包，因为
+   `manifest/harness/pnpm-workspace.yaml` 的 `minimumReleaseAgeExclude`
+   仍停留在上一内核版本。新增 `scripts/sync-release-age-excludes.mjs`
+   并在 workflow 的 lockfile 重生成步骤之后调用（顺序关键：lockfile-only
+   校验旧 lockfile 条目，须先换 lockfile 再同步豁免），同时去重 pnpm
+   自动追加的重复条目。提交 `36c2c82`。
+2. **内核升级**：`version.mjs bump dsh 0.1.1-rc.2`；`dsh-authorization`
+   pin 升到 `^0.1.1-rc.2`；lockfile 全新解析（`pnpm clean --lockfile`
+   后重解析，0 处 rc.1、2123 处 rc.2 引用）；release-age 豁免 193 条
+   同步到 rc.2。提交 `76f21f4`（文档基线 ARCHITECTURE/README/version.mjs
+   同步更新）。
+3. **三端发布**：tag `v0.1.1-rc.2.shell.0` → `76f21f4`，release.yml
+   verify + build（macos-14 / windows-2022 / ubuntu-24.04）+ publish 全绿；
+   GitHub Release 10 文件契约齐全（dmg/exe/deb/AppImage + 4×sha256 +
+   blockmap + latest.yml），attestation 与三平台 packaged smoke 通过。
+4. **GitCode 镜像（新策略）**：按用户要求只镜像 dmg/exe/deb + 3×sha256，
+   **AppImage 不镜像**。backfill 被取消（已创建 release 骨架 id 42923
+   并绑定 6 个小文件）；改用浏览器会话上传（本机代理下载 GitHub 资产，
+   直连 GitHub 仅 ~9KB/s，代理 419KB/s）→ 6 个 attachment 全部上传
+   （每文件 10-12 秒）→ PUT 绑定（`action:"keep"` 保留 3 个 sha256 +
+   `action:"create"` 新增 3 个安装包，payload 需含
+   ref/name/description/release_status/assets 全字段，缺字段报
+   400「审核异常」）。匿名 Range GET 6×206；`gitcode_ok` 已刷新。
+5. **网站数据**：本地 `gen-site-data` 重新生成（stats 108 次：
+   mac 46 / win 56 / linux 6），提交 `b89680d`；site-refresh 自动同步
+   提交 `2432d34`。
+
+发布元数据：
+- Release run `32548351782`（成功）；
+- Site Data Refresh run `32548638115`（自动，成功）；
+- 线上验证：`/data/release.json` 指向 rc.2.shell.0、6 资产
+  `gitcode_ok=true`、`/api/downloads` 实时计数可用。
+
+---
+
+_更新于 2026-08-22_
