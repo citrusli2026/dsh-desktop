@@ -23,6 +23,9 @@ requireValue(typeof data.release?.tag === 'string' && data.release.tag.startsWit
 requireValue(Array.isArray(data.release.assets), 'release assets are missing')
 requireValue(data.release.assets.length === 2 || data.release.assets.length === 4, 'public asset count must be 2 installers or 2 installers + 2 checksums')
 requireValue(Number.isInteger(data.stats?.installer_downloads) && data.stats.installer_downloads >= 0, 'stats.installer_downloads must be a non-negative integer')
+requireValue(Number.isInteger(data.stats?.mac_downloads) && data.stats.mac_downloads >= 0, 'stats.mac_downloads must be a non-negative integer')
+requireValue(Number.isInteger(data.stats?.win_downloads) && data.stats.win_downloads >= 0, 'stats.win_downloads must be a non-negative integer')
+requireValue(data.stats.installer_downloads === data.stats.mac_downloads + data.stats.win_downloads, 'stats.installer_downloads must equal mac_downloads + win_downloads')
 requireValue(Number.isInteger(data.stats?.releases) && data.stats.releases >= 1, 'stats.releases must be a positive integer')
 
 const installers = data.release.assets.filter(asset => asset.kind === 'installer')

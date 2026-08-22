@@ -84,13 +84,19 @@ if (!release) {
   throw new Error(`no published release found for ${REPO}`)
 }
 
-// 全版本累计安装包下载（dmg + exe，排除校验/升级辅助文件）：
-// 最新 release 的下载数会随每个新版本归零，单看它会严重低估实际使用量。
-const installerDownloads = published.reduce(
-  (sum, r) => sum + r.assets
-    .filter((a) => classifyPublicAsset(a.name) === 'installer')
-    .reduce((s, a) => s + (a.download_count || 0), 0),
-  0,
+// 全版本累计安装包下载（dmg + exe，排除校验/升级辅助文件），按平台分别
+// 统计：最新 release 的下载数会随每个新版本归零，单看它会严重低估实际
+// 使用量。
+const downloadsByPlatform = published.reduce(
+  (acc, r) => {
+    for (const a of r.assets) {
+      if (classifyPublicAsset(a.name) !== 'installer') continue
+      if (a.name.endsWith('.dmg')) acc.mac += a.download_count || 0
+      else acc.win += a.download_count || 0
+    }
+    return acc
+  },
+  { mac: 0, win: 0 },
 )
 
 const publicAssets = release.assets.filter(a => classifyPublicAsset(a.name) !== null)
@@ -104,7 +110,9 @@ const data = {
     license: repo.license?.spdx_id ?? 'MIT',
   },
   stats: {
-    installer_downloads: installerDownloads,
+    installer_downloads: downloadsByPlatform.mac + downloadsByPlatform.win,
+    mac_downloads: downloadsByPlatform.mac,
+    win_downloads: downloadsByPlatform.win,
     releases: published.length,
   },
   release: {

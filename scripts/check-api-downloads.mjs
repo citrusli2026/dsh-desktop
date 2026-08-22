@@ -34,7 +34,7 @@ function makeReq(method = 'GET', host = 'dsh-desktop.com') {
   return { method, headers: { host, 'x-forwarded-proto': 'https' } }
 }
 
-function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, expectTotal, req }) {
+function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, expectTotal, expectMac, expectWin, req }) {
   const originalFetch = globalThis.fetch
   globalThis.fetch = async (url, opts) => {
     const result = fetchImpl(String(url), opts)
@@ -54,7 +54,9 @@ function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, ex
     let detail = `status=${res.statusCode} (expect ${expectStatus})`
     if (res.body) {
       detail += ` source=${res.body.source} (expect ${expectSource})`
-      if (typeof res.body.total_downloads === 'number') detail += ` total=${res.body.total_downloads}`
+      if (typeof res.body.total_downloads === 'number') {
+        detail += ` total=${res.body.total_downloads} mac=${res.body.mac_downloads} win=${res.body.win_downloads}`
+      }
       if (res.body.assets) {
         const names = res.body.assets.map(a => a.name)
         detail += ` assets=[${names.join(', ')}]`
@@ -66,7 +68,9 @@ function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, ex
       }
     }
     const totalOk = expectTotal === undefined || res.body?.total_downloads === expectTotal
-    if (!ok || (expectSource && res.body && res.body.source !== expectSource) || !totalOk) {
+    const macOk = expectMac === undefined || res.body?.mac_downloads === expectMac
+    const winOk = expectWin === undefined || res.body?.win_downloads === expectWin
+    if (!ok || (expectSource && res.body && res.body.source !== expectSource) || !totalOk || !macOk || !winOk) {
       throw new Error(`${name} FAILED — ${detail}`)
     }
     console.log(`ok — ${name} (${detail})`)
@@ -105,8 +109,10 @@ await runCase('real-time counts from GitHub tag endpoint', {
   expectStatus: 200,
   expectSource: 'github',
   expectCounts: releaseJson.release.assets.map(a => (a.downloads || 0) + 100),
-  // 累计只统计安装包(dmg+exe=900),排除 sha256 辅助文件
+  // 累计按平台分别统计:mac=dmg 500、win=exe 400;排除 sha256 辅助文件
   expectTotal: 900,
+  expectMac: 500,
+  expectWin: 400,
 })
 
 await runCase('static fallback when GitHub tag endpoint fails', {
@@ -118,6 +124,8 @@ await runCase('static fallback when GitHub tag endpoint fails', {
   expectSource: 'release-data',
   expectCounts: releaseJson.release.assets.map(a => a.downloads || 0),
   expectTotal: releaseJson.stats?.installer_downloads ?? null,
+  expectMac: releaseJson.stats?.mac_downloads ?? null,
+  expectWin: releaseJson.stats?.win_downloads ?? null,
 })
 
 await runCase('malicious Host header cannot redirect same-site fetch', {
@@ -131,6 +139,8 @@ await runCase('malicious Host header cannot redirect same-site fetch', {
   expectSource: 'release-data',
   expectCounts: releaseJson.release.assets.map(a => a.downloads || 0),
   expectTotal: releaseJson.stats?.installer_downloads ?? null,
+  expectMac: releaseJson.stats?.mac_downloads ?? null,
+  expectWin: releaseJson.stats?.win_downloads ?? null,
 })
 
 await runCase('404 legacy path when no local data and no listable release', {

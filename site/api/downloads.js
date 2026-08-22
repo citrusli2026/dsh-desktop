@@ -62,24 +62,28 @@ async function fetchLiveDownloads(tag) {
 }
 
 async function fetchLiveTotalDownloads() {
-  // 全版本累计安装包下载。最新 release 的计数随每个新版本归零，累计值
-  // 才反映真实使用量；per_page=100 一次拿全（本仓库约 15 个 release）。
+  // 全版本累计安装包下载（按平台分别）。最新 release 的计数随每个新版本
+  // 归零，累计值才反映真实使用量；per_page=100 一次拿全（本仓库约 15 个
+  // release）。
   const res = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=100`, {
     headers: GH_HEADERS,
   })
   if (!res.ok) return null
   const releases = await res.json()
   if (!Array.isArray(releases)) return null
-  let total = 0
+  let mac = 0
+  let win = 0
   let count = 0
   for (const r of releases) {
     if (r.draft || !Array.isArray(r.assets)) continue
     count += 1
     for (const a of r.assets) {
-      if (classifyAsset(a.name) === 'installer') total += a.download_count || 0
+      if (classifyAsset(a.name) !== 'installer') continue
+      if (a.name.endsWith('.dmg')) mac += a.download_count || 0
+      else win += a.download_count || 0
     }
   }
-  return { total, releases: count }
+  return { mac, win, releases: count }
 }
 
 async function fetchLegacyGitHubList() {
@@ -163,8 +167,14 @@ module.exports = async function handler(req, res) {
       generated_at: downloadsByAsset ? new Date().toISOString() : local.generated_at,
       source: downloadsByAsset ? 'github' : 'release-data',
       total_downloads:
-        (liveTotal && liveTotal.total) ||
+        (liveTotal && liveTotal.mac + liveTotal.win) ||
         (typeof local.stats?.installer_downloads === 'number' ? local.stats.installer_downloads : null),
+      mac_downloads:
+        (liveTotal && liveTotal.mac) ||
+        (typeof local.stats?.mac_downloads === 'number' ? local.stats.mac_downloads : null),
+      win_downloads:
+        (liveTotal && liveTotal.win) ||
+        (typeof local.stats?.win_downloads === 'number' ? local.stats.win_downloads : null),
       released_versions: (liveTotal && liveTotal.releases) || local.stats?.releases || null,
       assets,
     })

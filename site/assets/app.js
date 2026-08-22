@@ -42,6 +42,7 @@
       'dl.lead': '每个版本只发布两个安装包:macOS Apple Silicon 的 DMG 与 Windows x64 的 EXE。GitCode 镜像可用时与 GitHub 并列展示。',
       'dl.total': '全版本累计下载 {n} 次',
       'dl.total.note': '含历史版本,仅统计 GitHub 下载',
+      'dl.platformTotal': '历史累计 ↓ {n}',
       'dl.fallback': '版本数据加载失败时,可直接前往 <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> 或 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a> 下载。',
       'dl.note': '命令行方式同样可用;桌面壳功能与其完全一致,但使用独立数据目录 <code>~/.dsh-desktop</code>,互不干扰。',
       'guide.mac.title': 'macOS 首次打开',
@@ -113,6 +114,7 @@
       'dl.lead': 'Every release carries exactly two installers: a DMG for Apple Silicon Macs and an EXE for Windows x64. A verified GitCode mirror appears alongside GitHub when available.',
       'dl.total': '{n} downloads across all versions',
       'dl.total.note': 'Includes past releases; GitHub downloads only',
+      'dl.platformTotal': 'All-time ↓ {n}',
       'dl.fallback': 'If live data fails to load, head to <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> directly.',
       'dl.note': 'The CLI route works too; the shell is functionally identical but keeps its own data home at <code>~/.dsh-desktop</code> — no interference either way.',
       'guide.mac.title': 'First launch on macOS',
@@ -353,8 +355,14 @@
       var list = groups[os]
       if (!list.length) return
       list.sort(function (a, b) { return (b.primary ? 1 : 0) - (a.primary ? 1 : 0) })
+      // 该平台全版本累计下载（dmg/exe 分别统计,见 release.json stats）
+      var hist = data.stats && (os === 'mac' ? data.stats.mac_downloads : data.stats.win_downloads)
       html += '<div class="platform-group">'
-      html += '<div class="platform-group__head"><h3>' + labels[os][0] + '</h3><span>' + labels[os][1] + '</span></div>'
+      html += '<div class="platform-group__head"><h3>' + labels[os][0] + '</h3><span>' + labels[os][1] + '</span>'
+      if (typeof hist === 'number') {
+        html += '<span class="platform-hist" title="' + t('dl.total.note') + '">' + t('dl.platformTotal').replace('{n}', fmtNum(hist)) + '</span>'
+      }
+      html += '</div>'
       list.forEach(function (a) {
         var links = linksOf(a)
         html += '<div class="asset-row">'
@@ -388,6 +396,13 @@
             updated = true
           }
         })
+        if (typeof live.mac_downloads === 'number' && typeof live.win_downloads === 'number' && typeof live.total_downloads === 'number') {
+          data.stats = data.stats || {}
+          data.stats.mac_downloads = live.mac_downloads
+          data.stats.win_downloads = live.win_downloads
+          data.stats.installer_downloads = live.total_downloads
+          updated = true
+        }
         if (updated) {
           renderPlatforms(data)
           bindCopy($('#platform-rows'))
