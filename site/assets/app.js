@@ -366,6 +366,12 @@ function applyLang() {
   })
   fillFaqVersion()
   $('#lang-toggle').textContent = lang === 'zh' ? 'EN' : '中'
+  var mbtn = $('#menu-toggle')
+  if (mbtn) {
+    var mlabel = t(mbtn.classList.contains('is-open') ? 'a11y.menuClose' : 'a11y.menuOpen')
+    mbtn.setAttribute('aria-label', mlabel)
+    mbtn.setAttribute('title', mlabel)
+  }
   renderFirstRun()
   if (siteData) {
     renderMeta(siteData)
@@ -384,10 +390,45 @@ function bindLangToggle() {
   })
 }
 
+/* ══ 移动端菜单(≤960px 替代隐藏的导航) ═════════════ */
+function setMenu(open, focus) {
+  var btn = $('#menu-toggle')
+  var menu = $('#topbar-menu')
+  if (!btn || !menu) return
+  menu.classList.toggle('is-open', open)
+  btn.classList.toggle('is-open', open)
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false')
+  var label = t(open ? 'a11y.menuClose' : 'a11y.menuOpen')
+  btn.setAttribute('aria-label', label)
+  btn.setAttribute('title', label)
+  if (focus) (open ? menu.querySelector('a') : btn).focus()
+}
+
+function bindMenuToggle() {
+  var btn = $('#menu-toggle')
+  var menu = $('#topbar-menu')
+  if (!btn || !menu) return
+  btn.addEventListener('click', function () {
+    setMenu(!menu.classList.contains('is-open'))
+  })
+  $all('a', menu).forEach(function (a) {
+    a.addEventListener('click', function () { setMenu(false) })
+  })
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.classList.contains('is-open')) setMenu(false, true)
+  })
+  document.addEventListener('click', function (e) {
+    if (menu.classList.contains('is-open') && !menu.contains(e.target) && !btn.contains(e.target)) {
+      setMenu(false)
+    }
+  })
+}
+
 /* ══ 启动 ══════════════════════════════════════════ */
 bindReveal()
 bindLangToggle()
 bindThemeToggle()
+bindMenuToggle()
 bindCopy(document)
 applyTheme()
 if (lang === 'en') applyLang()

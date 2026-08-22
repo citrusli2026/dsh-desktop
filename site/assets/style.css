@@ -30,6 +30,7 @@
   --shadow-card: 0 0 0 1px #f1f5f9, 0 2px 4px rgba(0, 0, 0, 0.05), 0 12px 28px rgba(25, 42, 86, 0.08);
   /* 玻璃层与硬编码色抽出为主题变量 */
   --topbar-bg: rgba(249, 248, 248, 0.78);
+  --topbar-menu-bg: #f9f8f8;
   --hover-glass: rgba(255, 255, 255, 0.55);
   --chip-hover-bg: rgba(255, 255, 255, 0.5);
   --notice-bg: rgba(255, 255, 255, 0.58);
@@ -77,6 +78,7 @@
     --amber: #d99a3f;
     --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 2px 4px rgba(0, 0, 0, 0.35), 0 12px 28px rgba(0, 0, 0, 0.5);
     --topbar-bg: rgba(12, 15, 22, 0.72);
+    --topbar-menu-bg: #0c0f16;
     --hover-glass: rgba(255, 255, 255, 0.08);
     --chip-hover-bg: rgba(255, 255, 255, 0.07);
     --notice-bg: rgba(23, 27, 37, 0.62);
@@ -123,6 +125,7 @@
   --amber: #d99a3f;
   --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 2px 4px rgba(0, 0, 0, 0.35), 0 12px 28px rgba(0, 0, 0, 0.5);
   --topbar-bg: rgba(12, 15, 22, 0.72);
+    --topbar-menu-bg: #0c0f16;
   --hover-glass: rgba(255, 255, 255, 0.08);
   --chip-hover-bg: rgba(255, 255, 255, 0.07);
   --notice-bg: rgba(23, 27, 37, 0.62);
@@ -219,6 +222,7 @@ a { color: inherit; }
   text-decoration: none; letter-spacing: -0.01em;
 }
 .topbar__brand img { border-radius: 5px; display: block; }
+.topbar__brand > span:first-of-type { white-space: nowrap; }
 .community-tag {
   display: inline-flex; align-items: center;
   min-height: 24px; padding: 2px 9px;
@@ -231,6 +235,7 @@ a { color: inherit; }
   font-family: var(--sans); font-size: 13px; font-weight: 500; letter-spacing: 0;
   color: var(--faint); text-decoration: none;
   padding: 7px 12px; border-radius: 100px;
+  white-space: nowrap;
   transition: color 0.15s ease;
 }
 .topbar__nav a:hover { color: var(--signal-deep); background: var(--hover-glass); }
@@ -253,6 +258,38 @@ a { color: inherit; }
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 .gh-chip:hover { color: var(--text); border-color: var(--border-strong); background: var(--chip-hover-bg); }
+
+/* ══ 移动端菜单 ══ */
+.menu-toggle {
+  display: none;
+  align-items: center; justify-content: center;
+  width: 36px; height: 36px; padding: 0;
+  background: transparent; border: 1px solid var(--border); border-radius: 100px;
+  color: var(--muted); cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.menu-toggle:hover { color: var(--signal); border-color: var(--signal); }
+.menu-toggle svg { display: block; }
+.menu-toggle .menu-icon--close { display: none; }
+.menu-toggle.is-open .menu-icon--open { display: none; }
+.menu-toggle.is-open .menu-icon--close { display: block; }
+
+.topbar__menu {
+  display: none;
+  position: absolute; top: 64px; left: 0; right: 0;
+  flex-direction: column; gap: 2px;
+  padding: 10px 16px 16px;
+  background: var(--topbar-menu-bg);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 18px 30px -18px rgba(0, 0, 0, 0.18);
+}
+.topbar__menu a {
+  font: 500 14px/1.4 var(--sans);
+  color: var(--faint); text-decoration: none;
+  padding: 12px 10px; border-radius: 10px;
+  transition: color 0.15s ease;
+}
+.topbar__menu a:hover { color: var(--signal-deep); background: var(--hover-glass); }
 
 /* ══ 按钮 ══ */
 .btn {
@@ -598,10 +635,24 @@ a { color: inherit; }
 .footer__links a:hover { color: var(--signal); }
 
 /* ══ 响应式 ══ */
+@media (max-width: 1180px) {
+  .topbar { gap: 16px; padding-left: 20px; padding-right: 20px; }
+  .topbar__nav a { padding: 7px 9px; }
+  .topbar__right { gap: 9px; }
+  .community-tag { padding: 2px 8px; letter-spacing: 0.03em; }
+}
+
+@media (max-width: 1000px) {
+  .gh-chip { padding: 6px 8px; }
+  .gh-chip span { display: none; }
+}
+
 @media (max-width: 960px) {
   .hero { padding-top: 118px; }
   .topbar { gap: 14px; }
   .topbar__nav { display: none; }
+  .menu-toggle { display: inline-flex; }
+  .topbar__menu.is-open { display: flex; }
   .footer__grid { grid-template-columns: 1fr; }
   .footer__sync { text-align: left; }
   .legend-row { grid-template-columns: 1fr; gap: 6px; }
@@ -624,8 +675,12 @@ a { color: inherit; }
 
 @media (max-width: 640px) {
   .wrap { padding-left: 18px; padding-right: 18px; }
-  .topbar { padding: 0 16px; }
-  .topbar__right { margin-left: auto; gap: 8px; }
+  .topbar { padding: 0 16px; gap: 10px; }
+  .topbar__brand { font-size: 14px; gap: 8px; }
+  .community-tag { font-size: 9px; padding: 2px 7px; }
+  .theme-toggle, .lang-toggle { padding: 5px 9px; }
+  .menu-toggle { width: 34px; height: 34px; }
+  .topbar__right { margin-left: auto; gap: 6px; }
   .gh-chip, .topbar .btn--sm { display: none; }
   .hero { padding-top: 104px; padding-bottom: 64px; }
   .headline { font-size: 2.25rem; }
@@ -645,4 +700,13 @@ a { color: inherit; }
   .platform-group__head { align-items: center; }
   .asset-row__actions { flex-wrap: wrap; }
   .cmdline { margin-left: 16px; margin-right: 16px; }
+  .cmdline code { font-size: 12.5px; white-space: normal; overflow-wrap: anywhere; }
+}
+
+@media (min-width: 641px) and (max-width: 960px) {
+  .topbar__menu-gh { display: none; }
+}
+
+@media (max-width: 340px) {
+  .community-tag { display: none; }
 }
