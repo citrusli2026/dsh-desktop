@@ -22,22 +22,17 @@ test('release contract has three platforms of installers, hashes, and Windows up
     'latest.yml',
     `dsh-desktop-${VERSION}-amd64.deb`,
     `dsh-desktop-${VERSION}-amd64.deb.sha256`,
-    `dsh-desktop-${VERSION}-x86_64.AppImage`,
-    `dsh-desktop-${VERSION}-x86_64.AppImage.sha256`,
   ])
   assert.deepEqual(installerNames(VERSION, 'darwin'), [`dsh-desktop-${VERSION}-arm64-mac.dmg`])
   assert.deepEqual(installerNames(VERSION, 'win32'), [`dsh-desktop-setup-${VERSION}.exe`])
-  assert.deepEqual(installerNames(VERSION, 'linux'), [
-    `dsh-desktop-${VERSION}-amd64.deb`,
-    `dsh-desktop-${VERSION}-x86_64.AppImage`,
-  ])
+  assert.deepEqual(installerNames(VERSION, 'linux'), [`dsh-desktop-${VERSION}-amd64.deb`])
 })
 
 test('checksum writer and release validator reject missing, extra, or changed assets', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'dsh-release-assets-'))
   try {
     const installers = (expectedAssetNames(VERSION) as string[])
-      .filter(name => name.endsWith('.dmg') || name.endsWith('.exe') || name.endsWith('.deb') || name.endsWith('.AppImage'))
+      .filter(name => name.endsWith('.dmg') || name.endsWith('.exe') || name.endsWith('.deb'))
     for (const installer of installers) {
       const file = join(directory, installer)
       await writeFile(file, `fixture:${installer}`)
@@ -55,7 +50,7 @@ test('checksum writer and release validator reject missing, extra, or changed as
       `sha512: ${windowsSha512}`,
       '',
     ].join('\n'))
-    assert.equal(await validateReleaseAssets(directory, VERSION), 10)
+    assert.equal(await validateReleaseAssets(directory, VERSION), 8)
 
     await writeFile(join(directory, 'latest.yml'), [
       `version: ${VERSION}`,

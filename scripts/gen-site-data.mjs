@@ -40,8 +40,10 @@ async function api(url) {
 }
 
 export function classifyPublicAsset(name) {
-  if (/^dsh-desktop-.+-arm64-mac\.dmg$/.test(name) || /^dsh-desktop-setup-.+\.exe$/.test(name) || /^dsh-desktop-.+\.(deb|AppImage)$/.test(name)) return 'installer'
-  if (/^dsh-desktop-.+-arm64-mac\.dmg\.sha256$/.test(name) || /^dsh-desktop-setup-.+\.exe\.sha256$/.test(name) || /^dsh-desktop-.+\.(deb|AppImage)\.sha256$/.test(name)) return 'checksum'
+  // AppImage 已整体移除（决策 2026-08-22）：Linux 只交付 deb，历史 AppImage
+  // 资产既不出现在展示列表也不计入统计口径。
+  if (/^dsh-desktop-.+-arm64-mac\.dmg$/.test(name) || /^dsh-desktop-setup-.+\.exe$/.test(name) || /^dsh-desktop-.+\.deb$/.test(name)) return 'installer'
+  if (/^dsh-desktop-.+-arm64-mac\.dmg\.sha256$/.test(name) || /^dsh-desktop-setup-.+\.exe\.sha256$/.test(name) || /^dsh-desktop-.+\.deb\.sha256$/.test(name)) return 'checksum'
   return null
 }
 

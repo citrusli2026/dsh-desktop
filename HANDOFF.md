@@ -9,10 +9,10 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 最新代码基线 | ✅ `0.1.1-rc.2.shell.0`（已发布 2026-08-22；内核 0.1.1-rc.1 → 0.1.1-rc.2，壳修订归零） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.0`（2026-08-22，三端 dmg/exe/deb/AppImage） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.0`（2026-08-22，三端 dmg/exe/deb；AppImage 已整体移除） |
 | 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛、官网门禁、构建通过 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.0 Release 严格 10 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.0`（6 个用户资产 `gitcode_ok=true`；AppImage 不镜像） |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.0 Release 严格 8 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.0`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
 | 国内镜像 | ✅ 0.1.1-rc.2.shell.0 GitCode 镜像：dmg/exe/deb + 3×sha256（2026-08-22 浏览器会话上传 + PUT 绑定，匿名 Range GET 6×206） |
 | 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
 

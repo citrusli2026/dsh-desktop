@@ -47,7 +47,7 @@
       'toast.title': '下载已开始 ✓',
       'toast.firstOpenMac': '首次打开如遇「无法验证开发者」:<b>右键点击 → 打开</b>',
       'toast.firstOpenWin': '如遇 SmartScreen 蓝色提示:<b>更多信息 → 仍要运行</b>',
-      'toast.firstOpenLinux': 'DEB 双击安装即可;AppImage 需先赋予执行权限',
+      'toast.firstOpenLinux': 'DEB 双击安装即可,首次打开直接使用',
       'toast.star': '觉得好用?去 GitHub 点个 Star 支持一下 →',
       'toast.close': '关闭',
       'dl.fallback': '版本数据加载失败时,可直接前往 <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> 或 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a> 下载。',
@@ -62,7 +62,7 @@
       'guide.win.title': 'Windows 首次打开',
       'guide.win.steps': '<ol><li>双击 <code>.exe</code> 启动安装向导</li><li>如出现 SmartScreen 蓝色提示:点 <b>更多信息</b> → <b>仍要运行</b></li><li>完成安装后从开始菜单启动</li></ol>',
       'guide.linux.title': 'Linux 安装与运行',
-      'guide.linux.steps': '<ol><li>双击 <code>.deb</code> 即可安装(适用于 Debian/Ubuntu/UOS/Deepin/麒麟)</li><li>或用 AppImage:右键 → 属性 → 勾选「允许作为程序执行」,双击运行</li><li>如需卸载,在系统软件中心中移除即可</li></ol>',
+      'guide.linux.steps': '<ol><li>双击 <code>.deb</code> 即可安装(适用于 Debian/Ubuntu/UOS/Deepin/麒麟)</li><li>安装完成后从应用菜单启动 dsh-desktop</li><li>如需卸载,在系统软件中心中移除即可</li></ol>',
       'ft.marker': '特性', 'ft.title': '为什么用它',
       'ft.p1': '<h3>无需安装 Node.js</h3><p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>',
       'ft.p2': '<h3>独立数据目录,环境隔离</h3><p>桌面版默认使用 <code>~/.dsh-desktop</code>:设置、会话、API Key、插件都是独立的一份,安装卸载都不影响你的命令行工作流。需要共享时,设 <code>DSH_HOME=~/.dsh</code> 即可。</p>',
@@ -134,7 +134,7 @@
       'toast.title': 'Download started ✓',
       'toast.firstOpenMac': 'If macOS says "cannot be verified": <b>right-click → Open</b>',
       'toast.firstOpenWin': 'If SmartScreen prompts: <b>More info → Run anyway</b>',
-      'toast.firstOpenLinux': 'DEB installs on double-click; AppImage needs exec permission',
+      'toast.firstOpenLinux': 'DEB installs on double-click; just open it after installing',
       'toast.star': 'Enjoying it? Star us on GitHub →',
       'toast.close': 'Close',
       'dl.fallback': 'If live data fails to load, head to <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> directly.',
@@ -149,7 +149,7 @@
       'guide.win.title': 'First launch on Windows',
       'guide.win.steps': '<ol><li>Double-click the <code>.exe</code> to start the installer</li><li>If SmartScreen shows a blue prompt: click <b>More info</b> → <b>Run anyway</b></li><li>Launch from the Start menu after install</li></ol>',
       'guide.linux.title': 'Install & run on Linux',
-      'guide.linux.steps': '<ol><li>Double-click the <code>.deb</code> to install (Debian/Ubuntu/UOS/Deepin/Kylin)</li><li>Or use the AppImage: right-click → Properties → enable "Allow executing as a program", then double-click</li><li>To uninstall, remove it from the system software center</li></ol>',
+      'guide.linux.steps': '<ol><li>Double-click the <code>.deb</code> to install (Debian/Ubuntu/UOS/Deepin/Kylin)</li><li>Launch dsh-desktop from the app menu after installing</li><li>To uninstall, remove it from the system software center</li></ol>',
       'ft.marker': 'FEATURES', 'ft.title': 'Why this shell',
       'ft.p1': '<h3>No Node.js install required</h3><p>The shell bundles a pinned Node.js 22 LTS runtime and the complete <code>@deepseek-ai/dsh</code> dependency closure, pinned per platform. Download → double-click → use.</p>',
       'ft.p2': '<h3>Isolated data home</h3><p>The desktop app defaults to <code>~/.dsh-desktop</code>: settings, sessions, API keys, and plugins are its own copy — installing or uninstalling never touches your CLI workflow. Set <code>DSH_HOME=~/.dsh</code> to share again.</p>',
@@ -191,24 +191,24 @@
     zh: {
       mac: ['macOS', 'APPLE SILICON · 首次打开请右键 → 打开'],
       win: ['Windows', 'NSIS 安装包 · 首次打开选"更多信息 → 仍要运行"'],
-      linux: ['Linux', 'DEB 双击安装 · AppImage 免安装'],
+      linux: ['Linux', 'DEB 双击安装'],
     },
     en: {
       mac: ['macOS', 'APPLE SILICON · RIGHT-CLICK → OPEN ON FIRST LAUNCH'],
       win: ['Windows', 'NSIS INSTALLER · FIRST RUN: "MORE INFO → RUN ANYWAY"'],
-      linux: ['Linux', 'DEB DOUBLE-CLICK INSTALL · APPIMAGE PORTABLE'],
+      linux: ['Linux', 'DEB DOUBLE-CLICK INSTALL'],
     },
   }
   var OS_NOTE = {
     zh: {
       mac: '.dmg 拖入“应用程序”即可使用。',
       win: '支持 Windows 10 及以上(64 位)与原地自动更新。',
-      linux: 'DEB 适用于 Debian/Ubuntu/UOS/Deepin/麒麟等;AppImage 免安装,Ubuntu 22.04+ 需 libfuse2。',
+      linux: 'DEB 适用于 Debian/Ubuntu/UOS/Deepin/麒麟等,双击安装。',
     },
     en: {
       mac: 'Drag the DMG app into Applications to install.',
       win: 'Windows 10+ (64-bit) with in-place updates.',
-      linux: 'DEB for Debian/Ubuntu/UOS/Deepin/Kylin etc.; AppImage is portable (Ubuntu 22.04+ needs libfuse2).',
+      linux: 'DEB for Debian/Ubuntu/UOS/Deepin/Kylin etc.; double-click to install.',
     },
   }
 

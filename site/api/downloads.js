@@ -26,8 +26,9 @@ const GH_HEADERS = {
 }
 
 function classifyAsset(name) {
-  if (/^dsh-desktop-.+\.(dmg|exe|deb|AppImage)$/.test(name)) return 'installer'
-  if (/^dsh-desktop-.+\.(dmg|exe|deb|AppImage)\.sha256$/.test(name)) return 'checksum'
+  // AppImage 已整体移除（2026-08-22）：Linux 只交付 deb。
+  if (/^dsh-desktop-.+\.(dmg|exe|deb)$/.test(name)) return 'installer'
+  if (/^dsh-desktop-.+\.(dmg|exe|deb)\.sha256$/.test(name)) return 'checksum'
   return null
 }
 
