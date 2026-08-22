@@ -380,4 +380,46 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
 
 ---
 
+## 十七、mattpocock/skills 技能包（2026-08-22，进行中）
+
+用户要求安装 [mattpocock/skills](https://github.com/mattpocock/skills)
+（36 个工程技能）供本项目迭代使用，随后改为「装到 ZCode 用户目录
+（通用技能不占项目仓库），项目只留 AGENTS.md 提示」。
+
+**已完成：**
+1. 项目级安装过 36 个技能到 `.agents/skills/`（`npx skills add ... --all --copy`），
+   已清理 CLI 为约 50 个 agent 生成的冗余目录，只留 `.agents/skills/` +
+   根目录 `skills-lock.json`。
+2. 修复 `release-dsh-desktop` 的 frontmatter YAML 解析错误（description
+   未加引号，`Companion:` 冒号被误解析为嵌套映射）——已加引号，`npx skills list`
+   告警消失。
+3. 技能↔项目映射分析已完成：高价值为 setup-matt-pocock-skills / tdd /
+   code-review / diagnosing-bugs / research / handoff / to-spec+to-tickets+
+   implement / grill-with-docs / ask-matt；中价值为 improve-codebase-architecture /
+   wizard / prototype / domain-modeling / triage / setup-pre-commit；
+   git-guardrails-claude-code（Claude Code 专用）与 writing-*（英文写作）
+   不适用。
+4. **迁移到用户目录（2026-08-22 完成）**：网络恢复后
+   `npx skills add mattpocock/skills --skill '*' -a zcode -g -y --copy`
+   成功。落盘位置为 **`~/.zcode/skills/`**（CLI 对 zcode agent 的规范位置，
+   非 HANDOFF 原先预估的 `~/.agents/skills/`；ZCode 两者都读，本会话技能列表
+   即含 `~/.zcode/skills/frontend-design`，功能等效）。CLI 同时写了项目级
+   `.zcode/skills/` 副本，已删除；全局锁 `~/.agents/.skill-lock.json` 已登记
+   36 个技能（共 38 项），`npx skills update` 可正常更新。项目 `.agents/skills/`
+   只保留 `release-dsh-desktop` / `gitcode-release-publisher`，
+   `skills-lock.json` 已删除。
+5. **setup-matt-pocock-skills 完成（2026-08-22）**：按用户决策执行——
+   GitHub Issues tracker（`gh` 已认证）；创建 **AGENTS.md**（含 Agent skills
+   块 + 工程技能用户级安装提示，`/ask-matt` 路由）；写
+   `docs/agents/{issue-tracker,triage-labels,domain}.md`（domain.md 定制为
+   指向既有 `docs/decisions/`，不新建 `docs/adr/`；单上下文，pnpm-workspace.yaml
+   仅为 allowBuilds 配置非 monorepo）；GitHub 已创建 4 个缺失 triage 标签
+   `needs-triage`/`needs-info`/`ready-for-agent`/`ready-for-human`
+   （`wontfix` 原本就有），5 个规范标签齐备。
+
+**待办（无阻塞）：** 新文件 AGENTS.md、docs/agents/* 与 HANDOFF.md 更新、
+`release-dsh-desktop` frontmatter 修复尚未提交（git 工作区仅这 4 处改动）。
+
+---
+
 _更新于 2026-08-22_

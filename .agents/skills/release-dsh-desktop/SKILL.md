@@ -1,6 +1,6 @@
 ---
 name: release-dsh-desktop
-description: Run a full dsh-desktop release — bump the bundled @deepseek-ai/dsh kernel, pass local gates, cut the composite tag, watch the GitHub release CI, mirror installers to GitCode, verify the site data, and record the run in HANDOFF. Use when the user asks to 发版/发布/release/bump kernel/重发版本, or when version.mjs check reports an upstream update. Companion: gitcode-release-publisher (browser-based GitCode uploads when backfill stalls).
+description: "Run a full dsh-desktop release — bump the bundled @deepseek-ai/dsh kernel, pass local gates, cut the composite tag, watch the GitHub release CI, mirror installers to GitCode, verify the site data, and record the run in HANDOFF. Use when the user asks to 发版/发布/release/bump kernel/重发版本, or when version.mjs check reports an upstream update. Companion: gitcode-release-publisher (browser-based GitCode uploads when backfill stalls)."
 ---
 
 # dsh-desktop Release Runbook
