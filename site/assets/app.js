@@ -39,7 +39,7 @@
       'ext.steps': '<li>扩展 → 通过局域网连接手机 / 平板</li><li>手机与电脑连接同一局域网，扫描二维码</li><li>确认一次性配对码，进入原生 Harness Web 界面</li>',
       'ext.note': '只集成 Web 壳，不需要 Android/iOS；代理与桌面端解耦，可独立产出 Web artifact。',
       'dl.marker': '下载', 'dl.title': '选择你的平台',
-      'dl.lead': '每个版本只发布两个安装包:macOS Apple Silicon 的 DMG 与 Windows x64 的 EXE。GitCode 镜像可用时与 GitHub 并列展示。',
+      'dl.lead': '每个版本发布 macOS、Windows 与 Linux 三个平台的安装包。GitCode 镜像可用时与 GitHub 并列展示。',
       'dl.total': '全版本累计下载 {n} 次',
       'dl.total.note': '含历史版本,仅统计 GitHub 下载',
       'dl.platformTotal': '历史累计 ↓ {n}',
@@ -48,9 +48,11 @@
       'toast.title': '下载已开始 ✓',
       'toast.firstOpenMac': '首次打开如遇「无法验证开发者」:<b>右键点击 → 打开</b>',
       'toast.firstOpenWin': '如遇 SmartScreen 蓝色提示:<b>更多信息 → 仍要运行</b>',
+      'toast.firstOpenLinux': 'DEB 双击安装即可;AppImage 需先赋予执行权限',
       'toast.verify': '安装包未签名,建议校验后再打开:',
       'toast.cmdMac': '<code>shasum -a 256 -c &lt;安装包&gt;.sha256</code><br /><code>gh attestation verify &lt;安装包&gt; -R citrusli2026/dsh-electron-shell</code>',
       'toast.cmdWin': '<code>CertUtil -hashfile &lt;安装包&gt; SHA256</code><br /><code>gh attestation verify &lt;安装包&gt; -R citrusli2026/dsh-electron-shell</code>',
+      'toast.cmdLinux': '<code>sha256sum -c &lt;安装包&gt;.sha256</code><br /><code>gh attestation verify &lt;安装包&gt; -R citrusli2026/dsh-electron-shell</code>',
       'toast.star': '觉得好用?去 GitHub 点个 Star 支持一下 →',
       'toast.close': '关闭',
       'dl.fallback': '版本数据加载失败时,可直接前往 <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> 或 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a> 下载。',
@@ -64,6 +66,8 @@
       'guide.mac.steps': '<ol><li>双击 <code>.dmg</code> 打开,把 dsh-desktop 拖入「应用程序」</li><li>如提示「无法验证开发者」:<b>右键点击</b> App 图标 → <b>打开</b> → 弹窗中再点 <b>打开</b></li><li>以后从启动台正常打开即可</li></ol>',
       'guide.win.title': 'Windows 首次打开',
       'guide.win.steps': '<ol><li>双击 <code>.exe</code> 启动安装向导</li><li>如出现 SmartScreen 蓝色提示:点 <b>更多信息</b> → <b>仍要运行</b></li><li>完成安装后从开始菜单启动</li></ol>',
+      'guide.linux.title': 'Linux 安装与运行',
+      'guide.linux.steps': '<ol><li>双击 <code>.deb</code> 即可安装(适用于 Debian/Ubuntu/UOS/Deepin/麒麟)</li><li>或用 AppImage:右键 → 属性 → 勾选「允许作为程序执行」,双击运行</li><li>如需卸载,在系统软件中心中移除即可</li></ol>',
       'guide.verify': '安装包未购买商业签名证书,但<strong>来源可验证</strong>:每个包附带 <code>.sha256</code> 校验文件,且 CI 为每个包签发 GitHub 来源证明(见常见问题「如何校验下载文件」)。',
       'ft.marker': '特性', 'ft.title': '为什么用它',
       'ft.p1': '<h3>无需安装 Node.js</h3><p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包,版本逐平台锁定。下载安装包 → 双击 → 使用,没有任何环境配置。</p>',
@@ -128,7 +132,7 @@
       'ext.steps': '<li>Extensions → Connect a mobile device over LAN</li><li>Put the phone and computer on the same LAN, then scan</li><li>Confirm the one-time code and enter the original Harness Web UI</li>',
       'ext.note': 'Web shell only: no Android/iOS dependency. The proxy is decoupled from Electron and can ship as an independent Web artifact.',
       'dl.marker': 'DOWNLOAD', 'dl.title': 'Pick your platform',
-      'dl.lead': 'Every release carries exactly two installers: a DMG for Apple Silicon Macs and an EXE for Windows x64. A verified GitCode mirror appears alongside GitHub when available.',
+      'dl.lead': 'Every release ships installers for macOS, Windows, and Linux. A verified GitCode mirror appears alongside GitHub when available.',
       'dl.total': '{n} downloads across all versions',
       'dl.total.note': 'Includes past releases; GitHub downloads only',
       'dl.platformTotal': 'All-time ↓ {n}',
@@ -137,9 +141,11 @@
       'toast.title': 'Download started ✓',
       'toast.firstOpenMac': 'If macOS says "cannot be verified": <b>right-click → Open</b>',
       'toast.firstOpenWin': 'If SmartScreen prompts: <b>More info → Run anyway</b>',
+      'toast.firstOpenLinux': 'DEB installs on double-click; AppImage needs exec permission',
       'toast.verify': 'Unsigned installer — verify before opening:',
       'toast.cmdMac': '<code>shasum -a 256 -c &lt;installer&gt;.sha256</code><br /><code>gh attestation verify &lt;installer&gt; -R citrusli2026/dsh-electron-shell</code>',
       'toast.cmdWin': '<code>CertUtil -hashfile &lt;installer&gt; SHA256</code><br /><code>gh attestation verify &lt;installer&gt; -R citrusli2026/dsh-electron-shell</code>',
+      'toast.cmdLinux': '<code>sha256sum -c &lt;installer&gt;.sha256</code><br /><code>gh attestation verify &lt;installer&gt; -R citrusli2026/dsh-electron-shell</code>',
       'toast.star': 'Enjoying it? Star us on GitHub →',
       'toast.close': 'Close',
       'dl.fallback': 'If live data fails to load, head to <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> directly.',
@@ -153,6 +159,8 @@
       'guide.mac.steps': '<ol><li>Open the <code>.dmg</code> and drag dsh-desktop into Applications</li><li>If you see "cannot be verified": <b>right-click</b> the app icon → <b>Open</b> → click <b>Open</b> again in the dialog</li><li>Launch normally from Launchpad afterwards</li></ol>',
       'guide.win.title': 'First launch on Windows',
       'guide.win.steps': '<ol><li>Double-click the <code>.exe</code> to start the installer</li><li>If SmartScreen shows a blue prompt: click <b>More info</b> → <b>Run anyway</b></li><li>Launch from the Start menu after install</li></ol>',
+      'guide.linux.title': 'Install & run on Linux',
+      'guide.linux.steps': '<ol><li>Double-click the <code>.deb</code> to install (Debian/Ubuntu/UOS/Deepin/Kylin)</li><li>Or use the AppImage: right-click → Properties → enable "Allow executing as a program", then double-click</li><li>To uninstall, remove it from the system software center</li></ol>',
       'guide.verify': 'Installers are not commercially code-signed, but <strong>provenance is verifiable</strong>: every package ships a <code>.sha256</code> checksum and CI attaches a GitHub-signed build attestation (see FAQ "How do I verify downloads").',
       'ft.marker': 'FEATURES', 'ft.title': 'Why this shell',
       'ft.p1': '<h3>No Node.js install required</h3><p>The shell bundles a pinned Node.js 22 LTS runtime and the complete <code>@deepseek-ai/dsh</code> dependency closure, pinned per platform. Download → double-click → use.</p>',
@@ -195,20 +203,24 @@
     zh: {
       mac: ['macOS', 'APPLE SILICON · 未签名,首次请右键 → 打开'],
       win: ['Windows', 'NSIS 安装包 · SmartScreen 选"更多信息 → 仍要运行"'],
+      linux: ['Linux', 'DEB 双击安装 · AppImage 免安装'],
     },
     en: {
       mac: ['macOS', 'APPLE SILICON · UNSIGNED; RIGHT-CLICK → OPEN ON FIRST LAUNCH'],
       win: ['Windows', 'NSIS INSTALLER · SMARTSCREEN: "MORE INFO → RUN ANYWAY"'],
+      linux: ['Linux', 'DEB DOUBLE-CLICK INSTALL · APPIMAGE PORTABLE'],
     },
   }
   var OS_NOTE = {
     zh: {
       mac: '.dmg 拖入“应用程序”即可使用。',
       win: '支持 Windows 10 及以上(64 位)与原地自动更新。',
+      linux: 'DEB 适用于 Debian/Ubuntu/UOS/Deepin/麒麟等;AppImage 免安装,Ubuntu 22.04+ 需 libfuse2。',
     },
     en: {
       mac: 'Drag the DMG app into Applications to install.',
       win: 'Windows 10+ (64-bit) with in-place updates.',
+      linux: 'DEB for Debian/Ubuntu/UOS/Deepin/Kylin etc.; AppImage is portable (Ubuntu 22.04+ needs libfuse2).',
     },
   }
 
@@ -286,6 +298,8 @@
   function platformOf(name) {
     if (/arm64-mac\.dmg$/.test(name)) return { os: 'mac', primary: true, fmt: 'dmg' }
     if (/setup-.*\.exe$/.test(name)) return { os: 'win', primary: true, fmt: 'exe' }
+    if (/\.deb$/.test(name)) return { os: 'linux', primary: true, fmt: 'deb' }
+    if (/\.AppImage$/.test(name)) return { os: 'linux', primary: false, fmt: 'AppImage' }
     return null
   }
 
@@ -392,7 +406,7 @@
 
   function renderPlatforms(data) {
     var installers = data.release.assets.filter(function (a) { return a.kind === 'installer' })
-    var groups = { mac: [], win: [] }
+    var groups = { mac: [], win: [], linux: [] }
     installers.forEach(function (a) {
       var p = platformOf(a.name)
       if (p && groups[p.os]) groups[p.os].push(Object.assign({}, a, p))
@@ -401,12 +415,12 @@
     var labels = OS_LABEL[lang]
     var notes = OS_NOTE[lang]
     var html = ''
-    ;['mac', 'win'].forEach(function (os) {
+    ;['mac', 'win', 'linux'].forEach(function (os) {
       var list = groups[os]
       if (!list.length) return
       list.sort(function (a, b) { return (b.primary ? 1 : 0) - (a.primary ? 1 : 0) })
-      // 该平台全版本累计下载（dmg/exe 分别统计,见 release.json stats）
-      var hist = data.stats && (os === 'mac' ? data.stats.mac_downloads : data.stats.win_downloads)
+      // 该平台全版本累计下载(dmg/exe/deb/AppImage 分别统计,见 release.json stats)
+      var hist = data.stats && (os === 'mac' ? data.stats.mac_downloads : os === 'win' ? data.stats.win_downloads : data.stats.linux_downloads)
       html += '<div class="platform-group">'
       html += '<div class="platform-group__head"><h3>' + labels[os][0] + '</h3><span>' + labels[os][1] + '</span>'
       if (typeof hist === 'number') {
@@ -451,6 +465,7 @@
           data.stats = data.stats || {}
           data.stats.mac_downloads = live.mac_downloads
           data.stats.win_downloads = live.win_downloads
+          if (typeof live.linux_downloads === 'number') data.stats.linux_downloads = live.linux_downloads
           data.stats.installer_downloads = live.total_downloads
           updated = true
         }
@@ -495,6 +510,7 @@
     if (/Android|iPhone|iPad|iPod/i.test(ua)) return 'mobile'
     if (/Mac/.test(ua)) return 'mac'
     if (/Windows/.test(ua)) return 'win'
+    if (/Linux/.test(ua)) return 'linux'
     return null
   }
   var uaOs = detectPlatform()
@@ -544,8 +560,8 @@
   function showDownloadToast(os) {
     var toast = $('#download-toast')
     if (!toast) return
-    var cmd = os === 'win' ? t('toast.cmdWin') : t('toast.cmdMac')
-    var firstOpen = os === 'win' ? t('toast.firstOpenWin') : t('toast.firstOpenMac')
+    var cmd = os === 'win' ? t('toast.cmdWin') : os === 'linux' ? t('toast.cmdLinux') : t('toast.cmdMac')
+    var firstOpen = os === 'win' ? t('toast.firstOpenWin') : os === 'linux' ? t('toast.firstOpenLinux') : t('toast.firstOpenMac')
     toast.innerHTML =
       '<div class="download-toast__head"><b>' + t('toast.title') + '</b>'
       + '<button class="download-toast__close" type="button" aria-label="' + t('toast.close') + '">×</button></div>'

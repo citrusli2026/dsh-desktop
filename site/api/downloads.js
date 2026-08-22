@@ -26,8 +26,8 @@ const GH_HEADERS = {
 }
 
 function classifyAsset(name) {
-  if (/^dsh-desktop-.+\.(dmg|exe)$/.test(name)) return 'installer'
-  if (/^dsh-desktop-.+\.(dmg|exe)\.sha256$/.test(name)) return 'checksum'
+  if (/^dsh-desktop-.+\.(dmg|exe|deb|AppImage)$/.test(name)) return 'installer'
+  if (/^dsh-desktop-.+\.(dmg|exe|deb|AppImage)\.sha256$/.test(name)) return 'checksum'
   return null
 }
 
@@ -73,6 +73,7 @@ async function fetchLiveTotalDownloads() {
   if (!Array.isArray(releases)) return null
   let mac = 0
   let win = 0
+  let linux = 0
   let count = 0
   for (const r of releases) {
     if (r.draft || !Array.isArray(r.assets)) continue
@@ -80,10 +81,11 @@ async function fetchLiveTotalDownloads() {
     for (const a of r.assets) {
       if (classifyAsset(a.name) !== 'installer') continue
       if (a.name.endsWith('.dmg')) mac += a.download_count || 0
-      else win += a.download_count || 0
+      else if (a.name.endsWith('.exe')) win += a.download_count || 0
+      else linux += a.download_count || 0
     }
   }
-  return { mac, win, releases: count }
+  return { mac, win, linux, releases: count }
 }
 
 async function fetchLegacyGitHubList() {
@@ -167,7 +169,7 @@ module.exports = async function handler(req, res) {
       generated_at: downloadsByAsset ? new Date().toISOString() : local.generated_at,
       source: downloadsByAsset ? 'github' : 'release-data',
       total_downloads:
-        (liveTotal && liveTotal.mac + liveTotal.win) ||
+        (liveTotal && liveTotal.mac + liveTotal.win + liveTotal.linux) ||
         (typeof local.stats?.installer_downloads === 'number' ? local.stats.installer_downloads : null),
       mac_downloads:
         (liveTotal && liveTotal.mac) ||
@@ -175,6 +177,9 @@ module.exports = async function handler(req, res) {
       win_downloads:
         (liveTotal && liveTotal.win) ||
         (typeof local.stats?.win_downloads === 'number' ? local.stats.win_downloads : null),
+      linux_downloads:
+        (liveTotal && liveTotal.linux) ||
+        (typeof local.stats?.linux_downloads === 'number' ? local.stats.linux_downloads : null),
       released_versions: (liveTotal && liveTotal.releases) || local.stats?.releases || null,
       assets,
     })

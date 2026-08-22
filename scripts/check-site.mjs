@@ -25,17 +25,27 @@ requireValue(data.release.assets.length === 2 || data.release.assets.length === 
 requireValue(Number.isInteger(data.stats?.installer_downloads) && data.stats.installer_downloads >= 0, 'stats.installer_downloads must be a non-negative integer')
 requireValue(Number.isInteger(data.stats?.mac_downloads) && data.stats.mac_downloads >= 0, 'stats.mac_downloads must be a non-negative integer')
 requireValue(Number.isInteger(data.stats?.win_downloads) && data.stats.win_downloads >= 0, 'stats.win_downloads must be a non-negative integer')
-requireValue(data.stats.installer_downloads === data.stats.mac_downloads + data.stats.win_downloads, 'stats.installer_downloads must equal mac_downloads + win_downloads')
+requireValue(Number.isInteger(data.stats?.linux_downloads) && data.stats.linux_downloads >= 0, 'stats.linux_downloads must be a non-negative integer')
+requireValue(data.stats.installer_downloads === data.stats.mac_downloads + data.stats.win_downloads + data.stats.linux_downloads, 'stats.installer_downloads must equal mac + win + linux downloads')
 requireValue(Number.isInteger(data.stats?.releases) && data.stats.releases >= 1, 'stats.releases must be a positive integer')
 
 const installers = data.release.assets.filter(asset => asset.kind === 'installer')
 const checksums = data.release.assets.filter(asset => asset.kind === 'checksum')
-requireValue(installers.length === 2, 'exactly two installers are required')
+// 三平台:mac/win 必选(现状),linux 在发布后出现(mac 1 + win 1 + linux 1-2)
+requireValue(installers.length >= 2 && installers.length <= 6, 'installer count must be between 2 and 6')
+const osOf = name => /-arm64-mac\.dmg$/.test(name) ? 'mac' : /setup-.*\.exe$/.test(name) ? 'win' : /\.(deb|AppImage)$/.test(name) ? 'linux' : null
+const installerOs = new Set(installers.map(asset => osOf(asset.name)).filter(Boolean))
+for (const platform of ['mac', 'win']) {
+  requireValue(installerOs.has(platform), `${platform} must have at least one installer`)
+}
 for (const [platform, pattern] of [
   ['macOS', /-arm64-mac\.dmg$/],
   ['Windows', /\.exe$/],
 ]) {
-  requireValue(installers.filter(asset => pattern.test(asset.name)).length === 1, `${platform} must have exactly one installer`)
+  requireValue(installers.some(asset => pattern.test(asset.name)), `${platform} must have a matching installer`)
+}
+if (installerOs.has('linux')) {
+  requireValue(installers.some(asset => /\.(deb|AppImage)$/.test(asset.name)), 'Linux must have a deb or AppImage installer')
 }
 for (const asset of data.release.assets) {
   requireValue(asset.kind === 'installer' || asset.kind === 'checksum', `${asset.name} has an unsupported public kind`)

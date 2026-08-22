@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-22T02:04:52.742Z",
+  "generated_at": "2026-08-22T02:07:38.610Z",
   "repo": {
     "full_name": "citrusli2026/dsh-electron-shell",
     "html_url": "https://github.com/citrusli2026/dsh-electron-shell",
@@ -7,9 +7,10 @@
     "license": "MIT"
   },
   "stats": {
-    "installer_downloads": 92,
+    "installer_downloads": 96,
     "mac_downloads": 41,
     "win_downloads": 51,
+    "linux_downloads": 4,
     "releases": 15
   },
   "release": {

@@ -40,8 +40,8 @@ async function api(url) {
 }
 
 export function classifyPublicAsset(name) {
-  if (/^dsh-desktop-.+-arm64-mac\.dmg$/.test(name) || /^dsh-desktop-setup-.+\.exe$/.test(name)) return 'installer'
-  if (/^dsh-desktop-.+-arm64-mac\.dmg\.sha256$/.test(name) || /^dsh-desktop-setup-.+\.exe\.sha256$/.test(name)) return 'checksum'
+  if (/^dsh-desktop-.+-arm64-mac\.dmg$/.test(name) || /^dsh-desktop-setup-.+\.exe$/.test(name) || /^dsh-desktop-.+\.(deb|AppImage)$/.test(name)) return 'installer'
+  if (/^dsh-desktop-.+-arm64-mac\.dmg\.sha256$/.test(name) || /^dsh-desktop-setup-.+\.exe\.sha256$/.test(name) || /^dsh-desktop-.+\.(deb|AppImage)\.sha256$/.test(name)) return 'checksum'
   return null
 }
 
@@ -92,11 +92,12 @@ const downloadsByPlatform = published.reduce(
     for (const a of r.assets) {
       if (classifyPublicAsset(a.name) !== 'installer') continue
       if (a.name.endsWith('.dmg')) acc.mac += a.download_count || 0
-      else acc.win += a.download_count || 0
+      else if (a.name.endsWith('.exe')) acc.win += a.download_count || 0
+      else acc.linux += a.download_count || 0
     }
     return acc
   },
-  { mac: 0, win: 0 },
+  { mac: 0, win: 0, linux: 0 },
 )
 
 const publicAssets = release.assets.filter(a => classifyPublicAsset(a.name) !== null)
@@ -110,9 +111,10 @@ const data = {
     license: repo.license?.spdx_id ?? 'MIT',
   },
   stats: {
-    installer_downloads: downloadsByPlatform.mac + downloadsByPlatform.win,
+    installer_downloads: downloadsByPlatform.mac + downloadsByPlatform.win + downloadsByPlatform.linux,
     mac_downloads: downloadsByPlatform.mac,
     win_downloads: downloadsByPlatform.win,
+    linux_downloads: downloadsByPlatform.linux,
     releases: published.length,
   },
   release: {
