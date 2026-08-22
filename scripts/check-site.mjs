@@ -71,6 +71,9 @@ requireValue(/id="legend-core"/.test(html), 'legend chip #legend-core is missing
 requireValue(/id="legend-shell"/.test(html), 'legend chip #legend-shell is missing')
 requireValue(!/\blegend-chip[^>]*>\s*\d+\.\d+/.test(html), 'legend chips must not hardcode a version number')
 requireValue(/id="download-toast"/.test(html), 'download toast container is missing')
+requireValue(/og:image/.test(html) && /assets\/og-image\.png/.test(html), 'og:image meta must point to /assets/og-image.png')
+requireValue(!/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(html), 'Google Fonts must not be referenced (system font stack instead)')
+requireValue(/Content-Security-Policy/.test(html), 'CSP meta is missing')
 
 const tabTargets = [...html.matchAll(/data-tab="([^"]+)"/g)].map(match => match[1])
 for (const id of tabTargets) requireValue(html.includes(`id="${id}"`), `tab target #${id} is missing`)

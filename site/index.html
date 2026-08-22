@@ -9,9 +9,13 @@
 <meta property="og:description" content="社区维护、非官方的 DeepSeek Harness 桌面版。每版仅发布 macOS 与 Windows 两个安装包。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://dsh-desktop.com/" />
+<meta property="og:image" content="https://dsh-desktop.com/assets/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9f8f8" />
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c0f16" />
 <meta name="color-scheme" content="light dark" />
+<!-- Google Fonts 不再引用:国内网络加载不稳定,统一使用系统字体栈(style.css) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://api.github.com; object-src 'none'; base-uri 'self'; form-action 'self'" />
 <script>
 /* 首帧前应用主题:手动选择(浅色/深色)优先,未选择时跟随系统 */
 (function () {
@@ -25,9 +29,6 @@
 <link rel="canonical" href="https://dsh-desktop.com/" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Host+Grotesk:wght@500;600;700&amp;display=swap" />
 <link rel="stylesheet" href="/assets/style.css?v=22" />
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"dsh-desktop","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows","isAccessibleForFree":true,"license":"https://opensource.org/license/mit","url":"https://dsh-desktop.com/","downloadUrl":"https://github.com/citrusli2026/dsh-electron-shell/releases"}</script>
 </head>

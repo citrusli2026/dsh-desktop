@@ -406,9 +406,10 @@
         html += '<span class="asset-row__meta">' + fmtSize(a.size) + ' · ↓ ' + a.downloads + '</span>'
         html += '<span class="asset-row__actions">'
         links.forEach(function (link, i) {
-          html += '<a class="dl-btn' + (i === 0 && a.primary ? '' : ' dl-btn--alt') + '" data-platform="' + os + '" href="' + link.href + '">'
+          var btnText = a.fmt + ' · ' + link.src
+          html += '<a class="dl-btn' + (i === 0 && a.primary ? '' : ' dl-btn--alt') + '" data-platform="' + os + '" href="' + link.href + '" aria-label="' + btnText + '">'
             + '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M8 11.5 3.5 7l1.4-1.4L7 7.7V1h2v6.7l2.1-2.1L12.5 7 8 11.5ZM2 13.5h12V15H2v-1.5Z"/></svg>'
-            + a.fmt + ' · ' + link.src + '</a>'
+            + btnText + '</a>'
         })
         html += '<button class="copybtn" type="button" data-copy="' + links[0].href + '">' + t('copy.link') + '</button>'
         html += '</span></div>'
