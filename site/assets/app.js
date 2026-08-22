@@ -40,6 +40,8 @@
       'ext.note': '只集成 Web 壳，不需要 Android/iOS；代理与桌面端解耦，可独立产出 Web artifact。',
       'dl.marker': '下载', 'dl.title': '选择你的平台',
       'dl.lead': '每个版本只发布两个安装包:macOS Apple Silicon 的 DMG 与 Windows x64 的 EXE。GitCode 镜像可用时与 GitHub 并列展示。',
+      'dl.total': '全版本累计下载 {n} 次',
+      'dl.total.note': '含历史版本,仅统计 GitHub 下载',
       'dl.fallback': '版本数据加载失败时,可直接前往 <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> 或 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a> 下载。',
       'dl.note': '命令行方式同样可用;桌面壳功能与其完全一致,但使用独立数据目录 <code>~/.dsh-desktop</code>,互不干扰。',
       'guide.mac.title': 'macOS 首次打开',
@@ -109,6 +111,8 @@
       'ext.note': 'Web shell only: no Android/iOS dependency. The proxy is decoupled from Electron and can ship as an independent Web artifact.',
       'dl.marker': 'DOWNLOAD', 'dl.title': 'Pick your platform',
       'dl.lead': 'Every release carries exactly two installers: a DMG for Apple Silicon Macs and an EXE for Windows x64. A verified GitCode mirror appears alongside GitHub when available.',
+      'dl.total': '{n} downloads across all versions',
+      'dl.total.note': 'Includes past releases; GitHub downloads only',
       'dl.fallback': 'If live data fails to load, head to <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> directly.',
       'dl.note': 'The CLI route works too; the shell is functionally identical but keeps its own data home at <code>~/.dsh-desktop</code> — no interference either way.',
       'guide.mac.title': 'First launch on macOS',
@@ -235,6 +239,9 @@
     if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB'
     return bytes + ' B'
   }
+  function fmtNum(n) {
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  }
   function fmtDate(iso) {
     var d = new Date(iso)
     if (isNaN(d)) return iso
@@ -318,6 +325,17 @@
     $('#sync-time').textContent = data.generated_at
       ? (lang === 'zh' ? '数据同步于 ' : 'data synced ') + fmtDate(data.generated_at) + ' ' + data.generated_at.slice(11, 16) + ' UTC'
       : (lang === 'zh' ? '数据来自 GitHub API 实时拉取' : 'live data via GitHub API')
+
+    renderTotalDownloads(data.stats && data.stats.installer_downloads)
+  }
+
+  /* 全版本累计安装包下载——每个新版本单资产计数会归零,累计值才反映真实使用量 */
+  function renderTotalDownloads(total) {
+    var el = $('#total-downloads')
+    if (!el || typeof total !== 'number') return
+    el.textContent = t('dl.total').replace('{n}', fmtNum(total))
+    el.title = t('dl.total.note')
+    el.hidden = false
   }
 
   function renderPlatforms(data) {
@@ -375,6 +393,7 @@
           bindCopy($('#platform-rows'))
           bindDownloadGuide()
         }
+        if (typeof live.total_downloads === 'number') renderTotalDownloads(live.total_downloads)
         // 更新同步时间文案为实时模式
         var syncEl = $('#sync-time')
         if (syncEl) {

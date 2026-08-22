@@ -1,10 +1,14 @@
 {
-  "generated_at": "2026-08-21T14:54:30.197Z",
+  "generated_at": "2026-08-22T00:36:30.126Z",
   "repo": {
     "full_name": "citrusli2026/dsh-electron-shell",
     "html_url": "https://github.com/citrusli2026/dsh-electron-shell",
     "stars": 0,
     "license": "MIT"
+  },
+  "stats": {
+    "installer_downloads": 90,
+    "releases": 15
   },
   "release": {
     "tag": "v0.1.1-rc.1.shell.0",
@@ -16,7 +20,7 @@
       {
         "name": "dsh-desktop-0.1.1-rc.1.shell.0-arm64-mac.dmg",
         "size": 181665150,
-        "downloads": 2,
+        "downloads": 5,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.1-rc.1.shell.0/dsh-desktop-0.1.1-rc.1.shell.0-arm64-mac.dmg",
         "kind": "installer",
         "sha256": null,
@@ -26,7 +30,7 @@
       {
         "name": "dsh-desktop-0.1.1-rc.1.shell.0-arm64-mac.dmg.sha256",
         "size": 111,
-        "downloads": 3,
+        "downloads": 6,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.1-rc.1.shell.0/dsh-desktop-0.1.1-rc.1.shell.0-arm64-mac.dmg.sha256",
         "kind": "checksum",
         "sha256": "7f844b3f7d75c48a31797acc961daaa435918447a82d5c9b51a761cba090226a",
@@ -36,7 +40,7 @@
       {
         "name": "dsh-desktop-setup-0.1.1-rc.1.shell.0.exe",
         "size": 157666969,
-        "downloads": 4,
+        "downloads": 11,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.1-rc.1.shell.0/dsh-desktop-setup-0.1.1-rc.1.shell.0.exe",
         "kind": "installer",
         "sha256": null,
@@ -46,7 +50,7 @@
       {
         "name": "dsh-desktop-setup-0.1.1-rc.1.shell.0.exe.sha256",
         "size": 107,
-        "downloads": 3,
+        "downloads": 6,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.1-rc.1.shell.0/dsh-desktop-setup-0.1.1-rc.1.shell.0.exe.sha256",
         "kind": "checksum",
         "sha256": "6131955f8600ae16c2e50fac74509751bece576a6fd098aea1a4c0274cee634a",

@@ -71,17 +71,27 @@ async function verifyGitCode(url) {
 }
 
 const [releases, repo] = await Promise.all([
-  api(`https://api.github.com/repos/${REPO}/releases?per_page=10`),
+  api(`https://api.github.com/repos/${REPO}/releases?per_page=100`),
   api(`https://api.github.com/repos/${REPO}`),
 ])
 
-const release = releases
-  .filter((r) => !r.draft)
+const published = releases.filter((r) => !r.draft)
+
+const release = published
   .sort((a, b) => new Date(b.published_at) - new Date(a.published_at))[0]
 
 if (!release) {
   throw new Error(`no published release found for ${REPO}`)
 }
+
+// 全版本累计安装包下载（dmg + exe，排除校验/升级辅助文件）：
+// 最新 release 的下载数会随每个新版本归零，单看它会严重低估实际使用量。
+const installerDownloads = published.reduce(
+  (sum, r) => sum + r.assets
+    .filter((a) => classifyPublicAsset(a.name) === 'installer')
+    .reduce((s, a) => s + (a.download_count || 0), 0),
+  0,
+)
 
 const publicAssets = release.assets.filter(a => classifyPublicAsset(a.name) !== null)
 
@@ -92,6 +102,10 @@ const data = {
     html_url: repo.html_url,
     stars: repo.stargazers_count,
     license: repo.license?.spdx_id ?? 'MIT',
+  },
+  stats: {
+    installer_downloads: installerDownloads,
+    releases: published.length,
   },
   release: {
     tag: release.tag_name,

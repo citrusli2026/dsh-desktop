@@ -45,6 +45,7 @@ async function fetchLocalReleaseData() {
   return {
     tag: rel.tag,
     generated_at: typeof payload.generated_at === 'string' ? payload.generated_at : new Date().toISOString(),
+    stats: payload.stats,
     assets: rel.assets.filter(a => classifyAsset(a.name) !== null),
   }
 }
@@ -58,6 +59,27 @@ async function fetchLiveDownloads(tag) {
   if (!release || !Array.isArray(release.assets)) return null
   const byName = new Map(release.assets.map(a => [a.name, a.download_count || 0]))
   return byName
+}
+
+async function fetchLiveTotalDownloads() {
+  // 全版本累计安装包下载。最新 release 的计数随每个新版本归零，累计值
+  // 才反映真实使用量；per_page=100 一次拿全（本仓库约 15 个 release）。
+  const res = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=100`, {
+    headers: GH_HEADERS,
+  })
+  if (!res.ok) return null
+  const releases = await res.json()
+  if (!Array.isArray(releases)) return null
+  let total = 0
+  let count = 0
+  for (const r of releases) {
+    if (r.draft || !Array.isArray(r.assets)) continue
+    count += 1
+    for (const a of r.assets) {
+      if (classifyAsset(a.name) === 'installer') total += a.download_count || 0
+    }
+  }
+  return { total, releases: count }
 }
 
 async function fetchLegacyGitHubList() {
@@ -113,10 +135,16 @@ module.exports = async function handler(req, res) {
     // 3) Live download counts from the specific published tag (works for
     //    prereleases), else the counts baked into release.json.
     let downloadsByAsset = null
+    let liveTotal = null
     try {
       downloadsByAsset = await fetchLiveDownloads(local.tag)
     } catch (_) {
       downloadsByAsset = null
+    }
+    try {
+      liveTotal = await fetchLiveTotalDownloads()
+    } catch (_) {
+      liveTotal = null
     }
 
     const assets = local.assets.map(a => ({
@@ -134,6 +162,10 @@ module.exports = async function handler(req, res) {
       tag: local.tag,
       generated_at: downloadsByAsset ? new Date().toISOString() : local.generated_at,
       source: downloadsByAsset ? 'github' : 'release-data',
+      total_downloads:
+        (liveTotal && liveTotal.total) ||
+        (typeof local.stats?.installer_downloads === 'number' ? local.stats.installer_downloads : null),
+      released_versions: (liveTotal && liveTotal.releases) || local.stats?.releases || null,
       assets,
     })
   } catch (err) {

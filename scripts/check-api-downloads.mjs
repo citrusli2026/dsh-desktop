@@ -34,7 +34,7 @@ function makeReq(method = 'GET', host = 'dsh-desktop.com') {
   return { method, headers: { host, 'x-forwarded-proto': 'https' } }
 }
 
-function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, req }) {
+function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, expectTotal, req }) {
   const originalFetch = globalThis.fetch
   globalThis.fetch = async (url, opts) => {
     const result = fetchImpl(String(url), opts)
@@ -54,6 +54,7 @@ function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, re
     let detail = `status=${res.statusCode} (expect ${expectStatus})`
     if (res.body) {
       detail += ` source=${res.body.source} (expect ${expectSource})`
+      if (typeof res.body.total_downloads === 'number') detail += ` total=${res.body.total_downloads}`
       if (res.body.assets) {
         const names = res.body.assets.map(a => a.name)
         detail += ` assets=[${names.join(', ')}]`
@@ -64,7 +65,8 @@ function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, re
         }
       }
     }
-    if (!ok || (expectSource && res.body && res.body.source !== expectSource)) {
+    const totalOk = expectTotal === undefined || res.body?.total_downloads === expectTotal
+    if (!ok || (expectSource && res.body && res.body.source !== expectSource) || !totalOk) {
       throw new Error(`${name} FAILED — ${detail}`)
     }
     console.log(`ok — ${name} (${detail})`)
@@ -88,11 +90,23 @@ await runCase('real-time counts from GitHub tag endpoint', {
       }))
       return { status: 200, body: { assets } }
     }
+    if (listUrl.test(url)) {
+      // 全量列表：一个 release，含 dmg/exe 安装包计数与辅助文件
+      return { status: 200, body: [
+        { draft: false, assets: [
+          { name: 'dsh-desktop-x-arm64-mac.dmg', download_count: 500 },
+          { name: 'dsh-desktop-setup-x.exe', download_count: 400 },
+          { name: 'dsh-desktop-x-arm64-mac.dmg.sha256', download_count: 999 },
+        ] },
+      ] }
+    }
     return { status: 404, body: { message: 'nope' } }
   },
   expectStatus: 200,
   expectSource: 'github',
   expectCounts: releaseJson.release.assets.map(a => (a.downloads || 0) + 100),
+  // 累计只统计安装包(dmg+exe=900),排除 sha256 辅助文件
+  expectTotal: 900,
 })
 
 await runCase('static fallback when GitHub tag endpoint fails', {
@@ -103,6 +117,7 @@ await runCase('static fallback when GitHub tag endpoint fails', {
   expectStatus: 200,
   expectSource: 'release-data',
   expectCounts: releaseJson.release.assets.map(a => a.downloads || 0),
+  expectTotal: releaseJson.stats?.installer_downloads ?? null,
 })
 
 await runCase('malicious Host header cannot redirect same-site fetch', {
@@ -115,6 +130,7 @@ await runCase('malicious Host header cannot redirect same-site fetch', {
   expectStatus: 200,
   expectSource: 'release-data',
   expectCounts: releaseJson.release.assets.map(a => a.downloads || 0),
+  expectTotal: releaseJson.stats?.installer_downloads ?? null,
 })
 
 await runCase('404 legacy path when no local data and no listable release', {

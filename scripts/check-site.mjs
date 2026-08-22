@@ -22,6 +22,8 @@ JSON.parse(vercelRaw)
 requireValue(typeof data.release?.tag === 'string' && data.release.tag.startsWith('v'), 'release tag is missing')
 requireValue(Array.isArray(data.release.assets), 'release assets are missing')
 requireValue(data.release.assets.length === 2 || data.release.assets.length === 4, 'public asset count must be 2 installers or 2 installers + 2 checksums')
+requireValue(Number.isInteger(data.stats?.installer_downloads) && data.stats.installer_downloads >= 0, 'stats.installer_downloads must be a non-negative integer')
+requireValue(Number.isInteger(data.stats?.releases) && data.stats.releases >= 1, 'stats.releases must be a positive integer')
 
 const installers = data.release.assets.filter(asset => asset.kind === 'installer')
 const checksums = data.release.assets.filter(asset => asset.kind === 'checksum')
