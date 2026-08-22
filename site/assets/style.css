@@ -295,24 +295,9 @@ a { color: inherit; }
   width: 100%;
 }
 .hero__copy { max-width: 1080px; margin: 0 auto; text-align: center; }
-.hero__copy .community-notice { margin-left: auto; margin-right: auto; }
 .hero__copy .subhead { margin-left: auto; margin-right: auto; }
 .hero__copy .cta-row { justify-content: center; }
 
-.community-notice {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px;
-  width: fit-content; max-width: 100%; margin-bottom: 24px; padding: 8px 10px;
-  background: var(--notice-bg); border: 1px solid rgba(77, 107, 254, 0.18);
-  border-radius: 100px; box-shadow: var(--notice-shadow);
-  backdrop-filter: blur(12px);
-  color: var(--muted); font-size: 11.5px;
-}
-.community-notice strong {
-  padding: 4px 9px; border-radius: 100px; background: var(--signal); color: #fff;
-  font-size: 10.5px; letter-spacing: 0.05em;
-}
-.community-notice a { color: var(--signal-deep); font-weight: 600; text-decoration: none; white-space: nowrap; }
-.community-notice a:hover { text-decoration: underline; }
 .headline {
   font-family: var(--display);
   font-size: clamp(2.5rem, 4.8vw, 4.15rem);
