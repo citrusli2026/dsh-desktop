@@ -536,6 +536,26 @@ a { color: inherit; }
 .copybtn.is-copied { color: var(--amber); border-color: var(--amber); box-shadow: none; }
 .note { font-size: 13px; color: var(--faint); padding: 12px 22px 20px; }
 
+/* ══ 快速开始(小白三步引导) ══ */
+.quickstart { margin-top: 28px; }
+.quickstart__title { font-family: var(--display); font-size: 24px; font-weight: 700; margin: 4px 0 18px; }
+.quickstart__grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+}
+.quickstart__step {
+  position: relative; padding: 22px 20px 20px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow-card);
+}
+.quickstart__num {
+  position: absolute; top: 14px; right: 16px;
+  font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--signal-dim);
+}
+.quickstart__step h4 { font-size: 15px; font-weight: 700; margin: 0 0 8px; }
+.quickstart__step p { font-size: 13px; color: var(--muted); margin: 0 0 10px; line-height: 1.6; }
+.quickstart__link { font-size: 13px; font-weight: 700; color: var(--signal); text-decoration: none; }
+.quickstart__link:hover { text-decoration: underline; }
+
 /* ══ 可扫读能力矩阵 ══ */
 .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow-card); }
 .feature-card { position: relative; min-height: 220px; padding: 30px 28px; background: var(--panel); }
@@ -617,6 +637,7 @@ a { color: inherit; }
   .asset-row__meta { text-align: left; }
   .release-meta { display: block; font-size: 11px; white-space: normal; }
   .download-toast { right: 12px; left: 12px; bottom: 12px; max-width: none; }
+  .quickstart__grid { grid-template-columns: 1fr; }
   .trust-strip__grid { grid-template-columns: 1fr 1fr; }
   .trust-strip__grid div:nth-child(3) { border-top: 1px solid var(--border); }
   .trust-strip__grid div:nth-child(4) { border-top: 1px solid var(--border); border-right: 1px solid var(--border); }

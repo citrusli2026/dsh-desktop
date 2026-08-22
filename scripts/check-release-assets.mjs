@@ -9,6 +9,8 @@ import { parse as parseYaml } from 'yaml'
 export function expectedAssetNames(version) {
   const macInstaller = `dsh-desktop-${version}-arm64-mac.dmg`
   const windowsInstaller = `dsh-desktop-setup-${version}.exe`
+  const linuxDeb = `dsh-desktop-${version}-x64.deb`
+  const linuxAppImage = `dsh-desktop-${version}-x64.AppImage`
   return [
     macInstaller,
     `${macInstaller}.sha256`,
@@ -16,6 +18,10 @@ export function expectedAssetNames(version) {
     `${windowsInstaller}.sha256`,
     `${windowsInstaller}.blockmap`,
     'latest.yml',
+    linuxDeb,
+    `${linuxDeb}.sha256`,
+    linuxAppImage,
+    `${linuxAppImage}.sha256`,
   ]
 }
 
@@ -35,7 +41,7 @@ export async function validateReleaseAssets(directory, version) {
     ].filter(Boolean).join('; '))
   }
 
-  for (const installer of expected.filter(name => name.endsWith('.dmg') || name.endsWith('.exe'))) {
+  for (const installer of expected.filter(name => name.endsWith('.dmg') || name.endsWith('.exe') || name.endsWith('.deb') || name.endsWith('.AppImage'))) {
     const bytes = await readFile(resolve(directory, installer))
     const actualHash = createHash('sha256').update(bytes).digest('hex')
     const checksum = await readFile(resolve(directory, `${installer}.sha256`), 'utf8')

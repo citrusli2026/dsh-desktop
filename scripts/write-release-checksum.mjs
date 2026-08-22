@@ -5,9 +5,15 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-export function installerName(version, platform) {
-  if (platform === 'darwin') return `dsh-desktop-${version}-arm64-mac.dmg`
-  if (platform === 'win32') return `dsh-desktop-setup-${version}.exe`
+export function installerNames(version, platform) {
+  if (platform === 'darwin') return [`dsh-desktop-${version}-arm64-mac.dmg`]
+  if (platform === 'win32') return [`dsh-desktop-setup-${version}.exe`]
+  if (platform === 'linux') {
+    return [
+      `dsh-desktop-${version}-x64.deb`,
+      `dsh-desktop-${version}-x64.AppImage`,
+    ]
+  }
   throw new Error(`release installers are not published for ${platform}`)
 }
 
@@ -22,9 +28,11 @@ export async function writeReleaseChecksum(file) {
 async function main() {
   const directory = resolve(process.argv[2] ?? 'dist')
   const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
-  const file = resolve(directory, installerName(packageJson.version, process.platform))
-  const output = await writeReleaseChecksum(file)
-  console.log(`release-checksum: wrote ${output}`)
+  const files = installerNames(packageJson.version, process.platform).map(name => resolve(directory, name))
+  for (const file of files) {
+    const output = await writeReleaseChecksum(file)
+    console.log(`release-checksum: wrote ${output}`)
+  }
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

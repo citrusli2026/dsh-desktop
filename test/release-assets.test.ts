@@ -8,11 +8,11 @@ import { readFileSync } from 'node:fs'
 // @ts-expect-error Dependency-free CI scripts intentionally stay plain ESM JavaScript.
 import { expectedAssetNames, validateReleaseAssets } from '../scripts/check-release-assets.mjs'
 // @ts-expect-error Dependency-free CI scripts intentionally stay plain ESM JavaScript.
-import { installerName, writeReleaseChecksum } from '../scripts/write-release-checksum.mjs'
+import { installerNames, writeReleaseChecksum } from '../scripts/write-release-checksum.mjs'
 
 const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version as string
 
-test('release contract has two large installers, two hashes, and Windows updater metadata', () => {
+test('release contract has three platforms of installers, hashes, and Windows updater metadata', () => {
   assert.deepEqual(expectedAssetNames(VERSION), [
     `dsh-desktop-${VERSION}-arm64-mac.dmg`,
     `dsh-desktop-${VERSION}-arm64-mac.dmg.sha256`,
@@ -20,16 +20,24 @@ test('release contract has two large installers, two hashes, and Windows updater
     `dsh-desktop-setup-${VERSION}.exe.sha256`,
     `dsh-desktop-setup-${VERSION}.exe.blockmap`,
     'latest.yml',
+    `dsh-desktop-${VERSION}-x64.deb`,
+    `dsh-desktop-${VERSION}-x64.deb.sha256`,
+    `dsh-desktop-${VERSION}-x64.AppImage`,
+    `dsh-desktop-${VERSION}-x64.AppImage.sha256`,
   ])
-  assert.equal(installerName(VERSION, 'darwin'), `dsh-desktop-${VERSION}-arm64-mac.dmg`)
-  assert.equal(installerName(VERSION, 'win32'), `dsh-desktop-setup-${VERSION}.exe`)
-  assert.throws(() => installerName(VERSION, 'linux'), /not published/)
+  assert.deepEqual(installerNames(VERSION, 'darwin'), [`dsh-desktop-${VERSION}-arm64-mac.dmg`])
+  assert.deepEqual(installerNames(VERSION, 'win32'), [`dsh-desktop-setup-${VERSION}.exe`])
+  assert.deepEqual(installerNames(VERSION, 'linux'), [
+    `dsh-desktop-${VERSION}-x64.deb`,
+    `dsh-desktop-${VERSION}-x64.AppImage`,
+  ])
 })
 
 test('checksum writer and release validator reject missing, extra, or changed assets', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'dsh-release-assets-'))
   try {
-    const installers = (expectedAssetNames(VERSION) as string[]).filter(name => name.endsWith('.dmg') || name.endsWith('.exe'))
+    const installers = (expectedAssetNames(VERSION) as string[])
+      .filter(name => name.endsWith('.dmg') || name.endsWith('.exe') || name.endsWith('.deb') || name.endsWith('.AppImage'))
     for (const installer of installers) {
       const file = join(directory, installer)
       await writeFile(file, `fixture:${installer}`)
@@ -47,7 +55,7 @@ test('checksum writer and release validator reject missing, extra, or changed as
       `sha512: ${windowsSha512}`,
       '',
     ].join('\n'))
-    assert.equal(await validateReleaseAssets(directory, VERSION), 6)
+    assert.equal(await validateReleaseAssets(directory, VERSION), 10)
 
     await writeFile(join(directory, 'latest.yml'), [
       `version: ${VERSION}`,

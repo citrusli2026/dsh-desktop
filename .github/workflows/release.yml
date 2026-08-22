@@ -54,8 +54,24 @@ jobs:
         include:
           - os: macos-14
             targets: --mac dmg
+            upload: |
+              dist/*.dmg
+              dist/*.sha256
           - os: windows-2022
             targets: --win nsis
+            upload: |
+              dist/*.exe
+              dist/*.sha256
+              dist/*.exe.blockmap
+              dist/latest.yml
+          # Linux: deb 覆盖 Debian/Ubuntu/UOS/Deepin/麒麟桌面,AppImage 便携。
+          # 必须在 Linux runner 上打包(electronDist 是平台相关的本地 electron)。
+          - os: ubuntu-24.04
+            targets: --linux deb AppImage
+            upload: |
+              dist/*.deb
+              dist/*.AppImage
+              dist/*.sha256
     runs-on: ${{ matrix.os }}
     env:
       DSH_MOBILE_SHELL_WEB_ROOT: ${{ github.workspace }}/dsh-mobile-shell/dist/web
@@ -88,8 +104,17 @@ jobs:
           # --publish never keeps electron-builder from creating the release
           # itself; the publish job below owns release creation.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # latest.yml / blockmap are Windows electron-updater metadata; the Linux
+      # build would generate a colliding same-named manifest otherwise.
+      - name: Drop Linux updater metadata
+        if: matrix.os == 'ubuntu-24.04'
+        run: rm -f dist/latest.yml
       - name: Smoke packaged app
+        if: matrix.os != 'ubuntu-24.04'
         run: node scripts/smoke-packaged.mjs
+      - name: Smoke packaged app (headless)
+        if: matrix.os == 'ubuntu-24.04'
+        run: xvfb-run -a node scripts/smoke-packaged.mjs
       - name: Write installer SHA-256
         run: node scripts/write-release-checksum.mjs dist
       - name: Attest macOS installer (build provenance)
@@ -102,16 +127,18 @@ jobs:
         uses: actions/attest@v4
         with:
           subject-path: dist/*.exe
+      - name: Attest Linux packages (build provenance)
+        if: matrix.os == 'ubuntu-24.04'
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            dist/*.deb
+            dist/*.AppImage
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
           name: dsh-electron-shell-${{ matrix.os }}
-          path: |
-            dist/*.dmg
-            dist/*.exe
-            dist/*.sha256
-            dist/*.exe.blockmap
-            dist/latest.yml
+          path: ${{ matrix.upload }}
           if-no-files-found: error
 
   publish:
@@ -138,7 +165,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          for F in artifacts/*.dmg artifacts/*.exe; do
+          for F in artifacts/*.dmg artifacts/*.exe artifacts/*.deb artifacts/*.AppImage; do
             [ -f "$F" ] || continue
             echo "verifying $F"
             gh attestation verify "$F" -R "${{ github.repository }}"
@@ -156,6 +183,7 @@ jobs:
 
           - macOS: `dsh-desktop-<版本>-arm64-mac.dmg`（Apple Silicon）。首次打开如遇 Gatekeeper 提示，请 **右键点击 → 打开**。
           - Windows: `dsh-desktop-setup-<版本>.exe`。如遇 SmartScreen 提示，点 **更多信息 → 仍要运行**。
+          - Linux: `dsh-desktop-<版本>-x64.deb`（Debian/Ubuntu/UOS/Deepin/麒麟,双击安装）与 `dsh-desktop-<版本>-x64.AppImage`（免安装,Ubuntu 22.04+ 需安装 libfuse2）。
           - 每个安装包均附带 `.sha256` 校验文件。
 
           **验证安装包来源（可选但推荐）**

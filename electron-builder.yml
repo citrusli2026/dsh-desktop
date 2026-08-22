@@ -65,6 +65,18 @@ win:
     - nsis
   artifactName: ${name}-setup-${version}.${ext}
 
+# Linux: deb 覆盖 Debian/Ubuntu/UOS/Deepin/麒麟桌面(双击安装,对小白最友好),
+# AppImage 作为免安装便携补充。必须在 Linux 构建机(CI ubuntu runner)上打包:
+# electronDist 指向的本地 electron 是平台相关的。
+linux:
+  category: Development
+  maintainer: dsh-desktop contributors <citrusli@126.com>
+  synopsis: DeepSeek Harness desktop shell
+  target:
+    - deb
+    - AppImage
+  artifactName: ${name}-${version}-${arch}.${ext}
+
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
