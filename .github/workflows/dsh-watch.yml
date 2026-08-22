@@ -55,6 +55,14 @@ jobs:
       - name: Regenerate the closure lockfile
         if: steps.check.outputs.code == '3'
         run: pnpm -C manifest/harness install --lockfile-only
+      # lockfile-only 校验的是旧 lockfile(豁免列表仍是旧 pin),因此本步
+      # 必须在其后执行;否则新 lockfile 会被 24h minimumReleaseAge 拦住
+      # (历史失败模式: 全家桶 rc 发布当天 bootstrap 必挂)。
+      - name: Sync release-age excludes to the new kernel
+        if: steps.check.outputs.code == '3'
+        env:
+          NEW: ${{ steps.check.outputs.new }}
+        run: node scripts/sync-release-age-excludes.mjs "$NEW"
       - name: Rebuild the harness closure
         if: steps.check.outputs.code == '3'
         run: pnpm run bootstrap
