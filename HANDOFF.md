@@ -8,12 +8,12 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.0`（已发布 2026-08-22；内核 0.1.1-rc.1 → 0.1.1-rc.2，壳修订归零） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.0`（2026-08-22，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 67 项单测、类型检查、覆盖率门槛、官网门禁、构建通过 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.0 Release 严格 8 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.0`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.0 GitCode 镜像：dmg/exe/deb + 3×sha256（2026-08-22 浏览器会话上传 + PUT 绑定，匿名 Range GET 6×206） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.1`（已发布 2026-08-22；内核 0.1.1-rc.2 未变，壳修订 +1） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.1`（2026-08-22，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 107 项单测、类型检查、覆盖率门槛、官网门禁、构建通过 |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.1 Release 严格 8 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.1`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.1 GitCode 镜像：dmg/exe/deb + 3×sha256（2026-08-22 本机 SOCKS5 下载 + 直传，匿名 Range GET 6×302） |
 | 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -453,6 +453,31 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
 
 **待清理**：GitCode 测试 release `v0.0.0-mirror-test`（v5 API 无删除
 端点、v2 被 CloudWAF 拦）——下次打开 GitCode 网页在 releases 页删除。
+
+## 十九、v0.1.1-rc.2.shell.1 发布（2026-08-22）
+
+1. **内核升级**：无。上游 npm latest 仍为 `0.1.1-rc.2`
+   （`version.mjs check` 退出 0，registry.npmjs.org dist-tags 复核一致）；
+   本次为壳修订号 bump：`version.mjs bump shell` → `0.1.1-rc.2.shell.1`
+   （含 2aaac55/c46ebe5 的架构重构与测试收敛，17 文件 +705/-325）。
+2. **发布**：tag `v0.1.1-rc.2.shell.1` → `f6a24ae`（peeled 核对）；
+   release.yml verify + build（macos-14/ubuntu-24.04/windows-2022）+ publish
+   全绿（run 32577667429）；8 文件契约齐全（dmg/exe/deb + 3×sha256 +
+   blockmap + latest.yml）。
+3. **GitCode 镜像**：第一轮 `mirror-gitcode.mjs` 经 ghproxy.net 完成
+   deb + 3×sha256 4/6，dmg/exe 经公开代理下载失败（大文件连接中断）；
+   改走本机 SOCKS5 代理（127.0.0.1:7890，用户验证过最快的线路）直连
+   GitHub 下载 dmg(173M)/exe(150M)（峰值 ~1 MB/s，各约 4 分钟），
+   sha256 与官方逐字节一致后经 `mirror-gitcode.mjs <本地文件>` 直传
+   GitCode；匿名 Range GET 6×302；`gitcode_ok=true` 已刷新；backfill 后备
+   run 32581545486 已取消。
+4. **网站数据**：gen-site-data 重新生成（stats 134 次：mac 54 / win 72 /
+   linux 8）。过程中发现并修复 bot 同步故障：site-refresh（run
+   32577974276）因 `gen-site-data.mjs` 重复声明 `classifyPublicAsset`
+   （c46ebe5 引入，SyntaxError）失败，提交 8670060 修复；bot 重跑
+   32579332171 成功（92fa567）；本地复核镜像后提交 d9960b7。线上
+   `/data/release.json` 指向新 tag 且 `gitcode_ok=true`，`/api/downloads`
+   实时计数可用（total 134）。
 
 ---
 
