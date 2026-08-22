@@ -29,7 +29,8 @@ jobs:
   refresh:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # The GitCode re-probe below can wait ~30 min for a slow mirror.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
         with:
@@ -48,6 +49,27 @@ jobs:
           git config user.name "dsh-shell-bot"
           git config user.email "bot@users.noreply.github.com"
           node scripts/gen-site-data.mjs
+
+      - name: Re-probe GitCode until the mirror settles
+        # A Release-triggered run frequently finishes before the GitCode
+        # mirror does, so gitcode_ok=false would be committed and need a
+        # manual regeneration. Re-probe with backoff for up to ~30 min;
+        # if the mirror is still incomplete, commit anyway (data stays
+        # fresh) and the next scheduled run re-probes.
+        if: steps.gen.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for i in 1 2 3 4 5 6; do
+            node scripts/gen-site-data.mjs >/dev/null
+            if node -e "const j=require('./site/data/release.json');process.exit(j.release.assets.some(a=>a.gitcode_url && a.gitcode_ok===false)?1:0)"; then
+              echo "all GitCode mirrors verified (attempt $i)"
+              exit 0
+            fi
+            echo "GitCode mirror incomplete (attempt $i/6); waiting 5 minutes"
+            sleep 300
+          done
+          echo "::warning::GitCode mirror still incomplete after 6 attempts; the next scheduled run will re-probe"
 
       - name: Commit and push if changed
         run: |

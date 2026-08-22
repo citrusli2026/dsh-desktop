@@ -149,6 +149,28 @@ jobs:
     if: ${{ github.ref_type == 'tag' }}
     steps:
       - uses: actions/checkout@v7
+      - name: Verify the tag points at this commit
+        # A tag cut from a stale base (a bot sync landed between tagging and
+        # pushing — seen in the field) would publish assets under content
+        # that is not the release's true state. Dereference the tag (GitHub
+        # returns the tag object for annotated tags) and refuse to publish
+        # when it does not match the commit this workflow runs on.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          REPO="${{ github.repository }}"
+          OBJECT=$(gh api "repos/$REPO/git/ref/tags/$TAG" --jq '.object')
+          if [ "$(printf '%s' "$OBJECT" | jq -r .type)" = "tag" ]; then
+            PEELED=$(gh api "repos/$REPO/git/tags/$(printf '%s' "$OBJECT" | jq -r .sha)" --jq '.object.sha')
+          else
+            PEELED=$(printf '%s' "$OBJECT" | jq -r .sha)
+          fi
+          if [ "$PEELED" != "${{ github.sha }}" ]; then
+            echo "::error::tag $TAG points at $PEELED but this run is on ${{ github.sha }} — pull latest main and re-tag before publishing"
+            exit 1
+          fi
+          echo "tag $TAG -> $PEELED matches this run"
       - uses: actions/download-artifact@v8
         with:
           path: artifacts

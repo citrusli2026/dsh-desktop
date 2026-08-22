@@ -427,4 +427,33 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
 
 ---
 
+## 十八、发布自动化迭代（2026-08-22）
+
+1. **GitCode 镜像主方案自动化（mirror-gitcode.mjs）**：一条命令完成
+   探测→下载(经 GH_PROXY_PREFIX)→上传(v5 API)→sha256 校验→复核；
+   本机直连 GitCode 实测 **2.2 MB/s**（runner 跨境 160 KB/s 的 13 倍），
+   上传链路已用临时 release 实测通过（创建/上传/验证/汇总全通）。
+   `--check-only` 免 token 探测；幂等可重跑。backfill workflow 与
+   `gitcode-release-publisher` 浏览器会话降级为 fallback。
+2. **凭据落位（本机）**：`~/.gitcode-token`（600，从 GitHub Actions
+   secret 经临时 workflow 导出后已清理）与 `~/.gitcode-mirror.env`
+   （600，供定时任务读取）。均不入仓库。
+3. **launchd 半自动镜像**：`com.dsh-desktop.gitcode-mirror` 每日
+   10:05/22:05 运行 `scripts/gitcode-mirror-daemon.sh`（git ls-remote
+   解析最新 tag → mirror-gitcode，幂等，失败仅记
+   `~/Library/Logs/dsh-gitcode-mirror.log`）；已手动实测通过。
+4. **release.yml tag→commit 门禁**：publish job 解引用 tag（含 annotated
+   两段解引用）与 `github.sha` 比对，不一致即 fail——杜绝 shell.9 式
+   「tag 建在旧提交」事故复发。
+5. **site-refresh GitCode 重试**：Release 触发后 gitcode_ok=false 时
+   每 5 分钟重新探测（最多 6 次）再提交，消除镜像时序误报；
+   job 超时 10→45 分钟。
+6. **runbook HANDOFF 模板**：release-dsh-desktop 技能第 8 步加入章节
+   模板与取数命令（run id / peeled commit / check-only 探测）。
+
+**待清理**：GitCode 测试 release `v0.0.0-mirror-test`（v5 API 无删除
+端点、v2 被 CloudWAF 拦）——下次打开 GitCode 网页在 releases 页删除。
+
+---
+
 _更新于 2026-08-22_

@@ -158,11 +158,37 @@ counts and regenerate over it.
 
 ### 8. HANDOFF and live verification
 
-- Add a release section (`## 十五、…发布`) with: CI run ids (release
-  + site-refresh), tag → commit short sha, GitCode backfill run
-  history (which run got each asset), Range GET result, live checks.
-- Update the status table rows: 最新代码基线 (now 已发布), 已发布,
-  核心发布, 官网数据, 国内镜像.
+Add a release section with the template below, then update the status
+table rows (最新代码基线 / 已发布 / 核心发布 / 官网数据 / 国内镜像).
+Fill the placeholders from the commands in the template.
+
+```markdown
+## 十八、<tag> 发布（<date>）
+
+1. **内核升级**：`<dsh>.<rev>` 说明（bump 命令、lockfile、release-age 豁免同步）。
+2. **发布**：tag `v<version>` → `<short-sha>`（核对 peeled commit），release.yml
+   verify + build + publish 全绿；<N> 文件契约齐全，attestation 与 packaged smoke 通过。
+3. **GitCode 镜像（mirror-gitcode.mjs）**：本机直连上传 dmg/exe/deb + 3×sha256
+   （<实际耗时>），Range GET 6×206；`gitcode_ok` 已刷新。
+4. **网站数据**：gen-site-data 重新生成（stats <n> 次：mac x / win y / linux z），
+   site-refresh 自动同步提交 <sha>。
+
+发布元数据：
+- Release run `<id>`（成功）；Site Data Refresh run `<id>`（自动，成功）；
+- 线上验证：`/data/release.json` 指向 <tag>、资产 `gitcode_ok=true`、
+  `/api/downloads` 实时计数可用。
+```
+
+Fill commands:
+
+```sh
+gh run list --workflow=release.yml --limit 1 --json databaseId,status --jq '.[0]'
+gh run list --workflow=site-refresh.yml --limit 1 --json databaseId,status --jq '.[0]'
+git rev-parse --short v<version>^{}     # peeled tag commit, cross-check the mirror tag
+GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-electron-shell \
+  node scripts/mirror-gitcode.mjs v<version> --check-only   # 6× present
+```
+
 - Verify live:
   `https://dsh-desktop.com/data/release.json` (tag + gitcode_ok) and
   `https://dsh-desktop.com/api/downloads` (real-time counts). Vercel

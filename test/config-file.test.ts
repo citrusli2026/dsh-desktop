@@ -96,7 +96,13 @@ test('withFileLock serializes concurrent operations', async () => {
       order.push('second:enter')
     })
     await Promise.all([first, second])
-    assert.deepEqual(order, ['first:enter', 'first:exit', 'second:enter'])
+    // Which caller wins the lock first is scheduling-dependent; the contract
+    // is mutual exclusion — the second operation must not interleave inside
+    // the first one's critical section.
+    const firstEnter = order.indexOf('first:enter')
+    assert.ok(firstEnter >= 0, 'first operation must run')
+    assert.equal(order[firstEnter + 1], 'first:exit', 'the lock must not interleave the two operations')
+    assert.ok(order.includes('second:enter'), 'second operation must run')
     assert.deepEqual(await readdir(dir), [], 'lock file must be removed after the operation')
   } finally {
     await rm(dir, { recursive: true, force: true })
