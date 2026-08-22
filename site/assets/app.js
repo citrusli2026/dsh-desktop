@@ -191,26 +191,14 @@
 
   var OS_LABEL = {
     zh: {
-      mac: ['macOS', 'APPLE SILICON · 首次打开请右键 → 打开'],
-      win: ['Windows', 'NSIS 安装包 · 首次打开选"更多信息 → 仍要运行"'],
-      linux: ['Linux', 'DEB 双击安装'],
+      mac: ['macOS', 'APPLE SILICON'],
+      win: ['Windows', 'NSIS 安装包'],
+      linux: ['Linux', 'DEB'],
     },
     en: {
-      mac: ['macOS', 'APPLE SILICON · RIGHT-CLICK → OPEN ON FIRST LAUNCH'],
-      win: ['Windows', 'NSIS INSTALLER · FIRST RUN: "MORE INFO → RUN ANYWAY"'],
-      linux: ['Linux', 'DEB DOUBLE-CLICK INSTALL'],
-    },
-  }
-  var OS_NOTE = {
-    zh: {
-      mac: '.dmg 拖入“应用程序”即可使用。',
-      win: '支持 Windows 10 及以上(64 位)与原地自动更新。',
-      linux: 'DEB 适用于 Debian/Ubuntu/UOS/Deepin/麒麟等,双击安装。',
-    },
-    en: {
-      mac: 'Drag the DMG app into Applications to install.',
-      win: 'Windows 10+ (64-bit) with in-place updates.',
-      linux: 'DEB for Debian/Ubuntu/UOS/Deepin/Kylin etc.; double-click to install.',
+      mac: ['macOS', 'APPLE SILICON'],
+      win: ['Windows', 'NSIS INSTALLER'],
+      linux: ['Linux', 'DEB'],
     },
   }
 
@@ -289,7 +277,6 @@
     if (/arm64-mac\.dmg$/.test(name)) return { os: 'mac', primary: true, fmt: 'dmg' }
     if (/setup-.*\.exe$/.test(name)) return { os: 'win', primary: true, fmt: 'exe' }
     if (/\.deb$/.test(name)) return { os: 'linux', primary: true, fmt: 'deb' }
-    if (/\.AppImage$/.test(name)) return { os: 'linux', primary: false, fmt: 'AppImage' }
     return null
   }
 
@@ -392,7 +379,6 @@
     })
 
     var labels = OS_LABEL[lang]
-    var notes = OS_NOTE[lang]
     var html = ''
     ;['mac', 'win', 'linux'].forEach(function (os) {
       var list = groups[os]
@@ -421,7 +407,6 @@
         html += '<button class="copybtn" type="button" data-copy="' + links[0].href + '">' + t('copy.link') + '</button>'
         html += '</span></div>'
       })
-      html += '<p class="platform-note">' + notes[os] + '</p>'
       html += '</div>'
     })
     if (html) $('#platform-rows').innerHTML = html

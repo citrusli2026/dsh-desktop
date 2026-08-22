@@ -471,7 +471,6 @@ a { color: inherit; }
 .dl-btn:hover { background: var(--signal-deep); box-shadow: 0 8px 22px rgba(58, 101, 194, 0.2); }
 .dl-btn--alt { background: transparent; color: var(--muted); border: 1px solid var(--border); }
 .dl-btn--alt:hover { color: var(--signal-deep); border-color: var(--border-strong); box-shadow: none; background: var(--alt-hover-bg); }
-.platform-note { font-size: 12.5px; color: var(--faint); padding: 2px 22px 16px; }
 .asset-fallback { padding: 26px 22px; color: var(--muted); }
 .asset-fallback a { color: var(--signal); }
 
