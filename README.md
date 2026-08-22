@@ -22,7 +22,7 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 
 ## Versioning
 
-Version and tag are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.1-rc.1.shell.3` bundles `@deepseek-ai/dsh` 0.1.1-rc.1 at shell revision 3. `scripts/version.mjs` owns the version field (`show` / `check` / `bump`); a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically (decision 0009).
+Version and tag are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.1-rc.2.shell.3` bundles `@deepseek-ai/dsh` 0.1.1-rc.2 at shell revision 3. `scripts/version.mjs` owns the version field (`show` / `check` / `bump`); a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically (decision 0009).
 
 CI and Release consume the mobile-shell Web artifact from the immutable upstream tag `v1.0.0`; update that pin only as an explicit compatibility change.
 
