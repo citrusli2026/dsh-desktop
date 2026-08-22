@@ -6,7 +6,7 @@
 export var I18N = {
   zh: {
     'a11y.skip': '跳到主要内容',
-    'brand.community': '社区维护',
+      'brand.community': '社区版',
     'nav.download': '下载', 'nav.workflow': '工作方式', 'nav.features': '特性', 'nav.version': '版本号', 'nav.faq': '常见问题', 'nav.cta': '立即下载',
     'hero.h1': '把 DeepSeek Harness<br />变成可靠的 <em>桌面工作台</em>。',
     'hero.sub': '官方 WebUI 的桌面封装，打开即用。零配置启动、独立数据空间、崩溃自愈——只增强桌面体验，不改写 Harness 行为。',

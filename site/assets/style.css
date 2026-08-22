@@ -4,6 +4,7 @@
   color-scheme: light;
   --bg: #f9f8f8;
   --panel: rgba(255, 255, 255, 0.74);
+  --toast-bg: #ffffff;
   --panel-2: rgba(255, 255, 255, 0.46);
   --border: rgba(0, 0, 0, 0.1);
   --border-strong: rgba(9, 45, 78, 0.2);
@@ -59,6 +60,7 @@
     color-scheme: dark;
     --bg: #0c0f16;
     --panel: rgba(23, 27, 37, 0.68);
+    --toast-bg: #1a1e28;
     --panel-2: rgba(23, 27, 37, 0.44);
     --border: rgba(255, 255, 255, 0.1);
     --border-strong: rgba(178, 198, 255, 0.3);
@@ -105,6 +107,7 @@
   --bg: #0c0f16;
   --panel: rgba(23, 27, 37, 0.68);
   --panel-2: rgba(23, 27, 37, 0.44);
+  --toast-bg: #1a1e28;
   --border: rgba(255, 255, 255, 0.1);
   --border-strong: rgba(178, 198, 255, 0.3);
   --text: #e8ecf5;
@@ -398,27 +401,31 @@ a { color: inherit; }
 /* ══ 下载后提示(如何运行 + Star 邀请) ══ */
 .download-toast {
   position: fixed; right: 20px; bottom: 20px; z-index: 999;
-  max-width: 340px; padding: 14px 16px;
-  background: var(--panel, #fff); color: var(--text, #1e2230);
-  border: 1px solid var(--border); border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+  max-width: 340px; padding: 16px 18px;
+  /* 浮层必须实色:玻璃拟态的 --panel 是半透明,页面内容透过来会看不清 */
+  background: var(--toast-bg, #fff); color: var(--text, #1e2230);
+  border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.1);
   font: 13px/1.55 -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif;
 }
 .download-toast[hidden] { display: none; }
-.download-toast__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.download-toast__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.download-toast__head b { font-size: 13.5px; letter-spacing: 0.01em; }
 .download-toast__close {
   border: 0; background: none; cursor: pointer;
   font: 600 16px/1 var(--mono); color: var(--faint);
   padding: 2px 6px; border-radius: 6px;
+  flex: none;
 }
 .download-toast__close:hover { color: var(--text); background: var(--border); }
-.download-toast__first { margin: 0 0 10px; }
+.download-toast__first { margin: 0 0 12px; color: var(--text); }
 .download-toast__star {
-  display: flex; align-items: center; gap: 6px;
-  font-weight: 700; color: var(--signal); text-decoration: none;
-  padding-top: 9px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-weight: 700; color: #fff; background: var(--signal);
+  text-decoration: none; padding: 9px 12px; border-radius: 100px;
+  transition: filter 0.15s ease;
 }
-.download-toast__star:hover { text-decoration: underline; }
+.download-toast__star:hover { text-decoration: none; filter: brightness(1.08); }
 
 /* ══ 下载矩阵 ══ */
 .platform-group + .platform-group { border-top: 1px solid var(--border); }
