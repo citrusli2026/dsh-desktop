@@ -4,16 +4,9 @@ import { createHash } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { installerNames } from './release-shape.mjs'
 
-export function installerNames(version, platform) {
-  if (platform === 'darwin') return [`dsh-desktop-${version}-arm64-mac.dmg`]
-  if (platform === 'win32') return [`dsh-desktop-setup-${version}.exe`]
-  if (platform === 'linux') {
-    // electron-builder expands ${arch} per target convention: deb -> amd64.
-    return [`dsh-desktop-${version}-amd64.deb`]
-  }
-  throw new Error(`release installers are not published for ${platform}`)
-}
+export { installerNames } from './release-shape.mjs'
 
 export async function writeReleaseChecksum(file) {
   const bytes = await readFile(file)

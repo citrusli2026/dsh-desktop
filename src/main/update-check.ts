@@ -110,5 +110,9 @@ export function latestPublishedRelease(payload: unknown): PublishedRelease | und
 export function splitCompositeVersion(version: string): { dsh: string; shellRev: number } | undefined {
   const match = /^(.+)\.shell\.(\d+)$/.exec(version)
   if (match === null || match[1] === undefined || match[2] === undefined) return undefined
+  // The dsh part must itself be a semver; mirrors scripts/release-shape.mjs's
+  // parseCompositeVersion so the About surface and the release tooling can
+  // never disagree about what counts as a composite version.
+  if (parseVersion(match[1]) === undefined) return undefined
   return { dsh: match[1], shellRev: Number(match[2]) }
 }

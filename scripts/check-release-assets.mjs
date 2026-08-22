@@ -5,26 +5,9 @@ import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { parse as parseYaml } from 'yaml'
+import { expectedAssetNames, installerNames, isSha512Base64, SHA256_LINE } from './release-shape.mjs'
 
-export function expectedAssetNames(version) {
-  const macInstaller = `dsh-desktop-${version}-arm64-mac.dmg`
-  const windowsInstaller = `dsh-desktop-setup-${version}.exe`
-  const linuxDeb = `dsh-desktop-${version}-amd64.deb`
-  return [
-    macInstaller,
-    `${macInstaller}.sha256`,
-    windowsInstaller,
-    `${windowsInstaller}.sha256`,
-    `${windowsInstaller}.blockmap`,
-    'latest.yml',
-    linuxDeb,
-    `${linuxDeb}.sha256`,
-  ]
-}
-
-function isSha512(value) {
-  return typeof value === 'string' && /^[A-Za-z0-9+/]{86}==$/.test(value)
-}
+export { expectedAssetNames } from './release-shape.mjs'
 
 export async function validateReleaseAssets(directory, version) {
   const actual = (await readdir(directory)).sort()
@@ -42,14 +25,14 @@ export async function validateReleaseAssets(directory, version) {
     const bytes = await readFile(resolve(directory, installer))
     const actualHash = createHash('sha256').update(bytes).digest('hex')
     const checksum = await readFile(resolve(directory, `${installer}.sha256`), 'utf8')
-    const match = /^([a-f0-9]{64})  ([^\r\n]+)\r?\n$/.exec(checksum)
+    const match = SHA256_LINE.exec(checksum)
     if (match === null || match[2] !== installer) {
       throw new Error(`${installer}.sha256 has an invalid sha256sum format`)
     }
     if (match[1] !== actualHash) throw new Error(`${installer}.sha256 does not match ${installer}`)
   }
 
-  const windowsInstaller = `dsh-desktop-setup-${version}.exe`
+  const windowsInstaller = installerNames(version, 'win32')[0]
   const updateManifest = await readFile(resolve(directory, 'latest.yml'), 'utf8')
   let update
   try {
@@ -62,12 +45,12 @@ export async function validateReleaseAssets(directory, version) {
   }
   if (update.version !== version) throw new Error(`latest.yml version does not match ${version}`)
   if (update.path !== windowsInstaller) throw new Error(`latest.yml path does not reference ${windowsInstaller}`)
-  if (!isSha512(update.sha512)) {
+  if (!isSha512Base64(update.sha512)) {
     throw new Error('latest.yml is missing a top-level sha512')
   }
   if (!Array.isArray(update.files)) throw new Error('latest.yml is missing its files list')
   const windowsEntry = update.files.find(file => file !== null && typeof file === 'object' && file.url === windowsInstaller)
-  if (windowsEntry === undefined || !isSha512(windowsEntry.sha512)) {
+  if (windowsEntry === undefined || !isSha512Base64(windowsEntry.sha512)) {
     throw new Error(`latest.yml files list does not contain a hashed entry for ${windowsInstaller}`)
   }
   const windowsSha512 = createHash('sha512').update(await readFile(resolve(directory, windowsInstaller))).digest('base64')

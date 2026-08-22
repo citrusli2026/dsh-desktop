@@ -1,9 +1,9 @@
 /** Shell-owned locale selection, persistence, and live settings synchronization. */
 import { watch, type FSWatcher } from 'node:fs'
-import { mkdir, open, readFile, rename, rm } from 'node:fs/promises'
-import { dirname, basename, join } from 'node:path'
-import { randomUUID } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
+import { basename, dirname } from 'node:path'
 import { parseDocument } from 'yaml'
+import { atomicWriteFile, withFileLock } from './config-file.ts'
 
 export const SHELL_LOCALES = ['zh', 'en'] as const
 export type ShellLocale = typeof SHELL_LOCALES[number]
@@ -309,46 +309,6 @@ export async function readThemePreference(settingsPath: string): Promise<ShellTh
   }
 }
 
-async function writeFileAtomic(filename: string, content: string): Promise<void> {
-  await mkdir(dirname(filename), { recursive: true })
-  const temporary = join(dirname(filename), `.${basename(filename)}.${process.pid}.${randomUUID()}.tmp`)
-  const handle = await open(temporary, 'wx', 0o600)
-  try {
-    await handle.writeFile(content, 'utf8')
-  } finally {
-    await handle.close()
-  }
-  try {
-    await rename(temporary, filename)
-  } catch (error) {
-    await rm(temporary, { force: true })
-    throw error
-  }
-}
-
-async function withSettingsLock<T>(settingsPath: string, operation: () => Promise<T>): Promise<T> {
-  const lockPath = `${settingsPath}.lock`
-  const deadline = Date.now() + 2_000
-  let delay = 25
-  let handle: Awaited<ReturnType<typeof open>> | undefined
-  await mkdir(dirname(settingsPath), { recursive: true })
-  while (handle === undefined) {
-    try {
-      handle = await open(lockPath, 'wx', 0o600)
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST' || Date.now() >= deadline) throw error
-      await new Promise(resolve => setTimeout(resolve, delay))
-      delay = Math.min(delay * 2, 250)
-    }
-  }
-  try {
-    return await operation()
-  } finally {
-    await handle.close()
-    await rm(lockPath, { force: true })
-  }
-}
-
 /** Initialize an absent preference once, without overwriting an existing or invalid value. */
 export async function initializeLocalePreference(
   settingsPath: string,
@@ -357,7 +317,7 @@ export async function initializeLocalePreference(
   const existing = await readLocalePreference(settingsPath)
   if (existing !== undefined) return existing
   const selected = resolvePreferredLocale(preferredLanguages)
-  return withSettingsLock(settingsPath, async () => {
+  return withFileLock(`${settingsPath}.lock`, async () => {
     let text = ''
     try {
       text = await readFile(settingsPath, 'utf8')
@@ -366,7 +326,7 @@ export async function initializeLocalePreference(
     }
     const parsed = parseLocaleDocument(text)
     if (parsed.locale !== undefined) return parsed.locale
-    await writeFileAtomic(settingsPath, parsed.rendered!(selected))
+    await atomicWriteFile(settingsPath, parsed.rendered!(selected))
     return selected
   })
 }

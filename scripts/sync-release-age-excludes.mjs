@@ -43,6 +43,6 @@ for (const line of replaced.split('\n')) {
 }
 writeFileSync(file, out.join('\n'))
 
-const before = (src.match(/@0\.1\.1-rc\.\d+'/g) || []).length
-const after = (replaced.match(/@0\.1\.1-rc\.\d+'/g) || []).length
-console.log(`sync-release-age-excludes: @${OLD} -> @${NEW} (${before} -> ${after} rc-pinned entries)`)
+const before = (src.match(new RegExp(`@${OLD}'`, 'g')) || []).length
+const after = (replaced.match(new RegExp(`@${NEW}'`, 'g')) || []).length
+console.log(`sync-release-age-excludes: @${OLD} -> @${NEW} (${before} -> ${after} pinned entries)`)

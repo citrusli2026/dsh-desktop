@@ -3,6 +3,9 @@ import { readdir, rm, mkdtemp } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
+// Shared with the app's built-in smoke mode (src/main/smoke.ts) so the flag,
+// exit codes, and injection env vars cannot drift between the two sides.
+import { SMOKE_EXIT_OK, SMOKE_FLAG } from '../src/main/smoke-protocol.ts'
 
 async function filesBelow(root) {
   const result = []
@@ -32,7 +35,7 @@ try {
     // The unpacked tree has no SUID chrome-sandbox (deb postinst sets it at
     // install time), so headless CI smoke runs with the Chromium sandbox off,
     // same as the e2e fixture.
-    const args = ['--smoke-test', `--user-data-dir=${userData}`]
+    const args = [SMOKE_FLAG, `--user-data-dir=${userData}`]
     if (process.platform === 'linux') args.push('--no-sandbox')
     const child = spawn(executable, args, {
       env: { ...process.env, DSH_HOME: dshHome },
@@ -58,7 +61,7 @@ try {
       resolve(code)
     })
   })
-  if (exitCode !== 0) throw new Error(`packaged smoke exited with code ${String(exitCode)}`)
+  if (exitCode !== SMOKE_EXIT_OK) throw new Error(`packaged smoke exited with code ${String(exitCode)}`)
   console.log(`packaged smoke: OK ${executable}`)
 } finally {
   await rm(dshHome, { recursive: true, force: true })

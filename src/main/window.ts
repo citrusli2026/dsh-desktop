@@ -1,11 +1,11 @@
 /** Main-window ownership, persistence, and navigation boundaries. */
 import { app, BrowserWindow, clipboard, Menu, nativeTheme, screen, shell } from 'electron'
-import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { errorPageHtml, loadingPageHtml } from './pages.ts'
 import { fitWindowState, MIN_WINDOW_HEIGHT, MIN_WINDOW_WIDTH, type WindowState } from './window-state.ts'
 import { shellText, type ShellLocale } from './locale.ts'
 import { hiddenTitleBarOptions } from './window-chrome.ts'
+import { ConfigFile } from './config-file.ts'
 
 type BuiltInPage =
   | { kind: 'loading' }
@@ -24,28 +24,28 @@ export interface WindowContext {
   rendererRecoveryTimes?: number[]
 }
 
-function windowStatePath(): string {
-  return join(app.getPath('userData'), 'window-state.json')
-}
+const windowStateFile = new ConfigFile<unknown>(
+  join(app.getPath('userData'), 'window-state.json'),
+  undefined,
+  raw => raw,
+  {
+    // A missing file is the first-run state; anything else is worth a warn.
+    onError: error => {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return
+      console.warn(`dsh-desktop: window state failed: ${error instanceof Error ? error.message : String(error)}`)
+    },
+  },
+)
 
 function loadWindowState(): WindowState {
-  try {
-    const raw: unknown = JSON.parse(readFileSync(windowStatePath(), 'utf8'))
-    return fitWindowState(raw, screen.getAllDisplays().map(display => display.workArea))
-  } catch {
-    return fitWindowState(undefined, [])
-  }
+  return fitWindowState(windowStateFile.readSync(), screen.getAllDisplays().map(display => display.workArea))
 }
 
 function saveWindowState(window: BrowserWindow): void {
   if (window.isDestroyed()) return
-  try {
-    const bounds = window.getNormalBounds()
-    const state: WindowState = { ...bounds, isMaximized: window.isMaximized() }
-    writeFileSync(windowStatePath(), `${JSON.stringify(state)}\n`)
-  } catch (error) {
-    console.warn(`dsh-desktop: saving window state failed: ${error instanceof Error ? error.message : String(error)}`)
-  }
+  const bounds = window.getNormalBounds()
+  const state: WindowState = { ...bounds, isMaximized: window.isMaximized() }
+  windowStateFile.writeSync(state)
 }
 
 export function createMainWindow(context: WindowContext): BrowserWindow {

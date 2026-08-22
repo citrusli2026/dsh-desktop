@@ -13,6 +13,9 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { classifyPublicAsset, SHA256_LINE } from './release-shape.mjs'
+
+export { classifyPublicAsset } from './release-shape.mjs'
 
 const REPO = process.env.REPO || 'citrusli2026/dsh-electron-shell'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -53,7 +56,7 @@ async function readChecksum(asset) {
     },
   })
   if (!response.ok) throw new Error(`checksum download ${response.status} for ${asset.name}`)
-  const match = /^([a-f0-9]{64})  ([^\r\n]+)\r?\n$/.exec(await response.text())
+  const match = SHA256_LINE.exec(await response.text())
   if (match === null || `${match[2]}.sha256` !== asset.name) throw new Error(`invalid checksum asset ${asset.name}`)
   return match[1]
 }

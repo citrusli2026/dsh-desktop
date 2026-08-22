@@ -2,6 +2,10 @@
 /** Static integrity checks for the zero-build website. */
 import { access, readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { classifyOs, classifyPublicAsset } from './release-shape.mjs'
+// The site's data layer is a plain ESM module with no DOM access, so the
+// checker imports the real dictionaries instead of regex-scraping app.js.
+import { I18N, platformOf, splitCompositeTag } from '../site/assets/data-model.js'
 
 const ROOT = process.cwd()
 const SITE = path.join(ROOT, 'site')
@@ -10,9 +14,8 @@ function requireValue(condition, message) {
   if (!condition) throw new Error(`site-check: ${message}`)
 }
 
-const [html, appJs, releaseRaw, vercelRaw] = await Promise.all([
+const [html, releaseRaw, vercelRaw] = await Promise.all([
   readFile(path.join(SITE, 'index.html'), 'utf8'),
-  readFile(path.join(SITE, 'assets', 'app.js'), 'utf8'),
   readFile(path.join(SITE, 'data', 'release.json'), 'utf8'),
   readFile(path.join(SITE, 'vercel.json'), 'utf8'),
 ])
@@ -20,6 +23,7 @@ const data = JSON.parse(releaseRaw)
 JSON.parse(vercelRaw)
 
 requireValue(typeof data.release?.tag === 'string' && data.release.tag.startsWith('v'), 'release tag is missing')
+requireValue(splitCompositeTag(data.release.tag) !== null, 'release tag must be composite (<dsh>.shell.<rev>)')
 requireValue(Array.isArray(data.release.assets), 'release assets are missing')
 requireValue([2, 4, 6].includes(data.release.assets.length), 'public asset count must be 2, 4, or 6 (installers + checksums, Linux deb only)')
 requireValue(Number.isInteger(data.stats?.installer_downloads) && data.stats.installer_downloads >= 0, 'stats.installer_downloads must be a non-negative integer')
@@ -33,8 +37,7 @@ const installers = data.release.assets.filter(asset => asset.kind === 'installer
 const checksums = data.release.assets.filter(asset => asset.kind === 'checksum')
 // 三平台:mac/win 必选(现状),linux 在发布后出现(mac 1 + win 1 + linux 1-2)
 requireValue(installers.length >= 2 && installers.length <= 6, 'installer count must be between 2 and 6')
-const osOf = name => /-arm64-mac\.dmg$/.test(name) ? 'mac' : /setup-.*\.exe$/.test(name) ? 'win' : /\.deb$/.test(name) ? 'linux' : null
-const installerOs = new Set(installers.map(asset => osOf(asset.name)).filter(Boolean))
+const installerOs = new Set(installers.map(asset => classifyOs(asset.name)).filter(Boolean))
 for (const platform of ['mac', 'win']) {
   requireValue(installerOs.has(platform), `${platform} must have at least one installer`)
 }
@@ -48,7 +51,11 @@ if (installerOs.has('linux')) {
   requireValue(installers.some(asset => /\.deb$/.test(asset.name)), 'Linux must have a deb installer')
 }
 for (const asset of data.release.assets) {
-  requireValue(asset.kind === 'installer' || asset.kind === 'checksum', `${asset.name} has an unsupported public kind`)
+  requireValue(classifyPublicAsset(asset.name) === asset.kind, `${asset.name} has an unsupported public kind`)
+  // The browser's render-time classifier must agree with the canonical one,
+  // so a release-shape change can never silently diverge on the site.
+  const browserOs = platformOf(asset.name)?.os ?? null
+  requireValue(browserOs === classifyOs(asset.name), `${asset.name} is classified differently by app.js and release-shape`)
   requireValue(typeof asset.name === 'string' && asset.name !== '', 'asset name is missing')
   requireValue(typeof asset.size === 'number' && asset.size > 0, `${asset.name} has an invalid size`)
   requireValue(asset.url.includes(`/download/${data.release.tag}/${asset.name}`), `${asset.name} GitHub URL does not match the release`)
@@ -64,12 +71,8 @@ for (const checksum of checksums) {
 const localReferences = [...html.matchAll(/(?:href|src)="(\/(?:assets|data)\/[^"?#]+)[^\"]*"/g)].map(match => match[1])
 for (const reference of localReferences) await access(path.join(SITE, reference.slice(1)))
 
-const zhBlock = /\n\s*zh:\s*\{([\s\S]*?)\n\s*\},\n\s*en:/.exec(appJs)?.[1]
-const enBlock = /\n\s*en:\s*\{([\s\S]*?)\n\s*\},\n\s*\}/.exec(appJs)?.[1]
-requireValue(zhBlock !== undefined && enBlock !== undefined, 'cannot read the translation dictionaries')
-const keys = block => new Set([...block.matchAll(/'([^']+)':/g)].map(match => match[1]))
-const zhKeys = keys(zhBlock)
-const enKeys = keys(enBlock)
+const zhKeys = new Set(Object.keys(I18N.zh))
+const enKeys = new Set(Object.keys(I18N.en))
 requireValue([...zhKeys].every(key => enKeys.has(key)) && [...enKeys].every(key => zhKeys.has(key)), 'Chinese and English translation keys differ')
 for (const match of html.matchAll(/data-i18n="([^"]+)"/g)) {
   requireValue(zhKeys.has(match[1]), `HTML uses missing translation key ${match[1]}`)

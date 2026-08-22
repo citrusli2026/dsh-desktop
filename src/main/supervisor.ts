@@ -4,7 +4,7 @@
  * on unexpected exit with a bounded backoff, and shut down gracefully on quit.
  * @module main/supervisor
  */
-import { spawn, type ChildProcess } from 'node:child_process'
+import { type ChildProcess } from 'node:child_process'
 import { mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -14,6 +14,7 @@ import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, nodeBin } from './paths.ts'
 import { decideRestart, exitsInWindow, parseReadyUrl, RESTART_BASE_DELAY_MS } from './restart-policy.ts'
 import { RollingLogWriter } from './diagnostics.ts'
+import { InFlight, ManagedChild } from './process-lifecycle.ts'
 
 /** Give a broken first boot room before declaring failure. */
 const READY_TIMEOUT_MS = 90_000
@@ -66,7 +67,9 @@ function defaultCwd(): string | undefined {
  */
 export class HarnessSupervisor {
   private readonly events: SupervisorEvents
-  private child: ChildProcess | undefined
+  private readonly managed = new ManagedChild()
+  private readonly startSlot = new InFlight<string>()
+  private readonly stopSlot = new InFlight<void>()
   private stopping = false
   private resolveReady: ((url: string) => void) | undefined
   private rejectReady: ((error: Error) => void) | undefined
@@ -82,8 +85,6 @@ export class HarnessSupervisor {
   private readonly env: NodeJS.ProcessEnv
   private readonly readyTimeoutMs: number
   private readonly cwd: string | undefined
-  private startInFlight: Promise<string> | undefined
-  private stopInFlight: Promise<void> | undefined
 
   constructor(
     events: SupervisorEvents,
@@ -117,19 +118,19 @@ export class HarnessSupervisor {
   }
 
   private spawnOnce(): ChildProcess {
-    const child = spawn(this.command, this.args, {
+    const child = this.managed.spawn({
+      command: this.command,
+      args: this.args,
       // Run from the harness root so dsh's own cwd-relative lookups (if any)
       // resolve against its bundled closure, not the Electron app directory.
       // In tests this is undefined and spawn inherits the parent cwd.
-      ...(this.cwd !== undefined ? { cwd: this.cwd } : {}),
+      cwd: this.cwd,
       // Isolate the desktop data home by default (decision 0012): the harness
       // uses ~/.dsh-desktop unless the user sets DSH_HOME explicitly (e.g.
       // DSH_HOME=~/.dsh to share with the CLI again).
       env: this.env,
-      stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
     })
-    this.child = child
     for (const stream of [child.stdout, child.stderr]) {
       const lines = createInterface({ input: stream! })
       lines.on('line', (line) => {
@@ -143,7 +144,6 @@ export class HarnessSupervisor {
       this.failStart(error)
     })
     child.once('exit', (code, signal) => {
-      this.child = undefined
       this.recordLine(`supervisor: harness exited code=${String(code)} signal=${String(signal)}`)
       if (this.stopping) return
       if (this.rejectReady !== undefined) {
@@ -181,7 +181,7 @@ export class HarnessSupervisor {
     const reject = this.rejectReady
     if (reject === undefined) return
     this.stopping = true
-    this.child?.kill('SIGTERM')
+    this.managed.process?.kill('SIGTERM')
     this.clearStartAttempt()
     reject(error)
   }
@@ -208,15 +208,15 @@ export class HarnessSupervisor {
    * @returns the loopback URL the web UI is served at.
    */
   start(): Promise<string> {
-    if (this.startInFlight !== undefined) return this.startInFlight
-    if (this.stopInFlight !== undefined) {
-      return this.trackStart(this.stopInFlight.then(() => this.createStartTask()))
+    if (this.startSlot.pending) return this.startSlot.current!
+    if (this.stopSlot.pending) {
+      return this.startSlot.track(this.stopSlot.current!.then(() => this.createStartTask()))
     }
-    return this.trackStart(this.createStartTask())
+    return this.startSlot.track(this.createStartTask())
   }
 
   private createStartTask(): Promise<string> {
-    if (this.child !== undefined && this.resolveReady === undefined) {
+    if (this.managed.process !== undefined && this.resolveReady === undefined) {
       return Promise.reject(new Error('harness is already running'))
     }
     if (this.restartTimer !== undefined) clearTimeout(this.restartTimer)
@@ -233,62 +233,25 @@ export class HarnessSupervisor {
     })
   }
 
-  private trackStart(task: Promise<string>): Promise<string> {
-    this.startInFlight = task
-    void task.then(
-      () => this.finishStart(task),
-      () => this.finishStart(task),
-    )
-    return task
-  }
-
-  private finishStart(task: Promise<string>): void {
-    if (this.startInFlight === task) this.startInFlight = undefined
-  }
-
   /**
    * Stop the harness: SIGTERM, then SIGKILL after the grace budget. Safe to
    * call with no child running; never rejects.
    */
   stop(): Promise<void> {
-    if (this.stopInFlight !== undefined) return this.stopInFlight
-    const task = new Promise<void>((resolve) => {
-      const finish = (): void => { void this.logWriter.close().then(resolve) }
+    if (this.stopSlot.pending) return this.stopSlot.current!
+    const task = (async () => {
       if (this.restartTimer !== undefined) clearTimeout(this.restartTimer)
       this.restartTimer = undefined
       this.stopping = true
-      const child = this.child
       const reject = this.rejectReady
       if (reject !== undefined) {
         this.clearStartAttempt()
         reject(new Error('harness stopped before ready'))
       }
-      if (child === undefined) {
-        finish()
-        return
-      }
-      const killTimer = setTimeout(() => child.kill('SIGKILL'), STOP_TIMEOUT_MS)
-      child.once('exit', () => {
-        clearTimeout(killTimer)
-        finish()
-      })
-      // SIGTERM on Windows is TerminateProcess for the direct child only;
-      // sweep the whole tree so shell sessions and subagents do not survive
-      // an app quit (their incremental JSONL writes bound the data loss).
-      child.kill('SIGTERM')
-      if (process.platform === 'win32' && child.pid !== undefined) {
-        spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' })
-      }
-    })
-    this.stopInFlight = task
-    void task.then(
-      () => this.finishStop(task),
-      () => this.finishStop(task),
-    )
+      await this.managed.stop(STOP_TIMEOUT_MS)
+      await this.logWriter.close()
+    })()
+    this.stopSlot.track(task)
     return task
-  }
-
-  private finishStop(task: Promise<void>): void {
-    if (this.stopInFlight === task) this.stopInFlight = undefined
   }
 }

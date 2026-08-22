@@ -1,33 +1,29 @@
 /** Tiny shell-only preferences that do not belong in the upstream Harness document. */
 import { app } from 'electron'
-import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { ConfigFile } from './config-file.ts'
 
 interface ShellPreferences {
   closeToTrayExplained?: boolean
 }
 
-function preferencesPath(): string {
-  return join(app.getPath('userData'), 'shell-preferences.json')
-}
-
-function readPreferences(): ShellPreferences {
-  try {
-    const value: unknown = JSON.parse(readFileSync(preferencesPath(), 'utf8'))
-    return typeof value === 'object' && value !== null ? value as ShellPreferences : {}
-  } catch {
-    return {}
-  }
-}
+const preferencesFile = new ConfigFile<ShellPreferences>(
+  join(app.getPath('userData'), 'shell-preferences.json'),
+  {},
+  raw => (typeof raw === 'object' && raw !== null ? raw as ShellPreferences : {}),
+  {
+    // A missing file is the normal first-run state; anything else is worth a warn.
+    onError: error => {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return
+      console.warn(`dsh-desktop: shell preferences failed: ${error instanceof Error ? error.message : String(error)}`)
+    },
+  },
+)
 
 export function shouldExplainCloseToTray(): boolean {
-  return readPreferences().closeToTrayExplained !== true
+  return preferencesFile.readSync().closeToTrayExplained !== true
 }
 
 export function markCloseToTrayExplained(): void {
-  try {
-    writeFileSync(preferencesPath(), `${JSON.stringify({ ...readPreferences(), closeToTrayExplained: true })}\n`, { mode: 0o600 })
-  } catch (error) {
-    console.warn(`dsh-desktop: saving shell preferences failed: ${error instanceof Error ? error.message : String(error)}`)
-  }
+  preferencesFile.update(current => ({ ...current, closeToTrayExplained: true }))
 }

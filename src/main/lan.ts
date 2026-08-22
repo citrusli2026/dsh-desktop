@@ -1,5 +1,5 @@
 /** LAN bridge for the prebuilt dsh-mobile-shell token proxy. */
-import { spawn, type ChildProcessByStdio } from 'node:child_process'
+import { type ChildProcessByStdio } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { createServer } from 'node:net'
 import { networkInterfaces } from 'node:os'
@@ -8,6 +8,7 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { Readable } from 'node:stream'
 import { readMobileShellArtifact } from './mobile-shell.ts'
+import { InFlight, ManagedChild } from './process-lifecycle.ts'
 
 export interface LanPairing {
   readonly baseUrl: string
@@ -190,12 +191,12 @@ export async function qrSvgFromText(text: string, mobileShellRoot: string): Prom
 
 export class LanService {
   private readonly options: LanServiceOptions
-  private child: ChildProcessByStdio<null, Readable, Readable> | undefined
+  private readonly managed = new ManagedChild()
+  private readonly startSlot = new InFlight<LanPairing>()
+  private readonly stopSlot = new InFlight<void>()
   private pairing: LanPairing | undefined
   private targetUrl: string | undefined
   private stopping = false
-  private startInFlight: Promise<LanPairing> | undefined
-  private stopInFlight: Promise<void> | undefined
   private startAbortController: AbortController | undefined
 
   constructor(options: LanServiceOptions) {
@@ -210,11 +211,11 @@ export class LanService {
   }
 
   get isRunning(): boolean {
-    return this.child !== undefined && this.child.exitCode === null
+    return this.managed.running
   }
 
   get isBusy(): boolean {
-    return this.startInFlight !== undefined || this.stopInFlight !== undefined
+    return this.startSlot.pending || this.stopSlot.pending
   }
 
   get currentPairing(): LanPairing | undefined {
@@ -226,36 +227,34 @@ export class LanService {
   }
 
   start(): Promise<LanPairing> {
-    if (this.startInFlight !== undefined) return this.startInFlight
+    if (this.startSlot.pending) return this.startSlot.current!
     if (this.isRunning && this.pairing !== undefined) return Promise.resolve(this.pairing)
-    if (this.stopInFlight !== undefined) {
-      const task = this.stopInFlight.then(() => {
+    if (this.stopSlot.pending) {
+      const task = this.stopSlot.current!.then(() => {
         this.stopping = false
         return this.startInternal()
       })
       return this.trackStart(task)
     }
-    return this.beginStart()
-  }
-
-  private beginStart(): Promise<LanPairing> {
     this.stopping = false
     return this.trackStart(this.startInternal())
   }
 
   private trackStart(task: Promise<LanPairing>): Promise<LanPairing> {
-    this.startInFlight = task
-    void task.then(
-      () => this.finishStart(task),
-      () => this.finishStart(task),
-    )
+    const tracked = this.track(this.startSlot, task)
     this.options.onStateChanged?.()
-    return task
+    return tracked
   }
 
-  private finishStart(task: Promise<LanPairing>): void {
-    if (this.startInFlight === task) this.startInFlight = undefined
-    this.options.onStateChanged?.()
+  /** Share `task` as the in-flight operation for `slot`, notifying listeners
+   *  when it settles (the busy flag flips at settle). */
+  private track<T>(slot: InFlight<T>, task: Promise<T>): Promise<T> {
+    const tracked = slot.track(task)
+    void task.then(
+      () => this.options.onStateChanged?.(),
+      () => this.options.onStateChanged?.(),
+    )
+    return tracked
   }
 
   private async startInternal(): Promise<LanPairing> {
@@ -287,7 +286,9 @@ export class LanService {
       const mobileShell = readMobileShellArtifact(this.mobileShellPath)
       const proxyPath = mobileShell.proxyPath
       const launcherPath = mobileShell.launcherPath
-      const child = spawn(this.options.nodeExecutable?.() ?? process.execPath, [proxyPath], {
+      const child = this.managed.spawn({
+        command: this.options.nodeExecutable?.() ?? process.execPath,
+        args: [proxyPath],
         cwd: mobileShell.root,
         env: proxyEnvironment({
           DSH_REMOTE_TOKEN: token,
@@ -298,10 +299,8 @@ export class LanService {
           DSH_LAUNCHER: launcherPath,
           DSH_PAIR_QR: 'off',
         }),
-        stdio: ['ignore', 'pipe', 'pipe'],
         windowsHide: true,
-      })
-      this.child = child as ChildProcessByStdio<null, Readable, Readable>
+      }) as ChildProcessByStdio<null, Readable, Readable>
       this.targetUrl = targetUrl
       const onLine = (line: string): void => this.options.onLog?.(`mobile-shell: ${line}`)
       child.stdout.setEncoding('utf8')
@@ -311,7 +310,6 @@ export class LanService {
       }
       child.once('exit', () => {
         if (!this.stopping) this.options.onLog?.('mobile-shell: LAN proxy stopped unexpectedly')
-        this.child = undefined
         this.pairing = undefined
         this.targetUrl = undefined
         this.options.onStateChanged?.()
@@ -338,55 +336,26 @@ export class LanService {
   }
 
   async restart(): Promise<LanPairing> {
-    const pendingStart = this.startInFlight
+    const pendingStart = this.startSlot.current
     await this.stop()
     await pendingStart?.catch(() => {})
     return this.start()
   }
 
   stop(): Promise<void> {
-    if (this.stopInFlight !== undefined) return this.stopInFlight
-    const task = this.stopInternal()
-    this.stopInFlight = task
-    void task.then(
-      () => this.finishStop(task),
-      () => this.finishStop(task),
-    )
+    if (this.stopSlot.pending) return this.stopSlot.current!
+    const tracked = this.track(this.stopSlot, this.stopInternal())
     this.options.onStateChanged?.()
-    return task
-  }
-
-  private finishStop(task: Promise<void>): void {
-    if (this.stopInFlight === task) this.stopInFlight = undefined
-    this.options.onStateChanged?.()
+    return tracked
   }
 
   private async stopInternal(): Promise<void> {
     this.stopping = true
     this.startAbortController?.abort()
-    const child = this.child
     this.targetUrl = undefined
     this.pairing = undefined
-    if (child === undefined) return
-    this.child = undefined
-    if (child.exitCode !== null) return
-    await new Promise<void>(resolve => {
-      const timer = setTimeout(() => {
-        child.kill('SIGKILL')
-        resolve()
-      }, 3_000)
-      timer.unref()
-      child.once('exit', () => {
-        clearTimeout(timer)
-        resolve()
-      })
-      child.kill('SIGTERM')
-      // The mobile-shell proxy may have spawned a launcher grandchild; on
-      // Windows SIGTERM/TerminateProcess only reaches the direct child, so
-      // sweep the whole tree the same way the harness supervisor does.
-      if (process.platform === 'win32' && child.pid !== undefined) {
-        spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true })
-      }
-    })
+    // SIGTERM → SIGKILL (3s) with a Windows tree sweep; resolves immediately
+    // when no proxy child is running or it already exited.
+    await this.managed.stop(3_000)
   }
 }

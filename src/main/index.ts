@@ -21,27 +21,26 @@ import {
 import { createTray, destroyTray, refreshTray } from './tray.ts'
 import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } from './update-prompt.ts'
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
+import { DEV_WEB_URL_ENV, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport } from './diagnostics.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { MenuActions } from './menu-template.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
 import { LanService, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
+import { isShellOwnedFrame, ShellApp } from './shell-app.ts'
 
-const DEV_WEB_URL = process.env.DSH_DESKTOP_DEV_WEB_URL
+const DEV_WEB_URL = process.env[DEV_WEB_URL_ENV]
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
 
 let currentLocale: ShellLocale = 'en'
 let localeController: ShellLocaleController | undefined
-let supervisor: HarnessSupervisor | undefined
-let lastState: HarnessState | undefined
-let restartInFlight: Promise<boolean> | undefined
 let closeNoticeClaimed = false
 
 const lanService = new LanService({
   mobileShellRoot,
   nodeExecutable: () => nodeBin(),
-  getTargetUrl: () => lastState?.phase === 'ready' ? lastState.url : undefined,
+  getTargetUrl: () => shellApp.state?.phase === 'ready' ? shellApp.state.url : undefined,
   onLog: line => console.log(`dsh-desktop: ${line}`),
   onStateChanged: () => refreshNativeSurfaces(),
 })
@@ -54,54 +53,20 @@ const windowContext: WindowContext = {
   onCloseToTray: () => { void explainCloseToTray() },
 }
 
-function restartEnabled(): boolean {
-  return restartInFlight === undefined && lastState !== undefined && lastState.phase !== 'starting'
-}
-
-function refreshNativeSurfaces(): void {
-  if (windowContext.quitInProgress) return
-  installAppMenu(currentLocale, menuActions, restartEnabled(), lanService.isRunning, lanService.isBusy)
-  refreshTray()
-}
-
-function applyState(state: HarnessState): void {
-  const previousTarget = lastState?.phase === 'ready' ? lastState.url : undefined
-  lastState = state
-  if (state.phase === 'ready' && lanService.isRunning && previousTarget !== undefined && previousTarget !== state.url) {
-    void lanService.restart().catch(error => console.warn(`dsh-desktop: LAN proxy restart failed: ${error instanceof Error ? error.message : String(error)}`))
-  }
-  refreshNativeSurfaces()
-  if (state.phase === 'ready') void loadHarnessUrl(windowContext, state.url)
-  else if (state.phase === 'crashed') void loadErrorPage(windowContext, state.attempts, state.logTail)
-  else void loadLoadingPage(windowContext)
-}
-
-async function runHarnessRestart(): Promise<boolean> {
-  if (restartInFlight !== undefined) return restartInFlight
-  const task = Promise.resolve().then(async () => {
-    await supervisor?.stop()
-    if (windowContext.quitInProgress) return false
-    supervisor = new HarnessSupervisor({ onState: applyState })
-    try {
-      await supervisor.start()
-      return true
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      applyState({ phase: 'crashed', attempts: 0, logTail: message })
-      return false
-    }
-  })
-  restartInFlight = task.finally(() => {
-    restartInFlight = undefined
-    refreshNativeSurfaces()
-  })
-  refreshNativeSurfaces()
-  return restartInFlight
-}
-
-async function requestHarnessRestart(): Promise<void> {
-  if (!restartEnabled()) return
-  if (lastState?.phase === 'ready') {
+/** The shell state machine, wired to the Electron surfaces it drives. */
+const shellApp = new ShellApp({
+  createSupervisor: onState => new HarnessSupervisor({ onState }),
+  onStateApplied: (state) => {
+    if (windowContext.quitInProgress) return
+    installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), lanService.isRunning, lanService.isBusy)
+    refreshTray()
+    if (state.phase === 'ready') void loadHarnessUrl(windowContext, state.url)
+    else if (state.phase === 'crashed') void loadErrorPage(windowContext, state.attempts, state.logTail)
+    else void loadLoadingPage(windowContext)
+  },
+  onRestartBusyChanged: refreshNativeSurfaces,
+  restartLanProxy: () => lanService.restart(),
+  confirmRestart: async () => {
     const options: MessageBoxOptions = {
       type: 'warning',
       title: shellText(currentLocale, 'restart.title'),
@@ -113,9 +78,14 @@ async function requestHarnessRestart(): Promise<void> {
     }
     const window = windowContext.mainWindow
     const result = window === undefined ? await dialog.showMessageBox(options) : await dialog.showMessageBox(window, options)
-    if (result.response !== 0) return
-  }
-  await runHarnessRestart()
+    return result.response === 0
+  },
+})
+
+function refreshNativeSurfaces(): void {
+  if (windowContext.quitInProgress) return
+  installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), lanService.isRunning, lanService.isBusy)
+  refreshTray()
 }
 
 async function explainCloseToTray(): Promise<void> {
@@ -192,9 +162,9 @@ const menuActions: MenuActions = {
   closeWindow: () => windowContext.mainWindow?.close(),
   quit: () => app.quit(),
   toggleMaximize,
-  restartHarness: () => { void requestHarnessRestart() },
+  restartHarness: () => { void shellApp.requestRestart() },
   openLogs: () => { void openLogsFolder() },
-  exportDiagnostics: () => { void exportDiagnosticReport(lastState, currentLocale) },
+  exportDiagnostics: () => { void exportDiagnosticReport(shellApp.state, currentLocale) },
   checkForUpdates: () => { void checkForUpdatesInteractively(currentLocale) },
   showAbout: () => { void showAboutDialog(currentLocale) },
   openExternal: url => { void shell.openExternal(url) },
@@ -205,13 +175,13 @@ const menuActions: MenuActions = {
 
 const trayActions = {
   getLocale: (): ShellLocale => currentLocale,
-  getState: (): HarnessState | undefined => lastState,
-  isRestarting: (): boolean => restartInFlight !== undefined,
+  getState: (): HarnessState | undefined => shellApp.state,
+  isRestarting: (): boolean => shellApp.restartInFlight,
   isWindowVisible: (): boolean => windowContext.mainWindow?.isVisible() === true,
   toggleWindow: toggleMainWindow,
-  restartHarness: (): void => { void requestHarnessRestart() },
+  restartHarness: (): void => { void shellApp.requestRestart() },
   openLogs: (): void => { void openLogsFolder() },
-  exportDiagnostics: (): void => { void exportDiagnosticReport(lastState, currentLocale) },
+  exportDiagnostics: (): void => { void exportDiagnosticReport(shellApp.state, currentLocale) },
   checkForUpdates: (): void => { void checkForUpdatesInteractively(currentLocale) },
   quit: (): void => app.quit(),
 }
@@ -225,23 +195,19 @@ const trayActions = {
 // verify the sender is exactly that modal window. This keeps a compromised
 // or curious harness page from invoking shell restarts, opening dialogs, or
 // closing other modals. See src/preload/index.ts for the bridge.
-function isShellOwnedFrame(url: string | undefined): boolean {
-  return typeof url === 'string' && url.startsWith('data:')
-}
-
 ipcMain.handle('harness:retry', async (event) => {
   const window = windowContext.mainWindow
   if (window === undefined || window.isDestroyed()) return false
   if (event.sender !== window.webContents || !isShellOwnedFrame(event.senderFrame?.url)) return false
-  if (SMOKE_TEST && process.env.DSH_DESKTOP_TEST_RETRY_FAIL === '1') return false
-  return runHarnessRestart()
+  if (SMOKE_TEST && process.env[TEST_RETRY_FAIL_ENV] === '1') return false
+  return shellApp.runHarnessRestart()
 })
 
 ipcMain.handle('shell:export-diagnostics', async (event) => {
   const window = windowContext.mainWindow
   if (window === undefined || window.isDestroyed()) return false
   if (event.sender !== window.webContents || !isShellOwnedFrame(event.senderFrame?.url)) return false
-  return exportDiagnosticReport(lastState, currentLocale)
+  return exportDiagnosticReport(shellApp.state, currentLocale)
 })
 
 ipcMain.handle('shell:close-lan-pairing', (event) => {
@@ -262,25 +228,15 @@ function verifyHarness(root: string): void {
 async function boot(): Promise<string> {
   if (!app.isPackaged && DEV_WEB_URL !== undefined) {
     console.log(`dsh-desktop: dev mode, loading ${DEV_WEB_URL}`)
-    applyState({ phase: 'ready', url: DEV_WEB_URL })
+    shellApp.applyState({ phase: 'ready', url: DEV_WEB_URL })
     return DEV_WEB_URL
   }
   verifyHarness(harnessRoot())
-  if (SMOKE_TEST && process.env.DSH_DESKTOP_TEST_FAIL_HARNESS === '1') {
-    applyState({ phase: 'crashed', attempts: 6, logTail: 'simulated crash (smoke)' })
+  if (SMOKE_TEST && process.env[TEST_FAIL_HARNESS_ENV] === '1') {
+    shellApp.applyState({ phase: 'crashed', attempts: 6, logTail: 'simulated crash (smoke)' })
     throw new Error('simulated boot failure (smoke)')
   }
-  supervisor = new HarnessSupervisor({ onState: applyState })
-  try {
-    const url = await supervisor.start()
-    console.log(`dsh-desktop: harness ready at ${url}`)
-    return url
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error(`dsh-desktop: ${message}`)
-    applyState({ phase: 'crashed', attempts: 0, logTail: message })
-    throw error
-  }
+  return shellApp.startHarness()
 }
 
 app.on('before-quit', (event) => {
@@ -289,14 +245,14 @@ app.on('before-quit', (event) => {
   closeLanPairingWindow()
   localeController?.dispose()
   destroyTray()
-  if (supervisor !== undefined || lanService.isRunning) {
+  if (shellApp.supervisorInstance !== undefined || lanService.isRunning) {
     event.preventDefault()
     // Absolute quit guard: each stop() already has a SIGKILL fallback, but if
     // something unexpected leaves a promise pending we still force-quit
     // within 8s instead of hanging the app on exit.
     const forceQuitTimer = setTimeout(() => app.quit(), 8_000)
     forceQuitTimer.unref()
-    void Promise.all([supervisor?.stop(), lanService.stop()]).finally(() => {
+    void Promise.all([shellApp.stopHarness(), lanService.stop()]).finally(() => {
       clearTimeout(forceQuitTimer)
       app.quit()
     })
@@ -358,8 +314,8 @@ if (!gotLock) {
       if (!SMOKE_TEST) {
         const message = error instanceof Error ? error.message : String(error)
         if (windowContext.mainWindow === undefined || windowContext.mainWindow.isDestroyed()) createMainWindow(windowContext)
-        applyState({ phase: 'crashed', attempts: 0, logTail: message })
-      } else if (process.env.DSH_DESKTOP_TEST_FAIL_HARNESS === '1' && windowContext.mainWindow !== undefined) {
+        shellApp.applyState({ phase: 'crashed', attempts: 0, logTail: message })
+      } else if (process.env[TEST_FAIL_HARNESS_ENV] === '1' && windowContext.mainWindow !== undefined) {
         await verifySmokeFailureRecovery(windowContext.mainWindow, () => windowContext.allowedOrigin, currentLocale)
       } else {
         quitGracefully(1)
