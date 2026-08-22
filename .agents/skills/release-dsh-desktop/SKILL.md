@@ -98,18 +98,36 @@ not built), attestations verified, release created.
 
 **Preferred: mirror from this machine** — domestic network reaches GitCode
 fast (~2 MB/s vs ~160 KB/s cross-border), one command does probe → download
-(through `GH_PROXY_PREFIX` when GitHub is unreachable) → upload → verify:
+→ upload → verify. GitHub assets are unreachable directly from this
+machine, so the download goes through a proxy: `GH_SOCKS5` (a local Clash /
+similar SOCKS endpoint) is the verified fastest path (~1 MB/s), falling back
+to `GH_PROXY_PREFIX` when the SOCKS tunnel is down:
 
 ```sh
+GITCODE_TOKEN=<gitcode personal token> GITCODE_REPO=citrusli2026/dsh-electron-shell \
+  GH_SOCKS5=127.0.0.1:7890 \
+  node scripts/mirror-gitcode.mjs v<version>
+
+# fallback: public HTTP proxy prefix
 GITCODE_TOKEN=<gitcode personal token> GITCODE_REPO=citrusli2026/dsh-electron-shell \
   GH_PROXY_PREFIX=<proxy prefix, e.g. https://ghproxy.net/https://github.com> \
   node scripts/mirror-gitcode.mjs v<version>
 ```
 
+Network facts (verified on shell.1): HTTP + SOCKS ports of the same Clash
+proxy can route differently — `curl -x http://127.0.0.1:7890` measured
+~30 KB/s while `curl -x socks5h://127.0.0.1:7890` measured ~1 MB/s, so
+always prefer the SOCKS slot; public HTTP proxies (ghproxy.net,
+gh-proxy.com) sit at ~0.2 MB/s and are the ones that give up on large
+files (dmg/exe) mid-download. The mirror script downloads with curl
+`-C -` resume and 8 retries.
+
 Idempotent and re-runnable: already-mirrored assets are skipped (one-byte
 Range GET) and installers are checksum-verified against their sibling
 `.sha256`. Probe-only (no token needed): add `--check-only`. Explicit local
-files skip the download: `node scripts/mirror-gitcode.mjs v<version> <file...>`.
+files skip the download: `node scripts/mirror-gitcode.mjs v<version> <file...>`
+(the daily daemon `gitcode-mirror-daemon.sh` defaults `GH_SOCKS5` to
+`127.0.0.1:7890`).
 
 **Fallback: dispatch the backfill workflow** (idempotent — only missing
 files are uploaded, safe to re-run):
@@ -206,6 +224,9 @@ GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-electron-she
 | `gitcode_ok=false` in bot sync although mirror is up | bot ran before mirror finished; regenerate locally after verifying |
 | runner upload stuck for hours | check assets with Range GETs; if still 404 after a run, cancel and re-dispatch |
 | exe specifically times out 3× | retry run; if persistent, switch to browser upload from domestic network |
+| mirror via public HTTP proxy: big files (dmg/exe) stall at 0 B or drop mid-download (observed `ghproxy.net`, `gh-proxy.com`) | GitHub assets are blocked directly; use `GH_SOCKS5=127.0.0.1:7890` (Clash SOCKS loop ~1 MB/s, verified fastest). If stuck, kill and rerun the mirror — it is idempotent; or download manually with `curl -sL -x socks5h://127.0.0.1:7890 -C -` and upload via `mirror-gitcode.mjs v<tag> <file...>` |
+| same proxy: HTTP port slow (~30 KB/s) but SOCKS port fast (~1 MB/s) | different routes per protocol port; always use the SOCKS slot (`socks5h://`) for asset downloads |
+| site-refresh fails: `SyntaxError: Identifier 'classifyPublicAsset' has already been declared` | `scripts/gen-site-data.mjs` had a duplicated local `export function classifyPublicAsset` alongside the import from `release-shape.mjs` (introduced by the architecture refactor); keep only the import, delete the local function, re-trigger the workflow |
 
 ## Exit criteria
 

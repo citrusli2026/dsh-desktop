@@ -7,8 +7,11 @@
  *
  * Flow per asset:
  *   1. Skip when GitCode already serves the stable URL (one-byte Range GET).
- *   2. Download from GitHub — through GH_PROXY_PREFIX when the direct
- *      connection is unreachable (the usual case in China).
+ *   2. Download from GitHub — through GH_SOCKS5 (local Clash SOCKS proxy) or
+ *      GH_PROXY_PREFIX when the direct connection is unreachable (the usual
+ *      case in China). Verified fastest on this machine: GH_SOCKS5
+ *      (127.0.0.1:7890, ~1 MB/s) beats public HTTP proxies (~200 KB/s, which
+ *      also drop large files mid-download).
  *   3. Upload through the v5 upload_url flow (fresh signed PUT per attempt,
  *      small files first) — the same flow scripts/gitcode-upload.mjs uses.
  *   4. Verify the stable URL afterwards.
@@ -17,7 +20,11 @@
  *
  * Usage:
  *   GITCODE_TOKEN=… GITCODE_REPO=owner/repo \
- *     [GITHUB_REPO=owner/repo] [GH_PROXY_PREFIX=https://ghproxy.net/https://github.com] \
+ *     [GITHUB_REPO=owner/repo] [GH_SOCKS5=127.0.0.1:7890] \
+ *     node scripts/mirror-gitcode.mjs <tag>
+ *
+ *   GITCODE_TOKEN=… GITCODE_REPO=owner/repo \
+ *     [GH_PROXY_PREFIX=https://ghproxy.net/https://github.com] \
  *     node scripts/mirror-gitcode.mjs <tag>
  *
  *   GITCODE_TOKEN=… GITCODE_REPO=owner/repo node scripts/mirror-gitcode.mjs <tag> <file...>
@@ -58,11 +65,15 @@ async function gitCodeHas(repo, tag, name) {
   }
 }
 
-/** Download a release asset from GitHub (through the proxy prefix when set). */
+/** Download a release asset from GitHub (through GH_SOCKS5 / GH_PROXY_PREFIX when set). */
 async function downloadAsset(tag, name, target) {
   const url = `${GH_BASE}/${GITHUB_REPO}/releases/download/${tag}/${name}`
-  await execFileP('curl', ['-sfSL', '--max-time', '1200', '--retry', '3', '-o', target, url],
-    { maxBuffer: 4 * 1024 * 1024, timeout: 21 * 60_000 })
+  const proxyArgs = process.env.GH_SOCKS5
+    ? ['--socks5-hostname', process.env.GH_SOCKS5]
+    : []
+  await execFileP('curl', ['-sfSL', '-C', '-', '--retry', '8', '--retry-all-errors', '--retry-delay', '5',
+    '--max-time', '1200', ...proxyArgs, '-o', target, url],
+  { maxBuffer: 4 * 1024 * 1024, timeout: 21 * 60_000 })
 }
 
 /** Parse a portable sha256sum line and return the hex, or null. */

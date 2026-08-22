@@ -6,7 +6,9 @@
 # still mirrors explicitly at release time.
 #
 # Configuration lives OUTSIDE the repo (never commit credentials):
-#   ~/.gitcode-mirror.env  —  GITCODE_TOKEN=… and optional GH_PROXY_PREFIX=…
+#   ~/.gitcode-mirror.env  —  GITCODE_TOKEN=… and optional GH_SOCKS5=…/GH_PROXY_PREFIX=…
+# GH_SOCKS5 defaults to the local Clash SOCKS proxy (127.0.0.1:7890) —
+# verified ~1 MB/s for GitHub asset downloads, the fastest path here.
 # Log: ~/Library/Logs/dsh-gitcode-mirror.log
 set -uo pipefail
 
@@ -25,6 +27,7 @@ set -a
 . "$ENV_FILE"
 set +a
 export GITCODE_REPO
+export GH_SOCKS5="${GH_SOCKS5:-127.0.0.1:7890}"
 
 # Latest release tag from the remote (the local checkout may lag behind bot
 # syncs; the remote is authoritative). 45s cap keeps a dead network cheap.
