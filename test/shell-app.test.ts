@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isShellOwnedFrame, ShellApp, type ShellAppServices } from '../src/main/shell-app.ts'
+import { isMainWindowSender, isShellOwnedFrame, ShellApp, type ShellAppServices } from '../src/main/shell-app.ts'
 import type { HarnessState, HarnessSupervisor } from '../src/main/supervisor.ts'
 
 class FakeSupervisor {
@@ -157,4 +157,14 @@ test('isShellOwnedFrame accepts only data: URLs', () => {
   assert.equal(isShellOwnedFrame('data:text/html,hello'), true)
   assert.equal(isShellOwnedFrame('http://127.0.0.1:1234/'), false)
   assert.equal(isShellOwnedFrame(undefined), false)
+})
+
+test('isMainWindowSender admits only the shell-owned main-window frame', () => {
+  const webContents = { id: 1 }
+  const window = { isDestroyed: () => false, webContents }
+  assert.equal(isMainWindowSender(window, webContents, 'data:text/html,loading'), true)
+  assert.equal(isMainWindowSender(window, webContents, 'http://127.0.0.1:1234/'), false, 'harness page must be rejected')
+  assert.equal(isMainWindowSender(window, { id: 2 }, 'data:text/html,loading'), false, 'other webContents must be rejected')
+  assert.equal(isMainWindowSender(undefined, webContents, 'data:text/html,loading'), false, 'no window')
+  assert.equal(isMainWindowSender({ isDestroyed: () => true, webContents }, webContents, 'data:text/html,loading'), false, 'destroyed window')
 })

@@ -28,7 +28,7 @@ import type { MenuActions } from './menu-template.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
 import { LanService, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
-import { isShellOwnedFrame, ShellApp } from './shell-app.ts'
+import { isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
 
 const DEV_WEB_URL = process.env[DEV_WEB_URL_ENV]
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -196,17 +196,13 @@ const trayActions = {
 // or curious harness page from invoking shell restarts, opening dialogs, or
 // closing other modals. See src/preload/index.ts for the bridge.
 ipcMain.handle('harness:retry', async (event) => {
-  const window = windowContext.mainWindow
-  if (window === undefined || window.isDestroyed()) return false
-  if (event.sender !== window.webContents || !isShellOwnedFrame(event.senderFrame?.url)) return false
+  if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
   if (SMOKE_TEST && process.env[TEST_RETRY_FAIL_ENV] === '1') return false
   return shellApp.runHarnessRestart()
 })
 
 ipcMain.handle('shell:export-diagnostics', async (event) => {
-  const window = windowContext.mainWindow
-  if (window === undefined || window.isDestroyed()) return false
-  if (event.sender !== window.webContents || !isShellOwnedFrame(event.senderFrame?.url)) return false
+  if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
   return exportDiagnosticReport(shellApp.state, currentLocale)
 })
 

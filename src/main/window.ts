@@ -6,6 +6,7 @@ import { fitWindowState, MIN_WINDOW_HEIGHT, MIN_WINDOW_WIDTH, type WindowState }
 import { shellText, type ShellLocale } from './locale.ts'
 import { hiddenTitleBarOptions } from './window-chrome.ts'
 import { ConfigFile } from './config-file.ts'
+import { MAX_RENDERER_RECOVERIES, recordRendererRecovery } from './renderer-recovery.ts'
 
 type BuiltInPage =
   | { kind: 'loading' }
@@ -175,12 +176,10 @@ async function navigateWindow(context: WindowContext, url: string): Promise<void
 }
 
 async function recoverRenderer(context: WindowContext, reason: string): Promise<void> {
-  const now = Date.now()
-  const recent = (context.rendererRecoveryTimes ?? []).filter(time => now - time <= 5 * 60_000)
-  recent.push(now)
+  const { times: recent, allowed } = recordRendererRecovery(context.rendererRecoveryTimes, Date.now())
   context.rendererRecoveryTimes = recent
-  console.warn(`dsh-desktop: ${reason}; renderer recovery ${recent.length}/2`)
-  if (recent.length <= 2 && context.harnessUrl !== undefined) {
+  console.warn(`dsh-desktop: ${reason}; renderer recovery ${recent.length}/${MAX_RENDERER_RECOVERIES}`)
+  if (allowed && context.harnessUrl !== undefined) {
     await navigateWindow(context, context.harnessUrl)
     return
   }

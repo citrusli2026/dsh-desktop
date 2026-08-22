@@ -242,3 +242,32 @@ export function normalizeReleasesPayload(releases) {
     },
   }
 }
+
+/* ══ 实时下载数合并 ══
+   /api/downloads 的实时计数合并进 release.json 形状。纯函数:输入不变,
+   无变化时返回 null(调用方据此跳过重渲染)。 */
+export function mergeLiveCounts(data, live) {
+  if (!live || !Array.isArray(live.assets)) return null
+  var changed = false
+  var assets = data.release.assets.map(function (a) {
+    var la = live.assets.find(function (x) { return x.name === a.name })
+    if (la && typeof la.downloads === 'number' && la.downloads !== a.downloads) {
+      changed = true
+      return Object.assign({}, a, { downloads: la.downloads })
+    }
+    return a
+  })
+  var stats = data.stats ? Object.assign({}, data.stats) : {}
+  if (typeof live.mac_downloads === 'number' && typeof live.win_downloads === 'number' && typeof live.total_downloads === 'number') {
+    stats.mac_downloads = live.mac_downloads
+    stats.win_downloads = live.win_downloads
+    if (typeof live.linux_downloads === 'number') stats.linux_downloads = live.linux_downloads
+    stats.installer_downloads = live.total_downloads
+    changed = true
+  }
+  if (!changed) return null
+  return Object.assign({}, data, {
+    release: Object.assign({}, data.release, { assets }),
+    stats: stats,
+  })
+}

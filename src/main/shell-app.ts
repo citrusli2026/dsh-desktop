@@ -27,6 +27,25 @@ export function isShellOwnedFrame(url: string | undefined): boolean {
   return typeof url === 'string' && url.startsWith('data:')
 }
 
+/** The minimal window surface the IPC guard needs, so it stays unit-testable. */
+export interface ShellIpcWindow {
+  isDestroyed(): boolean
+  webContents: unknown
+}
+
+/**
+ * Guard for the shell-owned IPC channels: accept the call only when the main
+ * window exists, the sender is its webContents, and the frame is one of our
+ * data:-URL pages. A compromised or curious harness page can never invoke
+ * shell restarts or dialogs. See the `isShellOwnedFrame` doc for the threat
+ * model; the three ipcMain handlers in index.ts delegate to this.
+ */
+export function isMainWindowSender(window: ShellIpcWindow | undefined, sender: unknown, frameUrl: string | undefined): boolean {
+  if (window === undefined || window.isDestroyed()) return false
+  if (sender !== window.webContents || !isShellOwnedFrame(frameUrl)) return false
+  return true
+}
+
 export class ShellApp {
   private readonly services: ShellAppServices
   private supervisor: HarnessSupervisor | undefined

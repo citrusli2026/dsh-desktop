@@ -5,7 +5,7 @@ import path from 'node:path'
 import { classifyOs, classifyPublicAsset } from './release-shape.mjs'
 // The site's data layer is a plain ESM module with no DOM access, so the
 // checker imports the real dictionaries instead of regex-scraping app.js.
-import { I18N, platformOf, splitCompositeTag } from '../site/assets/data-model.js'
+import { I18N, mergeLiveCounts, platformOf, splitCompositeTag } from '../site/assets/data-model.js'
 
 const ROOT = process.cwd()
 const SITE = path.join(ROOT, 'site')
@@ -76,6 +76,22 @@ const enKeys = new Set(Object.keys(I18N.en))
 requireValue([...zhKeys].every(key => enKeys.has(key)) && [...enKeys].every(key => zhKeys.has(key)), 'Chinese and English translation keys differ')
 for (const match of html.matchAll(/data-i18n="([^"]+)"/g)) {
   requireValue(zhKeys.has(match[1]), `HTML uses missing translation key ${match[1]}`)
+}
+
+// Live-count merging must keep the release.json shape and only report a
+// change when something actually moved; app.js skips re-render on null.
+{
+  const live = {
+    assets: data.release.assets.map(asset => ({ name: asset.name, downloads: (asset.downloads || 0) + 1 })),
+    mac_downloads: 1, win_downloads: 2, linux_downloads: 3, total_downloads: 6,
+    generated_at: '2026-01-01T00:00:00.000Z',
+  }
+  const merged = mergeLiveCounts(data, live)
+  requireValue(merged !== null, 'mergeLiveCounts must produce an update when counts move')
+  requireValue(merged.release.assets.every(asset => asset.downloads === (data.release.assets.find(a => a.name === asset.name)?.downloads || 0) + 1), 'mergeLiveCounts must apply live per-asset counts')
+  requireValue(merged.stats?.mac_downloads === 1 && merged.stats?.win_downloads === 2 && merged.stats?.linux_downloads === 3 && merged.stats?.installer_downloads === 6, 'mergeLiveCounts must apply live platform totals')
+  requireValue(mergeLiveCounts(data, { assets: [] }) === null, 'mergeLiveCounts must return null without a change')
+  requireValue(mergeLiveCounts(data, null) === null, 'mergeLiveCounts must tolerate a null payload')
 }
 
 // 版本号必须单一数据源:图例 chip 由 app.js 从 release.json 动态填充,

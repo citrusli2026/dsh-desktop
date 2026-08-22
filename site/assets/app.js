@@ -4,7 +4,7 @@
    - 平台识别 CTA / 复制 / 滚动 reveal
    数据与文案字典见 ./data-model.js (纯数据层,亦被 check-site 直接导入)。
    零依赖,渐进增强。 */
-import { I18N, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js'
+import { I18N, mergeLiveCounts, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js'
 
 var REPO = 'citrusli2026/dsh-electron-shell'
 var RELEASES_URL = 'https://github.com/' + REPO + '/releases'
@@ -189,24 +189,11 @@ function fetchRealTimeDownloads(data) {
     .then(function (res) { return res.json() })
     .then(function (live) {
       if (!live || !live.assets || !live.assets.length) return
-      var updated = false
-      live.assets.forEach(function (la) {
-        var found = data.release.assets.find(function (a) { return a.name === la.name })
-        if (found && found.downloads !== la.downloads) {
-          found.downloads = la.downloads
-          updated = true
-        }
-      })
-      if (typeof live.mac_downloads === 'number' && typeof live.win_downloads === 'number' && typeof live.total_downloads === 'number') {
-        data.stats = data.stats || {}
-        data.stats.mac_downloads = live.mac_downloads
-        data.stats.win_downloads = live.win_downloads
-        if (typeof live.linux_downloads === 'number') data.stats.linux_downloads = live.linux_downloads
-        data.stats.installer_downloads = live.total_downloads
-        updated = true
-      }
-      if (updated) {
-        renderPlatforms(data)
+      // 纯合并:返回新对象,无变化时返回 null(跳过重渲染)
+      var merged = mergeLiveCounts(data, live)
+      if (merged) {
+        siteData = merged
+        renderPlatforms(siteData)
         bindCopy($('#platform-rows'))
         bindDownloadGuide()
       }

@@ -5,18 +5,7 @@
  */
 
 import { shellText, type ShellLocale } from './locale.ts'
-
-/** Escape one text run for embedding in the page body. */
-function escapeHtml(text: string): string {
-  return text.replace(/[&<>"]/g, char => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]!
-  ))
-}
-
-/** Wrap a page in a data: URL — loadURL rejects bare HTML strings. */
-function asDataUrl(html: string): string {
-  return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
-}
+import { asDataUrl, escapeHtml } from './shell-html.ts'
 
 const STYLE = `
   :root { color-scheme: light dark; --bg: #f9f8f8; --panel: #ffffff; --line: #e7e7e9;
