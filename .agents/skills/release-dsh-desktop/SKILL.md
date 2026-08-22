@@ -94,10 +94,25 @@ windows-2022 + ubuntu-24.04) → publish. Success means: 8 assets
 (dmg/exe/deb + three `.sha256` + blockmap + latest.yml; AppImage is
 not built), attestations verified, release created.
 
-### 6. GitCode mirror (expect slow, plan for retries)
+### 6. GitCode mirror (domestic machine first, backfill as fallback)
 
-Dispatch the backfill workflow (idempotent — only missing files are
-uploaded, safe to re-run):
+**Preferred: mirror from this machine** — domestic network reaches GitCode
+fast (~2 MB/s vs ~160 KB/s cross-border), one command does probe → download
+(through `GH_PROXY_PREFIX` when GitHub is unreachable) → upload → verify:
+
+```sh
+GITCODE_TOKEN=<gitcode personal token> GITCODE_REPO=citrusli2026/dsh-electron-shell \
+  GH_PROXY_PREFIX=<proxy prefix, e.g. https://ghproxy.net/https://github.com> \
+  node scripts/mirror-gitcode.mjs v<version>
+```
+
+Idempotent and re-runnable: already-mirrored assets are skipped (one-byte
+Range GET) and installers are checksum-verified against their sibling
+`.sha256`. Probe-only (no token needed): add `--check-only`. Explicit local
+files skip the download: `node scripts/mirror-gitcode.mjs v<version> <file...>`.
+
+**Fallback: dispatch the backfill workflow** (idempotent — only missing
+files are uploaded, safe to re-run):
 
 ```sh
 gh workflow run gitcode-backfill.yml -f tag=v<version>

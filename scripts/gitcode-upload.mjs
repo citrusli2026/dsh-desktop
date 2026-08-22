@@ -12,32 +12,27 @@
  * reflects the final tally. The token enters the request path only inside
  * GitCode's own response and is never logged.
  *
- * Usage:
+ * Usage (CLI):
  *   GITCODE_TOKEN=… GITCODE_REPO=owner/repo node scripts/gitcode-upload.mjs <tag> <file...>
+ *
+ * Programmatic (used by scripts/mirror-gitcode.mjs):
+ *   import { uploadGitCodeAssets } from './gitcode-upload.mjs'
  * @module scripts/gitcode-upload
  */
-const TOKEN = process.env.GITCODE_TOKEN
-const REPO = process.env.GITCODE_REPO
-const [tag, ...files] = process.argv.slice(2)
-
-if (!TOKEN || !REPO || !tag || files.length === 0) {
-  console.error('usage: GITCODE_TOKEN=… GITCODE_REPO=owner/repo node scripts/gitcode-upload.mjs <tag> <file...>')
-  process.exit(1)
-}
-
 import { execFile } from 'node:child_process'
 import { statSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 
 const execFileP = promisify(execFile)
 
-const API = `https://api.gitcode.com/api/v5/repos/${REPO}`
 const ATTEMPTS = 3
 
-async function getUploadTarget(name) {
+export async function getUploadTarget(api, tag, name, token) {
   const metaResponse = await fetch(
-    `${API}/releases/${encodeURIComponent(tag)}/upload_url?file_name=${encodeURIComponent(name)}`,
-    { headers: { 'PRIVATE-TOKEN': TOKEN } })
+    `${api}/releases/${encodeURIComponent(tag)}/upload_url?file_name=${encodeURIComponent(name)}`,
+    { headers: { 'PRIVATE-TOKEN': token } })
   if (!metaResponse.ok) throw new Error(`upload_url for ${name} -> HTTP ${metaResponse.status}`)
   const { url, headers } = await metaResponse.json()
   if (typeof url !== 'string' || headers === undefined) throw new Error(`upload_url for ${name}: unexpected response shape`)
@@ -57,13 +52,13 @@ async function putFile(path, { url, headers }) {
   }
 }
 
-async function uploadOne(path) {
+async function uploadOne(api, tag, token, path) {
   const name = path.split('/').pop()
   const sizeMb = Math.round(statSync(path).size / 1024 / 1024)
   let lastError = 'unknown'
   for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
     try {
-      const target = await getUploadTarget(name) // fresh signature per attempt
+      const target = await getUploadTarget(api, tag, name, token) // fresh signature per attempt
       await putFile(path, target)
       console.log(`gitcode-upload: ${name} uploaded (${sizeMb}M, attempt ${attempt}/${ATTEMPTS})`)
       return true
@@ -76,16 +71,41 @@ async function uploadOne(path) {
   return false
 }
 
-let failed = 0
-// Upload small files first: a cross-border run may exhaust its job timeout
-// on a large installer, so checksums/updater metadata should land before
-// the big binaries instead of waiting behind them.
-const ordered = [...files].sort((a, b) => statSync(a).size - statSync(b).size)
-for (const file of ordered) {
-  if (!(await uploadOne(file))) failed++
+/**
+ * Upload every given file to the GitCode release, smallest first (a slow
+ * run should land checksums before the big binaries). Never rejects; the
+ * result carries the failed file names.
+ */
+export async function uploadGitCodeAssets({ token, repo, tag, files }) {
+  const api = `https://api.gitcode.com/api/v5/repos/${repo}`
+  const failed = []
+  const ordered = [...files].sort((a, b) => statSync(a).size - statSync(b).size)
+  for (const file of ordered) {
+    if (!(await uploadOne(api, tag, token, file))) failed.push(file)
+  }
+  return { ok: failed.length === 0, failed }
 }
-if (failed > 0) {
-  console.error(`gitcode-upload: ${failed}/${files.length} file(s) failed for ${tag}`)
-  process.exit(1)
+
+function main() {
+  const token = process.env.GITCODE_TOKEN
+  const repo = process.env.GITCODE_REPO
+  const [tag, ...files] = process.argv.slice(2)
+  if (!token || !repo || !tag || files.length === 0) {
+    console.error('usage: GITCODE_TOKEN=… GITCODE_REPO=owner/repo node scripts/gitcode-upload.mjs <tag> <file...>')
+    process.exit(1)
+  }
+  uploadGitCodeAssets({ token, repo, tag, files }).then(({ ok, failed }) => {
+    if (!ok) {
+      console.error(`gitcode-upload: ${failed.length}/${files.length} file(s) failed for ${tag}`)
+      process.exit(1)
+    }
+    console.log(`gitcode-upload: all ${files.length} file(s) uploaded for ${tag}`)
+  }).catch(error => {
+    console.error(`gitcode-upload: ${error instanceof Error ? error.message : String(error)}`)
+    process.exit(1)
+  })
 }
-console.log(`gitcode-upload: all ${files.length} file(s) uploaded for ${tag}`)
+
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  main()
+}

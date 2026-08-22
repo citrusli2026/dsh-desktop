@@ -62,8 +62,13 @@ tag push  → Release verify
 
 GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名 URL 过期
 502）；拉取式流水线方案评估后放弃，决策与过程见 docs/decisions/0008 第二
-修订。当前用 `.agents/skills/gitcode-release-publisher/` 复用已登录 GitCode
-浏览器会话完成附件预留、签名存储上传和 Release 创建；只上传两个面向用户的
+修订。当前主方案为 **`scripts/mirror-gitcode.mjs`（本机直连，2026-08-22
+落地）**：一条命令完成 探测→下载(经 GH_PROXY_PREFIX)→上传(v5 API)→校验，
+本机到 GitCode 实测 2.2 MB/s（runner 跨境 160 KB/s 的 13 倍）；幂等可重跑、
+`--check-only` 免 token 探测。上传链路待 `GITCODE_TOKEN` 本机配置后实测
+（探测链路已验 6/6 present）。fallback 依次为 gitcode-backfill workflow 与
+`.agents/skills/gitcode-release-publisher/` 浏览器会话（复用已登录 GitCode
+浏览器会话完成附件预留、签名存储上传和 Release 创建）；只上传两个面向用户的
 安装包与校验文件。blockmap / latest*.yml 不镜像，auto-updater 始终直连 GitHub。
 官网数据生成器逐资产用 range GET 探测 GitCode；中文页面在镜像 URL 真实
 可下载时并列展示镜像与 GitHub 两个下载源，否则只展示 GitHub。不要把带
