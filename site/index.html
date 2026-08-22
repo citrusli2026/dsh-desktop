@@ -211,11 +211,11 @@
       </div>
       <div class="version-legend" data-reveal style="--i:3">
         <div class="legend-row">
-          <code class="legend-chip legend-chip--core">0.1.0-rc.8</code>
+          <code class="legend-chip legend-chip--core" id="legend-core">…</code>
           <p data-i18n="vr.core"><b>内核版本</b> —— 内置的 <code>@deepseek-ai/dsh</code> 版本。每日工作流自动检查 npm 上游,有新版本就开升级 PR。</p>
         </div>
         <div class="legend-row">
-          <code class="legend-chip legend-chip--shell">shell.3</code>
+          <code class="legend-chip legend-chip--shell" id="legend-shell">…</code>
           <p data-i18n="vr.shell"><b>壳修订号</b> —— 壳自身(窗口、守护、打包)的修订次数。同一内核可以有多次壳修订。</p>
         </div>
       </div>
@@ -283,5 +283,8 @@
 </footer>
 
 <script src="/assets/app.js?v=22" defer></script>
+
+<!-- 下载后提示(校验方式 + 未签名处理 + GitHub Star 邀请),由 app.js 填充 -->
+<div class="download-toast" id="download-toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>

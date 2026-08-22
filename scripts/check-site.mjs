@@ -65,6 +65,13 @@ for (const match of html.matchAll(/data-i18n="([^"]+)"/g)) {
   requireValue(zhKeys.has(match[1]), `HTML uses missing translation key ${match[1]}`)
 }
 
+// 版本号必须单一数据源:图例 chip 由 app.js 从 release.json 动态填充,
+// index.html 里不允许出现硬编码的复合版本号(防每次发布后失同步)。
+requireValue(/id="legend-core"/.test(html), 'legend chip #legend-core is missing')
+requireValue(/id="legend-shell"/.test(html), 'legend chip #legend-shell is missing')
+requireValue(!/\blegend-chip[^>]*>\s*\d+\.\d+/.test(html), 'legend chips must not hardcode a version number')
+requireValue(/id="download-toast"/.test(html), 'download toast container is missing')
+
 const tabTargets = [...html.matchAll(/data-tab="([^"]+)"/g)].map(match => match[1])
 for (const id of tabTargets) requireValue(html.includes(`id="${id}"`), `tab target #${id} is missing`)
 

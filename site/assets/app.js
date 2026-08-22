@@ -43,6 +43,16 @@
       'dl.total': '全版本累计下载 {n} 次',
       'dl.total.note': '含历史版本,仅统计 GitHub 下载',
       'dl.platformTotal': '历史累计 ↓ {n}',
+      'dl.released': '发布于 {d}',
+      'dl.new': 'NEW',
+      'toast.title': '下载已开始 ✓',
+      'toast.firstOpenMac': '首次打开如遇「无法验证开发者」:<b>右键点击 → 打开</b>',
+      'toast.firstOpenWin': '如遇 SmartScreen 蓝色提示:<b>更多信息 → 仍要运行</b>',
+      'toast.verify': '安装包未签名,建议校验后再打开:',
+      'toast.cmdMac': '<code>shasum -a 256 -c &lt;安装包&gt;.sha256</code><br /><code>gh attestation verify &lt;安装包&gt; -R citrusli2026/dsh-electron-shell</code>',
+      'toast.cmdWin': '<code>CertUtil -hashfile &lt;安装包&gt; SHA256</code><br /><code>gh attestation verify &lt;安装包&gt; -R citrusli2026/dsh-electron-shell</code>',
+      'toast.star': '觉得好用?去 GitHub 点个 Star 支持一下 →',
+      'toast.close': '关闭',
       'dl.fallback': '版本数据加载失败时,可直接前往 <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> 或 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a> 下载。',
       'dl.note': '命令行方式同样可用;桌面壳功能与其完全一致,但使用独立数据目录 <code>~/.dsh-desktop</code>,互不干扰。',
       'guide.mac.title': 'macOS 首次打开',
@@ -115,6 +125,16 @@
       'dl.total': '{n} downloads across all versions',
       'dl.total.note': 'Includes past releases; GitHub downloads only',
       'dl.platformTotal': 'All-time ↓ {n}',
+      'dl.released': 'released {d}',
+      'dl.new': 'NEW',
+      'toast.title': 'Download started ✓',
+      'toast.firstOpenMac': 'If macOS says "cannot be verified": <b>right-click → Open</b>',
+      'toast.firstOpenWin': 'If SmartScreen prompts: <b>More info → Run anyway</b>',
+      'toast.verify': 'Unsigned installer — verify before opening:',
+      'toast.cmdMac': '<code>shasum -a 256 -c &lt;installer&gt;.sha256</code><br /><code>gh attestation verify &lt;installer&gt; -R citrusli2026/dsh-electron-shell</code>',
+      'toast.cmdWin': '<code>CertUtil -hashfile &lt;installer&gt; SHA256</code><br /><code>gh attestation verify &lt;installer&gt; -R citrusli2026/dsh-electron-shell</code>',
+      'toast.star': 'Enjoying it? Star us on GitHub →',
+      'toast.close': 'Close',
       'dl.fallback': 'If live data fails to load, head to <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> directly.',
       'dl.note': 'The CLI route works too; the shell is functionally identical but keeps its own data home at <code>~/.dsh-desktop</code> — no interference either way.',
       'guide.mac.title': 'First launch on macOS',
@@ -315,14 +335,30 @@
   /* ══ 渲染 ══════════════════════════════════════════ */
   function renderMeta(data) {
     var r = data.release
-    $('#release-meta').textContent = r.tag + ' · ' + fmtDate(r.published_at) + (r.prerelease ? ' · PRE' : '')
+    // 版本 + 发布时间;发布 3 天内加 NEW 徽标。rc 版本均为预发布,
+    // 不再显示 "PRE" 以免被误读为"不稳定"。
+    var label = r.tag
+    if (r.published_at) {
+      label += ' · ' + t('dl.released').replace('{d}', fmtDate(r.published_at))
+      var ageDays = (Date.now() - new Date(r.published_at).getTime()) / 86400000
+      if (ageDays >= 0 && ageDays <= 3) label += ' · <span class="new-badge">' + t('dl.new') + '</span>'
+    }
+    $('#release-meta').innerHTML = label
 
     var meta = $('#hero-meta')
     meta.innerHTML = r.tag + ' · macOS / Windows · <span data-i18n="hero.meta">' + t('hero.meta') + '</span>'
 
     var ver = r.tag.replace(/^v/, '')
     var m = ver.match(/^(.*)\.(shell\.\d+)$/)
-    if (m) { $('#v-core').textContent = m[1]; $('#v-shell').textContent = m[2] }
+    if (m) {
+      $('#v-core').textContent = m[1]
+      $('#v-shell').textContent = m[2]
+      // 图例 chip 与动态版本共用同一份解析结果,杜绝硬编码失同步
+      var legendCore = $('#legend-core')
+      var legendShell = $('#legend-shell')
+      if (legendCore) legendCore.textContent = m[1]
+      if (legendShell) legendShell.textContent = m[2]
+    }
 
     $('#sync-time').textContent = data.generated_at
       ? (lang === 'zh' ? '数据同步于 ' : 'data synced ') + fmtDate(data.generated_at) + ' ' + data.generated_at.slice(11, 16) + ' UTC'
@@ -421,9 +457,8 @@
   }
 
   function tunePrimaryCta(data) {
-    var ua = navigator.userAgent
-    var os = /Mac/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : null
-    if (!os) return
+    var os = detectPlatform()
+    if (!os || os === 'mobile') return
     var hit = data.release.assets.filter(function (a) {
       var p = platformOf(a.name)
       return p && p.os === os && p.primary
@@ -437,16 +472,28 @@
       : 'Download for ' + OS_LABEL.en[os][0]) + ' · ' + fmtSize(hit.size)
   }
 
-  /* ══ 首次打开主动引导 ═════════════════════════════ */
-  var uaOs = (function () {
+  /* 访问者平台识别。注意:iOS Safari 的 UA 含 "Macintosh",必须先排除
+     移动端,否则 iPhone/iPad 会被误判成 macOS(表现为默认展示 macOS 引导
+     卡、点 Windows 下载按钮不滚动)。 */
+  function detectPlatform() {
     var ua = navigator.userAgent
-    return /Mac/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : null
-  })()
+    if (/Android|iPhone|iPad|iPod/i.test(ua)) return 'mobile'
+    if (/Mac/.test(ua)) return 'mac'
+    if (/Windows/.test(ua)) return 'win'
+    return null
+  }
+  var uaOs = detectPlatform()
 
-  function renderFirstRun() {
+  /* 首次打开引导卡:默认按访问者平台显示;点击下载按钮时按按钮平台渲染
+     (移动端访问者点击任意平台按钮都会看到对应平台的打开提示)。 */
+  function renderFirstRun(os) {
     var el = $('#first-run')
-    if (!el || !uaOs) return
-    var os = uaOs
+    if (!el) return
+    os = os || uaOs
+    if (!os || os === 'mobile') {
+      el.hidden = true
+      return
+    }
     el.innerHTML =
       '<div class="first-run__card first-run__card--' + os + '">'
       + '<h4>' + t('guide.' + os + '.title') + '</h4>'
@@ -456,7 +503,8 @@
     el.hidden = false
   }
 
-  /* 点下载按钮时,若用户平台匹配,滚动到引导卡并短暂高亮 */
+  /* 点下载按钮:渲染对应平台的打开提示卡,滚动到引导卡并短暂高亮;
+     同时弹出下载后提示(校验方式 + Star 邀请)。 */
   function bindDownloadGuide() {
     var guide = $('#first-run')
     if (!guide) return
@@ -464,13 +512,39 @@
       if (btn.__guideBound) return
       btn.__guideBound = true
       btn.addEventListener('click', function () {
-        if (btn.getAttribute('data-platform') !== uaOs) return
-        guide.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-        guide.classList.remove('is-flash')
-        void guide.offsetWidth
-        guide.classList.add('is-flash')
+        var os = btn.getAttribute('data-platform')
+        if (os === 'mac' || os === 'win') renderFirstRun(os)
+        if (!guide.hidden) {
+          guide.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          guide.classList.remove('is-flash')
+          void guide.offsetWidth
+          guide.classList.add('is-flash')
+        }
+        showDownloadToast(os)
       })
     })
+  }
+
+  /* ══ 下载后提示(校验方式 + 未签名处理 + GitHub Star 邀请) ═══════ */
+  function showDownloadToast(os) {
+    var toast = $('#download-toast')
+    if (!toast) return
+    var cmd = os === 'win' ? t('toast.cmdWin') : t('toast.cmdMac')
+    var firstOpen = os === 'win' ? t('toast.firstOpenWin') : t('toast.firstOpenMac')
+    toast.innerHTML =
+      '<div class="download-toast__head"><b>' + t('toast.title') + '</b>'
+      + '<button class="download-toast__close" type="button" aria-label="' + t('toast.close') + '">×</button></div>'
+      + '<p class="download-toast__first">' + firstOpen + '</p>'
+      + '<p class="download-toast__verify">' + t('toast.verify') + '</p>'
+      + '<p class="download-toast__cmd">' + cmd + '</p>'
+      + '<a class="download-toast__star" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">'
+      + '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M8 .5 10 5.4l5.2.4-4 3.4 1.2 5L8 11.2 3.6 14.2l1.2-5-4-3.4L6 5.4 8 .5Z"/></svg>'
+      + t('toast.star') + '</a>'
+    toast.hidden = false
+    var close = toast.querySelector('.download-toast__close')
+    if (close) {
+      close.onclick = function () { toast.hidden = true }
+    }
   }
 
   /* ══ 交互 ══════════════════════════════════════════ */
