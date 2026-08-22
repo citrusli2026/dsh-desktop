@@ -29,7 +29,12 @@ const dshHome = await mkdtemp(join(tmpdir(), 'dsh-packaged-smoke-'))
 try {
   const exitCode = await new Promise((resolve, reject) => {
     const userData = join(dshHome, 'electron-user-data')
-    const child = spawn(executable, ['--smoke-test', `--user-data-dir=${userData}`], {
+    // The unpacked tree has no SUID chrome-sandbox (deb postinst sets it at
+    // install time), so headless CI smoke runs with the Chromium sandbox off,
+    // same as the e2e fixture.
+    const args = ['--smoke-test', `--user-data-dir=${userData}`]
+    if (process.platform === 'linux') args.push('--no-sandbox')
+    const child = spawn(executable, args, {
       env: { ...process.env, DSH_HOME: dshHome },
       stdio: 'inherit',
     })
