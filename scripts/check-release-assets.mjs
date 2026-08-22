@@ -9,8 +9,8 @@ import { parse as parseYaml } from 'yaml'
 export function expectedAssetNames(version) {
   const macInstaller = `dsh-desktop-${version}-arm64-mac.dmg`
   const windowsInstaller = `dsh-desktop-setup-${version}.exe`
-  const linuxDeb = `dsh-desktop-${version}-x64.deb`
-  const linuxAppImage = `dsh-desktop-${version}-x64.AppImage`
+  const linuxDeb = `dsh-desktop-${version}-amd64.deb`
+  const linuxAppImage = `dsh-desktop-${version}-x86_64.AppImage`
   return [
     macInstaller,
     `${macInstaller}.sha256`,

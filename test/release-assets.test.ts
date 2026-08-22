@@ -20,16 +20,16 @@ test('release contract has three platforms of installers, hashes, and Windows up
     `dsh-desktop-setup-${VERSION}.exe.sha256`,
     `dsh-desktop-setup-${VERSION}.exe.blockmap`,
     'latest.yml',
-    `dsh-desktop-${VERSION}-x64.deb`,
-    `dsh-desktop-${VERSION}-x64.deb.sha256`,
-    `dsh-desktop-${VERSION}-x64.AppImage`,
-    `dsh-desktop-${VERSION}-x64.AppImage.sha256`,
+    `dsh-desktop-${VERSION}-amd64.deb`,
+    `dsh-desktop-${VERSION}-amd64.deb.sha256`,
+    `dsh-desktop-${VERSION}-x86_64.AppImage`,
+    `dsh-desktop-${VERSION}-x86_64.AppImage.sha256`,
   ])
   assert.deepEqual(installerNames(VERSION, 'darwin'), [`dsh-desktop-${VERSION}-arm64-mac.dmg`])
   assert.deepEqual(installerNames(VERSION, 'win32'), [`dsh-desktop-setup-${VERSION}.exe`])
   assert.deepEqual(installerNames(VERSION, 'linux'), [
-    `dsh-desktop-${VERSION}-x64.deb`,
-    `dsh-desktop-${VERSION}-x64.AppImage`,
+    `dsh-desktop-${VERSION}-amd64.deb`,
+    `dsh-desktop-${VERSION}-x86_64.AppImage`,
   ])
 })
 

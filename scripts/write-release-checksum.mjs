@@ -9,9 +9,11 @@ export function installerNames(version, platform) {
   if (platform === 'darwin') return [`dsh-desktop-${version}-arm64-mac.dmg`]
   if (platform === 'win32') return [`dsh-desktop-setup-${version}.exe`]
   if (platform === 'linux') {
+    // electron-builder expands ${arch} per target convention: deb -> amd64,
+    // AppImage -> x86_64.
     return [
-      `dsh-desktop-${version}-x64.deb`,
-      `dsh-desktop-${version}-x64.AppImage`,
+      `dsh-desktop-${version}-amd64.deb`,
+      `dsh-desktop-${version}-x86_64.AppImage`,
     ]
   }
   throw new Error(`release installers are not published for ${platform}`)
