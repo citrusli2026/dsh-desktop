@@ -111,6 +111,15 @@ function loadData() {
 }
 
 /* ══ 渲染 ══════════════════════════════════════════ */
+function renderHeroDownloads(data) {
+  var el = $('#hero-social')
+  if (!el) return
+  var n = data && data.stats && data.stats.installer_downloads
+  if (typeof n !== 'number') return
+  el.textContent = t('hero.downloads').replace('{n}', fmtNum(n))
+  el.hidden = false
+}
+
 function renderMeta(data) {
   var r = data.release
   // 发布时间(版本号已在 hero 与下载按钮文件名中展示,这里不重复);
@@ -194,6 +203,7 @@ function fetchRealTimeDownloads(data) {
       if (merged) {
         siteData = merged
         renderPlatforms(siteData)
+        renderHeroDownloads(siteData)
         bindCopy($('#platform-rows'))
         bindDownloadGuide()
       }
@@ -375,6 +385,7 @@ function applyLang() {
   renderFirstRun()
   if (siteData) {
     renderMeta(siteData)
+    renderHeroDownloads(siteData)
     renderPlatforms(siteData)
     tunePrimaryCta(siteData)
     bindCopy($('#platform-rows'))
@@ -437,6 +448,7 @@ loadData()
   .then(function (data) {
     siteData = data
     renderMeta(data)
+    renderHeroDownloads(data)
     renderPlatforms(data)
     tunePrimaryCta(data)
     renderFirstRun()
