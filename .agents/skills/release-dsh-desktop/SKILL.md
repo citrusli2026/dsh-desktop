@@ -90,9 +90,9 @@ git push origin v<version>     # triggers .github/workflows/release.yml
 
 Watch the run: `gh run list --workflow=release.yml --limit 1`, then
 `gh run watch <id> --exit-status`. Jobs: verify → build (macos-14 +
-windows-2022) → publish. Success means: 6 assets (dmg/exe + two
-`.sha256` + blockmap + latest.yml), attestations verified, release
-created.
+windows-2022 + ubuntu-24.04) → publish. Success means: 8 assets
+(dmg/exe/deb + three `.sha256` + blockmap + latest.yml; AppImage is
+not built), attestations verified, release created.
 
 ### 6. GitCode mirror (expect slow, plan for retries)
 
@@ -168,8 +168,9 @@ counts and regenerate over it.
 
 ## Exit criteria
 
-- GitHub release has the 6 assets; attestations verified in CI.
-- GitCode serves all four user-facing assets (dmg, exe, 2× sha256).
+- GitHub release has the 8 assets; attestations verified in CI.
+- GitCode serves all six user-facing assets (dmg, exe, deb, 3× sha256;
+  AppImage is not mirrored).
 - `site/data/release.json` committed with `gitcode_ok=true` and live
   site confirms tag + counts.
 - HANDOFF has the release section and updated status table; all

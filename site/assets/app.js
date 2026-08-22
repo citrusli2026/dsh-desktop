@@ -21,6 +21,7 @@
       'hero.h1': '把 DeepSeek Harness<br />变成可靠的 <em>桌面工作台</em>。',
       'hero.sub': '零配置启动、独立数据空间、崩溃自愈——只增强桌面体验,不改写 Harness 行为。',
       'hero.cta': '下载桌面版',
+      'hero.ctaMobile': '在电脑上下载',
       'hero.secondary': '看看桌面壳做了什么 →',
       'hero.meta': '无需 Node.js',
       'trust.local': 'Loopback 本地运行', 'trust.isolated': '默认独立数据目录',
@@ -76,9 +77,9 @@
       'vr.shell': '<b>壳修订号</b> —— 壳自身(窗口、守护、打包)的修订次数。同一内核可以有多次壳修订。',
       'faq.marker': '常见问题', 'faq.title': '常见问题',
       'faq.q1': 'macOS 提示"无法打开,因为无法验证开发者"?',
-      'faq.a1': 'macOS 版未购买 Apple 开发者证书(决策记录 0004),首次启动请 <b>右键 → 打开</b>。如果仍没有放行选项,且你确认安装包来源可信,可在终端执行:<br><code class="faq-command">xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"</code><code class="faq-command">open "/Applications/dsh-desktop.app"</code>这会移除下载隔离标记,但不会添加 Apple 签名或公证。<br><br>安装包由公开 CI 构建,可用来源证明验证真伪:<br><code class="faq-command">gh attestation verify /path/to/dsh-desktop-&lt;版本&gt;-arm64-mac.dmg -R citrusli2026/dsh-electron-shell</code>',
+      'faq.a1': 'macOS 版未购买 Apple 开发者证书(决策记录 0004),首次启动请 <b>右键 → 打开</b>。如果仍没有放行选项,且你确认安装包来源可信,可在终端执行:<br><code class="faq-command">xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"</code><code class="faq-command">open "/Applications/dsh-desktop.app"</code>这会移除下载隔离标记,但不会添加 Apple 签名或公证。<br><br>安装包由公开 CI 构建,可用来源证明验证真伪:<br><code class="faq-command">gh attestation verify /path/to/dsh-desktop-{ver}-arm64-mac.dmg -R citrusli2026/dsh-electron-shell</code>',
       'faq.q2': 'Windows SmartScreen 拦截怎么办?',
-      'faq.a2': '安装包未购买代码签名证书。点击 <b>"更多信息" → "仍要运行"</b> 即可。安装包由 GitHub Actions 从公开源码构建,可全程审计;也可用以下命令验证来源:<br><code class="faq-command">gh attestation verify /path/to/dsh-desktop-setup-&lt;版本&gt;.exe -R citrusli2026/dsh-electron-shell</code>',
+      'faq.a2': '安装包未购买代码签名证书。点击 <b>"更多信息" → "仍要运行"</b> 即可。安装包由 GitHub Actions 从公开源码构建,可全程审计;也可用以下命令验证来源:<br><code class="faq-command">gh attestation verify /path/to/dsh-desktop-setup-{ver}.exe -R citrusli2026/dsh-electron-shell</code>',
       'faq.q3': '这和 DeepSeek 官方是什么关系?',
       'faq.a3': '非官方社区打包,与 DeepSeek AI 无关联。DeepSeek Harness 是 DeepSeek 的商标;本仓库仅在 MIT 许可下再打包 <a href="https://www.npmjs.com/package/@deepseek-ai/dsh" target="_blank" rel="noopener">@deepseek-ai/dsh</a>,不改变其任何行为。',
       'faq.q4': '我在用 npx @deepseek-ai/dsh web,配置会带过来吗?',
@@ -90,7 +91,7 @@
       'faq.q7': '桌面菜单为什么是中文或英文?',
       'faq.a7': '首次启动跟随电脑系统语言;不支持的系统语言默认使用英文。之后在 Harness 中切换语言,应用菜单、托盘和 Shell 对话框会读取同一设置并实时同步。',
       'faq.q8': '如何校验下载文件的完整性?',
-      'faq.a8': '每个安装包都附带同名的 <code>.sha256</code> 校验文件。下载后可用以下命令验证:<br><code class="faq-command">shasum -a 256 -c dsh-desktop-&lt;版本&gt;-arm64-mac.dmg.sha256</code><br>Windows 用户可用:<br><code class="faq-command">CertUtil -hashfile dsh-desktop-setup-&lt;版本&gt;.exe SHA256</code><br>校验值应与 <code>.sha256</code> 文件内容一致。也可使用 <code>npx dsh-validate-release</code> 自动校验整个 Release 目录。',
+      'faq.a8': '每个安装包都附带同名的 <code>.sha256</code> 校验文件。下载后可用以下命令验证:<br><code class="faq-command">shasum -a 256 -c dsh-desktop-{ver}-arm64-mac.dmg.sha256</code><br>Windows 用户可用:<br><code class="faq-command">CertUtil -hashfile dsh-desktop-setup-{ver}.exe SHA256</code><br>校验值应与 <code>.sha256</code> 文件内容一致。也可使用 <code>npx dsh-validate-release</code> 自动校验整个 Release 目录。',
       'faq.q9': '如何获取 DeepSeek API Key?',
       'faq.a9': '三步即可:<br>1) 打开 <a href="https://platform.deepseek.com" target="_blank" rel="noopener">DeepSeek 开放平台</a> 注册账号;<br>2) 登录后进入「API Keys」页面,点「创建 API Key」,复制生成的 <code>sk-</code> 开头的密钥;<br>3) 打开 dsh-desktop,在设置中把 Key 粘贴进去即可开始对话。<br>注意:DeepSeek API 按用量计费,首次使用前需要先充值(平台内最低充值金额即可),充值后立即可用。',
       'footer.legal': 'MIT © 2026 dsh-desktop contributors<br /><strong>社区维护 · 非官方产品</strong><br />与 DeepSeek AI 无隶属、授权或合作关系',
@@ -108,6 +109,7 @@
       'hero.h1': 'DeepSeek Harness,<br />as a dependable <em>desktop workspace</em>.',
       'hero.sub': 'Zero-setup launch, isolated data, crash recovery — a better desktop experience without changing how Harness works.',
       'hero.cta': 'Download for Desktop',
+      'hero.ctaMobile': 'Download on your computer',
       'hero.secondary': 'See what the shell adds →',
       'hero.meta': 'NO NODE.JS REQUIRED',
       'trust.local': 'Loopback-only runtime', 'trust.isolated': 'Isolated data by default',
@@ -464,18 +466,35 @@
 
   function tunePrimaryCta(data) {
     var os = detectPlatform()
-    if (!os || os === 'mobile') return
+    var cta = $('#cta-primary')
+    // 手机/平板浏览时不下发桌面安装包,引导到下载区(在电脑上下载)。
+    if (os === 'mobile') {
+      cta.href = '#download'
+      cta.textContent = t('hero.ctaMobile')
+      return
+    }
+    if (!os) return
     var hit = data.release.assets.filter(function (a) {
       var p = platformOf(a.name)
       return p && p.os === os && p.primary
     })[0]
     if (!hit) return
     var link = linksOf(hit)[0]
-    var cta = $('#cta-primary')
     cta.href = link.href
     cta.textContent = (lang === 'zh'
       ? '下载 ' + OS_LABEL.zh[os][0] + ' 版'
       : 'Download for ' + OS_LABEL.en[os][0]) + ' · ' + fmtSize(hit.size)
+  }
+
+  /* FAQ 命令示例里的 {ver} 占位符按当前版本填充(与 release.json 同一来源,
+     避免命令示例与实际文件名失同步)。 */
+  function fillFaqVersion() {
+    if (!siteData) return
+    var ver = siteData.release.tag.replace(/^v/, '')
+    $all('[data-i18n^="faq.a"]').forEach(function (el) {
+      if (el.innerHTML.indexOf('{ver}') === -1) return
+      el.innerHTML = el.innerHTML.split('{ver}').join(ver)
+    })
   }
 
   /* 访问者平台识别。注意:iOS Safari 的 UA 含 "Macintosh",必须先排除
@@ -601,6 +620,7 @@
       var key = el.getAttribute('data-i18n')
       if (I18N[lang][key] !== undefined) el.innerHTML = I18N[lang][key]
     })
+    fillFaqVersion()
     $('#lang-toggle').textContent = lang === 'zh' ? 'EN' : '中'
     renderFirstRun()
     if (siteData) {
@@ -635,6 +655,7 @@
       renderPlatforms(data)
       tunePrimaryCta(data)
       renderFirstRun()
+      fillFaqVersion()
       bindCopy($('#platform-rows'))
       bindDownloadGuide()
       fetchRealTimeDownloads(data)
