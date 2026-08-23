@@ -159,8 +159,11 @@ jobs:
         run: xvfb-run -a node scripts/run-e2e-guarded.mjs --grep @smoke
       - name: Install deb and smoke the installed app with real sandbox (S2)
         if: matrix.os == 'ubuntu-24.04'
+        # apt-get (not dpkg -i) so the deb's Depends are resolved: the bare
+        # runner image lacks libnotify4/libsecret-1-0, which a real desktop
+        # has but dpkg -i refuses to fetch.
         run: |
-          sudo dpkg -i dist/dsh-desktop-*.deb
+          sudo apt-get install -y ./dist/dsh-desktop-*.deb
           xvfb-run -a node scripts/smoke-installed.mjs dpkg dist --reinstall
       - name: NSIS silent install smoke (S2)
         if: matrix.os == 'windows-2022'
