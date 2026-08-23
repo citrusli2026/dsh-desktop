@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Static integrity checks for the zero-build website. */
-import { access, readFile } from 'node:fs/promises'
+import { access, readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { classifyOs, classifyPublicAsset } from './release-shape.mjs'
 // The site's data layer is a plain ESM module with no DOM access, so the
@@ -14,11 +14,48 @@ function requireValue(condition, message) {
   if (!condition) throw new Error(`site-check: ${message}`)
 }
 
+async function collectHtmlFiles(dir) {
+  const entries = await readdir(dir, { withFileTypes: true })
+  const files = []
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) files.push(...await collectHtmlFiles(fullPath))
+    else if (entry.isFile() && entry.name.endsWith('.html')) files.push(fullPath)
+  }
+  return files
+}
+
 const [html, releaseRaw, vercelRaw] = await Promise.all([
   readFile(path.join(SITE, 'index.html'), 'utf8'),
   readFile(path.join(SITE, 'data', 'release.json'), 'utf8'),
   readFile(path.join(SITE, 'vercel.json'), 'utf8'),
 ])
+const pageFiles = await collectHtmlFiles(SITE)
+const pageDocs = await Promise.all(pageFiles.map(async (file) => ({
+  file,
+  html: await readFile(file, 'utf8'),
+})))
+
+requireValue(pageDocs.length === 8, `expected 8 crawlable HTML pages, found ${pageDocs.length}`)
+for (const { file, html: pageHtml } of pageDocs) {
+  const relative = path.relative(SITE, file).split(path.sep).join('/')
+  const expectedCanonical = relative === 'index.html'
+    ? 'https://dsh-desktop.com/'
+    : `https://dsh-desktop.com/${relative.replace(/\/index\.html$/, '')}`
+  const canonical = pageHtml.match(/<link rel="canonical" href="([^"]+)"/)?.[1]
+  requireValue(canonical === expectedCanonical, `${relative} canonical must be ${expectedCanonical}`)
+  requireValue(/<title>[^<]+<\/title>/.test(pageHtml), `${relative} title is missing`)
+  requireValue(/<meta name="description" content="[^"]+"/.test(pageHtml), `${relative} meta description is missing`)
+  requireValue(/hreflang="zh-CN"/.test(pageHtml) && /hreflang="en"/.test(pageHtml), `${relative} language alternates are missing`)
+
+  const localReferences = [...pageHtml.matchAll(/(?:href|src)="(\/(?:assets|data)\/[^"?#]+)[^"]*"/g)].map(match => match[1])
+  for (const reference of localReferences) await access(path.join(SITE, reference.slice(1)))
+}
+
+requireValue(/name="google-site-verification" content="0NO32QsuJviivUirAXGOcVgj2knN_m5NCus7GpE-ZXg"/.test(html), 'Google Search Console verification meta tag is missing')
+requireValue(/"@type": "WebSite"/.test(html), 'WebSite structured data is missing from the homepage')
+requireValue(/href="\/download"/.test(html), 'homepage must expose a crawlable download page link')
 const data = JSON.parse(releaseRaw)
 JSON.parse(vercelRaw)
 
@@ -67,9 +104,6 @@ for (const checksum of checksums) {
   requireValue(installers.some(asset => asset.name === installerName), `${checksum.name} has no matching installer`)
   requireValue(typeof checksum.sha256 === 'string' && /^[a-f0-9]{64}$/.test(checksum.sha256), `${checksum.name} has an invalid SHA-256`)
 }
-
-const localReferences = [...html.matchAll(/(?:href|src)="(\/(?:assets|data)\/[^"?#]+)[^\"]*"/g)].map(match => match[1])
-for (const reference of localReferences) await access(path.join(SITE, reference.slice(1)))
 
 const zhKeys = new Set(Object.keys(I18N.zh))
 const enKeys = new Set(Object.keys(I18N.en))
