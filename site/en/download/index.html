@@ -11,19 +11,30 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://dsh-desktop.com/en/download" />
 <meta property="og:image" content="https://dsh-desktop.com/assets/og-image.png" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:locale:alternate" content="zh_CN" />
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="theme-color" content="#f9f8f8" />
+<meta name="color-scheme" content="light dark" />
 <link rel="canonical" href="https://dsh-desktop.com/en/download" />
 <link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/download" />
 <link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/download" />
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/download" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=29" />
-<link rel="stylesheet" href="/assets/seo.css?v=1" />
+<link rel="stylesheet" href="/assets/style.css?v=30" />
+<link rel="stylesheet" href="/assets/seo.css?v=2" />
+<script>
+  try {
+    var savedTheme = localStorage.getItem('dsh-site-theme')
+    document.documentElement.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  } catch (e) {}
+</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Download DSH Desktop","url":"https://dsh-desktop.com/en/download","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}}</script>
 </head>
 <body>
-<header class="topbar"><a class="topbar__brand" href="/en"><img src="/assets/favicon.svg" alt="" width="20" height="20" /><span>dsh-desktop</span><span class="community-tag">Community</span></a><nav class="topbar__nav" aria-label="Page navigation"><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a><a href="/">中文</a></nav><div class="topbar__right"><a class="gh-chip" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a><a class="btn btn--primary btn--sm" href="/en">Home</a></div></header>
-<main class="seo-page"><div class="wrap seo-article">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<header class="topbar"><a class="topbar__brand" href="/en"><img src="/assets/favicon.svg" alt="" width="20" height="20" /><span>dsh-desktop</span><span class="community-tag">Community</span></a><nav class="topbar__nav" id="topbar-menu" aria-label="Page navigation"><a href="/en">Home</a><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a></nav><div class="topbar__right"><button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch theme" title="Switch theme"></button><a class="lang-toggle" href="/download" aria-label="切换到中文" title="切换到中文">中</a><a class="gh-chip" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"><span>GitHub</span></a><a class="btn btn--primary btn--sm" href="/en/download">Download</a><button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="topbar-menu"><svg class="menu-icon menu-icon--open" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><svg class="menu-icon menu-icon--close" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div></header>
+<main id="main-content" class="seo-page"><div class="wrap seo-article">
   <nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/en">DSH Desktop</a><span>/</span><span>Download</span></nav>
   <p class="sec-marker">DOWNLOAD / DEEPSEEK HARNESS</p>
   <h1>Download the DeepSeek Harness desktop app</h1>
@@ -33,6 +44,7 @@
   <h2>Verify downloads</h2><p>Each installer has a matching <code>.sha256</code> file. Use <code>shasum -a 256 -c filename.sha256</code> on macOS/Linux or <code>CertUtil -hashfile filename SHA256</code> on Windows, then compare the result with the release checksum.</p>
   <div class="seo-next-links"><a href="/en/docs/install">Read the install guide →</a><a href="/en/docs/faq">Read the FAQ →</a><a href="/">返回中文下载页 →</a></div>
 </div></main>
-<footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />No affiliation with DeepSeek AI</p></div><nav class="footer__links" aria-label="Footer links"><a href="/en">Home</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a><a href="/download">中文</a><a href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a></nav></div></footer>
+<footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />No affiliation with DeepSeek AI</p><a class="footer__top" href="#main-content">Back to top ↑</a></div><nav class="footer__links" aria-label="Footer links"><a href="/en">Home</a><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a><a href="/download">中文</a><a href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a></nav><p class="footer__sync"><span>Static site · deployed on Vercel<br />Release data synced by GitHub Actions</span><br /><span>Download and help</span></p></div></footer>
+<script src="/assets/site-shell.js?v=1"></script>
 </body>
 </html>

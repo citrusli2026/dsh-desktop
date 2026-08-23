@@ -11,19 +11,31 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://dsh-desktop.com/en/docs/install" />
 <meta property="og:image" content="https://dsh-desktop.com/assets/og-image.png" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:locale:alternate" content="zh_CN" />
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="theme-color" content="#f9f8f8" />
+<meta name="color-scheme" content="light dark" />
 <link rel="canonical" href="https://dsh-desktop.com/en/docs/install" />
 <link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/docs/install" />
 <link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/docs/install" />
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/docs/install" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=29" />
-<link rel="stylesheet" href="/assets/seo.css?v=1" />
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"Install the DeepSeek Harness desktop app","description":"Install DSH Desktop and complete first-launch setup.","step":[{"@type":"HowToStep","name":"Download an installer"},{"@type":"HowToStep","name":"Install and launch"},{"@type":"HowToStep","name":"Add an API key"}],"isPartOf":{"@id":"https://dsh-desktop.com/#website"}}</script>
+<link rel="stylesheet" href="/assets/style.css?v=30" />
+<link rel="stylesheet" href="/assets/seo.css?v=2" />
+<script>
+  try {
+    var savedTheme = localStorage.getItem('dsh-site-theme')
+    document.documentElement.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  } catch (e) {}
+</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"Install the DeepSeek Harness desktop app","description":"Install DSH Desktop and complete first-launch setup.","inLanguage":"en","step":[{"@type":"HowToStep","name":"Download an installer"},{"@type":"HowToStep","name":"Install and launch"},{"@type":"HowToStep","name":"Add an API key"}],"isPartOf":{"@id":"https://dsh-desktop.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/en"},{"@type":"ListItem","position":2,"name":"Download","item":"https://dsh-desktop.com/en/download"},{"@type":"ListItem","position":3,"name":"Install guide","item":"https://dsh-desktop.com/en/docs/install"}]}</script>
 </head>
 <body>
-<header class="topbar"><a class="topbar__brand" href="/en"><img src="/assets/favicon.svg" alt="" width="20" height="20" /><span>dsh-desktop</span><span class="community-tag">Community</span></a><nav class="topbar__nav" aria-label="Page navigation"><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a><a href="/docs/install">中文</a></nav><div class="topbar__right"><a class="gh-chip" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a><a class="btn btn--primary btn--sm" href="/en/download">Download</a></div></header>
-<main class="seo-page"><div class="wrap seo-article">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<header class="topbar"><a class="topbar__brand" href="/en"><img src="/assets/favicon.svg" alt="" width="20" height="20" /><span>dsh-desktop</span><span class="community-tag">Community</span></a><nav class="topbar__nav" id="topbar-menu" aria-label="Page navigation"><a href="/en">Home</a><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a></nav><div class="topbar__right"><button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch theme" title="Switch theme"></button><a class="lang-toggle" href="/docs/install" aria-label="切换到中文" title="切换到中文">中</a><a class="gh-chip" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"><span>GitHub</span></a><a class="btn btn--primary btn--sm" href="/en/download">Download</a><button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="topbar-menu"><svg class="menu-icon menu-icon--open" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><svg class="menu-icon menu-icon--close" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div></header>
+<main id="main-content" class="seo-page"><div class="wrap seo-article">
   <nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/en">DSH Desktop</a><span>/</span><a href="/en/download">Download</a><span>/</span><span>Install guide</span></nav>
   <p class="sec-marker">GUIDE / INSTALLATION</p><h1>Install the DeepSeek Harness desktop app</h1><p class="seo-lead">DSH Desktop is designed to open the local DeepSeek Harness workspace without asking end users to set up Node.js, npm, or a terminal first.</p>
   <h2>Three steps to start</h2><ol><li><strong>Download:</strong> choose a Windows, macOS, or Linux installer from the <a href="/en/download">download page</a>.</li><li><strong>Install:</strong> run the installer and launch dsh-desktop. The shell starts its local Harness instance automatically.</li><li><strong>Configure:</strong> choose a model provider, paste an API key, and start your first session.</li></ol>
@@ -33,6 +45,7 @@
   <h2>When startup fails</h2><p>Confirm that the installer is complete, the data directory is writable, and security software is not blocking local loopback processes. Export a diagnostic report from the Help menu and include the version, platform, and relevant log details when opening an issue. See the <a href="/en/docs/faq">FAQ</a> for first-launch prompts.</p>
   <div class="seo-next-links"><a href="/en/download">Download DSH Desktop →</a><a href="/en/docs/faq">Read the FAQ →</a><a href="/docs/install">阅读中文指南 →</a></div>
 </div></main>
-<footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />No affiliation with DeepSeek AI</p></div><nav class="footer__links" aria-label="Footer links"><a href="/en">Home</a><a href="/en/download">Download</a><a href="/en/docs/faq">FAQ</a><a href="/docs/install">中文</a><a href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a></nav></div></footer>
+<footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />No affiliation with DeepSeek AI</p><a class="footer__top" href="#main-content">Back to top ↑</a></div><nav class="footer__links" aria-label="Footer links"><a href="/en">Home</a><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a><a href="/docs/install">中文</a><a href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a></nav><p class="footer__sync"><span>Static site · deployed on Vercel<br />Release data synced by GitHub Actions</span><br /><span>Install and help</span></p></div></footer>
+<script src="/assets/site-shell.js?v=1"></script>
 </body>
 </html>

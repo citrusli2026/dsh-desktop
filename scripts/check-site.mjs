@@ -26,12 +26,14 @@ async function collectHtmlFiles(dir) {
   return files
 }
 
-const [html, releaseRaw, vercelRaw] = await Promise.all([
+const [html, releaseRaw, vercelRaw, sitemap, notFoundHtml] = await Promise.all([
   readFile(path.join(SITE, 'index.html'), 'utf8'),
   readFile(path.join(SITE, 'data', 'release.json'), 'utf8'),
   readFile(path.join(SITE, 'vercel.json'), 'utf8'),
+  readFile(path.join(SITE, 'sitemap.xml'), 'utf8'),
+  readFile(path.join(SITE, '404.html'), 'utf8'),
 ])
-const pageFiles = await collectHtmlFiles(SITE)
+const pageFiles = (await collectHtmlFiles(SITE)).filter(file => !file.endsWith(`${path.sep}404.html`))
 const pageDocs = await Promise.all(pageFiles.map(async (file) => ({
   file,
   html: await readFile(file, 'utf8'),
@@ -48,10 +50,35 @@ for (const { file, html: pageHtml } of pageDocs) {
   requireValue(/<title>[^<]+<\/title>/.test(pageHtml), `${relative} title is missing`)
   requireValue(/<meta name="description" content="[^"]+"/.test(pageHtml), `${relative} meta description is missing`)
   requireValue(/hreflang="zh-CN"/.test(pageHtml) && /hreflang="en"/.test(pageHtml), `${relative} language alternates are missing`)
+  requireValue(/class="theme-toggle"/.test(pageHtml) && /class="menu-toggle"/.test(pageHtml), `${relative} shared header controls are missing`)
+  requireValue(/class="footer__sync"/.test(pageHtml), `${relative} shared footer sync block is missing`)
 
   const localReferences = [...pageHtml.matchAll(/(?:href|src)="(\/(?:assets|data)\/[^"?#]+)[^"]*"/g)].map(match => match[1])
   for (const reference of localReferences) await access(path.join(SITE, reference.slice(1)))
 }
+
+requireValue(/<meta name="robots" content="noindex, nofollow"/.test(notFoundHtml), '404 page must be noindex')
+requireValue(/class="theme-toggle"/.test(notFoundHtml) && /class="menu-toggle"/.test(notFoundHtml), '404 page must use the shared header controls')
+requireValue(/id="error-path"/.test(notFoundHtml) && /href="\/"/.test(notFoundHtml), '404 page must show the missing path and a home link')
+const notFoundReferences = [...notFoundHtml.matchAll(/(?:href|src)="(\/(?:assets|data)\/[^"?#]+)[^"]*"/g)].map(match => match[1])
+for (const reference of notFoundReferences) await access(path.join(SITE, reference.slice(1)))
+
+const sitemapLocations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1])
+const expectedSitemapLocations = [
+  'https://dsh-desktop.com/',
+  'https://dsh-desktop.com/en',
+  'https://dsh-desktop.com/download',
+  'https://dsh-desktop.com/en/download',
+  'https://dsh-desktop.com/docs/install',
+  'https://dsh-desktop.com/en/docs/install',
+  'https://dsh-desktop.com/docs/faq',
+  'https://dsh-desktop.com/en/docs/faq',
+]
+requireValue(/xmlns:xhtml="http:\/\/www.w3.org\/1999\/xhtml"/.test(sitemap), 'sitemap hreflang namespace is missing')
+requireValue(new Set(sitemapLocations).size === expectedSitemapLocations.length, 'sitemap contains duplicate URLs')
+requireValue(expectedSitemapLocations.every(url => sitemapLocations.includes(url)), 'sitemap must include every crawlable language page')
+requireValue(!sitemap.includes('404') && !sitemap.includes('/api/'), 'sitemap must not include non-content routes')
+requireValue(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/.test(sitemap), 'sitemap lastmod is missing')
 
 requireValue(/name="google-site-verification" content="0NO32QsuJviivUirAXGOcVgj2knN_m5NCus7GpE-ZXg"/.test(html), 'Google Search Console verification meta tag is missing')
 requireValue(/"@type": "WebSite"/.test(html), 'WebSite structured data is missing from the homepage')
