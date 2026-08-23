@@ -4,7 +4,7 @@
    - 平台识别 CTA / 复制 / 滚动 reveal
    数据与文案字典见 ./data-model.js (纯数据层,亦被 check-site 直接导入)。
    零依赖,渐进增强。 */
-import { I18N, mergeLiveCounts, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=29'
+import { I18N, mergeLiveCounts, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=30'
 
 var REPO = 'citrusli2026/dsh-electron-shell'
 var RELEASES_URL = 'https://github.com/' + REPO + '/releases'
@@ -111,13 +111,56 @@ function loadData() {
 }
 
 /* ══ 渲染 ══════════════════════════════════════════ */
-function renderHeroDownloads(data) {
+function animateCount(el, target, animate) {
+  if (!el || typeof target !== 'number') return
+  var end = Math.max(0, Math.round(target))
+  var current = typeof el.__countCurrent === 'number'
+    ? el.__countCurrent
+    : Number(el.getAttribute('data-count-value') || 0)
+  if (!Number.isFinite(current)) current = 0
+  if (el.__countFrame && window.cancelAnimationFrame) window.cancelAnimationFrame(el.__countFrame)
+  el.setAttribute('data-count-value', String(end))
+  if (!animate || current === end || typeof window.requestAnimationFrame !== 'function') {
+    el.__countCurrent = end
+    el.textContent = fmtNum(end)
+    return
+  }
+
+  var started = window.performance && typeof window.performance.now === 'function'
+    ? window.performance.now()
+    : Date.now()
+  var duration = 520
+  function tick(now) {
+    var progress = Math.min(1, (now - started) / duration)
+    var eased = 1 - Math.pow(1 - progress, 3)
+    var value = Math.round(current + (end - current) * eased)
+    el.__countCurrent = value
+    el.textContent = fmtNum(value)
+    if (progress < 1) el.__countFrame = window.requestAnimationFrame(tick)
+    else el.__countFrame = 0
+  }
+  el.__countFrame = window.requestAnimationFrame(tick)
+}
+
+function platformTotal(data, os) {
+  return data.stats && (os === 'mac' ? data.stats.mac_downloads : os === 'win' ? data.stats.win_downloads : data.stats.linux_downloads)
+}
+
+function renderHeroDownloads(data, animate) {
   var el = $('#hero-social')
   if (!el) return
   var n = data && data.stats && data.stats.installer_downloads
   if (typeof n !== 'number') return
-  el.textContent = t('hero.downloads').replace('{n}', fmtNum(n))
+  var template = t('hero.downloads')
+  var valueEl = $('.count-value', el)
+  if (!valueEl || el.getAttribute('data-count-template') !== template) {
+    var parts = template.split('{n}')
+    el.innerHTML = parts[0] + '<span class="count-value count-value--hero" data-count-value="0">0</span>' + parts[1]
+    el.setAttribute('data-count-template', template)
+    valueEl = $('.count-value', el)
+  }
   el.hidden = false
+  animateCount(valueEl, n, animate)
 }
 
 function renderMeta(data) {
@@ -151,7 +194,15 @@ function renderMeta(data) {
     : (lang === 'zh' ? '数据来自 GitHub API 实时拉取' : 'live data via GitHub API')
 }
 
-function renderPlatforms(data) {
+function updatePlatformCounts(data, animate) {
+  ;['mac', 'win', 'linux'].forEach(function (os) {
+    var el = $('.platform-hist__value[data-platform-count="' + os + '"]')
+    var n = platformTotal(data, os)
+    if (el && typeof n === 'number') animateCount(el, n, animate)
+  })
+}
+
+function renderPlatforms(data, animate) {
   var installers = data.release.assets.filter(function (a) { return a.kind === 'installer' })
   var groups = { mac: [], win: [], linux: [] }
   installers.forEach(function (a) {
@@ -166,11 +217,14 @@ function renderPlatforms(data) {
     if (!list.length) return
     list.sort(function (a, b) { return (b.primary ? 1 : 0) - (a.primary ? 1 : 0) })
     // 该平台全版本累计下载(仅数字,说明放 tooltip)
-    var hist = data.stats && (os === 'mac' ? data.stats.mac_downloads : os === 'win' ? data.stats.win_downloads : data.stats.linux_downloads)
+    var hist = platformTotal(data, os)
     html += '<div class="platform-group">'
     html += '<div class="platform-group__head"><h3>' + labels[os][0] + '</h3><span>' + labels[os][1] + '</span>'
     if (typeof hist === 'number') {
-      html += '<span class="platform-hist" title="' + t('dl.total.note') + '">' + t('dl.platformTotal').replace('{n}', fmtNum(hist)) + '</span>'
+      var totalParts = t('dl.platformTotal').split('{n}')
+      html += '<span class="platform-hist" title="' + t('dl.total.note') + '">' + totalParts[0]
+        + '<span class="platform-hist__value" data-platform-count="' + os + '" data-count-value="0">'
+        + (animate ? '0' : fmtNum(hist)) + '</span>' + totalParts[1] + '</span>'
     }
     html += '</div>'
     list.forEach(function (a) {
@@ -190,7 +244,10 @@ function renderPlatforms(data) {
     })
     html += '</div>'
   })
-  if (html) $('#platform-rows').innerHTML = html
+  if (html) {
+    $('#platform-rows').innerHTML = html
+    updatePlatformCounts(data, animate)
+  }
 }
 
 function fetchRealTimeDownloads(data) {
@@ -202,10 +259,8 @@ function fetchRealTimeDownloads(data) {
       var merged = mergeLiveCounts(data, live)
       if (merged) {
         siteData = merged
-        renderPlatforms(siteData)
-        renderHeroDownloads(siteData)
-        bindCopy($('#platform-rows'))
-        bindDownloadGuide()
+        updatePlatformCounts(siteData, true)
+        renderHeroDownloads(siteData, true)
       }
       // 更新同步时间文案为实时模式
       var syncEl = $('#sync-time')
@@ -404,8 +459,8 @@ function applyLang() {
   renderFirstRun()
   if (siteData) {
     renderMeta(siteData)
-    renderHeroDownloads(siteData)
-    renderPlatforms(siteData)
+    renderHeroDownloads(siteData, false)
+    renderPlatforms(siteData, false)
     tunePrimaryCta(siteData)
     bindCopy($('#platform-rows'))
     bindDownloadGuide()
@@ -495,8 +550,8 @@ loadData()
   .then(function (data) {
     siteData = data
     renderMeta(data)
-    renderHeroDownloads(data)
-    renderPlatforms(data)
+    renderHeroDownloads(data, true)
+    renderPlatforms(data, true)
     tunePrimaryCta(data)
     renderFirstRun()
     fillFaqVersion()

@@ -350,6 +350,10 @@ a { color: inherit; }
   background: var(--signal-dim); color: var(--signal-deep);
   font-family: var(--mono); font-size: 12px; letter-spacing: 0.05em;
 }
+.hero__social .count-value {
+  display: inline-block; min-width: 5ch; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 .hero__social[hidden] { display: none; }
 .hero__meta {
   font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em;
@@ -484,7 +488,13 @@ a { color: inherit; }
   display: flex; align-items: baseline; gap: 12px;
   padding: 20px 22px 4px;
 }
-.platform-hist { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--faint); white-space: nowrap; }
+.platform-hist {
+  display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 2px;
+  min-width: 6ch; margin-left: auto;
+  font-family: var(--mono); font-size: 11px; color: var(--faint); white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.platform-hist__value { display: inline-block; min-width: 4ch; text-align: right; }
 .platform-group__head h3 { font-size: 16px; font-weight: 700; }
 .platform-group__head span { font-family: var(--mono); font-size: 11.5px; color: var(--faint); letter-spacing: 0.03em; }
 .asset-row {
