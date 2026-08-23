@@ -157,7 +157,17 @@ async function main() {
   if (!existsSync(extracted)) fail(`expected extraction root ${extracted}`)
   await rm(nodeDir, { recursive: true, force: true })
   await rename(extracted, nodeDir)
-  if (!name.startsWith('win')) await chmod(nodeExecutable, 0o755)
+  if (name.startsWith('win')) {
+    // The Windows dist zip keeps node.exe at the archive root; the shell's
+    // runtime contract (nodeBin in src/main/paths.ts) is node/bin/node.exe on
+    // every platform, so move it into place.
+    const rootExe = join(nodeDir, 'node.exe')
+    if (!existsSync(rootExe)) fail(`expected Windows runtime at ${rootExe}`)
+    await mkdir(join(nodeDir, 'bin'), { recursive: true })
+    await rename(rootExe, nodeExecutable)
+  } else {
+    await chmod(nodeExecutable, 0o755)
+  }
 
   await writeFile(manifestPath, `${JSON.stringify({
     version, distName: name, file, sha256: actual, fetchedAt: new Date().toISOString(),
