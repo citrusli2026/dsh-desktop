@@ -159,10 +159,10 @@ jobs:
         if: matrix.os == 'ubuntu-24.04'
         run: |
           sudo dpkg -i dist/dsh-desktop-*.deb
-          xvfb-run -a node scripts/smoke-installed.mjs dpkg
+          xvfb-run -a node scripts/smoke-installed.mjs dpkg dist --reinstall
       - name: NSIS silent install smoke (S2)
         if: matrix.os == 'windows-2022'
-        run: node scripts/smoke-installed.mjs nsis dist
+        run: node scripts/smoke-installed.mjs nsis dist --reinstall
       - name: Write installer SHA-256
         run: node scripts/write-release-checksum.mjs dist
       - name: Attest macOS installer (build provenance)
