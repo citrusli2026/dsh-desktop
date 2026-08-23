@@ -128,13 +128,19 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle }>({
     }
     // Guard the teardown: on Linux CI a lingering application can keep
     // close() pending past the test timeout (observed on the diagnostics
-    // case). Race it and force-kill the process instead of hanging.
+    // case). Race it; only SIGKILL when the graceful close actually hung.
     const close = currentApp?.close().catch(() => {})
-    await Promise.race([close, new Promise<void>(resolve => setTimeout(resolve, 15_000))])
-    try {
-      currentApp?.process().kill('SIGKILL')
-    } catch {
-      // process already gone
+    const outcome = await Promise.race([
+      close?.then(() => 'closed') ?? Promise.resolve('none'),
+      new Promise<string>(resolve => setTimeout(() => resolve('timeout'), 15_000)),
+    ])
+    console.log(`[e2e-fixture] ${testInfo.title}: close=${outcome}`)
+    if (outcome === 'timeout') {
+      try {
+        currentApp?.process().kill('SIGKILL')
+      } catch {
+        // process already gone
+      }
     }
     activeLaunch = undefined
     await chmod(dshHome, 0o755).catch(() => undefined)
