@@ -292,7 +292,7 @@ function bindDownloadGuide() {
     btn.__guideBound = true
     btn.addEventListener('click', function () {
       var os = btn.getAttribute('data-platform')
-      if (os === 'mac' || os === 'win') renderFirstRun(os)
+      if (os === 'mac' || os === 'win' || os === 'linux') renderFirstRun(os)
       if (!guide.hidden) {
         guide.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
         guide.classList.remove('is-flash')
