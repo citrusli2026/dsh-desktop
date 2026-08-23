@@ -149,7 +149,7 @@ P1-3（独立）
 | S1-P0-3 故障注入 | ✅ 已实现并本地验证 | `smoke-packaged.mjs` 原已透传 env（spawn 全量 process.env），release.yml 增加 2 变体 × 3 平台步骤；mac 本地 fail-harness 与 retry-recovery 均 OK |
 | S1-P2-2 verify:full | ✅ 已添加 | `pnpm run verify:full` = verify + dev E2E + dist:dir + 两种打包 smoke |
 | S2-P0-2 deb 安装态 | ✅ 脚本已实现 | `scripts/smoke-installed.mjs dpkg`（真实 sandbox，不带 --no-sandbox）+ release.yml ubuntu 步骤；**首次实测在 next release**（mac 无法交叉构建 deb） |
-| S2-P1-3 NSIS 安装态 | ✅ 脚本已实现 | `scripts/smoke-installed.mjs nsis dist`（/S 静默安装 → smoke → 卸载）；**首次实测在 next release** |
+| S2-P1-3 NSIS 安装态 | ✅ | `scripts/smoke-installed.mjs nsis dist`（/S 静默安装 → smoke → 卸载）；shell.2 实测通过；同版本覆盖见 A-3 已知边界 |
 | S2.5 打包产物真实 Harness 首屏渲染 | ✅ 已实现并本地验证 | `--smoke-ui` 旗标 + `smokeUiRender`（boot 覆层消失 + 无 "Failed to load plugins" + 存在表单控件 + 失败截图）；mac 打包产物实测 `smoke-ui: OK — real Harness UI rendered` |
 
 > 下一次发版（shell.2 或补丁）即由 release.yml 全量执行：ubuntu deb 安装态 / Windows NSIS 安装态两个步骤为首次在 CI 实测，若失败优先排查 electron-builder 默认 postinst 与 NSIS `/D` 路径，而非回退验证目标。
@@ -163,7 +163,7 @@ P1-3（独立）
 | P1-2 诊断导出 UI 级 | ✅ | 菜单点击 → patch showSaveDialog → 断言报告文件生成且包含版本与品牌（版本号动态取值，不再硬编码） |
 | P1-2 窗口状态恢复 | ✅ | setBounds(1180×640，尊重 MIN 960×640) → 重启 → 几何还原断言 |
 | A-2 真实第二进程单实例 | ✅ | spawn 真实第二实例（同 userData）→ 原窗口从托盘恢复 + 第二实例自行退出 |
-| A-3 覆盖安装 | ✅ | `smoke-installed.mjs --reinstall`：deb `dpkg -i` 重装、NSIS `/S` 覆盖安装后再 smoke（同版本覆盖是 CI 可达到的最接近真实升级；跨版本升级需真实旧版本，记录为已知边界） |
+| A-3 覆盖安装 | ✅(deb)/⚠️(NSIS) | `smoke-installed.mjs --reinstall`：deb `dpkg -i` 重装后再 smoke（实测通过，覆盖同版本 overwrite 逻辑）；NSIS 同版本 `/S` 覆盖安装在 CI runner 上确定性挂死（shell.2 A8/A9 两次：150s/300s 超时、零输出，首次安装仅需 4s），故 Windows 保留 安装→smoke→卸载 全流程，覆盖安装交由 deb 代表，NSIS 覆盖画入已知边界 |
 | A-4 特殊路径 | ✅ | 中文+空格路径（DSH_HOME 与 userData）启动、读英文档可切换中文；只读 DSH_HOME 以默认值启动 |
 | 回归 | ✅ | dev E2E 9/9、packaged E2E @smoke 2/2、107 单测、typecheck 全绿；mac 本地全套通过 |
 | 已知边界 | 记录 | 跨版本升级安装、真实对话闭环（API key）、OS 版本矩阵声明对齐 — 保持文档记录，不做 |

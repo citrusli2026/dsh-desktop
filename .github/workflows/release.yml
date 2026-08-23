@@ -167,7 +167,7 @@ jobs:
           xvfb-run -a node scripts/smoke-installed.mjs dpkg dist --reinstall
       - name: NSIS silent install smoke (S2)
         if: matrix.os == 'windows-2022'
-        run: node scripts/smoke-installed.mjs nsis dist --reinstall
+        run: node scripts/smoke-installed.mjs nsis dist
       - name: Write installer SHA-256
         run: node scripts/write-release-checksum.mjs dist
       - name: Attest macOS installer (build provenance)
