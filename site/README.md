@@ -8,8 +8,10 @@
 site/
   index.html          单页:Hero / 下载矩阵 / 特性 / 版本号 / FAQ
   assets/style.css    深色工程视觉 + 响应式布局
-  assets/app.js       中英切换 / 下载数据 / 镜像回落 / 平台识别 / 交互
+  assets/app.js       中英切换 / 下载数据 / 镜像回落 / 平台识别 / 交互(含下载信标)
   assets/favicon.svg
+  api/downloads.js    Vercel 函数:实时下载计数(GitHub API + 官网引导合并)
+  api/beacon.js       Vercel 函数:下载按钮点击信标(可选,见下)
   data/release.json   ★ 由 scripts/gen-site-data.mjs 生成,CI 自动同步
   vercel.json         安全头 + 缓存策略(data/ 5 分钟,assets/ 1 小时)
   robots.txt
@@ -42,14 +44,31 @@ cd site && python3 -m http.server 8080
 # 或 npx serve site
 ```
 
-`assets/` 使用一小时可重新验证缓存,`data/` 使用五分钟缓存。静态文件名未做
-内容哈希,因此不要把 assets 设为 immutable。
+`assets/` 的 css/js 带 `?v=N` 版本号,使用一年 immutable;图片类一小时
+可重新验证;`data/` 使用五分钟缓存。改动 css/js/data-model 后必须同步
+提升 `?v=`(当前 v=27),否则 immutable 会让用户锁在旧内容。
 
 ## 域名
 
 正式域名 <https://dsh-desktop.com>(www 308 跳转主域),阿里云 DNS:
 A `@` → `216.198.79.1` / `64.29.17.1`,CNAME `www` → Vercel 专属解析值。
 HTTPS 证书由 Vercel 自动签发续期;`dsh-electron-shell.vercel.app` 作为备用域名保留。
+
+## 下载引导计数(可选,激活即可统计 GitCode)
+
+GitCode v5 API 与网页均不提供任何下载计数(资产对象只有 name/type/url),
+因此官网统计的是**下载按钮的点击引导量**,不是 CDN 侧真实下载;GitHub 侧
+展示的仍是 API 实计。未配置时该功能完全静默(信标返回 204,不记数)。
+
+激活步骤:
+
+1. 在 <https://upstash.com> 创建免费 Redis(选全球区,任意选一个);
+2. 控制台 Database → REST API → 复制 `UPSTASH_REDIS_REST_URL` 与
+   `UPSTASH_REDIS_REST_TOKEN`;
+3. Vercel 项目 Settings → Environment Variables 添加这两个变量(所有环境),
+   redeploy。
+之后 hero 的下载数 = GitHub 实计 + 两站引导点击;数值可在页面展示的
+tooltip 中区分(GitHub 实计 / GitCode 官网引导)。
 
 ## Vercel 接入(一次性)
 

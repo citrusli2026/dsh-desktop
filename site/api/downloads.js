@@ -12,6 +12,8 @@
  *   2. GitHub `GET /releases/tags/{tag}` for live download counts (anonymous
  *      access to a specific published tag works even for prereleases).
  *   3. Static fallback: the download counts already recorded in release.json.
+ * Plus POST /api/beacon site-guided click counts (GitCode has no download
+ * counters in its v5 API) — merged into total_downloads only when enabled.
  *
  * Security: repo / tag are never user-controlled; no SSRF surface.
  */
@@ -86,6 +88,33 @@ async function fetchLiveTotalDownloads() {
     }
   }
   return { mac, win, linux, releases: count }
+}
+
+async function fetchGuidedCounts() {
+  // Official-site download-link guidance (clicks) per source/platform,
+  // recorded by POST /api/beacon. Enabled only when Upstash envs exist;
+  // GitHub counts remain real CDN downloads from the API above.
+  const url = process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+  if (!url || !token) return null
+  const keys = ['dl:github:mac', 'dl:github:win', 'dl:github:linux', 'dl:gitcode:mac', 'dl:gitcode:win', 'dl:gitcode:linux']
+  try {
+    const res = await fetch(`${url}/mget`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keys }),
+    })
+    if (!res.ok) return null
+    const values = await res.json()
+    if (!Array.isArray(values)) return null
+    const get = (i) => Number(values[i]?.result?.[0]) || 0
+    return {
+      github: get(0) + get(1) + get(2),
+      gitcode: get(3) + get(4) + get(5),
+    }
+  } catch (_) {
+    return null
+  }
 }
 
 async function fetchLegacyGitHubList() {
@@ -164,13 +193,18 @@ module.exports = async function handler(req, res) {
 
     res.setHeader('Cache-Control', `public, s-maxage=${CACHE_MAX_AGE}, stale-while-revalidate=600`)
     res.setHeader('Content-Type', 'application/json')
+    const ghTotal =
+      (liveTotal && liveTotal.mac + liveTotal.win + liveTotal.linux) ||
+      (typeof local.stats?.installer_downloads === 'number' ? local.stats.installer_downloads : null)
+    const guided = await fetchGuidedCounts()
     res.status(200).json({
       tag: local.tag,
       generated_at: downloadsByAsset ? new Date().toISOString() : local.generated_at,
       source: downloadsByAsset ? 'github' : 'release-data',
-      total_downloads:
-        (liveTotal && liveTotal.mac + liveTotal.win + liveTotal.linux) ||
-        (typeof local.stats?.installer_downloads === 'number' ? local.stats.installer_downloads : null),
+      total_downloads: ghTotal !== null && guided ? ghTotal + guided.github + guided.gitcode : ghTotal,
+      github_downloads: ghTotal,
+      gitcode_downloads: guided ? guided.github + guided.gitcode : null,
+      gitcode_guided_downloads: guided?.gitcode ?? null,
       mac_downloads:
         (liveTotal && liveTotal.mac) ||
         (typeof local.stats?.mac_downloads === 'number' ? local.stats.mac_downloads : null),

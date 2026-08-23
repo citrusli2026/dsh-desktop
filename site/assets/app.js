@@ -4,7 +4,7 @@
    - 平台识别 CTA / 复制 / 滚动 reveal
    数据与文案字典见 ./data-model.js (纯数据层,亦被 check-site 直接导入)。
    零依赖,渐进增强。 */
-import { I18N, mergeLiveCounts, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=26'
+import { I18N, mergeLiveCounts, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=27'
 
 var REPO = 'citrusli2026/dsh-electron-shell'
 var RELEASES_URL = 'https://github.com/' + REPO + '/releases'
@@ -300,6 +300,11 @@ function bindDownloadGuide() {
         guide.classList.add('is-flash')
       }
       showDownloadToast(os)
+      // 下载引导计数:GitCode 无下载统计 API,官网只能统计"点击引导"。
+      try {
+        var source = btn.href.indexOf('gitcode.com') !== -1 ? 'gitcode' : 'github'
+        navigator.sendBeacon('/api/beacon?source=' + source + '&platform=' + os)
+      } catch (e) { /* 计数失败不影响下载 */ }
     })
   })
 }
