@@ -131,7 +131,7 @@ export var I18N = {
     'toast.firstOpenLinux': 'DEB installs on double-click; just open it after installing',
     'toast.star': 'Enjoying it? Star us on GitHub →',
     'toast.close': 'Close',
-    'dl.fallback': 'If live data fails to load, head to <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> directly.',
+    'dl.fallback': 'If live data fails to load, head to <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> or the <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode mirror</a>.',
     'dl.note': 'The CLI route works too; the shell is functionally identical but keeps its own data home at <code>~/.dsh-desktop</code> — no interference either way.',
     'qs.marker': 'QUICK START', 'qs.title': 'Start in three steps',
     'qs.s1.t': 'Download and install', 'qs.s1.b': 'Pick your OS, download the installer, and install it.',
