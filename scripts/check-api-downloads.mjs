@@ -34,8 +34,19 @@ function makeReq(method = 'GET', host = 'dsh-desktop.com') {
   return { method, headers: { host, 'x-forwarded-proto': 'https' } }
 }
 
-function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, expectTotal, expectMac, expectWin, req }) {
+function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, expectTotal, expectMac, expectWin, expectLinux, expectGitcode, req, env }) {
   const originalFetch = globalThis.fetch
+  const originalEnv = {}
+  for (const key of Object.keys(env || {})) {
+    originalEnv[key] = process.env[key]
+    process.env[key] = env[key]
+  }
+  const restoreEnv = () => {
+    for (const key of Object.keys(originalEnv)) {
+      if (originalEnv[key] === undefined) delete process.env[key]
+      else process.env[key] = originalEnv[key]
+    }
+  }
   globalThis.fetch = async (url, opts) => {
     const result = fetchImpl(String(url), opts)
     if (result && typeof result.then === 'function') return result
@@ -55,7 +66,7 @@ function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, ex
     if (res.body) {
       detail += ` source=${res.body.source} (expect ${expectSource})`
       if (typeof res.body.total_downloads === 'number') {
-        detail += ` total=${res.body.total_downloads} mac=${res.body.mac_downloads} win=${res.body.win_downloads}`
+        detail += ` total=${res.body.total_downloads} mac=${res.body.mac_downloads} win=${res.body.win_downloads} linux=${res.body.linux_downloads}`
       }
       if (res.body.assets) {
         const names = res.body.assets.map(a => a.name)
@@ -70,13 +81,19 @@ function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, ex
     const totalOk = expectTotal === undefined || res.body?.total_downloads === expectTotal
     const macOk = expectMac === undefined || res.body?.mac_downloads === expectMac
     const winOk = expectWin === undefined || res.body?.win_downloads === expectWin
-    if (!ok || (expectSource && res.body && res.body.source !== expectSource) || !totalOk || !macOk || !winOk) {
+    const linuxOk = expectLinux === undefined || res.body?.linux_downloads === expectLinux
+    const gitcodeOk = expectGitcode === undefined || res.body?.gitcode_downloads === expectGitcode
+    if (!ok || (expectSource && res.body && res.body.source !== expectSource) || !totalOk || !macOk || !winOk || !linuxOk || !gitcodeOk) {
       throw new Error(`${name} FAILED — ${detail}`)
     }
     console.log(`ok — ${name} (${detail})`)
   }).catch(err => {
     globalThis.fetch = originalFetch
+    restoreEnv()
     throw err
+  }).finally(() => {
+    globalThis.fetch = originalFetch
+    restoreEnv()
   })
 }
 
@@ -113,6 +130,37 @@ await runCase('real-time counts from GitHub tag endpoint', {
   expectTotal: 900,
   expectMac: 500,
   expectWin: 400,
+})
+
+await runCase('GitCode guidance is added to each platform total', {
+  env: {
+    UPSTASH_REDIS_REST_URL: 'https://redis.example.com',
+    UPSTASH_REDIS_REST_TOKEN: 'test-token',
+  },
+  fetchImpl(url, opts) {
+    if (dataUrl.test(url)) return { status: 200, body: releaseJson }
+    if (tagUrl.test(url)) return { status: 200, body: { assets: [] } }
+    if (listUrl.test(url)) {
+      return { status: 200, body: [
+        { draft: false, assets: [
+          { name: 'dsh-desktop-x-arm64-mac.dmg', download_count: 500 },
+          { name: 'dsh-desktop-setup-x.exe', download_count: 400 },
+          { name: 'dsh-desktop-x-amd64.deb', download_count: 50 },
+        ] },
+      ] }
+    }
+    if (url === 'https://redis.example.com/pipeline') {
+      return { status: 200, body: [{ result: '3' }, { result: '5' }, { result: '7' }] }
+    }
+    return { status: 404, body: { message: 'nope' } }
+  },
+  expectStatus: 200,
+  expectSource: 'github',
+  expectTotal: 965,
+  expectMac: 503,
+  expectWin: 405,
+  expectLinux: 57,
+  expectGitcode: 15,
 })
 
 await runCase('static fallback when GitHub tag endpoint fails', {

@@ -124,6 +124,7 @@ for (const match of html.matchAll(/data-i18n="([^"]+)"/g)) {
   requireValue(merged !== null, 'mergeLiveCounts must produce an update when counts move')
   requireValue(merged.release.assets.every(asset => asset.downloads === (data.release.assets.find(a => a.name === asset.name)?.downloads || 0) + 1), 'mergeLiveCounts must apply live per-asset counts')
   requireValue(merged.stats?.mac_downloads === 1 && merged.stats?.win_downloads === 2 && merged.stats?.linux_downloads === 3 && merged.stats?.installer_downloads === 6, 'mergeLiveCounts must apply live platform totals')
+  requireValue(mergeLiveCounts(merged, live) === null, 'mergeLiveCounts must skip an unchanged live payload')
   requireValue(mergeLiveCounts(data, { assets: [] }) === null, 'mergeLiveCounts must return null without a change')
   requireValue(mergeLiveCounts(data, null) === null, 'mergeLiveCounts must tolerate a null payload')
 }

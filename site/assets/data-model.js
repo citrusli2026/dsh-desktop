@@ -20,7 +20,7 @@ export var I18N = {
     'hero.ctaMobile': '在电脑上下载',
     'hero.secondary': '看看桌面壳做了什么 →',
     'hero.meta': '无需 Node.js',
-    'hero.downloads': '↓ {n} 次下载 · GitHub 实计 + GitCode 官网引导',
+    'hero.downloads': '↓ {n} 次下载 · GitHub + GitCode',
     'trust.local': 'Loopback 本地运行', 'trust.isolated': '默认独立数据目录',
     'trust.guarded': '沙箱与权限默认拒绝', 'trust.verifiable': '公开 CI 与真实应用测试',
     'wf.marker': '工作方式', 'wf.title': '一个桌面入口，三层可靠性',
@@ -38,7 +38,7 @@ export var I18N = {
     'ext.note': '只集成 Web 壳，不需要 Android/iOS；代理与桌面端解耦，可独立产出 Web artifact。',
     'dl.marker': '下载', 'dl.title': '选择你的平台',
     'dl.lead': '支持 macOS、Windows 和 Linux；具体以当前版本可用安装包为准。GitCode 镜像可用时与 GitHub 并列展示。',
-    'dl.total.note': '含历史版本，仅统计 GitHub 下载',
+    'dl.total.note': '含历史版本，GitHub + GitCode 官网引导',
     'dl.platformTotal': '↓ {n}',
     'dl.released': '发布于 {d}',
     'dl.new': 'NEW',
@@ -117,7 +117,7 @@ export var I18N = {
     'hero.ctaMobile': 'Download on your computer',
     'hero.secondary': 'See what the shell adds →',
     'hero.meta': 'NO NODE.JS REQUIRED',
-    'hero.downloads': '↓ {n} downloads · GitHub actual + GitCode guided',
+    'hero.downloads': '↓ {n} downloads · GitHub + GitCode',
     'trust.local': 'Loopback-only runtime', 'trust.isolated': 'Isolated data by default',
     'trust.guarded': 'Sandboxed, deny by default', 'trust.verifiable': 'Public CI and real-app tests',
     'wf.marker': 'HOW IT WORKS', 'wf.title': 'One desktop entry point. Three reliability layers.',
@@ -135,7 +135,7 @@ export var I18N = {
     'ext.note': 'Web shell only: no Android/iOS dependency. The proxy is decoupled from Electron and can ship as an independent Web artifact.',
     'dl.marker': 'DOWNLOAD', 'dl.title': 'Pick your platform',
     'dl.lead': 'Supports macOS, Windows, and Linux; see the current release list for available installers. A verified GitCode mirror appears alongside GitHub when available.',
-    'dl.total.note': 'Includes past releases; GitHub downloads only',
+    'dl.total.note': 'Includes past releases; GitHub + GitCode site guidance',
     'dl.platformTotal': '↓ {n}',
     'dl.released': 'released {d}',
     'dl.new': 'NEW',
@@ -281,11 +281,16 @@ export function mergeLiveCounts(data, live) {
   })
   var stats = data.stats ? Object.assign({}, data.stats) : {}
   if (typeof live.mac_downloads === 'number' && typeof live.win_downloads === 'number' && typeof live.total_downloads === 'number') {
+    if (stats.mac_downloads !== live.mac_downloads || stats.win_downloads !== live.win_downloads || stats.installer_downloads !== live.total_downloads) {
+      changed = true
+    }
     stats.mac_downloads = live.mac_downloads
     stats.win_downloads = live.win_downloads
-    if (typeof live.linux_downloads === 'number') stats.linux_downloads = live.linux_downloads
+    if (typeof live.linux_downloads === 'number') {
+      if (stats.linux_downloads !== live.linux_downloads) changed = true
+      stats.linux_downloads = live.linux_downloads
+    }
     stats.installer_downloads = live.total_downloads
-    changed = true
   }
   if (!changed) return null
   return Object.assign({}, data, {

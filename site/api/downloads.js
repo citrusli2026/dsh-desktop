@@ -13,7 +13,7 @@
  *      access to a specific published tag works even for prereleases).
  *   3. Static fallback: the download counts already recorded in release.json.
  * Plus POST /api/beacon site-guided click counts (GitCode has no download
- * counters in its v5 API) — merged into total_downloads only when enabled.
+ * counters in its v5 API) — merged into total and platform totals when enabled.
  *
  * Security: repo / tag are never user-controlled; no SSRF surface.
  */
@@ -110,7 +110,10 @@ async function fetchGuidedCounts() {
     const values = await res.json()
     if (!Array.isArray(values)) return null
     const get = (i) => Number(values[i]?.result) || 0
-    return get(0) + get(1) + get(2)
+    const mac = get(0)
+    const win = get(1)
+    const linux = get(2)
+    return { mac, win, linux, total: mac + win + linux }
   } catch (_) {
     return null
   }
@@ -192,27 +195,32 @@ module.exports = async function handler(req, res) {
 
     res.setHeader('Cache-Control', `public, s-maxage=${CACHE_MAX_AGE}, stale-while-revalidate=600`)
     res.setHeader('Content-Type', 'application/json')
-    const ghTotal =
-      (liveTotal && liveTotal.mac + liveTotal.win + liveTotal.linux) ||
-      (typeof local.stats?.installer_downloads === 'number' ? local.stats.installer_downloads : null)
+    const githubMac = liveTotal && typeof liveTotal.mac === 'number'
+      ? liveTotal.mac
+      : (typeof local.stats?.mac_downloads === 'number' ? local.stats.mac_downloads : null)
+    const githubWin = liveTotal && typeof liveTotal.win === 'number'
+      ? liveTotal.win
+      : (typeof local.stats?.win_downloads === 'number' ? local.stats.win_downloads : null)
+    const githubLinux = liveTotal && typeof liveTotal.linux === 'number'
+      ? liveTotal.linux
+      : (typeof local.stats?.linux_downloads === 'number' ? local.stats.linux_downloads : null)
+    const ghTotal = liveTotal && typeof liveTotal.mac === 'number' && typeof liveTotal.win === 'number' && typeof liveTotal.linux === 'number'
+      ? liveTotal.mac + liveTotal.win + liveTotal.linux
+      : (typeof local.stats?.installer_downloads === 'number' ? local.stats.installer_downloads : null)
     const guided = await fetchGuidedCounts()
+    const withGuided = (github, platform) => github !== null && guided ? github + guided[platform] : github
     res.status(200).json({
       tag: local.tag,
       generated_at: downloadsByAsset ? new Date().toISOString() : local.generated_at,
       source: downloadsByAsset ? 'github' : 'release-data',
-      total_downloads: ghTotal !== null && guided ? ghTotal + guided : ghTotal,
+      total_downloads: ghTotal !== null && guided ? ghTotal + guided.total : ghTotal,
       github_downloads: ghTotal,
-      gitcode_downloads: guided,
-      mac_downloads:
-        (liveTotal && liveTotal.mac) ||
-        (typeof local.stats?.mac_downloads === 'number' ? local.stats.mac_downloads : null),
-      win_downloads:
-        (liveTotal && liveTotal.win) ||
-        (typeof local.stats?.win_downloads === 'number' ? local.stats.win_downloads : null),
-      linux_downloads:
-        (liveTotal && liveTotal.linux) ||
-        (typeof local.stats?.linux_downloads === 'number' ? local.stats.linux_downloads : null),
-      released_versions: (liveTotal && liveTotal.releases) || local.stats?.releases || null,
+      gitcode_downloads: guided ? guided.total : null,
+      gitcode_platform_downloads: guided ? { mac: guided.mac, win: guided.win, linux: guided.linux } : null,
+      mac_downloads: withGuided(githubMac, 'mac'),
+      win_downloads: withGuided(githubWin, 'win'),
+      linux_downloads: withGuided(githubLinux, 'linux'),
+      released_versions: liveTotal && typeof liveTotal.releases === 'number' ? liveTotal.releases : (local.stats?.releases || null),
       assets,
     })
   } catch (err) {
