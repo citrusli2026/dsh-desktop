@@ -25,6 +25,9 @@ const STOP_TIMEOUT_MS = 5_000
 /** Lines kept in memory for the error page. */
 const LOG_TAIL_LINES = 40
 
+/** Web-profile flags owned by the desktop shell. */
+export const HARNESS_WEB_ARGS = ['--profile', 'web', '--no-open', '--port', '0'] as const
+
 /** Supervisor-reported lifecycle state, consumed by the window controller. */
 export type HarnessState =
   | { phase: 'starting' }
@@ -93,7 +96,7 @@ export class HarnessSupervisor {
     this.events = events
     const logDir = options.logDir ?? defaultLogDir()
     this.command = options.command ?? nodeBin()
-    this.args = options.args ?? [dshBin(), '--profile', 'web', '--port', '0']
+    this.args = options.args ?? [dshBin(), ...HARNESS_WEB_ARGS]
     const baseEnv = options.env ?? process.env
     this.dshHome = resolveDshHome(baseEnv, homedir())
     this.env = { ...baseEnv, DSH_HOME: this.dshHome }
