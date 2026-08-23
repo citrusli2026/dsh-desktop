@@ -1,0 +1,49 @@
+name: Bug report
+description: Something is broken — the app does not boot, crashes, or behaves wrongly.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before you write: check the [FAQ](https://dsh-desktop.com/#faq) — first-run
+        prompts (macOS Gatekeeper / Windows SmartScreen) and mirror questions are
+        covered there.
+  - type: input
+    id: version
+    attributes:
+      label: dsh-desktop version
+      description: Exact version from About / the release title, e.g. 0.1.1-rc.2.shell.2
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS (Apple Silicon)
+        - Windows (x64)
+        - Linux (Debian/Ubuntu/UOS/Deepin/麒麟)
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Describe expected vs actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        **Diagnostics help a lot**: Help → Export diagnostics inside the app
+        produces a report with versions, system state, and a bounded log tail
+        (secrets and home path masked). Paste the relevant part of it here.

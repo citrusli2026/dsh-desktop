@@ -1,0 +1,16 @@
+name: Feature request
+description: Something the shell needs — window/tray/updates/website behavior.
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: want
+    attributes:
+      label: What would you like?
+      description: Problem, not solution — what are you trying to do and what blocks you?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Related decisions, docs, or alternatives you considered.
