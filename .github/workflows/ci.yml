@@ -39,7 +39,7 @@ jobs:
         env:
           ELECTRON_DISABLE_SANDBOX: "1"
       - name: Electron shell E2E (native menu, locale sync, close-to-tray)
-        run: xvfb-run -a pnpm run test:e2e
+        run: xvfb-run -a node scripts/run-e2e-guarded.mjs
         env:
           ELECTRON_DISABLE_SANDBOX: "1"
       - name: Upload Electron E2E diagnostics
