@@ -63,7 +63,7 @@ bootstrap again until `audit-harness-peers: closure satisfied`.
 ### 3. Local gates
 
 ```sh
-pnpm run verify   # typecheck, 67 unit tests + coverage, site checks, build
+pnpm run verify   # typecheck, 107 unit tests + coverage, site checks, build
 ```
 
 ### 4. Sync docs and examples to the new kernel
@@ -114,7 +114,8 @@ GITCODE_TOKEN=<gitcode personal token> GITCODE_REPO=citrusli2026/dsh-electron-sh
   node scripts/mirror-gitcode.mjs v<version>
 ```
 
-Network facts (verified on shell.1): HTTP + SOCKS ports of the same Clash
+Network facts (verified on shell.1, re-verified on shell.2 — the shell.2
+mirror ran fully unaided in ~6.5 min): HTTP + SOCKS ports of the same Clash
 proxy can route differently — `curl -x http://127.0.0.1:7890` measured
 ~30 KB/s while `curl -x socks5h://127.0.0.1:7890` measured ~1 MB/s, so
 always prefer the SOCKS slot; public HTTP proxies (ghproxy.net,
@@ -227,6 +228,12 @@ GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-electron-she
 | mirror via public HTTP proxy: big files (dmg/exe) stall at 0 B or drop mid-download (observed `ghproxy.net`, `gh-proxy.com`) | GitHub assets are blocked directly; use `GH_SOCKS5=127.0.0.1:7890` (Clash SOCKS loop ~1 MB/s, verified fastest). If stuck, kill and rerun the mirror — it is idempotent; or download manually with `curl -sL -x socks5h://127.0.0.1:7890 -C -` and upload via `mirror-gitcode.mjs v<tag> <file...>` |
 | same proxy: HTTP port slow (~30 KB/s) but SOCKS port fast (~1 MB/s) | different routes per protocol port; always use the SOCKS slot (`socks5h://`) for asset downloads |
 | site-refresh fails: `SyntaxError: Identifier 'classifyPublicAsset' has already been declared` | `scripts/gen-site-data.mjs` had a duplicated local `export function classifyPublicAsset` alongside the import from `release-shape.mjs` (introduced by the architecture refactor); keep only the import, delete the local function, re-trigger the workflow |
+| packaged Windows build: `boot failed: bundled harness incomplete: node missing at ...\harness\node\bin\node.exe` | the win-x64 dist zip keeps `node.exe` at the archive root (no `bin/`); `scripts/fetch-node.mjs` now moves it to `node/bin/node.exe` after extraction — mac/linux tarballs already have `bin/node` |
+| smoke steps print `packaged smoke: OK` while the app logged a boot failure (Windows) | `app.quit()` drops `process.exitCode` as the process exit code on Windows; `quitGracefully` now forces `app.exit(code)` in `will-quit`. Never judge a gate by the script's exit code alone without a negative-path check (boot failure must exit non-zero) |
+| Windows packaged E2E: native menu stays in English after writing a zh preference | directory `fs.watch` can miss content rewrites on Windows; `ShellLocaleController` re-reads `settings.yaml` every 2s as a fallback (refresh() dedupes) |
+| deb install step: `dpkg: dependency problems prevent configuration of dsh-desktop` | `dpkg -i` never resolves Depends and the bare runner lacks libnotify4/libsecret-1-0; install with `sudo apt-get install -y ./dist/<deb>` instead |
+| `RangeError [ERR_CHILD_PROCESS_STDIO_MAXBUFFER]` from `dpkg -L` | a 160 MB install lists every file, overflowing the 1 MB cap; `smoke-installed.mjs` passes a 32 MB buffer — and selects the binary by `stat` (**regular executable**, since `dpkg -L` lists the `/opt/<app>` directory before the binary inside it) |
+| NSIS same-version overwrite (`/S` reinstall) hangs indefinitely | electron-builder replaces the install by running the existing uninstaller; on CI it never finishes (150s and 300s timeouts; zero output; the first silent install takes 4s). Deliberately out of CI scope — the deb reinstall smoke covers the overwrite logic; see test-hardening-plan A-3 |
 
 ## Exit criteria
 

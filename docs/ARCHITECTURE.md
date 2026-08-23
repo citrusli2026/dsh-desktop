@@ -4,7 +4,7 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-08-22 · 当前代码基线 `0.1.1-rc.2.shell.2`（未发布）
+最后更新: 2026-08-23 · 当前代码基线 `0.1.1-rc.2.shell.2`（已发布 2026-08-23，tag `v0.1.1-rc.2.shell.2`）
 
 ## 1. 产品概述
 
@@ -35,22 +35,45 @@ src/preload/index.ts        沙箱桥接：仅对 shell 自有页面开放窄通
 
 ## 3. 验证契约
 
-每次主分支 CI 执行:
+每次主分支 CI（ci.yml，ubuntu runner）执行:
 
 0. 依赖安全审计（官方 npm registry）;
 1. TypeScript typecheck;
-2. 67 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
-3. `site:check`（双端 release 数据、双语键与静态资源）;
-4. 主进程/预加载构建;
-5. Harness 闭包与内置 Node bootstrap;
-6. 三条 xvfb 冒烟: 正常启动、错误页重试成功、强制重试失败后按钮恢复;
-7. 真实 Electron E2E: 无标题栏拖拽区、语言同步、沙箱、close-to-tray、
-   第二实例恢复。
+2. 107 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
+3. `site:check` 与 `check-api-downloads`（双语键、静态资源与下载接口契约）;
+4. 主进程/预加载构建; Harness 闭包与内置 Node bootstrap;
+5. 三条 xvfb 冒烟: 正常启动、错误页重试成功、强制重试失败后按钮恢复;
+6. 真实 Electron E2E（`run-e2e-guarded.mjs`，9 用例）: 语言同步、托盘单实例、
+   设置面板 UI、更新检查、诊断导出、窗口几何恢复、真实第二实例、特殊路径、
+   只读 DSH_HOME。
 
-tag Release 在上述基础上再执行质量门禁，并强制:
+tag Release（release.yml: verify → build 三平台并行 → publish）在 CI 之上
+另加质量门禁，并强制:
 
-- tag 等于 `v${package.version}`;
-- macOS / Windows 从 unpacked 产物启动内置 Harness 并通过 smoke;
-- 只有 Apple Silicon DMG 与 Windows x64 EXE 两个大体积安装包;
-- 两个安装包的 SHA-256 实算匹配，且 Windows `latest.yml` 与 `.exe.blockmap`
-  齐全并引用本次 EXE; 严格拒绝其余 Release 文件。
+- verify（ubuntu runner）: 上述全部 + mobile-shell Web 产物打包 +
+  guarded E2E + tag 等于 `v${package.version}`;
+- build，三平台各执行: 打包（dmg / NSIS exe / deb）→ 打包 smoke 链 →
+  安装态冒烟 → 8 文件契约写入 → attestation → 产物上传。打包 smoke 链
+  （每平台同一套，故障注入与 UI 变体见 `scripts/smoke-packaged.mjs`）:
+  1. 基本 smoke（启动 → boot HTML）;
+  2. S2.5 真实 Harness 首屏渲染（`--smoke-ui`: boot 覆层消失、无
+     "Failed to load plugins"、存在表单控件，失败留截图）;
+  3. S1 故障注入 ×2（启动失败 → 错误页重试恢复; 强制重试失败 → 按钮恢复）;
+  4. 打包 E2E（`DSH_E2E_PACKAGED=1`，fixture 直接启动 unpacked 二进制、
+     真实 Harness 渲染、跳过 stub-only 断言，只跑 `@smoke @critical`
+     2 用例）;
+  5. 安装态冒烟（S2）：ubuntu 经 `apt-get install -y ./dist/<deb>`
+     （真实 SUID chrome-sandbox、解析依赖）→ smoke → `dpkg -i` 重装 →
+     smoke; windows NSIS `/S` 安装 → smoke → 卸载（同版本覆盖不做
+     —— 见 test-hardening-plan A-3 已知边界）; macOS 无安装器，以
+     dist 内 .app 直接冒烟;
+  6. 8 文件契约：三安装包（dmg/exe/deb）+ 三 `.sha256` + `latest.yml` +
+     `.exe.blockmap`; 校验和实算匹配、updater 元数据引用本次 exe，
+     多一个少一个都拒绝;
+- publish（仅 tag 触发）: tag→commit 解引用门禁（拒绝对齐失败）→
+  资产下载 → 8 文件契约校验 → 每安装包 attestation 验证 → release
+  创建/上传。
+
+测试硬化的规划、成本护栏与已知边界（NSIS 覆盖安装挂死、macOS dmg
+安装路径无自动化等）见 `docs/test-hardening-plan.md`; 2026-08-23
+shell.2 首次全量执行全绿，十余次波折与修复记录见 HANDOFF 二十节。

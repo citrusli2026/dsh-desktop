@@ -92,9 +92,12 @@ P0-2（独立）        P1-1（依赖 bootstrap，不依赖 P0）
 P1-3（独立）
 ```
 
-- **M1（P0 全部完成）**: 打包产物获得 UI 级 E2E + 故障注入 + Linux 安装态验证 —— 下次 release 立即受益，**建议本迭代全部合入后再发 shell.2**
-- **M2（P1 完成）**: E2E 覆盖密度达标（≥6 用例，含真实 harness）
-- **M3（P2 视情）**: verify:full 落地；其余评估归档
+- **M1（P0 全部完成）**: 打包产物获得 UI 级 E2E + 故障注入 + Linux 安装态验证 ——
+  **2026-08-23 全部合入并随 shell.2 首次全量执行，全绿**（见 HANDOFF 二十节）
+- **M2（P1 完成）**: E2E 覆盖密度达标（≥6 用例，含真实 harness）——已达成
+  （dev E2E 9 用例 + 打包 E2E 2 用例）
+- **M3（P2 视情）**: verify:full 落地——`pnpm run verify:full` 已添加；
+  P2-1 评估后跳过（见 §8 第 5 条）
 
 ## 5. 风险与回退
 
@@ -103,7 +106,7 @@ P1-3（独立）
 | Playwright 对打包产物启动不稳定（路径/权限差异） | 中 | 复用 smoke-packaged.mjs 已验证的定位逻辑；失败有 trace/screenshot 诊断（playwright.config.ts:16-17） |
 | 真实 harness E2E 受外部闭包影响变慢/抖动 | 中 | bootstrap 已在 CI 固化；@slow + retry=1；回退为仅 CI 跑、本地可选 |
 | Linux dpkg 安装需要 root | 低 | ubuntu runner 自带 sudo，无额外权限问题 |
-| 迭代周期拉长延误 shell.1 发布 | 低 | 测试代码不触碰产品代码，可独立合入；shell.1 已于 2026-08-22 发布，本迭代面向 shell.2 |
+| 迭代周期拉长延误发布 | 低 | 测试代码不触碰产品代码，可独立合入；本迭代已随 shell.2（2026-08-23）发布 |
 
 ## 6. 验收矩阵（现在 vs 目标）
 
@@ -139,7 +142,8 @@ P1-3（独立）
 3. **S3（作者成本主力，~1 天）**：P1-2 stub 4 用例扩展（设置面板/更新检查/诊断导出/窗口状态）
 4. **S4（谨慎，先侦察再立项）**：P1-1 真实 harness——先本地跑真 harness 抓 DOM 定断言（data-slot 已证伪），只做 1 个 @slow 用例（boot + root slot + 输入区）；若上游 DOM 不稳直接放弃，把"首屏文本 + boot 标记"并入 smoke 而非 E2E
 5. **P2-1 结论**：P0-1 生效后 dmg 内部结构风险已由打包 E2E 覆盖，**跳过**并在此记录。
-6. 全部合入后 `version.mjs bump shell` → shell.2 发布验证矩阵全绿。
+6. 全部合入后 `version.mjs bump shell` → shell.2：2026-08-23 发布，验证矩阵全绿
+   （run 32613297135，11m13s）。
 
 ## 9. 执行状态（2026-08-22）
 
@@ -148,11 +152,15 @@ P1-3（独立）
 | S1-P0-1 打包 E2E | ✅ 已实现并本地验证 | `DSH_E2E_PACKAGED=1`（fixture 直接启动 unpacked 二进制，真实 Harness 渲染，跳过 stub-only 断言）；`scripts/e2e-packaged.mjs` 跨平台设置 env；release.yml 门禁只跑 `@smoke`（2 用例均已打标）；mac 本地 2/2 通过 |
 | S1-P0-3 故障注入 | ✅ 已实现并本地验证 | `smoke-packaged.mjs` 原已透传 env（spawn 全量 process.env），release.yml 增加 2 变体 × 3 平台步骤；mac 本地 fail-harness 与 retry-recovery 均 OK |
 | S1-P2-2 verify:full | ✅ 已添加 | `pnpm run verify:full` = verify + dev E2E + dist:dir + 两种打包 smoke |
-| S2-P0-2 deb 安装态 | ✅ 脚本已实现 | `scripts/smoke-installed.mjs dpkg`（真实 sandbox，不带 --no-sandbox）+ release.yml ubuntu 步骤；**首次实测在 next release**（mac 无法交叉构建 deb） |
+| S2-P0-2 deb 安装态 | ✅ 实测通过 | `scripts/smoke-installed.mjs dpkg`（真实 sandbox，不带 --no-sandbox）+ release.yml ubuntu 步骤；shell.2 全量执行通过（apt 装依赖、首装+重装双冒烟） |
 | S2-P1-3 NSIS 安装态 | ✅ | `scripts/smoke-installed.mjs nsis dist`（/S 静默安装 → smoke → 卸载）；shell.2 实测通过；同版本覆盖见 A-3 已知边界 |
 | S2.5 打包产物真实 Harness 首屏渲染 | ✅ 已实现并本地验证 | `--smoke-ui` 旗标 + `smokeUiRender`（boot 覆层消失 + 无 "Failed to load plugins" + 存在表单控件 + 失败截图）；mac 打包产物实测 `smoke-ui: OK — real Harness UI rendered` |
 
-> 下一次发版（shell.2 或补丁）即由 release.yml 全量执行：ubuntu deb 安装态 / Windows NSIS 安装态两个步骤为首次在 CI 实测，若失败优先排查 electron-builder 默认 postinst 与 NSIS `/D` 路径，而非回退验证目标。
+> shell.2（2026-08-23）已由 release.yml 全量执行并全部通过。实测中遇到并已
+> 修复：deb 依赖需 `apt-get install`（裸 runner 缺 libnotify4/libsecret-1-0）、
+> `dpkg -L` 输出超 execFile 默认 1MB 缓冲、`dpkg -L` 目录候选先于二进制
+> （EACCES）、NSIS 同版本覆盖安装确定性挂死（降级为已知边界）。后续新增
+> 同类安装态步骤时注意这四处；完整波折与耗时见 HANDOFF 二十节。
 
 ### A 组（验证缺口补漏，2026-08-22 完成）
 

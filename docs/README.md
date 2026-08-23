@@ -13,6 +13,7 @@
 | `docs/ARCHITECTURE.md` | 产品架构、源码职责、验证契约 | 架构或门禁变化时 |
 | `docs/decisions/README.md` | ADR 索引 | 新增决策记录时 |
 | `docs/test-hardening-plan.md` | 测试完善迭代规划（v0.1.1-rc.2.shell.2，P0/P1/P2 工作项） | 测试门禁变化或迭代推进时 |
+| `CONTEXT.md` | 领域词汇与单上下文入口（agent 快速对齐） | 术语或概念变化时 |
 | `site/README.md` | 官网维护与部署 | 官网结构或部署方式变化时 |
 
 ## 版本术语
@@ -35,7 +36,7 @@
 
 - 所有 Markdown 本地链接有效。
 - 全库搜索 `shell.<N>` 时，文档中的"当前 / 最新"只能有一个版本口径。
-- 发布资产口径统一：GitHub 严格 6 个文件（两个安装包 + 两个 `.sha256` + `latest.yml` + `.exe.blockmap`）；GitCode 只镜像前 4 个。
+- 发布资产口径统一：GitHub 严格 8 个文件（三个安装包 + 三个 `.sha256` + `latest.yml` + `.exe.blockmap`）；GitCode 只镜像其中 6 个（三个安装包 + 三个 `.sha256`）。
 - 不提交硬编码本机绝对路径（如 `/Users/...`）。
 - 中英 README 的功能、下载、开发章节保持同步。
 

@@ -22,7 +22,7 @@ An Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/
 
 ## Versioning
 
-Version and tag are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.1-rc.2.shell.3` bundles `@deepseek-ai/dsh` 0.1.1-rc.2 at shell revision 3. `scripts/version.mjs` owns the version field (`show` / `check` / `bump`); a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically (decision 0009).
+Version and tag are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.1-rc.2.shell.2` bundles `@deepseek-ai/dsh` 0.1.1-rc.2 at shell revision 2. `scripts/version.mjs` owns the version field (`show` / `check` / `bump`); a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically (decision 0009).
 
 CI and Release consume the mobile-shell Web artifact from the immutable upstream tag `v1.0.0`; update that pin only as an explicit compatibility change.
 
@@ -34,13 +34,19 @@ Get the installer for your platform from [GitHub Releases](https://github.com/ci
 |---|---|
 | macOS (Apple Silicon only, unsigned) | `dsh-desktop-<version>-arm64-mac.dmg` |
 | Windows | `dsh-desktop-setup-<version>.exe` (NSIS) |
+| Linux | `dsh-desktop-<version>-amd64.deb` (Debian/Ubuntu/UOS/Deepin/麒麟) |
 
 - macOS: right-click → Open on first launch (unsigned, decision 0004);
 - Windows SmartScreen: choose "More info" → "Run anyway" (unsigned).
-- Each installer has a sibling `<installer>.sha256` file, so the user-facing
-  surface is at most four assets. The only other release files are the small
-  `latest.yml` and Windows `.exe.blockmap` required by in-place updates; no ZIP
-  or Linux package is published (decision 0016).
+- Linux: double-click the deb; on a minimal install let apt resolve the
+  runtime libraries — `sudo apt-get install -y ./dsh-desktop-<version>-amd64.deb`.
+- Every installer ships with a sibling `<installer>.sha256` checksum file,
+  so a release holds 3 installers + 3 checksums + `latest.yml` +
+  `.exe.blockmap` (the two small Windows updater files) = 8 files. The
+  Linux deb was added after decision 0016 (which predates the Linux
+  format) as the single Linux delivery format: it covers Debian,
+  Ubuntu, UOS, Deepin, and 麒麟 with one double-click install (decision
+  0017). No ZIP or AppImage is published.
 
 ### If macOS still refuses to open
 

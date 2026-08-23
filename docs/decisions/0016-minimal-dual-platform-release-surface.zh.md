@@ -1,7 +1,7 @@
 # 0016:最小双端发布面
 
 - 日期:2026-08-15
-- 状态:已接受
+- 状态:已接受(关于 Linux 的结论部分被 0017 取代——deb 现为唯一 Linux 格式)
 - English:[0016](0016-minimal-dual-platform-release-surface.md)
 
 ## 背景

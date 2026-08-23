@@ -1,7 +1,7 @@
 # 0016: Minimal dual-platform release surface
 
 - Date: 2026-08-15
-- Status: accepted
+- Status: accepted (partially superseded by 0017 for the Linux points — the deb is now the sole Linux format)
 - 中文:[0016](0016-minimal-dual-platform-release-surface.zh.md)
 
 ## Context

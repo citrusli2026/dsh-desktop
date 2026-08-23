@@ -32,8 +32,8 @@
 
 ## 版本号
 
-版本号与 tag 为复合式:`<dsh 版本>.shell.<壳修订号>`——如 `0.1.1-rc.2.shell.3`
-表示打包 `@deepseek-ai/dsh` 0.1.1-rc.2、壳第 3 次修订。版本字段由
+版本号与 tag 为复合式:`<dsh 版本>.shell.<壳修订号>`——如 `0.1.1-rc.2.shell.2`
+表示打包 `@deepseek-ai/dsh` 0.1.1-rc.2、壳第 2 次修订。版本字段由
 `scripts/version.mjs` 统一管理(`show` / `check` / `bump`);`dsh-watch`
 工作流每日检查上游 npm,发现新版自动开经验证的 bump PR(决策记录 0009)。
 CI 与 Release 使用 mobile-shell 上游不可变 tag `v1.0.0` 的 Web 产物;只有经过兼容性变更评估后才更新该 pin。
@@ -46,12 +46,17 @@ CI 与 Release 使用 mobile-shell 上游不可变 tag `v1.0.0` 的 Web 产物;�
 |---|---|
 | macOS(仅 Apple Silicon,未签名) | `dsh-desktop-<版本>-arm64-mac.dmg` |
 | Windows | `dsh-desktop-setup-<版本>.exe`(NSIS,可选择安装目录) |
+| Linux | `dsh-desktop-<版本>-amd64.deb`(Debian/Ubuntu/UOS/Deepin/麒麟) |
 
 - macOS:首次打开请右键 → 打开(未签名,决策记录 0004);
 - Windows SmartScreen:点「更多信息」→「仍要运行」(未签名)。
-- 每个安装包都有同名 `<安装包>.sha256` 文件,因此面向用户最多展示四个资产。
-  Release 仅额外保留 Windows 原地更新所需的小型 `latest.yml` 与
-  `.exe.blockmap`;不发布 ZIP 或 Linux 包(决策 0016)。
+- Linux:双击安装 deb;极简系统可用
+  `sudo apt-get install -y ./dsh-desktop-<版本>-amd64.deb` 让 apt 自动解析运行库。
+- 每个安装包都有同名 `<安装包>.sha256` 校验文件,因此一个 Release 共
+  8 个文件:3 个安装包 + 3 个校验文件 + Windows 原地更新所需的
+  `latest.yml` 与 `.exe.blockmap`。Linux deb 是在决策 0016(发布
+  Linux 格式之前)之后新增的唯一 Linux 交付格式:一个双击安装覆盖
+  Debian/Ubuntu/UOS/Deepin/麒麟(决策 0017);不发布 ZIP 或 AppImage。
 
 ### macOS 仍然无法打开
 
