@@ -7,6 +7,7 @@ export var I18N = {
   zh: {
     'a11y.skip': '跳到主要内容',
     'a11y.menuOpen': '打开导航', 'a11y.menuClose': '关闭导航',
+    'a11y.langToggle': '切换语言',
       'brand.community': '社区版',
     'nav.workflow': '工作方式', 'nav.features': '特性', 'nav.version': '版本号', 'nav.faq': '常见问题', 'nav.cta': '立即下载',
     'hero.h1': '把 DeepSeek Harness<br />变成可靠的 <em>桌面工作台</em>。',
@@ -98,6 +99,7 @@ export var I18N = {
   en: {
     'a11y.skip': 'Skip to main content',
     'a11y.menuOpen': 'Open menu', 'a11y.menuClose': 'Close menu',
+    'a11y.langToggle': 'Switch language',
     'brand.community': 'COMMUNITY EDITION',
     'nav.workflow': 'HOW IT WORKS', 'nav.features': 'FEATURES', 'nav.version': 'VERSIONING', 'nav.faq': 'FAQ', 'nav.cta': 'Download',
     'hero.h1': 'DeepSeek Harness,<br />as a dependable <em>desktop workspace</em>.',

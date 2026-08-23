@@ -376,6 +376,11 @@ function applyLang() {
   })
   fillFaqVersion()
   $('#lang-toggle').textContent = lang === 'zh' ? 'EN' : '中'
+  var lt = $('#lang-toggle')
+  if (lt) {
+    lt.setAttribute('aria-label', t('a11y.langToggle'))
+    lt.setAttribute('title', t('a11y.langToggle'))
+  }
   var mbtn = $('#menu-toggle')
   if (mbtn) {
     var mlabel = t(mbtn.classList.contains('is-open') ? 'a11y.menuClose' : 'a11y.menuOpen')
