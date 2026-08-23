@@ -343,7 +343,7 @@ a { color: inherit; }
 .subhead { font-size: 16px; color: var(--muted); max-width: 640px; margin-bottom: 30px; }
 .cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 26px; }
 .hero__social {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 0;
   margin: 0 0 24px;
   padding: 6px 14px;
   border: 1px solid var(--border-strong); border-radius: 100px;
