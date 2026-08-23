@@ -18,6 +18,9 @@ import { spawn } from 'node:child_process'
 import { SMOKE_EXIT_OK, SMOKE_FLAG } from '../src/main/smoke-protocol.ts'
 
 const execFileP = promisify(execFile)
+// dpkg -L lists every file of the 160 MB Electron install; the default 1 MB
+// stdout cap truncates it and aborts the smoke before the app ever runs.
+const BIG_BUFFER = { maxBuffer: 32 * 1024 * 1024 }
 const method = process.argv[2]
 const reinstall = process.argv.includes('--reinstall')
 
@@ -58,7 +61,7 @@ async function smokeRun(executable) {
 }
 
 if (method === 'dpkg') {
-  const { stdout } = await execFileP('dpkg', ['-L', 'dsh-desktop'])
+  const { stdout } = await execFileP('dpkg', ['-L', 'dsh-desktop'], BIG_BUFFER)
   const candidates = stdout.split('\n').filter(line => line.endsWith('/dsh-desktop'))
   if (candidates.length === 0) throw new Error('dpkg: installed binary not found via dpkg -L dsh-desktop')
   await smokeRun(candidates[0])
