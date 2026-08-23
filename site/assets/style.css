@@ -238,7 +238,7 @@ a { color: inherit; }
   white-space: nowrap;
   transition: color 0.15s ease;
 }
-.topbar__nav a:hover { color: var(--signal-deep); background: var(--hover-glass); }
+.topbar__nav a:hover, .topbar__nav a.active { color: var(--signal-deep); background: var(--hover-glass); }
 .topbar__right { display: flex; align-items: center; gap: 12px; }
 .lang-toggle, .theme-toggle {
   font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em;
@@ -682,7 +682,7 @@ a { color: inherit; }
     padding: 12px 10px; border-radius: 10px;
     transition: color 0.15s ease;
   }
-  .topbar__nav a:hover { color: var(--signal-deep); background: var(--hover-glass); }
+  .topbar__nav a:hover, .topbar__nav a.active { color: var(--signal-deep); background: var(--hover-glass); }
   .nav-download, .nav-gh { display: block; }
   .footer__grid { grid-template-columns: 1fr; }
   .footer__sync { text-align: left; }

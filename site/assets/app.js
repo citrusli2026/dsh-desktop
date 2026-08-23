@@ -435,6 +435,33 @@ function bindMenuToggle() {
   })
 }
 
+/* 单页导航:滚动时高亮当前章节(固定顶栏下方的一条侦测带),并标记
+   aria-current 供屏幕阅读器。 */
+function bindSectionSpy() {
+  var links = $all('.topbar__nav a[href^="#"]')
+  if (!links.length || !('IntersectionObserver' in window)) return
+  var byHref = {}
+  links.forEach(function (a) { byHref[a.getAttribute('href')] = a })
+  var spy = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return
+      $all('.topbar__nav a.active').forEach(function (a) {
+        a.classList.remove('active')
+        a.removeAttribute('aria-current')
+      })
+      var link = byHref['#' + e.target.id]
+      if (link) {
+        link.classList.add('active')
+        link.setAttribute('aria-current', 'location')
+      }
+    })
+  }, { rootMargin: '-72px 0px -72% 0px', threshold: 0 })
+  ;['workflow', 'download', 'features', 'faq'].forEach(function (id) {
+    var el = document.getElementById(id)
+    if (el) spy.observe(el)
+  })
+}
+
 /* ══ 启动 ══════════════════════════════════════════ */
 bindReveal()
 bindLangToggle()
