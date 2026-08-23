@@ -4,9 +4,10 @@
  * suite already printed its summary (observed on Linux CI: the diagnostics
  * case's app close() never resolves; SIGKILL leaves the worker waiting on
  * its own child bookkeeping). The tests themselves are green — the hang is
- * runner-exit plumbing, so this wrapper watches the summary line and then
- * hard-kills the whole process tree, exiting with the parsed result.
- * Child output is teed to stdout (GitHub step log) and a local file.
+ * runner-exit plumbing. This wrapper decides the result from the suite
+ * summary ("N passed / N failed") instead of the process exit code and
+ * hard-kills the whole tree when Playwright does not exit by itself.
+ * Child output is teed to stdout (step log) and a local file.
  *
  * Usage: node scripts/run-e2e-guarded.mjs [--grep tag]
  */
@@ -29,9 +30,18 @@ function tee(chunk) {
 child.stdout.on('data', tee)
 child.stderr.on('data', tee)
 
+/** Null when no summary yet; 0 = pass, 1 = real test failure. */
+function decide() {
+  const failed = buffered.match(/^\s*([0-9]+) failed/m)
+  if (failed !== null && Number(failed[1]) > 0) return 1
+  const passed = buffered.match(/^\s*([0-9]+) passed \(/m)
+  if (passed !== null) return 0
+  return null
+}
+
 let finished = false
 function finish(code) {
-  if (finished) return
+  if (finished || typeof code !== 'number') return
   finished = true
   setTimeout(() => {
     try {
@@ -50,24 +60,26 @@ function finish(code) {
   }, 2_000)
 }
 
-// Parse the suite summary as soon as either marker is printed.
-setInterval(() => {
-  const failedMatch = buffered.match(/^\s*([0-9]+) failed/m)
-  const passedMatch = buffered.match(/^\s*([0-9]+) passed \(/m)
-  if (failedMatch !== null) {
-    finish(Number(failedMatch[1]) > 0 ? 1 : 0)
-  } else if (passedMatch !== null) {
-    finish(0)
+const poll = setInterval(() => {
+  const verdict = decide()
+  if (verdict !== null) {
+    clearInterval(poll)
+    finish(verdict)
   }
 }, 1_000)
 
 child.once('error', error => {
   console.error(`run-e2e-guarded: spawn failed: ${error.message}`)
+  clearInterval(poll)
   process.exit(1)
 })
 child.once('exit', code => {
-  // Playwright exited on its own — no hang: trust its code.
-  process.exit(code ?? 1)
+  if (finished) return
+  clearInterval(poll)
+  finished = true
+  const verdict = decide()
+  logStream.end()
+  process.exit(verdict !== null ? verdict : (code ?? 1))
 })
 
 // Safety net: never let CI hang past 15 minutes.
