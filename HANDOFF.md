@@ -8,13 +8,13 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.2`（已发布 2026-08-23；内核 0.1.1-rc.2 未变，壳修订 +2） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.2`（2026-08-23，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.3`（已发布 2026-08-23；内核 0.1.1-rc.2 未变，壳修订 +3） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.3`（2026-08-23，三端 dmg/exe/deb；AppImage 已整体移除） |
 | 本地门禁 | ✅ 108 项单测、类型检查、官网门禁、构建通过 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.2 Release 严格 8 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.2`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.2 GitCode 镜像：dmg/exe/deb + 3×sha256（2026-08-23 本机 SOCKS5 下载 + 直传，匿名 Range GET 6×206） |
-| 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.3 Release 严格 8 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.3`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.3 GitCode 镜像：dmg/exe/deb + 3×sha256（2026-08-23 本机 SOCKS5 下载 + 直传，匿名 Range GET 6/6） |
+| 实时下载统计 | ✅ `/api/downloads` 优先读取同站 `release.json` 并通过 GitHub tag 端点实时计数；shell.3 发布后线上验证 200，累计 161（mac 60 / win 87 / linux 14） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -580,6 +580,36 @@ main 提交并准备推送：
 
 本轮提交序列：`500df7f`、`d4de9a7`、`5f728d7`、`4edaa8d`、`29c2cbc`、
 `127ec34`、`245dd29`，随后追加本 HANDOFF 更新提交。
+
+---
+
+## 二十二、v0.1.1-rc.2.shell.3 发布（2026-08-23）
+
+1. **版本与本地门禁**：上游检查确认 `@deepseek-ai/dsh 0.1.1-rc.2` 仍为
+   最新版本，本次执行 `version.mjs bump shell` 升至
+   `0.1.1-rc.2.shell.3`；重新部署 Harness 闭包并通过 peer 审计，暂存
+   Node v22.23.2。`pnpm run verify` 全绿：108 项单测、覆盖率、类型检查、
+   官网/API 门禁与构建均通过。
+2. **发布**：tag `v0.1.1-rc.2.shell.3` → `78c504c`（peeled commit 已核对）；
+   Release run `32645869254` 成功，verify、macOS/Windows/Linux build、
+   packaged smoke、安装态测试、8 文件契约与三平台 attestation 全部通过；
+   GitHub Release 于 `2026-08-23T14:49:44Z` 发布。
+3. **GitCode 镜像**：`mirror-gitcode.mjs` 经本机 SOCKS5 下载并直传
+   dmg/exe/deb + 3×sha256，三个大文件和三个校验文件均在 attempt 1/3
+   上传成功；全程约 24 分钟，最终 `--check-only` 与匿名 Range GET 均为
+   6/6 present。
+4. **网站数据**：Site Data Refresh run `32646635012` 成功；机器人先吸收
+   定时任务的 shell.2 计数提交 `5a62f64`，镜像稳定后提交 `c2c4fa1`
+   刷新为 shell.3。静态 stats 为 152（mac 59 / win 82 / linux 11）；
+   线上 `/api/downloads` 实时计数为 161（mac 60 / win 87 / linux 14）。
+
+发布元数据：
+
+- Release run `32645869254`（成功）；Site Data Refresh run `32646635012`
+  （成功）。
+- GitHub Release：<https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.1-rc.2.shell.3>。
+- 线上验证：`/data/release.json` 指向 `v0.1.1-rc.2.shell.3`，6 个资产
+  `gitcode_ok=true`，`/api/downloads` 返回 200 且实时计数可用。
 
 ---
 
