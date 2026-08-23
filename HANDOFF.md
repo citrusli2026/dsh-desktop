@@ -506,7 +506,7 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
    | A6 | efbb571 | 10m37s | verify 首次过；构建暴露 win node 布局 + deb 缺依赖 |
    | A7 | 9d99690 | 7m03s | 又暴露 win 菜单 locale watcher 失效 + dpkg -L maxBuffer |
    | A8 | c5ef75a | 10m11s | 又暴露 dpkg 候选选到目录（EACCES）+ NSIS 重装挂死 |
-   | A9 | c27cc50 | ~15m | 仅剩 NSIS 重装（300s 超时确认确定性挂死） |
+   | A9 | c27cc50 | 13m49s | 仅剩 NSIS 重装（300s 超时确认确定性挂死） |
    | A10 | ecb9923 | 11m13s | **全绿**（去掉 NSIS 覆盖重装后） |
 
 4. **瓶颈分析（按用户要求以时间切入）**：
