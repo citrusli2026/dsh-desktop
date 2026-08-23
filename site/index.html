@@ -3,14 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>dsh-desktop — DeepSeek Harness 桌面壳 · 下载</title>
-<meta name="description" content="dsh-desktop：社区维护的 DeepSeek Harness 桌面封装，官方 WebUI 打开即用。每版发布 macOS、Windows 与 Linux 三平台安装包。" />
-<meta property="og:title" content="dsh-desktop — DeepSeek Harness 桌面壳" />
-<meta property="og:description" content="社区维护的 DeepSeek Harness 桌面版：官方 WebUI 的桌面封装，打开即用。每版发布 macOS、Windows 与 Linux 三平台安装包。" />
+<title>DSH Desktop｜DeepSeek Harness 桌面端下载 - Windows、macOS、Linux</title>
+<meta name="description" content="DSH Desktop 是 DeepSeek Harness 的社区桌面版。无需安装 Node.js，支持 Windows、macOS 和 Linux，下载后即可运行本地 Agent 工作台。" />
+<meta name="google-site-verification" content="0NO32QsuJviivUirAXGOcVgj2knN_m5NCus7GpE-ZXg" />
+<meta property="og:site_name" content="DSH Desktop" />
+<meta property="og:title" content="DSH Desktop｜DeepSeek Harness 桌面端" />
+<meta property="og:description" content="DeepSeek Harness 的社区桌面版：无需 Node.js，支持 Windows、macOS 和 Linux，下载后即可运行。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://dsh-desktop.com/" />
 <meta property="og:image" content="https://dsh-desktop.com/assets/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="DSH Desktop｜DeepSeek Harness 桌面端" />
+<meta name="twitter:description" content="DeepSeek Harness 的社区桌面版：无需 Node.js，支持 Windows、macOS 和 Linux，下载后即可运行。" />
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9f8f8" />
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c0f16" />
 <meta name="color-scheme" content="light dark" />
@@ -31,10 +35,48 @@
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 <link rel="canonical" href="https://dsh-desktop.com/" />
+<link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/" />
+<link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/" />
+<link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
 <link rel="stylesheet" href="/assets/style.css?v=28" />
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"dsh-desktop","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","isAccessibleForFree":true,"license":"https://opensource.org/license/mit","url":"https://dsh-desktop.com/","downloadUrl":"https://github.com/citrusli2026/dsh-electron-shell/releases"}</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://dsh-desktop.com/#website",
+      "name": "DSH Desktop",
+      "alternateName": ["dsh-desktop", "DeepSeek Harness Desktop"],
+      "url": "https://dsh-desktop.com/"
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://dsh-desktop.com/#organization",
+      "name": "DSH Desktop contributors",
+      "url": "https://dsh-desktop.com/",
+      "logo": "https://dsh-desktop.com/assets/favicon.svg",
+      "sameAs": ["https://github.com/citrusli2026/dsh-electron-shell"]
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://dsh-desktop.com/#software",
+      "name": "DSH Desktop",
+      "description": "DeepSeek Harness 的社区桌面版，无需安装 Node.js 即可运行。",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": ["Windows", "macOS", "Linux"],
+      "isAccessibleForFree": true,
+      "license": "https://opensource.org/license/mit",
+      "url": "https://dsh-desktop.com/",
+      "downloadUrl": "https://dsh-desktop.com/download/",
+      "sameAs": ["https://github.com/citrusli2026/dsh-electron-shell"],
+      "publisher": {"@id": "https://dsh-desktop.com/#organization"}
+    }
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -76,7 +118,7 @@
     <div class="hero__grid" aria-hidden="true"></div>
     <div class="wrap hero__inner">
       <div class="hero__copy" data-reveal>
-        <h1 class="headline" data-i18n="hero.h1">把 DeepSeek Harness<br />变成可靠的 <em>桌面工作台</em>。</h1>
+        <h1 class="headline" data-i18n="hero.h1">DeepSeek Harness<br />桌面版，可靠的 <em>本地工作台</em>。</h1>
         <p class="subhead" data-i18n="hero.sub">官方 WebUI 的桌面封装，打开即用。零配置启动、独立数据空间、崩溃自愈——只增强桌面体验，不改写 Harness 行为。</p>
         <div class="cta-row">
           <a class="btn btn--primary btn--glow" id="cta-primary" href="#download" data-i18n="hero.cta">下载桌面版</a>
@@ -142,7 +184,7 @@
     <div class="wrap">
       <p class="sec-marker" data-reveal>02 / <span data-i18n="dl.marker">下载</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="dl.title">选择你的平台</h2>
-      <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">每个版本发布 macOS、Windows 与 Linux 三个平台的安装包。GitCode 镜像可用时与 GitHub 并列展示。</p>
+        <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">支持 macOS、Windows 和 Linux；具体以当前版本可用安装包为准。GitCode 镜像可用时与 GitHub 并列展示。</p>
 
       <div class="panel" data-reveal style="--i:3">
         <span class="tick tick--tl" aria-hidden="true"></span><span class="tick tick--tr" aria-hidden="true"></span>
@@ -327,7 +369,7 @@
   </div>
 </footer>
 
-<script type="module" src="/assets/app.js?v=28"></script>
+<script type="module" src="/assets/app.js?v=29"></script>
 
 <!-- 下载后提示(校验方式 + 未签名处理 + GitHub Star 邀请),由 app.js 填充 -->
 <div class="download-toast" id="download-toast" role="status" aria-live="polite" hidden></div>

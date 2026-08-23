@@ -4,7 +4,7 @@
    - 平台识别 CTA / 复制 / 滚动 reveal
    数据与文案字典见 ./data-model.js (纯数据层,亦被 check-site 直接导入)。
    零依赖,渐进增强。 */
-import { I18N, mergeLiveCounts, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=28'
+import { I18N, mergeLiveCounts, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=29'
 
 var REPO = 'citrusli2026/dsh-electron-shell'
 var RELEASES_URL = 'https://github.com/' + REPO + '/releases'
@@ -373,9 +373,17 @@ function bindReveal() {
 /* ══ 语言切换 ══════════════════════════════════════ */
 function applyLang() {
   document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
-  document.title = lang === 'zh'
-    ? 'dsh-desktop — DeepSeek Harness 桌面壳 · 下载'
-    : 'dsh-desktop — DeepSeek Harness desktop shell · Download'
+  document.title = t('seo.title')
+  var description = document.querySelector('meta[name="description"]')
+  var ogTitle = document.querySelector('meta[property="og:title"]')
+  var ogDescription = document.querySelector('meta[property="og:description"]')
+  var twitterTitle = document.querySelector('meta[name="twitter:title"]')
+  var twitterDescription = document.querySelector('meta[name="twitter:description"]')
+  if (description) description.content = t('seo.description')
+  if (ogTitle) ogTitle.content = t('seo.ogTitle')
+  if (ogDescription) ogDescription.content = t('seo.ogDescription')
+  if (twitterTitle) twitterTitle.content = t('seo.ogTitle')
+  if (twitterDescription) twitterDescription.content = t('seo.ogDescription')
   $all('[data-i18n]').forEach(function (el) {
     var key = el.getAttribute('data-i18n')
     if (I18N[lang][key] !== undefined) el.innerHTML = I18N[lang][key]
