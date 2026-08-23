@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DSH Desktop 常见问题｜DeepSeek Harness 桌面版 FAQ</title>
+<meta name="description" content="DSH Desktop 常见问题：是否官方产品、是否需要 Node.js、配置是否共享、macOS 和 Windows 首次启动如何处理，以及如何校验安装包。" />
+<meta property="og:site_name" content="DSH Desktop" />
+<meta property="og:title" content="DSH Desktop 常见问题｜DeepSeek Harness 桌面版 FAQ" />
+<meta property="og:description" content="关于 DSH Desktop 安装、配置、平台支持和安全校验的常见问题。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://dsh-desktop.com/docs/faq" />
+<meta property="og:image" content="https://dsh-desktop.com/assets/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://dsh-desktop.com/docs/faq" />
+<link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/docs/faq" />
+<link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/docs/faq" />
+<link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/docs/faq" />
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/assets/style.css?v=28" />
+<link rel="stylesheet" href="/assets/seo.css?v=1" />
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop 常见问题","url":"https://dsh-desktop.com/docs/faq","isPartOf":{"@id":"https://dsh-desktop.com/#website"}}</script>
+</head>
+<body>
+<header class="topbar"><a class="topbar__brand" href="/"><img src="/assets/favicon.svg" alt="" width="20" height="20" /><span>dsh-desktop</span><span class="community-tag">社区版</span></a><nav class="topbar__nav" aria-label="页面导航"><a href="/download">下载</a><a href="/docs/install">安装指南</a><a href="/docs/faq">常见问题</a><a href="/en/docs/faq">EN</a></nav><div class="topbar__right"><a class="gh-chip" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a><a class="btn btn--primary btn--sm" href="/download">立即下载</a></div></header>
+<main class="seo-page"><div class="wrap seo-article">
+  <nav class="seo-breadcrumb" aria-label="面包屑"><a href="/">DSH Desktop</a><span>/</span><span>常见问题</span></nav>
+  <p class="sec-marker">FAQ / 常见问题</p>
+  <h1>DSH Desktop 常见问题</h1>
+  <p class="seo-lead">这里集中回答 DeepSeek Harness 桌面版的安装、平台支持、配置目录和首次启动问题。</p>
+
+  <details open><summary>DSH Desktop 是 DeepSeek 官方产品吗？</summary><p>不是。它是社区维护的桌面封装项目，与 DeepSeek AI 没有隶属、授权或合作关系。DeepSeek Harness 及其依赖遵循各自的上游许可和商标政策。</p></details>
+  <details open><summary>需要安装 Node.js 或运行命令行吗？</summary><p>发布版内置锁定的 Node.js 运行时和 Harness 依赖，普通用户不需要另行安装 Node.js，也不需要先运行 <code>npx @deepseek-ai/dsh web</code>。</p></details>
+  <details><summary>桌面版会读取命令行的配置吗？</summary><p>默认不会。桌面版使用 <code>~/.dsh-desktop</code>，命令行通常使用 <code>~/.dsh</code>。如果需要共享，可以设置 <code>DSH_HOME=~/.dsh</code>，建议先备份。</p></details>
+  <details><summary>macOS 提示无法验证开发者怎么办？</summary><p>当前 macOS 构建可能未经过 Apple 公证。确认安装包来自公开 Release 后，在 Finder 中右键应用选择“打开”。不要从不明来源下载或执行来路不明的终端命令。</p></details>
+  <details><summary>Windows SmartScreen 拦截怎么办？</summary><p>当前 Windows 安装包可能未购买商业代码签名证书。确认来源和校验值后，点击“更多信息 → 仍要运行”。如果不确定文件来源，请停止安装并在 GitHub 仓库提交问题。</p></details>
+  <details><summary>Linux 支持哪些系统？</summary><p>当前提供 amd64 Debian 包，面向 Debian、Ubuntu、UOS、Deepin 和麒麟等系统。不同发行版的系统依赖可能不同，建议优先使用系统软件中心安装。</p></details>
+  <details><summary>如何校验安装包没有被篡改？</summary><p>每个安装包都附带同名 <code>.sha256</code> 文件。macOS/Linux 使用 <code>shasum -a 256 -c 文件名.sha256</code>，Windows 使用 <code>CertUtil -hashfile 文件名 SHA256</code>，再与 Release 中的校验文件比较。</p></details>
+  <details><summary>GitHub 下载慢怎么办？</summary><p>可以打开<a href="/download">下载页</a>中的 GitCode 镜像入口。镜像状态会随发布同步变化；如果镜像没有对应文件，请回到 GitHub Release 页面。</p></details>
+  <details><summary>如何获取 API Key？</summary><p>在 <a href="https://platform.deepseek.com" target="_blank" rel="noopener">DeepSeek 开放平台</a>注册并进入 API Keys 页面创建密钥，然后在 dsh-desktop 的模型设置中粘贴。API 使用按量计费，请先确认账户余额。</p></details>
+
+  <div class="seo-next-links"><a href="/download">下载 DSH Desktop →</a><a href="/docs/install">查看安装指南 →</a><a href="/en/docs/faq">Read in English →</a></div>
+</div></main>
+<footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />与 DeepSeek AI 无隶属、授权或合作关系</p></div><nav class="footer__links" aria-label="页脚链接"><a href="/">首页</a><a href="/download">下载</a><a href="/docs/install">安装指南</a><a href="/en/docs/faq">English</a><a href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a></nav></div></footer>
+</body>
+</html>
