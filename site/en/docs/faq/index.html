@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DSH Desktop FAQ | DeepSeek Harness desktop app</title>
+<meta name="description" content="DSH Desktop FAQ: official status, Node.js requirements, data isolation, Windows and macOS first launch, Linux support, API keys, and checksum verification." />
+<meta property="og:site_name" content="DSH Desktop" />
+<meta property="og:title" content="DSH Desktop FAQ | DeepSeek Harness desktop app" />
+<meta property="og:description" content="Answers about installing, configuring, verifying, and using the DSH Desktop community build." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://dsh-desktop.com/en/docs/faq" />
+<meta property="og:image" content="https://dsh-desktop.com/assets/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://dsh-desktop.com/en/docs/faq" />
+<link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/docs/faq" />
+<link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/docs/faq" />
+<link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/docs/faq" />
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/assets/style.css?v=28" />
+<link rel="stylesheet" href="/assets/seo.css?v=1" />
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop FAQ","url":"https://dsh-desktop.com/en/docs/faq","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}}</script>
+</head>
+<body>
+<header class="topbar"><a class="topbar__brand" href="/en"><img src="/assets/favicon.svg" alt="" width="20" height="20" /><span>dsh-desktop</span><span class="community-tag">Community</span></a><nav class="topbar__nav" aria-label="Page navigation"><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a><a href="/docs/faq">中文</a></nav><div class="topbar__right"><a class="gh-chip" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a><a class="btn btn--primary btn--sm" href="/en/download">Download</a></div></header>
+<main class="seo-page"><div class="wrap seo-article">
+  <nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/en">DSH Desktop</a><span>/</span><span>FAQ</span></nav><p class="sec-marker">FAQ / DEEPSEEK HARNESS</p><h1>DSH Desktop FAQ</h1><p class="seo-lead">Answers about installation, platform support, data isolation, and first-launch questions for the DeepSeek Harness desktop shell.</p>
+  <details open><summary>Is DSH Desktop an official DeepSeek product?</summary><p>No. It is an independently maintained community desktop shell with no affiliation, authorization, or partnership with DeepSeek AI. The upstream Harness package and trademarks remain subject to their own terms.</p></details>
+  <details open><summary>Do I need Node.js or a terminal?</summary><p>Release builds include a pinned Node.js runtime and the Harness dependency closure. End users do not need to install Node.js or run <code>npx @deepseek-ai/dsh web</code> first.</p></details>
+  <details><summary>Does the desktop share CLI configuration?</summary><p>Not by default. The desktop uses <code>~/.dsh-desktop</code>, while the CLI commonly uses <code>~/.dsh</code>. Set <code>DSH_HOME=~/.dsh</code> only when you intentionally want to share data.</p></details>
+  <details><summary>What if macOS says the developer cannot be verified?</summary><p>Current macOS builds may not be notarized. Verify the installer source and checksum, then right-click the app in Finder and choose <b>Open</b>. Do not run commands from an untrusted download page.</p></details>
+  <details><summary>What if Windows SmartScreen blocks the installer?</summary><p>Preview builds may not have a commercial code-signing certificate. Verify the source and checksum first; if you trust the build, choose <b>More info → Run anyway</b>.</p></details>
+  <details><summary>Which Linux systems are supported?</summary><p>The current amd64 Debian package targets Debian, Ubuntu, UOS, Deepin, and Kylin-style desktop systems. Dependencies can vary by distribution.</p></details>
+  <details><summary>How do I verify an installer?</summary><p>Use the matching <code>.sha256</code> file with <code>shasum -a 256 -c filename.sha256</code> on macOS/Linux or <code>CertUtil -hashfile filename SHA256</code> on Windows.</p></details>
+  <details><summary>What if GitHub is slow?</summary><p>Use the GitCode mirror listed on the <a href="/en/download">download page</a>. Mirror availability follows release synchronization; fall back to GitHub if a file is missing.</p></details>
+  <details><summary>How do I get an API key?</summary><p>Create one at the <a href="https://platform.deepseek.com" target="_blank" rel="noopener">DeepSeek Open Platform</a>, then paste it into the model/provider settings in dsh-desktop. API usage is metered.</p></details>
+  <div class="seo-next-links"><a href="/en/download">Download DSH Desktop →</a><a href="/en/docs/install">Read the install guide →</a><a href="/docs/faq">阅读中文 FAQ →</a></div>
+</div></main>
+<footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />No affiliation with DeepSeek AI</p></div><nav class="footer__links" aria-label="Footer links"><a href="/en">Home</a><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/docs/faq">中文</a><a href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a></nav></div></footer>
+</body>
+</html>
