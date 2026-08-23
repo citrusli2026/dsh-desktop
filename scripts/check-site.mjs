@@ -26,12 +26,14 @@ async function collectHtmlFiles(dir) {
   return files
 }
 
-const [html, releaseRaw, vercelRaw, sitemap, notFoundHtml] = await Promise.all([
+const [html, releaseRaw, vercelRaw, sitemap, notFoundHtml, styleCss, appJs] = await Promise.all([
   readFile(path.join(SITE, 'index.html'), 'utf8'),
   readFile(path.join(SITE, 'data', 'release.json'), 'utf8'),
   readFile(path.join(SITE, 'vercel.json'), 'utf8'),
   readFile(path.join(SITE, 'sitemap.xml'), 'utf8'),
   readFile(path.join(SITE, '404.html'), 'utf8'),
+  readFile(path.join(SITE, 'assets', 'style.css'), 'utf8'),
+  readFile(path.join(SITE, 'assets', 'app.js'), 'utf8'),
 ])
 const pageFiles = (await collectHtmlFiles(SITE)).filter(file => !file.endsWith(`${path.sep}404.html`))
 const pageDocs = await Promise.all(pageFiles.map(async (file) => ({
@@ -170,6 +172,8 @@ requireValue(/id="download-toast"/.test(html), 'download toast container is miss
 requireValue(/og:image/.test(html) && /assets\/og-image\.png/.test(html), 'og:image meta must point to /assets/og-image.png')
 requireValue(!/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(html), 'Google Fonts must not be referenced (system font stack instead)')
 requireValue(/Content-Security-Policy/.test(html), 'CSP meta is missing')
+requireValue(!/(^|\n)\[data-reveal\]\s*\{/.test(styleCss), 'reveal content must stay visible before JavaScript initializes')
+requireValue(/\.reveal-pending/.test(styleCss) && /classList\.add\('reveal-pending'\)/.test(appJs), 'reveal enhancement must opt into its hidden state')
 
 const tabTargets = [...html.matchAll(/data-tab="([^"]+)"/g)].map(match => match[1])
 for (const id of tabTargets) requireValue(html.includes(`id="${id}"`), `tab target #${id} is missing`)

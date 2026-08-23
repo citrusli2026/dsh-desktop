@@ -4,8 +4,10 @@
   isolation: isolate;
   min-height: calc(100vh - 64px);
   overflow: hidden;
-  padding: 142px 0 112px;
+  padding: 128px 0 104px;
 }
+
+.seo-page + .footer { margin-top: 0; }
 
 .seo-page::before {
   position: absolute;
@@ -94,7 +96,7 @@
   box-shadow: var(--shadow-card);
 }
 .seo-article ul { display: grid; gap: 10px; margin: 0 0 18px; padding-left: 24px; }
-.seo-article a { color: var(--signal-deep); }
+.seo-article a:not(.btn):not(.dl-btn) { color: var(--signal-deep); }
 
 .seo-breadcrumb {
   display: flex;
@@ -106,7 +108,8 @@
   letter-spacing: 0.04em;
 }
 
-.seo-breadcrumb span { color: var(--border-strong); }
+.seo-breadcrumb span { color: var(--faint); }
+.seo-breadcrumb a { display: inline-flex; align-items: center; min-height: 24px; }
 
 .seo-callout {
   margin: 26px 0;
@@ -140,8 +143,6 @@
 .seo-card p { font-size: 13px; }
 .seo-card__links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 
-.seo-article a:not(.btn) { color: var(--signal-deep); }
-
 .seo-button-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
 
 .download-source-panel { margin: 26px 0; }
@@ -169,6 +170,10 @@
 }
 
 .seo-article summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   cursor: pointer;
   color: var(--text-bluish);
   font-weight: 700;
@@ -178,8 +183,7 @@
 .seo-article summary::-webkit-details-marker { display: none; }
 
 .seo-article summary::after {
-  float: right;
-  margin-left: 16px;
+  flex: none;
   color: var(--signal);
   content: "+";
   font: 700 16px/1 var(--mono);
@@ -201,11 +205,41 @@
   padding-top: 22px;
   border-top: 1px solid var(--border);
 }
+.seo-next-links a { display: inline-flex; align-items: center; min-height: 28px; }
+
+.seo-product-preview {
+  max-width: none;
+  margin: 46px 0 0;
+}
+
+.seo-proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 12px 0 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+  background: var(--panel-2);
+  overflow: hidden;
+}
+
+.seo-proof-grid div { padding: 14px 16px; }
+.seo-proof-grid div + div { border-left: 1px solid var(--border); }
+.seo-proof-grid b {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--signal-deep);
+  font: 700 10px/1.4 var(--mono);
+  letter-spacing: 0.12em;
+}
+.seo-proof-grid span { color: var(--muted); font-size: 12px; }
 
 @media (max-width: 760px) {
-  .seo-page { padding-top: 112px; }
+  .seo-page { padding-top: 104px; padding-bottom: 80px; }
   .seo-download-grid { grid-template-columns: 1fr; }
   .seo-article h1 { max-width: none; }
+  .seo-product-preview { margin-top: 34px; }
+  .seo-proof-grid { grid-template-columns: 1fr; margin-bottom: 36px; }
+  .seo-proof-grid div + div { border-top: 1px solid var(--border); border-left: 0; }
 }
 
 /* The 404 keeps the same hero rhythm as the product homepage. */

@@ -46,7 +46,8 @@ cd site && python3 -m http.server 8080
 
 `assets/` 的 css/js 带 `?v=N` 版本号,使用一年 immutable;图片类一小时
 可重新验证;`data/` 使用五分钟缓存。改动 css/js/data-model 后必须同步
-提升 `?v=`(当前 v=29),否则 immutable 会让用户锁在旧内容。
+提升对应文件的 `?v=`(当前 style v=33、data-model v=32、app v=33、seo v=8),
+否则 immutable 会让用户锁在旧内容。
 
 ## 域名
 

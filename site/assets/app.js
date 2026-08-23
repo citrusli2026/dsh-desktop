@@ -4,7 +4,7 @@
    - 平台识别 CTA / 复制 / 滚动 reveal
    数据与文案字典见 ./data-model.js (纯数据层,亦被 check-site 直接导入)。
    零依赖,渐进增强。 */
-import { I18N, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=31'
+import { I18N, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=32'
 
 var REPO = 'citrusli2026/dsh-electron-shell'
 var RELEASES_URL = 'https://github.com/' + REPO + '/releases'
@@ -412,10 +412,10 @@ function bindCopy(root) {
 /* 滚动 reveal */
 function bindReveal() {
   var els = $all('[data-reveal]')
-  if (!('IntersectionObserver' in window)) {
-    els.forEach(function (el) { el.classList.add('is-in') })
-    return
-  }
+  if (!('IntersectionObserver' in window)) return
+  // Content is visible by default. Only opt into the hidden start state after
+  // we know the observer that will reveal it is available.
+  els.forEach(function (el) { el.classList.add('reveal-pending') })
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (e) {
       if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target) }

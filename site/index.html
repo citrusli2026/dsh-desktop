@@ -40,7 +40,7 @@
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="stylesheet" href="/assets/style.css?v=31" />
+<link rel="stylesheet" href="/assets/style.css?v=33" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -127,6 +127,10 @@
         <p class="hero__social" id="hero-social" hidden></p>
         <p class="hero__meta" id="hero-meta">… · macOS / Windows · <span data-i18n="hero.meta">无需 Node.js</span></p>
         <figure class="hero__shot" data-reveal style="--i:3">
+          <figcaption class="hero__shot-status">
+            <span class="hero__shot-runtime"><span class="hero__shot-dot" aria-hidden="true"></span><span data-i18n="hero.preview">本地运行时已就绪</span></span>
+            <span>127.0.0.1 · READY</span>
+          </figcaption>
           <img class="hero__shot-img hero__shot-img--light" src="/assets/hero-app-light.png?v=24" alt="dsh-desktop 运行中的 DeepSeek Harness 工作台（macOS 实测截图）" width="1280" height="800" decoding="async" />
           <img class="hero__shot-img hero__shot-img--dark" src="/assets/hero-app-dark.png?v=24" alt="dsh-desktop 运行中的 DeepSeek Harness 工作台（暗色主题）" width="1280" height="800" decoding="async" />
         </figure>
@@ -371,7 +375,7 @@
   </div>
 </footer>
 
-<script type="module" src="/assets/app.js?v=32"></script>
+<script type="module" src="/assets/app.js?v=33"></script>
 
 <!-- 下载后提示(校验方式 + 未签名处理 + GitHub Star 邀请),由 app.js 填充 -->
 <div class="download-toast" id="download-toast" role="status" aria-live="polite" hidden></div>

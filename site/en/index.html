@@ -21,8 +21,8 @@
 <link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en" />
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=31" />
-<link rel="stylesheet" href="/assets/seo.css?v=3" />
+<link rel="stylesheet" href="/assets/style.css?v=33" />
+<link rel="stylesheet" href="/assets/seo.css?v=8" />
 <script>
   try {
     var savedTheme = localStorage.getItem('dsh-site-theme')
@@ -39,6 +39,13 @@
   <h1>DeepSeek Harness as a dependable local desktop app.</h1>
   <p class="seo-lead">DSH Desktop is a community-maintained desktop shell for DeepSeek Harness. Download it, launch it, and keep the local agent workspace in its own desktop window without installing Node.js first.</p>
   <div class="seo-button-row"><a class="btn btn--primary" href="/en/download">Download DSH Desktop →</a><a class="btn btn--ghost" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">View source on GitHub</a></div>
+
+  <figure class="hero__shot seo-product-preview">
+    <figcaption class="hero__shot-status"><span class="hero__shot-runtime"><span class="hero__shot-dot" aria-hidden="true"></span><span>Local runtime ready</span></span><span>127.0.0.1 · READY</span></figcaption>
+    <img class="hero__shot-img hero__shot-img--light" src="/assets/hero-app-light.png?v=24" alt="DSH Desktop running the DeepSeek Harness workspace on macOS" width="1280" height="800" decoding="async" />
+    <img class="hero__shot-img hero__shot-img--dark" src="/assets/hero-app-dark.png?v=24" alt="DSH Desktop running the DeepSeek Harness workspace in dark mode" width="1280" height="800" decoding="async" />
+  </figure>
+  <div class="seo-proof-grid" aria-label="Product baseline"><div><b>LOCAL</b><span>Loopback-only runtime</span></div><div><b>ISOLATED</b><span>Separate data by default</span></div><div><b>VERIFIABLE</b><span>Public CI and real-app tests</span></div></div>
 
   <h2>What the desktop shell adds</h2>
   <ul><li>Bundled runtime and one-click startup for Windows, macOS, and Linux releases.</li><li>Native window, tray behavior, lifecycle supervision, and recovery diagnostics.</li><li>Isolated desktop data at <code>~/.dsh-desktop</code>, separate from the CLI by default.</li><li>Sandboxed renderer boundaries while the upstream Harness Web UI remains the source of agent behavior.</li></ul>
