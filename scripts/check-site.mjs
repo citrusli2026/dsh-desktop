@@ -52,6 +52,11 @@ for (const { file, html: pageHtml } of pageDocs) {
   requireValue(/hreflang="zh-CN"/.test(pageHtml) && /hreflang="en"/.test(pageHtml), `${relative} language alternates are missing`)
   requireValue(/class="theme-toggle"/.test(pageHtml) && /class="menu-toggle"/.test(pageHtml), `${relative} shared header controls are missing`)
   requireValue(/class="footer__sync"/.test(pageHtml), `${relative} shared footer sync block is missing`)
+  requireValue(!/class="[^\"]*\bseo-button(?!-)\b/.test(pageHtml), `${relative} must use the shared homepage button system`)
+  if (relative === 'download/index.html' || relative === 'en/download/index.html') {
+    requireValue(/id="platform-rows"/.test(pageHtml) && /id="first-run"/.test(pageHtml), `${relative} download surface is incomplete`)
+    requireValue(/id="download-toast"/.test(pageHtml) && /assets\/app\.js\?v=\d+/.test(pageHtml), `${relative} shared download logic is missing`)
+  }
 
   const localReferences = [...pageHtml.matchAll(/(?:href|src)="(\/(?:assets|data)\/[^"?#]+)[^"]*"/g)].map(match => match[1])
   for (const reference of localReferences) await access(path.join(SITE, reference.slice(1)))

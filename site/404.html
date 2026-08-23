@@ -9,8 +9,8 @@
 <meta name="theme-color" content="#f9f8f8" />
 <meta name="color-scheme" content="light dark" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=30" />
-<link rel="stylesheet" href="/assets/seo.css?v=2" />
+<link rel="stylesheet" href="/assets/style.css?v=31" />
+<link rel="stylesheet" href="/assets/seo.css?v=3" />
 <script>
   try {
     var savedTheme = localStorage.getItem('dsh-site-theme')
@@ -23,7 +23,7 @@
 <header class="topbar">
   <a class="topbar__brand" href="/"><img src="/assets/favicon.svg" alt="" width="20" height="20" /><span>dsh-desktop</span><span class="community-tag">社区版 · Community</span></a>
   <nav class="topbar__nav" id="topbar-menu" aria-label="页面导航 / Page navigation">
-    <a href="/">首页 / Home</a><a href="/download">下载 / Download</a><a href="/docs/install">安装指南 / Install</a><a href="/docs/faq">常见问题 / FAQ</a>
+    <a href="/">首页 / Home</a><a href="/download">下载 / Download</a><a href="/docs/install">安装指南 / Install</a>
   </nav>
   <div class="topbar__right">
     <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换主题 / Switch theme" title="切换主题 / Switch theme"></button>
@@ -45,9 +45,9 @@
     <p class="seo-lead">你访问的地址不存在，或者页面已经移动。返回首页继续探索，或直接打开下载和帮助文档。</p>
     <p class="error-page__path">当前地址：<code id="error-path">/</code></p>
     <div class="seo-button-row">
-      <a class="seo-button seo-button--primary" href="/">返回中文首页 →</a>
-      <a class="seo-button" href="/en">Open English home →</a>
-      <a class="seo-button" href="/download">前往下载页</a>
+      <a class="btn btn--primary" href="/">返回中文首页 →</a>
+      <a class="btn btn--ghost" href="/en">Open English home →</a>
+      <a class="btn btn--ghost" href="/download">前往下载页</a>
     </div>
   </div>
 </main>
@@ -65,6 +65,6 @@
     <p class="footer__sync"><span>纯静态站点 · 部署于 Vercel<br />Static site · deployed on Vercel</span><br /><span>404 · noindex</span></p>
   </div>
 </footer>
-<script src="/assets/site-shell.js?v=1"></script>
+<script src="/assets/site-shell.js?v=2"></script>
 </body>
 </html>

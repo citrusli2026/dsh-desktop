@@ -8,6 +8,7 @@ import { I18N, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDa
 
 var REPO = 'citrusli2026/dsh-electron-shell'
 var RELEASES_URL = 'https://github.com/' + REPO + '/releases'
+var isHomePage = !!document.querySelector('.hero')
 
 var OS_LABEL = {
   zh: {
@@ -66,6 +67,7 @@ function bindThemeToggle() {
 
 /* ══ 语言状态 ══════════════════════════════════════ */
 var lang = (function () {
+  if (!isHomePage) return (document.documentElement.lang || '').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en'
   try {
     var saved = localStorage.getItem('dsh-site-lang')
     if (saved === 'zh' || saved === 'en') return saved
@@ -186,15 +188,18 @@ function renderMeta(data) {
     var ageDays = (Date.now() - new Date(r.published_at).getTime()) / 86400000
     if (ageDays >= 0 && ageDays <= 3) label += ' · <span class="new-badge">' + t('dl.new') + '</span>'
   }
-  $('#release-meta').innerHTML = label
+  var releaseMeta = $('#release-meta')
+  if (releaseMeta) releaseMeta.innerHTML = label
 
   var meta = $('#hero-meta')
-  meta.innerHTML = r.tag + ' · macOS / Windows / Linux · <span data-i18n="hero.meta">' + t('hero.meta') + '</span>'
+  if (meta) meta.innerHTML = r.tag + ' · macOS / Windows / Linux · <span data-i18n="hero.meta">' + t('hero.meta') + '</span>'
 
   var split = splitCompositeTag(r.tag)
   if (split) {
-    $('#v-core').textContent = split.core
-    $('#v-shell').textContent = split.shell
+    var core = $('#v-core')
+    var shell = $('#v-shell')
+    if (core) core.textContent = split.core
+    if (shell) shell.textContent = split.shell
     // 图例 chip 与动态版本共用同一份解析结果,杜绝硬编码失同步
     var legendCore = $('#legend-core')
     var legendShell = $('#legend-shell')
@@ -202,7 +207,8 @@ function renderMeta(data) {
     if (legendShell) legendShell.textContent = split.shell
   }
 
-  $('#sync-time').textContent = data.generated_at
+  var sync = $('#sync-time')
+  if (sync) sync.textContent = data.generated_at
     ? (lang === 'zh' ? '数据同步于 ' : 'data synced ') + fmtDate(data.generated_at) + ' ' + data.generated_at.slice(11, 16) + ' UTC'
     : (lang === 'zh' ? '数据来自 GitHub API 实时拉取' : 'live data via GitHub API')
 }
@@ -216,6 +222,8 @@ function updatePlatformCounts(data, animate) {
 }
 
 function renderPlatforms(data, animate) {
+  var rows = $('#platform-rows')
+  if (!rows) return
   var installers = data.release.assets.filter(function (a) { return a.kind === 'installer' })
   var groups = { mac: [], win: [], linux: [] }
   installers.forEach(function (a) {
@@ -258,7 +266,7 @@ function renderPlatforms(data, animate) {
     html += '</div>'
   })
   if (html) {
-    $('#platform-rows').innerHTML = html
+    rows.innerHTML = html
     updatePlatformCounts(data, animate)
   }
 }
@@ -266,6 +274,7 @@ function renderPlatforms(data, animate) {
 function tunePrimaryCta(data) {
   var os = detectPlatform()
   var cta = $('#cta-primary')
+  if (!cta) return
   // 手机/平板浏览时不下发桌面安装包,引导到下载区(在电脑上下载)。
   if (os === 'mobile') {
     cta.href = '#download'
@@ -434,9 +443,9 @@ function applyLang() {
     if (I18N[lang][key] !== undefined) el.innerHTML = I18N[lang][key]
   })
   fillFaqVersion()
-  $('#lang-toggle').textContent = lang === 'zh' ? 'EN' : '中'
   var lt = $('#lang-toggle')
   if (lt) {
+    lt.textContent = lang === 'zh' ? 'EN' : '中'
     lt.setAttribute('aria-label', t('a11y.langToggle'))
     lt.setAttribute('title', t('a11y.langToggle'))
   }
@@ -458,7 +467,9 @@ function applyLang() {
 }
 
 function bindLangToggle() {
-  $('#lang-toggle').addEventListener('click', function () {
+  var button = $('#lang-toggle')
+  if (!button) return
+  button.addEventListener('click', function () {
     lang = lang === 'zh' ? 'en' : 'zh'
     try { localStorage.setItem('dsh-site-lang', lang) } catch (e) {}
     applyLang()
@@ -528,13 +539,15 @@ function bindSectionSpy() {
 
 /* ══ 启动 ══════════════════════════════════════════ */
 bindReveal()
-bindLangToggle()
-bindThemeToggle()
-bindMenuToggle()
-bindSectionSpy()
+if (isHomePage) {
+  bindLangToggle()
+  bindThemeToggle()
+  bindMenuToggle()
+  bindSectionSpy()
+  applyTheme()
+  if (lang === 'en') applyLang()
+}
 bindCopy(document)
-applyTheme()
-if (lang === 'en') applyLang()
 
 loadData()
   .then(function (data) {
@@ -549,8 +562,10 @@ loadData()
     bindDownloadGuide()
   })
   .catch(function () {
-    $('#release-meta').textContent = 'OFFLINE → GITHUB'
-    $('#release-meta').parentElement.addEventListener('click', function () {
+    var releaseMeta = $('#release-meta')
+    if (!releaseMeta) return
+    releaseMeta.textContent = 'OFFLINE → GITHUB'
+    releaseMeta.parentElement.addEventListener('click', function () {
       window.open(RELEASES_URL, '_blank')
     })
   })

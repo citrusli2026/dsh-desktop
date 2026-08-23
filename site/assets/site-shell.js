@@ -20,6 +20,9 @@
   function applyTheme() {
     var theme = effectiveTheme()
     root.dataset.theme = theme
+    Array.prototype.forEach.call(document.querySelectorAll('meta[name="theme-color"]'), function (meta) {
+      meta.content = theme === 'dark' ? '#0c0f16' : '#f9f8f8'
+    })
     var button = document.getElementById('theme-toggle')
     if (button) {
       button.innerHTML = icons[theme]

@@ -21,8 +21,8 @@
 <link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/download" />
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/download" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=30" />
-<link rel="stylesheet" href="/assets/seo.css?v=2" />
+<link rel="stylesheet" href="/assets/style.css?v=31" />
+<link rel="stylesheet" href="/assets/seo.css?v=3" />
 <script>
   try {
     var savedTheme = localStorage.getItem('dsh-site-theme')
@@ -42,17 +42,29 @@
     <h1>下载 DeepSeek Harness 桌面版</h1>
     <p class="seo-lead">DSH Desktop 把 DeepSeek Harness 的本地 Web 工作体验封装成可直接启动的桌面应用。当前发布 Windows、macOS 和 Linux 安装包，具体平台以当前 Release 列表为准。</p>
 
-    <div class="seo-callout">
-      <p><strong>当前版本：</strong>请以 <a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> 中最新公开版本为准。</p>
-      <p>这是社区维护的非官方项目，与 DeepSeek AI 没有隶属、授权或合作关系。下载前请确认你信任公开源码和发布记录。</p>
-      <div class="seo-button-row"><a class="seo-button seo-button--primary" href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">打开 GitHub Releases</a><a class="seo-button" href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">打开 GitCode 镜像</a></div>
+    <div class="panel download-source-panel">
+      <div class="panel__head"><span class="panel__label">RELEASE SOURCE</span><span>GitHub + GitCode</span></div>
+      <div class="download-source-panel__body">
+        <p><strong>当前版本：</strong>下面的下载矩阵会自动读取最新公开 Release；也可以直接打开发布页查看全部文件。</p>
+        <div class="seo-button-row"><a class="btn btn--primary btn--sm" href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">打开 GitHub Releases</a><a class="btn btn--ghost btn--sm" href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">打开 GitCode 镜像</a></div>
+        <p class="download-source-panel__legal">这是社区维护的非官方项目，与 DeepSeek AI 没有隶属、授权或合作关系。下载前请确认你信任公开源码和发布记录。</p>
+      </div>
     </div>
 
-    <div class="seo-download-grid">
-      <article class="seo-card"><h2>Windows x64</h2><p>下载 NSIS 安装程序，安装后从开始菜单启动。首次运行可能出现 Windows SmartScreen 提示。</p><div class="seo-card__links"><a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">下载页面</a><a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">国内镜像</a></div></article>
-      <article class="seo-card"><h2>macOS Apple Silicon</h2><p>适用于 M 系列芯片的 DMG。首次打开未签名应用时，请在 Finder 中右键选择“打开”。</p><div class="seo-card__links"><a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">下载页面</a><a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">国内镜像</a></div></article>
-      <article class="seo-card"><h2>Linux amd64</h2><p>提供 Debian 包，适用于 Debian、Ubuntu、UOS、Deepin 和麒麟等系统。</p><div class="seo-card__links"><a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">下载页面</a><a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">国内镜像</a></div></article>
+    <div class="panel download-panel">
+      <span class="tick tick--tl" aria-hidden="true"></span><span class="tick tick--tr" aria-hidden="true"></span>
+      <span class="tick tick--bl" aria-hidden="true"></span><span class="tick tick--br" aria-hidden="true"></span>
+      <div class="panel__head"><span class="panel__label">RELEASES</span><span class="release-meta" id="release-meta">正在读取发布数据…</span></div>
+      <div id="platform-rows"><div class="asset-fallback"><p>版本数据加载失败时，可直接打开发布页：<a href="https://github.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitHub Releases</a> 或 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a>。</p></div></div>
+      <p class="note"><a href="/docs/install">查看安装指南</a>：了解首次启动、系统提示和 API Key 配置。</p>
+      <div class="first-run" id="first-run" hidden></div>
+      <div class="cmdline"><span class="cmdline__prompt">$</span><code>npx @deepseek-ai/dsh web</code><button class="copybtn" data-copy="npx @deepseek-ai/dsh web" type="button">复制命令</button></div>
+      <p class="note">命令行方式同样可用；桌面壳使用独立数据目录 <code>~/.dsh-desktop</code>，与 CLI 互不干扰。</p>
     </div>
+
+    <div class="quickstart"><p class="sec-marker">快速开始</p><h3 class="quickstart__title">三步开始使用</h3><div class="quickstart__grid"><article class="quickstart__step"><span class="quickstart__num">1</span><h4>下载并安装</h4><p>选择你的系统，下载匹配的安装包并完成安装。</p></article><article class="quickstart__step"><span class="quickstart__num">2</span><h4>获取 API Key</h4><p>在 DeepSeek 开放平台注册账号并创建 API Key（按量计费）。</p><a class="quickstart__link" href="https://platform.deepseek.com" target="_blank" rel="noopener">打开 DeepSeek 开放平台 →</a></article><article class="quickstart__step"><span class="quickstart__num">3</span><h4>粘贴 Key，开始对话</h4><p>打开 dsh-desktop，在设置中粘贴 Key，即可开始使用。</p></article></div></div>
+
+    <div class="seo-download-grid"><article class="seo-card"><h2>Windows x64</h2><p>提供 NSIS 安装程序。首次运行可能出现 Windows SmartScreen 提示，请先确认来源和校验值。</p></article><article class="seo-card"><h2>macOS Apple Silicon</h2><p>提供适用于 M 系列芯片的 DMG。首次打开未签名应用时，请在 Finder 中右键选择“打开”。</p></article><article class="seo-card"><h2>Linux amd64</h2><p>提供 Debian 包，适用于 Debian、Ubuntu、UOS、Deepin 和麒麟等系统。</p></article></div>
 
     <h2>安装后如何开始</h2>
     <ol><li>下载与你系统匹配的安装包并完成安装。</li><li>首次启动后，在 Harness 设置中选择模型服务商并填写 API Key。</li><li>打开新会话开始使用；桌面版会自动管理本地 Harness 进程和数据目录。</li></ol>
@@ -65,6 +77,8 @@
 </main>
 
 <footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />与 DeepSeek AI 无隶属、授权或合作关系</p><a class="footer__top" href="#main-content">回到顶部 ↑</a></div><nav class="footer__links" aria-label="页脚链接"><a href="/">首页</a><a href="/download">下载</a><a href="/docs/install">安装指南</a><a href="/docs/faq">常见问题</a><a href="/en/download">English</a><a href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">GitHub</a></nav><p class="footer__sync"><span>纯静态站点 · 部署于 Vercel<br />版本数据由 GitHub Actions 自动同步</span><br /><span>下载与帮助</span></p></div></footer>
-<script src="/assets/site-shell.js?v=1"></script>
+<div class="download-toast" id="download-toast" role="status" aria-live="polite" hidden></div>
+<script src="/assets/site-shell.js?v=2"></script>
+<script type="module" src="/assets/app.js?v=32"></script>
 </body>
 </html>

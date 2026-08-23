@@ -239,6 +239,9 @@ a { color: inherit; }
   transition: color 0.15s ease;
 }
 .topbar__nav a:hover, .topbar__nav a.active { color: var(--signal-deep); background: var(--hover-glass); }
+/* FAQ remains discoverable in the footer and contextual links; keep the topbar focused on the primary path. */
+.topbar__nav a[href="/docs/faq"],
+.topbar__nav a[href="/en/docs/faq"] { display: none; }
 .topbar__right { display: flex; align-items: center; gap: 12px; }
 .lang-toggle, .theme-toggle {
   font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em;

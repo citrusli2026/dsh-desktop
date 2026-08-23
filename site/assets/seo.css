@@ -111,7 +111,7 @@
 .seo-callout {
   margin: 26px 0;
   padding: 18px 20px;
-  border: 1px solid var(--signal);
+  border: 1px solid var(--border);
   border-radius: var(--r-panel);
   background: var(--panel);
   box-shadow: var(--shadow-card);
@@ -140,32 +140,17 @@
 .seo-card p { font-size: 13px; }
 .seo-card__links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 
-.seo-card__links a,
-.seo-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 7px 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  color: var(--signal-deep);
-  font-size: 12px;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.seo-card__links a:first-child,
-.seo-button--primary {
-  border-color: transparent;
-  background: var(--ink);
-  color: var(--on-ink);
-}
-
-.seo-card__links a:hover,
-.seo-button:hover { border-color: var(--signal); }
+.seo-article a:not(.btn) { color: var(--signal-deep); }
 
 .seo-button-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
+
+.download-source-panel { margin: 26px 0; }
+.download-source-panel__body { padding: 20px 22px 18px; }
+.download-source-panel__body p { margin-bottom: 14px; }
+.download-source-panel__body .seo-button-row { margin: 16px 0 12px; }
+.download-source-panel__legal { color: var(--faint) !important; font-size: 13px !important; }
+.download-panel { margin: 28px 0; }
+.seo-article .quickstart__title { margin: 4px 0 18px; padding: 0; border: 0; color: var(--text-bluish); font: 700 24px/1.2 var(--display); }
 
 .seo-table-wrap { overflow-x: auto; margin: 22px 0; }
 .seo-table { width: 100%; min-width: 580px; border-collapse: collapse; }
