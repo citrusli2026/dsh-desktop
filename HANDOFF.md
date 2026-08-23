@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-08-22。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-08-23。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -8,12 +8,12 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.1`（已发布 2026-08-22；内核 0.1.1-rc.2 未变，壳修订 +1） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.1`（2026-08-22，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 107 项单测、类型检查、覆盖率门槛、官网门禁、构建通过 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.1 Release 严格 8 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.1`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.1 GitCode 镜像：dmg/exe/deb + 3×sha256（2026-08-22 本机 SOCKS5 下载 + 直传，匿名 Range GET 6×302） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.2`（已发布 2026-08-23；内核 0.1.1-rc.2 未变，壳修订 +2） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.2`（2026-08-23，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 108 项单测、类型检查、官网门禁、构建通过 |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.2 Release 严格 8 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.2`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.2 GitCode 镜像：dmg/exe/deb + 3×sha256（2026-08-23 本机 SOCKS5 下载 + 直传，匿名 Range GET 6×206） |
 | 实时下载统计 | ✅ 已完成并修复 404 — `site/api/downloads.js` 曾因 GitHub 匿名 list 接口不返回 Pre-release 导致 `/api/downloads` 恒 404；已改为优先读同站 `data/release.json` + GitHub tag 端点实时计数，2026-08-17 修复待部署 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -538,6 +538,48 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
    挂死（两次超时验证、零输出、首次安装仅 4s），覆盖安装逻辑由 deb
    重装冒烟代表；macOS dmg 安装路径（挂载→拖入 Applications）无自动化
    冒烟；跨版本升级安装需真实旧版本（沿用十九记录）。
+
+---
+
+## 二十一、官网 SEO 与 Search Console 收录准备（2026-08-23）
+
+本轮为站内 SEO 改造，不改变桌面应用行为，也不产生新 Release/tag。所有改动已在
+main 提交并准备推送：
+
+1. **Search Console 验证**：`site/index.html` 的 `<head>` 保留以下元标记；成功验证后
+   也不得删除：
+
+   ```html
+   <meta name="google-site-verification" content="0NO32QsuJviivUirAXGOcVgj2knN_m5NCus7GpE-ZXg" />
+   ```
+
+2. **首页实体与摘要**：更新 title、description、Open Graph、Twitter 元数据，加入
+   `WebSite`、`Organization`、`SoftwareApplication` JSON-LD，并补充中英文
+   `hreflang`。首页保留可抓取的 `/download` 静态入口。
+3. **可索引页面**：新增 8 个 canonical 页面：
+   `/`、`/en`、`/download`、`/en/download`、`/docs/install`、
+   `/en/docs/install`、`/docs/faq`、`/en/docs/faq`。下载/安装/FAQ 内容不再只存在
+   首页 hash 区块或 JS 语言切换中。
+4. **抓取入口与门禁**：`robots.txt` 声明 sitemap；`sitemap.xml` 收录 8 个 URL；
+   `scripts/check-site.mjs` 现在检查全部 HTML 页面、canonical、title、description、
+   hreflang、本地资源、Search Console 标记和首页 `WebSite` 数据。
+5. **后续 runbook**：Search Console 验证、提交 sitemap、URL Inspection 请求收录、
+   外部权威、内容扩展和 30/60/90 天指标写入 `docs/seo-follow-up.md`。
+
+本地验证：
+
+- `pnpm run typecheck` ✅
+- `pnpm test` ✅（108 项）
+- `pnpm run site:check` ✅（8 个页面、120 个双语键）
+- `pnpm run build` ✅
+- 本地静态服务器检查 8 个页面、`robots.txt`、`sitemap.xml` 均可访问 ✅
+
+**部署后人工动作**：在 Google Search Console 点击“验证”，提交
+`https://dsh-desktop.com/sitemap.xml`，再对 8 个 URL 逐个执行 URL Inspection。账号内的
+验证按钮和收录请求尚未由自动化执行，完成情况需回填到本节。
+
+本轮提交序列：`500df7f`、`d4de9a7`、`5f728d7`、`4edaa8d`、`29c2cbc`、
+`127ec34`、`245dd29`，随后追加本 HANDOFF 更新提交。
 
 ---
 
