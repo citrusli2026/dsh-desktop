@@ -1,5 +1,5 @@
 /* dsh-electron-shell 官网脚本 v3 (ESM):
-   - 中英切换;macOS DMG / Windows EXE 双端下载
+   - 中英切换;macOS DMG / Windows EXE / Linux DEB 三端下载
    - data/release.json 渲染下载矩阵;失败回退 GitHub API;再失败保留静态兜底
    - 平台识别 CTA / 复制 / 滚动 reveal
    数据与文案字典见 ./data-model.js (纯数据层,亦被 check-site 直接导入)。
