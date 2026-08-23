@@ -479,6 +479,66 @@ Extensions → Vision (ModLens) 功能完整落地并发布：
    `/data/release.json` 指向新 tag 且 `gitcode_ok=true`，`/api/downloads`
    实时计数可用（total 134）。
 
+## 二十、v0.1.1-rc.2.shell.2 发布（2026-08-23）
+
+1. **版本**：壳修订 bump → `0.1.1-rc.2.shell.2`（333578e）；内核仍为
+   上游 `0.1.1-rc.2`（`version.mjs check` 与 dist-tags 复核一致），无内核升级。
+   本次发布携带 S1/S2/S2.5/A 组测试硬化首次全量上线。
+2. **耗时记录**（全部记于 `/tmp/shell2-times.txt`，epoch 秒/UTC）：
+   - 本地准备 46s：bump 11s → typecheck+107 单测+site check 12s →
+     commit+tag+push 23s。
+   - CI 共 10 次尝试，全绿 run 32613297135（ecb9923，02:36:50→02:48:03Z）
+     **11m13s**；publish 自动完成（8 文件契约+attestation 校验通过），
+     release `v0.1.1-rc.2.shell.2` published_at **02:47:51Z**。
+   - GitCode 镜像 **393s**：SOCKS5（127.0.0.1:7890）六资产下载→上传→
+     6/6 线上校验，全程 attempt 1/3 零重试（对照 shell.1 走公开代理时的
+     大文件中断与手动补传）。
+   - 站点数据 ~1min：gen-site-data → check-site / check-api-downloads
+     全过 → 推送 e1ce202；线上 `dsh-desktop.com/data/release.json` 验证：
+     tag ✓ / published_at ✓ / 资产同时含 GitHub 与 gitcode_url ✓ /
+     stats 累计 138（mac 55 / win 75 / linux 8）✓。
+3. **10 次尝试历程**（每失败一次即修一个只在此刻暴露的问题）：
+
+   | 尝试 | commit | 耗时 | 死因 |
+   |---|---|---|---|
+   | A1 | 333578e | 7m36s | verify E2E 偶发失败 |
+   | A2–A5 | 4b0a3c7→459eb41 | 各 ~2m | **同根因**：Playwright/Electron worker teardown 挂起 ×4 |
+   | A6 | efbb571 | 10m37s | verify 首次过；构建暴露 win node 布局 + deb 缺依赖 |
+   | A7 | 9d99690 | 7m03s | 又暴露 win 菜单 locale watcher 失效 + dpkg -L maxBuffer |
+   | A8 | c5ef75a | 10m11s | 又暴露 dpkg 候选选到目录（EACCES）+ NSIS 重装挂死 |
+   | A9 | c27cc50 | ~15m | 仅剩 NSIS 重装（300s 超时确认确定性挂死） |
+   | A10 | ecb9923 | 11m13s | **全绿**（去掉 NSIS 覆盖重装后） |
+
+4. **瓶颈分析（按用户要求以时间切入）**：
+   - **问题层叠是主因**：6 个构建问题呈"解锁一层暴露一层"结构——
+     ① Windows node.exe 布局错误使 **自 shell.1 起 Windows 包从未能启动**；
+     ② 它被 smoke 退出码在 Windows 上失效掩盖（`app.quit()` 丢弃
+     `process.exitCode`，boot failed 后仍以 0 退出，4 个 smoke 步骤假绿）；
+     ③ deb 依赖缺 libnotify4/libsecret-1-0；④ `dpkg -L` 超 1MB 缓冲区；
+     ⑤ dpkg `-L` 目录候选先于二进制；⑥ NSIS 同版本覆盖安装挂死。
+     ①②③在 A6 同时暴露，④⑤在 A7/A8 逐个暴露，⑥在 A8/A9 确认。
+   - **共性教训**：这些全部是**只在远端 CI 可复现**的问题（win/nsis/deb
+     路径本机 mac 无法触达），且前一层不修复根本看不到后一层——于是
+     每次失败只能修一个点，共迭代 6 轮、约 60 分钟墙钟。若有"破局型"
+     远端口（如 Windows 自托管 runner 或至少 win-unpacked 本地验证），
+     可在单轮内同时列全。其次：**smoke 脚本不得仅依赖进程退出码判断
+     成败**，应把断言输出纳入门禁（本仓库已补负向路径验证）。
+   - **verify 阶段**：A2–A5 四个周期烧在 dev E2E teardown hang（Playwright
+     1.62.1+Electron 已知交互问题），guarded runner 按 "N passed" 摘要
+     判定理后已兜底；根因未除，每次 verify 仍会报 45s teardown 超时
+     （不影响结论），保留为已知边界。
+   - **总账**：本地 46s + 10 次 CI 约 84 分钟 + 6 轮编辑/门禁/推送各 ~3–6 分钟
+     + 镜像 6m33s + 站点 1m ≈ **2 小时**；其中真正来自"测试硬化"的
+     gate 增加只有一次 A10 的 +7 分钟（对照 shell.1 的 6m12s 成功 run）。
+     其余时间 90% 以上是历史积弊（Windows 从未可用）在新门禁下的集中偿还。
+5. **本次修复提交**：31a43d9（win node 布局）/ 8372f04（smoke 退出码）/
+   9d99690（deb 依赖 apt 安装）/ 6173790（设置轮询兜底，修 win 菜单）/
+   c5ef75a（dpkg -L 缓冲区）/ ecb9923（NSIS 去覆盖重装+边界文档）。
+6. **已知边界（新增记录）**：NSIS 同版本覆盖安装在 CI runner 上确定性
+   挂死（两次超时验证、零输出、首次安装仅 4s），覆盖安装逻辑由 deb
+   重装冒烟代表；macOS dmg 安装路径（挂载→拖入 Applications）无自动化
+   冒烟；跨版本升级安装需真实旧版本（沿用十九记录）。
+
 ---
 
-_更新于 2026-08-22_
+_更新于 2026-08-23_
