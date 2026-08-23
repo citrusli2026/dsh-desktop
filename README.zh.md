@@ -35,8 +35,8 @@ DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打�
 
 ## 版本号
 
-版本与 tag 为复合式:`<dsh 版本>.shell.<壳修订号>`——如 `0.1.1-rc.2.shell.2`
-表示打包 `@deepseek-ai/dsh` 0.1.1-rc.2、壳第 2 次修订。版本字段由
+版本与 tag 为复合式:`<dsh 版本>.shell.<壳修订号>`——如 `0.1.1-rc.2.shell.3`
+表示打包 `@deepseek-ai/dsh` 0.1.1-rc.2、壳第 3 次修订。版本字段由
 `scripts/version.mjs` 统一管理;`dsh-watch` 工作流每日检查上游 npm,
 发现新版自动开经验证的 bump PR(决策 0009)。
 
