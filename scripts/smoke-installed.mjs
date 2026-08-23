@@ -63,15 +63,22 @@ async function smokeRun(executable) {
 if (method === 'dpkg') {
   const { stdout } = await execFileP('dpkg', ['-L', 'dsh-desktop'], BIG_BUFFER)
   const candidates = stdout.split('\n').filter(line => line.endsWith('/dsh-desktop'))
-  if (candidates.length === 0) throw new Error('dpkg: installed binary not found via dpkg -L dsh-desktop')
-  await smokeRun(candidates[0])
+  // dpkg -L lists the /opt/dsh-desktop DIRECTORY before the binary inside it;
+  // spawn the first regular executable (stat follows the /usr/bin symlink).
+  let executable
+  for (const candidate of candidates) {
+    const info = await stat(candidate).catch(() => null)
+    if (info?.isFile() && (info.mode & 0o111) !== 0) { executable = candidate; break }
+  }
+  if (executable === undefined) throw new Error('dpkg: installed binary not found via dpkg -L dsh-desktop')
+  await smokeRun(executable)
   if (reinstall) {
     const distDir = process.argv[3] ?? 'dist'
     const debName = (await readdir(distDir)).find(name => name.endsWith('.deb'))
     if (debName === undefined) throw new Error(`dpkg --reinstall: no .deb under ${distDir}`)
-    await execFileP('sudo', ['dpkg', '-i', join(distDir, debName)], { timeout: 150_000 })
+    await execFileP('sudo', ['dpkg', '-i', join(distDir, debName)], { timeout: 300_000 })
     console.log('dpkg: reinstalled', debName)
-    await smokeRun(candidates[0])
+    await smokeRun(executable)
   }
 } else if (method === 'nsis') {
   const dirOrFile = process.argv[3]
@@ -88,18 +95,28 @@ if (method === 'dpkg') {
   try {
     // /S = silent, /D = installation directory (NSIS: must be the last switch,
     // no quotes around the path).
-    await execFileP(installer, ['/S', `/D=${installDir}`], { timeout: 150_000 })
+    await execFileP(installer, ['/S', `/D=${installDir}`], { timeout: 300_000 })
     console.log(`nsis: installed under ${installDir}`)
     const executable = join(installDir, 'dsh-desktop.exe')
     await smokeRun(executable)
     if (reinstall) {
       // Same-version overwrite: closest CI can get to a real user upgrade.
-      await execFileP(installer, ['/S', `/D=${installDir}`], { timeout: 150_000 })
+      // Replacing a same-version install runs the existing app's uninstaller,
+      // which waits indefinitely when a previous smoke left part of the app
+      // running and holding install-dir files, so sweep the tree first.
+      if (process.platform === 'win32') {
+        await new Promise(resolve => {
+          const sweep = spawn('taskkill', ['/f', '/t', '/im', 'dsh-desktop.exe'], { stdio: 'ignore' })
+          sweep.once('exit', () => resolve(undefined))
+          sweep.once('error', () => resolve(undefined))
+        })
+      }
+      await execFileP(installer, ['/S', `/D=${installDir}`], { timeout: 300_000 })
       console.log('nsis: reinstalled over the existing install')
       await smokeRun(executable)
     }
     const uninstaller = join(installDir, 'Uninstall dsh-desktop.exe')
-    await execFileP(uninstaller, ['/S'], { timeout: 150_000 })
+    await execFileP(uninstaller, ['/S'], { timeout: 300_000 })
     console.log('nsis: uninstalled')
   } finally {
     await rm(installDir, { recursive: true, force: true }).catch(() => undefined)
