@@ -368,6 +368,24 @@ a { color: inherit; }
   font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em;
   color: var(--faint);
 }
+.hero__shot {
+  margin: 34px auto 0;
+  max-width: 860px;
+  position: relative;
+}
+.hero__shot-img {
+  display: block;
+  width: 100%; height: auto;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.45), 0 8px 24px -12px rgba(0, 0, 0, 0.18);
+}
+[data-theme="light"] .hero__shot-img--dark { display: none; }
+[data-theme="dark"] .hero__shot-img--light { display: none; }
+@media (max-width: 640px) {
+  .hero__shot { margin-top: 26px; }
+  .hero__shot-img { border-radius: 10px; }
+}
 
 /* ══ 可信基线与工作方式 ══ */
 .trust-strip { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--strip-bg); backdrop-filter: blur(12px); }
