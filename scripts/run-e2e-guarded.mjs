@@ -6,33 +6,33 @@
  * its own child bookkeeping). The tests themselves are green — the hang is
  * runner-exit plumbing, so this wrapper watches the summary line and then
  * hard-kills the whole process tree, exiting with the parsed result.
+ * Child output is teed to stdout (GitHub step log) and a local file.
  *
  * Usage: node scripts/run-e2e-guarded.mjs [--grep tag]
  */
 import { spawn } from 'node:child_process'
-import { openSync, readFileSync } from 'node:fs'
+import { createWriteStream } from 'node:fs'
 
 const LOG = '/tmp/dsh-e2e-guarded.log'
-const logFd = openSync(LOG, 'w')
-// Args here are static (CI-provided grep filters); join to avoid the
-// shell-args concatenation warning.
+const logStream = createWriteStream(LOG)
 const command = ['pnpm', 'exec', 'playwright', 'test', ...process.argv.slice(2)].join(' ')
-const child = spawn(command, { stdio: ['inherit', logFd, logFd], shell: true })
+const child = spawn(command, { stdio: ['inherit', 'pipe', 'pipe'], shell: true })
+let buffered = ''
 
-let finished = false
-
-function readLog() {
-  try {
-    return readFileSync(LOG, 'utf8')
-  } catch {
-    return ''
-  }
+function tee(chunk) {
+  process.stdout.write(chunk)
+  buffered += chunk.toString()
+  if (buffered.length > 2_000_000) buffered = buffered.slice(-1_000_000)
+  logStream.write(chunk)
 }
 
-function reap(result) {
+child.stdout.on('data', tee)
+child.stderr.on('data', tee)
+
+let finished = false
+function finish(code) {
   if (finished) return
   finished = true
-  // Give trace/screenshot writers a moment to flush, then reap the tree.
   setTimeout(() => {
     try {
       spawn('pkill', ['-9', '-f', 'playwright'], { stdio: 'ignore' })
@@ -45,31 +45,28 @@ function reap(result) {
     } catch {
       // already exited
     }
-    process.exit(result)
+    logStream.end()
+    process.exit(code)
   }, 2_000)
 }
 
-// Watch for the suite summary: "N passed (…)" with a failed count present.
-const interval = setInterval(() => {
-  const text = readLog()
-  const failedMatch = text.match(/^\s*([0-9]+) failed/m)
-  const passedMatch = text.match(/^\s*([0-9]+) passed \(/m)
-  if (passedMatch !== null && failedMatch !== null) {
-    clearInterval(interval)
-    reap(Number(failedMatch[1]) > 0 ? 1 : 0)
+// Parse the suite summary as soon as either marker is printed.
+setInterval(() => {
+  const failedMatch = buffered.match(/^\s*([0-9]+) failed/m)
+  const passedMatch = buffered.match(/^\s*([0-9]+) passed \(/m)
+  if (failedMatch !== null) {
+    finish(Number(failedMatch[1]) > 0 ? 1 : 0)
+  } else if (passedMatch !== null) {
+    finish(0)
   }
-}, 2_000)
+}, 1_000)
 
-// Normal exit: report playwright's own code (no hang occurred).
 child.once('error', error => {
   console.error(`run-e2e-guarded: spawn failed: ${error.message}`)
-  clearInterval(interval)
   process.exit(1)
 })
 child.once('exit', code => {
-  if (finished) return
-  clearInterval(interval)
-  finished = true
+  // Playwright exited on its own — no hang: trust its code.
   process.exit(code ?? 1)
 })
 
@@ -77,5 +74,5 @@ child.once('exit', code => {
 setTimeout(() => {
   if (finished) return
   console.error('run-e2e-guarded: global timeout — killing process tree')
-  reap(1)
+  finish(1)
 }, 15 * 60_000).unref()
