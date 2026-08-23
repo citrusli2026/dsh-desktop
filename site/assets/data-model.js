@@ -92,6 +92,7 @@ export var I18N = {
     'footer.official': 'DeepSeek 官方站点',
     'footer.mirror': 'GitCode 镜像', 'footer.releases': '全部版本', 'footer.issues': '问题反馈',
     'footer.sync': '纯静态站点 · 部署于 Vercel<br />版本数据由 GitHub Actions 自动同步',
+    'footer.top': '回到顶部',
     'copy': '复制', 'copy.link': '复制链接', 'copied': '已复制 ✓',
   },
   en: {
@@ -182,6 +183,7 @@ export var I18N = {
     'footer.official': 'Official DeepSeek site',
     'footer.mirror': 'GitCode mirror', 'footer.releases': 'All releases', 'footer.issues': 'Issues',
     'footer.sync': 'Static site · deployed on Vercel<br />Release data auto-synced by GitHub Actions',
+    'footer.top': 'Back to top',
     'copy': 'COPY', 'copy.link': 'COPY LINK', 'copied': 'COPIED ✓',
   },
 }

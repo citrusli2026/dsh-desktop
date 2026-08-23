@@ -640,7 +640,9 @@ a { color: inherit; }
 .footer__legal, .footer__sync { font-size: 12.5px; color: var(--faint); line-height: 1.75; }
 .footer__sync { text-align: right; }
 .footer__sync span:last-child { font-family: var(--mono); font-size: 11px; }
-.footer__links { display: flex; flex-direction: column; gap: 9px; }
+.footer__links { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 24px; }
+.footer__top { display: inline-block; margin-top: 14px; font-size: 12.5px; color: var(--signal-deep); text-decoration: none; }
+.footer__top:hover { color: var(--signal); }
 .footer__links a {
   font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.04em;
   color: var(--faint); text-decoration: none; width: fit-content;
