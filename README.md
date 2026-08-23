@@ -6,7 +6,7 @@
 
 A dependable desktop workspace for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`): the official WebUI, packaged for your desktop — download, install, and talk. Functionally identical to `npx @deepseek-ai/dsh web`. Community-maintained, MIT-licensed, no affiliation with DeepSeek AI; DeepSeek Harness is a DeepSeek trademark and this repo only repackages it under MIT.
 
-**Website**: [dsh-desktop.com](https://dsh-desktop.com) — product intro, downloads, and a FAQ (unsigned-macOS first launch, SmartScreen, checksum & provenance verification, mirror options). The site syncs with GitHub Releases automatically and lists a verified GitCode mirror ahead of GitHub on the Chinese interface.
+**Website**: [dsh-desktop.com](https://dsh-desktop.com) — product intro, downloads (GitHub and the verified GitCode mirror, in whichever order is usable), and a FAQ covering unsigned-macOS first launch, SmartScreen, checksum & provenance verification. The site syncs with GitHub Releases automatically.
 
 ## What you get
 
@@ -26,7 +26,7 @@ Installers per platform (plus `latest.yml` and `.exe.blockmap` in the release fo
 | Windows | `dsh-desktop-setup-<version>.exe` (NSIS) |
 | Linux | `dsh-desktop-<version>-amd64.deb` (Debian/Ubuntu/UOS/Deepin/麒麟) |
 
-From [GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases), or the GitCode mirror when shown. To verify what you downloaded: check the sibling `.sha256`, or `gh attestation verify <file> -R citrusli2026/dsh-electron-shell` for provenance — full steps per platform in the [website FAQ](https://dsh-desktop.com/#faq). GitHub slow or blocked? The FAQ covers the Chinese mirror and community proxies.
+Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the GitCode mirror) or [GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases). Verify what you downloaded with the sibling `.sha256`, or `gh attestation verify <file> -R citrusli2026/dsh-electron-shell` for provenance — full steps per platform in the [website FAQ](https://dsh-desktop.com/#faq).
 
 ## Versioning
 
@@ -37,7 +37,7 @@ Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1
 Requires Node `^22.19.0 || >=24.0.0` and pnpm 11:
 
 ```sh
-pnpm install         # deps + Electron binary (npmmirror by default)
+pnpm install         # deps + Electron binary
 pnpm run bootstrap   # materialize the harness closure + bundled Node 22 LTS
 pnpm run dev         # run locally
 pnpm run smoke       # smoke: harness ready -> window loads -> verify page -> exit
@@ -46,7 +46,7 @@ pnpm run dist        # build installers for the current platform (into dist/)
 ```
 
 - **LAN Web connection**: "Extensions → Connect phone / tablet over LAN" starts an isolated mobile-shell Web proxy and one-time pairing QR. The shell only stages the other repo's Web artifact (`dsh-mobile-shell`, immutable tag `v1.0.0`); `DSH_LAN_IP` selects an adapter when needed.
-- **Mirrors for the sandboxed fetch**: `NPM_CONFIG_REGISTRY`, `ELECTRON_MIRROR`, `ELECTRON_BUILDER_BINARIES_MIRROR`, `NODE_DIST_MIRROR` (default npmmirror). The bundled Node is pinned in `manifest/node-runtime.json` with per-platform SHA-256, so a mirror can only deliver bytes matching the commit.
+- The bundled Node is pinned in `manifest/node-runtime.json` with per-platform SHA-256, so bootstrap is reproducible from the committed values.
 
 ## Layout
 

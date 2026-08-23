@@ -8,9 +8,7 @@ DeepSeek Harness 的可靠桌面工作台:官方 WebUI 的桌面封装,下载安
 功能与 `npx @deepseek-ai/dsh web` 完全一致。社区维护,MIT 开源,与 DeepSeek AI 无关联;
 DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打包。
 
-**官网**: [dsh-desktop.com](https://dsh-desktop.com) —— 产品介绍、下载入口与常见问题
-(未签名 macOS 首启、SmartScreen、校验与来源验证、镜像方案)。官网随 GitHub Releases
-自动同步;中文界面在镜像可用时会把已经验证的 GitCode 镜像排在 GitHub 前面。
+**官网**: [dsh-desktop.com](https://dsh-desktop.com) —— 产品介绍与下载(GitHub 与验证过的 GitCode 镜像,按可用性排序展示),以及未签名 macOS 首启、SmartScreen、校验与来源验证等常见问题。官网随 GitHub Releases 自动同步。
 
 ## 你得到什么
 
@@ -30,11 +28,10 @@ DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打�
 | Windows | `dsh-desktop-setup-<版本>.exe`(NSIS) |
 | Linux | `dsh-desktop-<版本>-amd64.deb`(Debian/Ubuntu/UOS/Deepin/麒麟) |
 
-从 [GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases) 下载;
-显示镜像时也可走 GitCode。校验下载:核对旁侧的 `.sha256`,或
-`gh attestation verify <文件> -R citrusli2026/dsh-electron-shell` 验证来源证明,
-各平台完整步骤见[官网 FAQ](https://dsh-desktop.com/#faq)。GitHub 慢或被墙?
-FAQ 里讲了国内镜像与社区代理方案。
+从[官网](https://dsh-desktop.com)(按可用性展示 GitHub 与 GitCode 镜像)或
+[GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases)下载。
+校验:核对旁侧的 `.sha256`,或 `gh attestation verify <文件> -R citrusli2026/dsh-electron-shell`
+验证来源证明,各平台完整步骤见[官网 FAQ](https://dsh-desktop.com/#faq)。
 
 ## 版本号
 
@@ -48,7 +45,7 @@ FAQ 里讲了国内镜像与社区代理方案。
 要求:Node `^22.19.0 || >=24.0.0`,pnpm 11。
 
 ```sh
-pnpm install         # 依赖 + Electron 二进制(默认 npmmirror)
+pnpm install         # 依赖 + Electron 二进制
 pnpm run bootstrap   # 物化 harness 闭包 + 内置 Node 22 LTS
 pnpm run dev         # 本机运行
 pnpm run smoke       # 冒烟:harness 就绪 → 窗口加载 → 校验页面 → 退出
@@ -59,10 +56,8 @@ pnpm run dist        # 打当前平台安装包(产物在 dist/)
 - **局域网 Web 连接**:「扩展 → 通过局域网连接手机 / 平板」启动独立
   mobile-shell Web 代理并显示一次性配对码。壳只消费另一仓库的 Web 产物
   (`dsh-mobile-shell`,不可变 tag `v1.0.0`);`DSH_LAN_IP` 可指定多网卡时的地址。
-- **下载镜像覆盖**:`NPM_CONFIG_REGISTRY`、`ELECTRON_MIRROR`、
-  `ELECTRON_BUILDER_BINARIES_MIRROR`、`NODE_DIST_MIRROR`(默认 npmmirror)。
-  内置 Node 在 `manifest/node-runtime.json` 里 pin 死版本与各平台 SHA-256,
-  镜像只能交付与仓库提交哈希一致的字节。
+- 内置 Node 在 `manifest/node-runtime.json` 里 pin 死版本与各平台 SHA-256,
+  bootstrap 从仓库提交值复现。
 
 ## 目录结构
 
