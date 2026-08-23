@@ -4,7 +4,7 @@
    - 平台识别 CTA / 复制 / 滚动 reveal
    数据与文案字典见 ./data-model.js (纯数据层,亦被 check-site 直接导入)。
    零依赖,渐进增强。 */
-import { I18N, mergeLiveCounts, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js'
+import { I18N, mergeLiveCounts, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=26'
 
 var REPO = 'citrusli2026/dsh-electron-shell'
 var RELEASES_URL = 'https://github.com/' + REPO + '/releases'
