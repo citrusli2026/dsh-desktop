@@ -126,7 +126,16 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle }>({
       const page = currentApp?.windows()[0]
       if (page !== undefined) await page.screenshot({ path: testInfo.outputPath('window.png') }).catch(() => {})
     }
-    await currentApp?.close().catch(() => {})
+    // Guard the teardown: on Linux CI a lingering application can keep
+    // close() pending past the test timeout (observed on the diagnostics
+    // case). Race it and force-kill the process instead of hanging.
+    const close = currentApp?.close().catch(() => {})
+    await Promise.race([close, new Promise<void>(resolve => setTimeout(resolve, 15_000))])
+    try {
+      currentApp?.process().kill('SIGKILL')
+    } catch {
+      // process already gone
+    }
     activeLaunch = undefined
     await chmod(dshHome, 0o755).catch(() => undefined)
     if (server !== undefined) await new Promise<void>(resolve => server!.close(() => resolve()))
