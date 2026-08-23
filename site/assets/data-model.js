@@ -5,13 +5,8 @@
 /* ══ 文案字典 ══════════════════════════════════════ */
 export var I18N = {
   zh: {
-    'seo.title': 'DSH Desktop｜DeepSeek Harness 桌面端下载 - Windows、macOS、Linux',
-    'seo.description': 'DSH Desktop 是 DeepSeek Harness 的社区桌面版。无需安装 Node.js，支持 Windows、macOS 和 Linux，下载后即可运行本地 Agent 工作台。',
-    'seo.ogTitle': 'DSH Desktop｜DeepSeek Harness 桌面端',
-    'seo.ogDescription': 'DeepSeek Harness 的社区桌面版：无需 Node.js，支持 Windows、macOS 和 Linux，下载后即可运行。',
     'a11y.skip': '跳到主要内容',
     'a11y.menuOpen': '打开导航', 'a11y.menuClose': '关闭导航',
-    'a11y.langToggle': '切换语言',
       'brand.community': '社区版',
     'nav.workflow': '工作方式', 'nav.features': '功能特性', 'nav.version': '版本号', 'nav.faq': '常见问题', 'nav.install': '安装指南', 'nav.cta': '立即下载',
     'hero.h1': 'DeepSeek Harness<br />桌面版，可靠的 <em>本地工作台</em>。',
@@ -103,13 +98,8 @@ export var I18N = {
     'copy': '复制', 'copy.link': '复制链接', 'copied': '已复制 ✓',
   },
   en: {
-    'seo.title': 'DSH Desktop | DeepSeek Harness desktop app for Windows, macOS, and Linux',
-    'seo.description': 'DSH Desktop is a community desktop build of DeepSeek Harness. No Node.js setup required; download the local agent workspace for Windows, macOS, or Linux.',
-    'seo.ogTitle': 'DSH Desktop | DeepSeek Harness desktop app',
-    'seo.ogDescription': 'A community desktop build of DeepSeek Harness: no Node.js setup, with downloadable builds for Windows, macOS, and Linux.',
     'a11y.skip': 'Skip to main content',
     'a11y.menuOpen': 'Open menu', 'a11y.menuClose': 'Close menu',
-    'a11y.langToggle': 'Switch language',
     'brand.community': 'COMMUNITY EDITION',
     'nav.workflow': 'HOW IT WORKS', 'nav.features': 'FEATURES', 'nav.version': 'VERSIONING', 'nav.faq': 'FAQ', 'nav.install': 'INSTALL GUIDE', 'nav.cta': 'Download',
     'hero.h1': 'DeepSeek Harness<br />as a dependable <em>local desktop app</em>.',

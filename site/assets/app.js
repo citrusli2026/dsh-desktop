@@ -66,14 +66,7 @@ function bindThemeToggle() {
 }
 
 /* ══ 语言状态 ══════════════════════════════════════ */
-var lang = (function () {
-  if (!isHomePage) return (document.documentElement.lang || '').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en'
-  try {
-    var saved = localStorage.getItem('dsh-site-lang')
-    if (saved === 'zh' || saved === 'en') return saved
-  } catch (e) {}
-  return (navigator.language || 'zh').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en'
-})()
+var lang = (document.documentElement.lang || '').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en'
 var siteData = null
 
 function t(key) { return (I18N[lang] && I18N[lang][key]) || I18N.zh[key] || key }
@@ -424,58 +417,6 @@ function bindReveal() {
   els.forEach(function (el) { io.observe(el) })
 }
 
-/* ══ 语言切换 ══════════════════════════════════════ */
-function applyLang() {
-  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
-  document.title = t('seo.title')
-  var description = document.querySelector('meta[name="description"]')
-  var ogTitle = document.querySelector('meta[property="og:title"]')
-  var ogDescription = document.querySelector('meta[property="og:description"]')
-  var twitterTitle = document.querySelector('meta[name="twitter:title"]')
-  var twitterDescription = document.querySelector('meta[name="twitter:description"]')
-  if (description) description.content = t('seo.description')
-  if (ogTitle) ogTitle.content = t('seo.ogTitle')
-  if (ogDescription) ogDescription.content = t('seo.ogDescription')
-  if (twitterTitle) twitterTitle.content = t('seo.ogTitle')
-  if (twitterDescription) twitterDescription.content = t('seo.ogDescription')
-  $all('[data-i18n]').forEach(function (el) {
-    var key = el.getAttribute('data-i18n')
-    if (I18N[lang][key] !== undefined) el.innerHTML = I18N[lang][key]
-  })
-  fillFaqVersion()
-  var lt = $('#lang-toggle')
-  if (lt) {
-    lt.textContent = lang === 'zh' ? 'EN' : '中'
-    lt.setAttribute('aria-label', t('a11y.langToggle'))
-    lt.setAttribute('title', t('a11y.langToggle'))
-  }
-  var mbtn = $('#menu-toggle')
-  if (mbtn) {
-    var mlabel = t(mbtn.classList.contains('is-open') ? 'a11y.menuClose' : 'a11y.menuOpen')
-    mbtn.setAttribute('aria-label', mlabel)
-    mbtn.setAttribute('title', mlabel)
-  }
-  renderFirstRun()
-  if (siteData) {
-    renderMeta(siteData)
-    renderHeroDownloads(siteData, false)
-    renderPlatforms(siteData, false)
-    tunePrimaryCta(siteData)
-    bindCopy($('#platform-rows'))
-    bindDownloadGuide()
-  }
-}
-
-function bindLangToggle() {
-  var button = $('#lang-toggle')
-  if (!button) return
-  button.addEventListener('click', function () {
-    lang = lang === 'zh' ? 'en' : 'zh'
-    try { localStorage.setItem('dsh-site-lang', lang) } catch (e) {}
-    applyLang()
-  })
-}
-
 /* ══ 移动端菜单(≤960px 替代隐藏的导航) ═════════════ */
 function setMenu(open, focus) {
   var btn = $('#menu-toggle')
@@ -540,12 +481,10 @@ function bindSectionSpy() {
 /* ══ 启动 ══════════════════════════════════════════ */
 bindReveal()
 if (isHomePage) {
-  bindLangToggle()
   bindThemeToggle()
   bindMenuToggle()
   bindSectionSpy()
   applyTheme()
-  if (lang === 'en') applyLang()
 }
 bindCopy(document)
 
