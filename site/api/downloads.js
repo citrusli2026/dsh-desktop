@@ -91,13 +91,13 @@ async function fetchLiveTotalDownloads() {
 }
 
 async function fetchGuidedCounts() {
-  // Official-site download-link guidance (clicks) per source/platform,
-  // recorded by POST /api/beacon. Enabled only when Upstash envs exist;
-  // GitHub counts remain real CDN downloads from the API above.
+  // Official-site GitCode download-link guidance (clicks), recorded by
+  // POST /api/beacon. Enabled only when Upstash envs exist; GitHub counts
+  // come from the API above and are never blended with clicks.
   const url = process.env.UPSTASH_REDIS_REST_URL
   const token = process.env.UPSTASH_REDIS_REST_TOKEN
   if (!url || !token) return null
-  const keys = ['dl:github:mac', 'dl:github:win', 'dl:github:linux', 'dl:gitcode:mac', 'dl:gitcode:win', 'dl:gitcode:linux']
+  const keys = ['dl:gitcode:mac', 'dl:gitcode:win', 'dl:gitcode:linux']
   try {
     const res = await fetch(`${url}/mget`, {
       method: 'POST',
@@ -108,10 +108,7 @@ async function fetchGuidedCounts() {
     const values = await res.json()
     if (!Array.isArray(values)) return null
     const get = (i) => Number(values[i]?.result?.[0]) || 0
-    return {
-      github: get(0) + get(1) + get(2),
-      gitcode: get(3) + get(4) + get(5),
-    }
+    return get(0) + get(1) + get(2)
   } catch (_) {
     return null
   }
@@ -201,10 +198,9 @@ module.exports = async function handler(req, res) {
       tag: local.tag,
       generated_at: downloadsByAsset ? new Date().toISOString() : local.generated_at,
       source: downloadsByAsset ? 'github' : 'release-data',
-      total_downloads: ghTotal !== null && guided ? ghTotal + guided.github + guided.gitcode : ghTotal,
+      total_downloads: ghTotal !== null && guided ? ghTotal + guided : ghTotal,
       github_downloads: ghTotal,
-      gitcode_downloads: guided ? guided.github + guided.gitcode : null,
-      gitcode_guided_downloads: guided?.gitcode ?? null,
+      gitcode_downloads: guided,
       mac_downloads:
         (liveTotal && liveTotal.mac) ||
         (typeof local.stats?.mac_downloads === 'number' ? local.stats.mac_downloads : null),

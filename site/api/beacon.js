@@ -1,17 +1,18 @@
 /**
- * Vercel Serverless Function — download-link beacon counter.
+ * Vercel Serverless Function — GitCode download-link beacon counter.
  *
- * Route: POST /api/beacon?source=<github|gitcode>&platform=<mac|win|linux>
- * Called fire-and-forget from the download buttons (navigator.sendBeacon).
+ * Route: POST /api/beacon?source=gitcode&platform=<mac|win|linux>
+ * Called fire-and-forget from GitCode download buttons (sendBeacon).
+ * GitHub clicks are NOT counted here: GitHub exposes real CDN download
+ * counts through its API, so only GitCode needs site-side guidance
+ * statistics (its v5 API carries no download counters at all).
  *
  * Storage: Upstash Redis REST (free tier). Set UPSTASH_REDIS_REST_URL and
  * UPSTASH_REDIS_REST_TOKEN in the Vercel project to activate; without them
  * the endpoint returns 204 and records nothing — it never blocks a click.
  *
- * Semantics: this counts official-site download-link GUIDANCE (clicks),
- * NOT CDN-side real downloads. GitCode exposes no download counters in its
- * v5 API (asset objects carry only name/type/url), so this is the only
- * self-serviceable GitCode metric; GitHub figures stay real counts.
+ * Semantics: counts official-site download-link GUIDANCE (clicks), NOT
+ * CDN-side real downloads — unavoidable for GitCode.
  */
 
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL
@@ -38,7 +39,7 @@ module.exports = async function handler(req, res) {
 
   const source = req.query.source
   const platform = req.query.platform
-  if (!plausible(source, ['github', 'gitcode']) || !plausible(platform, ['mac', 'win', 'linux'])) {
+  if (source !== 'gitcode' || !plausible(platform, ['mac', 'win', 'linux'])) {
     res.status(204).end()
     return
   }
@@ -54,8 +55,8 @@ module.exports = async function handler(req, res) {
       method: 'POST',
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify([
-        ['INCR', `dl:${source}:${platform}`],
-        ['INCR', `dl:${source}:total`],
+        ['INCR', `dl:gitcode:${platform}`],
+        ['INCR', 'dl:gitcode:total'],
       ]),
     })
   } catch (_) {

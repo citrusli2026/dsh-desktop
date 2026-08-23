@@ -67,8 +67,8 @@ GitCode v5 API 与网页均不提供任何下载计数(资产对象只有 name/t
    `UPSTASH_REDIS_REST_TOKEN`;
 3. Vercel 项目 Settings → Environment Variables 添加这两个变量(所有环境),
    redeploy。
-之后 hero 的下载数 = GitHub 实计 + 两站引导点击;数值可在页面展示的
-tooltip 中区分(GitHub 实计 / GitCode 官网引导)。
+之后 hero 的下载数 = GitHub 实计 + GitCode 官网引导点击。GitHub 不再
+计引导(GitHub API 有真实下载计数),GitCode 侧该口径是唯一可得数据。
 
 ## Vercel 接入(一次性)
 
