@@ -274,22 +274,9 @@ a { color: inherit; }
 .menu-toggle.is-open .menu-icon--open { display: none; }
 .menu-toggle.is-open .menu-icon--close { display: block; }
 
-.topbar__menu {
-  display: none;
-  position: absolute; top: 64px; left: 0; right: 0;
-  flex-direction: column; gap: 2px;
-  padding: 10px 16px 16px;
-  background: var(--topbar-menu-bg);
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 18px 30px -18px rgba(0, 0, 0, 0.18);
-}
-.topbar__menu a {
-  font: 500 14px/1.4 var(--sans);
-  color: var(--faint); text-decoration: none;
-  padding: 12px 10px; border-radius: 10px;
-  transition: color 0.15s ease;
-}
-.topbar__menu a:hover { color: var(--signal-deep); background: var(--hover-glass); }
+/* 桌面导航只显示章节链接;「下载」「GitHub」在 ≤960px 的面板中出现
+   (下载 CTA 与 gh-chip 在 ≤640px 会被隐藏,面板里必须补上)。 */
+.nav-download, .nav-gh { display: none; }
 
 /* ══ 按钮 ══ */
 .btn {
@@ -679,7 +666,24 @@ a { color: inherit; }
   .topbar { gap: 14px; }
   .topbar__nav { display: none; }
   .menu-toggle { display: inline-flex; }
-  .topbar__menu.is-open { display: flex; }
+  /* 单一导航在移动端变成下拉面板(与桌面共用元素,免双份维护)。 */
+  .topbar__nav.is-open { display: flex; }
+  .topbar__nav {
+    position: absolute; top: 64px; left: 0; right: 0;
+    flex-direction: column; gap: 2px;
+    padding: 10px 16px 16px;
+    background: var(--topbar-menu-bg);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 18px 30px -18px rgba(0, 0, 0, 0.18);
+  }
+  .topbar__nav a {
+    font: 500 14px/1.4 var(--sans);
+    color: var(--faint); text-decoration: none;
+    padding: 12px 10px; border-radius: 10px;
+    transition: color 0.15s ease;
+  }
+  .topbar__nav a:hover { color: var(--signal-deep); background: var(--hover-glass); }
+  .nav-download, .nav-gh { display: block; }
   .footer__grid { grid-template-columns: 1fr; }
   .footer__sync { text-align: left; }
   .legend-row { grid-template-columns: 1fr; gap: 6px; }
@@ -731,7 +735,7 @@ a { color: inherit; }
 }
 
 @media (min-width: 641px) and (max-width: 960px) {
-  .topbar__menu-gh { display: none; }
+  .nav-gh { display: none; }
 }
 
 @media (max-width: 340px) {
