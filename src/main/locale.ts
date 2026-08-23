@@ -344,6 +344,7 @@ export class ShellLocaleController {
   private readonly themeListeners = new Set<ThemeListener>()
   private watcher: FSWatcher | undefined
   private readTimer: NodeJS.Timeout | undefined
+  private pollTimer: NodeJS.Timeout | undefined
 
   private constructor(settingsPath: string, initial: ShellLocale, theme: ShellTheme, systemLocale: ShellLocale) {
     this.settingsPath = settingsPath
@@ -364,6 +365,7 @@ export class ShellLocaleController {
     }
     const controller = new ShellLocaleController(settingsPath, initial, theme, systemLocale)
     controller.startWatching()
+    controller.startPolling()
     return controller
   }
 
@@ -387,9 +389,20 @@ export class ShellLocaleController {
 
   dispose(): void {
     if (this.readTimer !== undefined) clearTimeout(this.readTimer)
+    if (this.pollTimer !== undefined) clearInterval(this.pollTimer)
     this.watcher?.close()
     this.listeners.clear()
     this.themeListeners.clear()
+  }
+
+  private startPolling(): void {
+    // Directory fs.watch can miss content rewrites on some platforms
+    // (Windows in particular), which left the native menu and title stuck on
+    // the old locale after a settings change until restart. The file is tiny,
+    // so re-read it every few seconds as a fallback; refresh() deduplicates
+    // and only notifies when a value actually changed.
+    this.pollTimer = setInterval(() => { void this.refresh() }, 2_000)
+    this.pollTimer.unref()
   }
 
   private startWatching(): void {
