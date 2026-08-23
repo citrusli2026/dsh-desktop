@@ -266,6 +266,16 @@ a { color: inherit; }
   font-family: var(--mono);
   transition: color 0.15s ease, border-color 0.15s ease;
 }
+.gh-chip::before, .nav-gh::before {
+  content: "";
+  display: inline-block;
+  width: 13px; height: 13px; flex: 0 0 13px;
+  background: currentColor;
+  -webkit-mask: url("/assets/github-mark.svg") center / contain no-repeat;
+  mask: url("/assets/github-mark.svg") center / contain no-repeat;
+}
+.gh-chip > svg { display: none; }
+.nav-gh::before { margin-right: 6px; vertical-align: -2px; }
 .gh-chip:hover { color: var(--text); border-color: var(--border-strong); background: var(--chip-hover-bg); }
 
 /* ══ 移动端菜单 ══ */
