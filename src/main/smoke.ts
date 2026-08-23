@@ -19,6 +19,11 @@ export const SMOKE_TIMEOUT_MS = 150_000
 
 export function quitGracefully(code: number): void {
   process.exitCode = code
+  // app.quit() alone can exit 0 regardless of process.exitCode on Windows,
+  // which turned failed smoke runs into "packaged smoke: OK" in the CI logs;
+  // app.exit() forces the exact code. Hook will-quit so the before-quit
+  // cleanup chain (harness stop, tray) still runs before the forced exit.
+  app.once('will-quit', () => { app.exit(code) })
   app.quit()
 }
 
