@@ -34,7 +34,7 @@ function makeReq(method = 'GET', host = 'dsh-desktop.com') {
   return { method, headers: { host, 'x-forwarded-proto': 'https' } }
 }
 
-function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, expectTotal, expectMac, expectWin, expectLinux, expectGitcode, req, env }) {
+function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, expectTotal, expectMac, expectWin, expectLinux, expectGitcode, expectCanonical, req, env }) {
   const originalFetch = globalThis.fetch
   const originalEnv = {}
   for (const key of Object.keys(env || {})) {
@@ -83,7 +83,15 @@ function runCase(name, { fetchImpl, expectStatus, expectSource, expectCounts, ex
     const winOk = expectWin === undefined || res.body?.win_downloads === expectWin
     const linuxOk = expectLinux === undefined || res.body?.linux_downloads === expectLinux
     const gitcodeOk = expectGitcode === undefined || res.body?.gitcode_downloads === expectGitcode
-    if (!ok || (expectSource && res.body && res.body.source !== expectSource) || !totalOk || !macOk || !winOk || !linuxOk || !gitcodeOk) {
+    const canonicalOk = !expectCanonical || (
+      res.body?.release?.tag === releaseJson.release.tag &&
+      Array.isArray(res.body?.release?.assets) &&
+      res.body.release.assets.length === releaseJson.release.assets.length &&
+      typeof res.body.release.assets[0]?.url === 'string' &&
+      typeof res.body.release.assets[0]?.size === 'number' &&
+      res.body?.stats?.installer_downloads === res.body?.total_downloads
+    )
+    if (!ok || (expectSource && res.body && res.body.source !== expectSource) || !totalOk || !macOk || !winOk || !linuxOk || !gitcodeOk || !canonicalOk) {
       throw new Error(`${name} FAILED — ${detail}`)
     }
     console.log(`ok — ${name} (${detail})`)
@@ -130,6 +138,7 @@ await runCase('real-time counts from GitHub tag endpoint', {
   expectTotal: 900,
   expectMac: 500,
   expectWin: 400,
+  expectCanonical: true,
 })
 
 await runCase('GitCode guidance is added to each platform total', {
@@ -161,6 +170,7 @@ await runCase('GitCode guidance is added to each platform total', {
   expectWin: 405,
   expectLinux: 57,
   expectGitcode: 15,
+  expectCanonical: true,
 })
 
 await runCase('static fallback when GitHub tag endpoint fails', {
@@ -174,6 +184,7 @@ await runCase('static fallback when GitHub tag endpoint fails', {
   expectTotal: releaseJson.stats?.installer_downloads ?? null,
   expectMac: releaseJson.stats?.mac_downloads ?? null,
   expectWin: releaseJson.stats?.win_downloads ?? null,
+  expectCanonical: true,
 })
 
 await runCase('malicious Host header cannot redirect same-site fetch', {
@@ -189,6 +200,7 @@ await runCase('malicious Host header cannot redirect same-site fetch', {
   expectTotal: releaseJson.stats?.installer_downloads ?? null,
   expectMac: releaseJson.stats?.mac_downloads ?? null,
   expectWin: releaseJson.stats?.win_downloads ?? null,
+  expectCanonical: true,
 })
 
 await runCase('404 legacy path when no local data and no listable release', {

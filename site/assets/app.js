@@ -4,7 +4,7 @@
    - 平台识别 CTA / 复制 / 滚动 reveal
    数据与文案字典见 ./data-model.js (纯数据层,亦被 check-site 直接导入)。
    零依赖,渐进增强。 */
-import { I18N, mergeLiveCounts, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=30'
+import { I18N, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=31'
 
 var REPO = 'citrusli2026/dsh-electron-shell'
 var RELEASES_URL = 'https://github.com/' + REPO + '/releases'
@@ -102,10 +102,23 @@ function fromGitHubApi() {
 }
 
 function loadData() {
-  return fetch('/data/release.json', { cache: 'no-cache' })
+  return fetch('/api/downloads', { cache: 'no-store' })
     .then(function (res) {
-      if (!res.ok) throw new Error('local ' + res.status)
+      if (!res.ok) throw new Error('downloads ' + res.status)
       return res.json()
+    })
+    .then(function (data) {
+      if (!data || !data.release || !Array.isArray(data.release.assets) || !data.stats) {
+        throw new Error('downloads payload is incomplete')
+      }
+      return data
+    })
+    .catch(function () {
+      return fetch('/data/release.json', { cache: 'no-cache' })
+        .then(function (res) {
+          if (!res.ok) throw new Error('local ' + res.status)
+          return res.json()
+        })
     })
     .catch(fromGitHubApi)
 }
@@ -248,29 +261,6 @@ function renderPlatforms(data, animate) {
     $('#platform-rows').innerHTML = html
     updatePlatformCounts(data, animate)
   }
-}
-
-function fetchRealTimeDownloads(data) {
-  fetch('/api/downloads')
-    .then(function (res) { return res.json() })
-    .then(function (live) {
-      if (!live || !live.assets || !live.assets.length) return
-      // 纯合并:返回新对象,无变化时返回 null(跳过重渲染)
-      var merged = mergeLiveCounts(data, live)
-      if (merged) {
-        siteData = merged
-        updatePlatformCounts(siteData, true)
-        renderHeroDownloads(siteData, true)
-      }
-      // 更新同步时间文案为实时模式
-      var syncEl = $('#sync-time')
-      if (syncEl) {
-        syncEl.textContent = (lang === 'zh'
-          ? '下载数实时同步于 GitHub · ' + live.generated_at.slice(11, 16) + ' UTC'
-          : 'download count live-synced from GitHub · ' + live.generated_at.slice(11, 16) + ' UTC')
-      }
-    })
-    .catch(function () { /* silent fallback */ })
 }
 
 function tunePrimaryCta(data) {
@@ -557,7 +547,6 @@ loadData()
     fillFaqVersion()
     bindCopy($('#platform-rows'))
     bindDownloadGuide()
-    fetchRealTimeDownloads(data)
   })
   .catch(function () {
     $('#release-meta').textContent = 'OFFLINE → GITHUB'

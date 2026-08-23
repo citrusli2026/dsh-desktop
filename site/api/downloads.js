@@ -47,7 +47,14 @@ async function fetchLocalReleaseData() {
   return {
     tag: rel.tag,
     generated_at: typeof payload.generated_at === 'string' ? payload.generated_at : new Date().toISOString(),
+    repo: payload.repo || null,
     stats: payload.stats,
+    release: {
+      name: rel.name,
+      html_url: rel.html_url,
+      published_at: rel.published_at,
+      prerelease: rel.prerelease,
+    },
     assets: rel.assets.filter(a => classifyAsset(a.name) !== null),
   }
 }
@@ -171,20 +178,14 @@ module.exports = async function handler(req, res) {
 
     // 3) Live download counts from the specific published tag (works for
     //    prereleases), else the counts baked into release.json.
-    let downloadsByAsset = null
-    let liveTotal = null
-    try {
-      downloadsByAsset = await fetchLiveDownloads(local.tag)
-    } catch (_) {
-      downloadsByAsset = null
-    }
-    try {
-      liveTotal = await fetchLiveTotalDownloads()
-    } catch (_) {
-      liveTotal = null
-    }
+    const [downloadsByAsset, liveTotal, guided] = await Promise.all([
+      fetchLiveDownloads(local.tag).catch(() => null),
+      fetchLiveTotalDownloads().catch(() => null),
+      fetchGuidedCounts(),
+    ])
 
     const assets = local.assets.map(a => ({
+      ...a,
       name: a.name,
       downloads:
         (downloadsByAsset && downloadsByAsset.has(a.name))
@@ -207,20 +208,41 @@ module.exports = async function handler(req, res) {
     const ghTotal = liveTotal && typeof liveTotal.mac === 'number' && typeof liveTotal.win === 'number' && typeof liveTotal.linux === 'number'
       ? liveTotal.mac + liveTotal.win + liveTotal.linux
       : (typeof local.stats?.installer_downloads === 'number' ? local.stats.installer_downloads : null)
-    const guided = await fetchGuidedCounts()
     const withGuided = (github, platform) => github !== null && guided ? github + guided[platform] : github
-    res.status(200).json({
-      tag: local.tag,
+    const totalDownloads = ghTotal !== null && guided ? ghTotal + guided.total : ghTotal
+    const macDownloads = withGuided(githubMac, 'mac')
+    const winDownloads = withGuided(githubWin, 'win')
+    const linuxDownloads = withGuided(githubLinux, 'linux')
+    const releasedVersions = liveTotal && typeof liveTotal.releases === 'number' ? liveTotal.releases : (local.stats?.releases || null)
+    const siteData = {
       generated_at: downloadsByAsset ? new Date().toISOString() : local.generated_at,
+      repo: local.repo,
+      stats: {
+        ...(local.stats || {}),
+        installer_downloads: totalDownloads,
+        mac_downloads: macDownloads,
+        win_downloads: winDownloads,
+        linux_downloads: linuxDownloads,
+        releases: releasedVersions,
+      },
+      release: {
+        ...local.release,
+        tag: local.tag,
+        assets,
+      },
+    }
+    res.status(200).json({
+      ...siteData,
+      tag: local.tag,
       source: downloadsByAsset ? 'github' : 'release-data',
-      total_downloads: ghTotal !== null && guided ? ghTotal + guided.total : ghTotal,
+      total_downloads: totalDownloads,
       github_downloads: ghTotal,
       gitcode_downloads: guided ? guided.total : null,
       gitcode_platform_downloads: guided ? { mac: guided.mac, win: guided.win, linux: guided.linux } : null,
-      mac_downloads: withGuided(githubMac, 'mac'),
-      win_downloads: withGuided(githubWin, 'win'),
-      linux_downloads: withGuided(githubLinux, 'linux'),
-      released_versions: liveTotal && typeof liveTotal.releases === 'number' ? liveTotal.releases : (local.stats?.releases || null),
+      mac_downloads: macDownloads,
+      win_downloads: winDownloads,
+      linux_downloads: linuxDownloads,
+      released_versions: releasedVersions,
       assets,
     })
   } catch (err) {
