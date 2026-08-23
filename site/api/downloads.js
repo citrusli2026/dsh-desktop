@@ -99,15 +99,17 @@ async function fetchGuidedCounts() {
   if (!url || !token) return null
   const keys = ['dl:gitcode:mac', 'dl:gitcode:win', 'dl:gitcode:linux']
   try {
-    const res = await fetch(`${url}/mget`, {
+    // Upstash REST: the mget endpoint needs GET-style ?keys=... or the
+    // pipeline form; the POST {"keys": [...]} shape is not accepted.
+    const res = await fetch(`${url}/pipeline`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keys }),
+      body: JSON.stringify(keys.map(key => ['GET', key])),
     })
     if (!res.ok) return null
     const values = await res.json()
     if (!Array.isArray(values)) return null
-    const get = (i) => Number(values[i]?.result?.[0]) || 0
+    const get = (i) => Number(values[i]?.result) || 0
     return get(0) + get(1) + get(2)
   } catch (_) {
     return null
