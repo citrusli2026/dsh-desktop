@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-25T05:53:09.993Z",
+  "generated_at": "2026-08-25T05:58:59.846Z",
   "repo": {
     "full_name": "citrusli2026/dsh-electron-shell",
     "html_url": "https://github.com/citrusli2026/dsh-electron-shell",
@@ -7,10 +7,10 @@
     "license": "MIT"
   },
   "stats": {
-    "installer_downloads": 157,
-    "mac_downloads": 59,
+    "installer_downloads": 159,
+    "mac_downloads": 60,
     "win_downloads": 86,
-    "linux_downloads": 12,
+    "linux_downloads": 13,
     "releases": 20
   },
   "release": {
@@ -23,7 +23,7 @@
       {
         "name": "dsh-desktop-0.1.1-rc.2.shell.4-amd64.deb",
         "size": 159736444,
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.1-rc.2.shell.4/dsh-desktop-0.1.1-rc.2.shell.4-amd64.deb",
         "kind": "installer",
         "sha256": null,
@@ -33,7 +33,7 @@
       {
         "name": "dsh-desktop-0.1.1-rc.2.shell.4-amd64.deb.sha256",
         "size": 107,
-        "downloads": 0,
+        "downloads": 3,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.1-rc.2.shell.4/dsh-desktop-0.1.1-rc.2.shell.4-amd64.deb.sha256",
         "kind": "checksum",
         "sha256": "7d8d99b3ba265d4e29caeab899ac69fe501bd5e2803bd2d058d367de062a5e15",
@@ -43,7 +43,7 @@
       {
         "name": "dsh-desktop-0.1.1-rc.2.shell.4-arm64-mac.dmg",
         "size": 181627908,
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.1-rc.2.shell.4/dsh-desktop-0.1.1-rc.2.shell.4-arm64-mac.dmg",
         "kind": "installer",
         "sha256": null,
@@ -53,7 +53,7 @@
       {
         "name": "dsh-desktop-0.1.1-rc.2.shell.4-arm64-mac.dmg.sha256",
         "size": 111,
-        "downloads": 0,
+        "downloads": 3,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.1-rc.2.shell.4/dsh-desktop-0.1.1-rc.2.shell.4-arm64-mac.dmg.sha256",
         "kind": "checksum",
         "sha256": "22c0aa16368aa992c07d31466a011e387e18da1bc73a769bdb097098d672062a",
@@ -73,7 +73,7 @@
       {
         "name": "dsh-desktop-setup-0.1.1-rc.2.shell.4.exe.sha256",
         "size": 107,
-        "downloads": 0,
+        "downloads": 2,
         "url": "https://github.com/citrusli2026/dsh-electron-shell/releases/download/v0.1.1-rc.2.shell.4/dsh-desktop-setup-0.1.1-rc.2.shell.4.exe.sha256",
         "kind": "checksum",
         "sha256": "ec4bdb62bd98dc27c9bd49ee2133e4e0ae3752412f1788b1e49b25587ad88670",
