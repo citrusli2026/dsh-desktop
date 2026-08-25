@@ -8,13 +8,13 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | 🚧 `0.1.1-rc.2.shell.4`（待发布；内核 0.1.1-rc.2 未变，壳修订 +4） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.3`（2026-08-23，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.4`（2026-08-25 已发布；内核 0.1.1-rc.2 未变，壳修订 +4） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.4`（2026-08-25，三端 dmg/exe/deb；AppImage 已整体移除） |
 | 本地门禁 | ✅ 118 项单测、类型检查、官网门禁、构建通过 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.3 Release 严格 8 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.3`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.3 GitCode 镜像：dmg/exe/deb + 3×sha256（2026-08-23 本机 SOCKS5 下载 + 直传，匿名 Range GET 6/6） |
-| 实时下载统计 | ✅ `/api/downloads` 优先读取同站 `release.json` 并通过 GitHub tag 端点实时计数；shell.3 发布后线上验证 200，累计 161（mac 60 / win 87 / linux 14） |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.4 Release 严格 8 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.4`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.4 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证） |
+| 实时下载统计 | ✅ `/api/downloads` 优先读取同站 `release.json` 并通过 GitHub tag 端点实时计数；shell.4 线上验证 200，累计 173（mac 61 / win 97 / linux 15） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -617,7 +617,7 @@ _更新于 2026-08-23_
 
 ---
 
-## 二十三、Windows 菜单栏不可达 → 原生入口 + 应用内插件化入口（2026-08-24，未发布）
+## 二十三、Windows 菜单栏不可达 → 原生入口 + 应用内插件化入口（2026-08-24，随 shell.4 发布）
 
 **场景与根因**：真机验证发现 Windows 版本没有可见菜单栏（macOS 有系统菜单栏）。
 根因是窗口使用隐藏标题栏（`window-chrome.ts` 的 `titleBarStyle: 'hidden'` +
@@ -626,7 +626,7 @@ _更新于 2026-08-23_
 （Alt 也唤不出）。影响：**"扩展"菜单（LAN 手机配对）在 Windows 上完全无入口**，
 功能实现存在但不可用；同理失联的还有"关于、切换全屏、社区链接"。
 
-**已落地改动（尚未提交）**：
+**已落地改动（已提交并随 shell.4 发布）**：
 
 1. `menu-template.ts`：LAN 菜单项提取为共享纯函数 `buildLanMenuItems`
    （停/忙/连三态：连接移动设备 / 显示二维码 + 停止共享），社区链接提取为
@@ -653,8 +653,10 @@ data/error/loading 页面和其他 WebContents 均拒绝。当前完整验证：
 build、coverage 全绿（lines 90.55 / branches 82.43 / functions 84.23；阈值
 80/75/70）。
 
-**待办**：Windows 真机/打包态冒烟（托盘 + 右键 + `⋮` 入口及三项点击）；macOS 右键同样
-出现新项（与系统菜单冗余，无冲突）。
+**验证结果**：真实 Electron 渲染验证确认 `⋮` 入口、桥接函数和展开面板均可用；本地
+网站中英文页面及线上正式域名均确认出现 Windows 入口介绍；Release CI 的 Windows
+packaged smoke、安装态测试和三平台构建全部通过。Windows 真机托盘点击仍建议在有
+Windows 设备时补做一次人工确认；不影响本次发布。
 
 **Codex 调研（2026-08-24）**：`docs/codex-windows-reference.md`（19 KB，一手
 来源 + 标注不可核实项）。结论：Codex 在 Windows 有桌面 GUI（Microsoft Store
@@ -663,9 +665,40 @@ footer 常驻 "`?` for shortcuts"、`?` 打开快捷键浮层、约 50 条斜杠
 平移到命令层、快捷键全不依赖 OS 菜单栏（Ctrl+T/Ctrl+O/Esc/Alt+A 等）。CLI→GUI
 桥为 `codex://threads/new?path=` deep link + `/app` 命令。
 
+本产品没有照搬问号入口，而是采用更符合桌面产品习惯的 `⋮`（更多操作）符号，
+避免把“快捷键帮助”和“桌面操作入口”混在一起。
+
 **后续优化（下一步候选，未立项）**：
 
 1. 将当前三项入口扩展为完整「快捷帮助浮层」：补充诊断、日志和快捷键，并视需要
    覆盖 loading/错误页；不把原生托盘/右键替换掉。
-2. 托盘/右键入口与插件入口并存，不冲突；发布随下次 shell bump（当前
-   `0.1.1-rc.2.shell.3` 已发布，本改动未打 tag）。
+2. 托盘/右键入口与插件入口并存，不冲突；当前已随 `0.1.1-rc.2.shell.4` 发布。
+
+---
+
+## 二十四、v0.1.1-rc.2.shell.4 发布（2026-08-25）
+
+1. **版本与功能**：`0.1.1-rc.2.shell.4` 基于内核 `0.1.1-rc.2`，新增 Windows 菜单不可达时的
+   应用内 `⋮` 更多操作入口，并保留系统托盘与窗口右键入口；三者均可进入 LAN 配对、全屏和关于。
+2. **验证与发布**：本地 `pnpm run verify` 通过（118 项单测、类型检查、官网门禁、构建）；真实
+   Electron 渲染验证通过；Release workflow `32813464908` 的 verify、Windows/macOS/Linux 构建、
+   Windows packaged smoke 与 publish 全部成功，publish job 为 `97698807331`。GitHub Release
+   发布时间为 `2026-08-25T05:46:04Z`。
+3. **提交与资产**：tag `v0.1.1-rc.2.shell.4` peeled 到 `228c6b5`
+   （`228c6b56c9658a7921ba8b18632b83891be990dd`），Release 含 8 个资产：三端安装包、三份
+   `.sha256`、Windows `.blockmap` 和 `latest.yml`。
+4. **GitCode 镜像**：dmg/exe/deb 与三份 `.sha256` 共 6 个用户资产已上传，`6/6` 在线验证通过；
+   GitCode tag 已与发布提交对齐，官网刷新提交 `8afe659` 也已同步到 GitCode。
+5. **官网**：Site Data Refresh 首次触发因并发提交产生 rebase 冲突（run `32814155085`），随后
+   手动重跑 `32814990932` 成功并提交 `8afe659`；线上 `release.json` 已指向 shell.4，中英文页面
+   已加入 Windows 入口介绍，`/api/downloads` 返回 200，线上累计统计为 173（mac 61 / win 97 / linux 15）。
+
+发布元数据：
+
+- GitHub Release：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.1-rc.2.shell.4>
+- 官网：<https://dsh-desktop.com>
+- Site Data Refresh：run `32814990932`（成功），提交 `8afe659`
+
+---
+
+_更新于 2026-08-25_
