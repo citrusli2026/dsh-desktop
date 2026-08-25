@@ -21,7 +21,7 @@
 <link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en" />
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=33" />
+<link rel="stylesheet" href="/assets/style.css?v=34" />
 <link rel="stylesheet" href="/assets/seo.css?v=8" />
 <script>
   try {
@@ -46,6 +46,19 @@
     <img class="hero__shot-img hero__shot-img--dark" src="/assets/hero-app-dark.png?v=24" alt="DSH Desktop running the DeepSeek Harness workspace in dark mode" width="1280" height="800" decoding="async" />
   </figure>
   <div class="seo-proof-grid" aria-label="Product baseline"><div><b>LOCAL</b><span>Loopback-only runtime</span></div><div><b>ISOLATED</b><span>Separate data by default</span></div><div><b>VERIFIABLE</b><span>Public CI and real-app tests</span></div></div>
+
+  <section class="access-card" aria-labelledby="windows-access-title">
+    <div class="access-card__copy">
+      <p class="access-card__eyebrow">WINDOWS ACCESS</p>
+      <h2 id="windows-access-title">The menu can hide. Your controls don't.</h2>
+      <p>When Windows hides the title-bar menu, the <code>⋮</code> desktop entry stays visible for mobile pairing, full screen, and About. Right-click anywhere in the window or use the system tray for the complete desktop fallback.</p>
+    </div>
+    <div class="access-card__routes" aria-label="Windows desktop access routes">
+      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">⋮</span><div><b>In-app controls</b><span>Pair a device · Full screen · About</span></div></div>
+      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">Right-click</span><div><b>Window context menu</b><span>Available from any page</span></div></div>
+      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">Tray</span><div><b>System tray</b><span>Still available while the window recovers</span></div></div>
+    </div>
+  </section>
 
   <h2>What the desktop shell adds</h2>
   <ul><li>Bundled runtime and one-click startup for Windows, macOS, and Linux releases.</li><li>Native window, tray behavior, lifecycle supervision, and recovery diagnostics.</li><li>Isolated desktop data at <code>~/.dsh-desktop</code>, separate from the CLI by default.</li><li>Sandboxed renderer boundaries while the upstream Harness Web UI remains the source of agent behavior.</li></ul>

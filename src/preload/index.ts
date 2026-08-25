@@ -58,4 +58,7 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   exportDiagnostics: (): Promise<boolean> => ipcRenderer.invoke('shell:export-diagnostics'),
   /** Close the shell-owned LAN pairing modal. */
   closeLanPairing: (): Promise<boolean> => ipcRenderer.invoke('shell:close-lan-pairing'),
+  /** Invoke one of the fixed, low-risk desktop controls from the Harness UI. */
+  desktopAction: (action: 'startLanPairing' | 'toggleFullscreen' | 'showAbout'): Promise<boolean> =>
+    ipcRenderer.invoke('desktop:action', action),
 })

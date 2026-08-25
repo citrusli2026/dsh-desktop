@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isMainWindowSender, isShellOwnedFrame, ShellApp, type ShellAppServices } from '../src/main/shell-app.ts'
+import { isMainWindowHarnessSender, isMainWindowSender, isShellOwnedFrame, ShellApp, type ShellAppServices } from '../src/main/shell-app.ts'
 import type { HarnessState, HarnessSupervisor } from '../src/main/supervisor.ts'
 
 class FakeSupervisor {
@@ -167,4 +167,15 @@ test('isMainWindowSender admits only the shell-owned main-window frame', () => {
   assert.equal(isMainWindowSender(window, { id: 2 }, 'data:text/html,loading'), false, 'other webContents must be rejected')
   assert.equal(isMainWindowSender(undefined, webContents, 'data:text/html,loading'), false, 'no window')
   assert.equal(isMainWindowSender({ isDestroyed: () => true, webContents }, webContents, 'data:text/html,loading'), false, 'destroyed window')
+})
+
+test('isMainWindowHarnessSender admits only the current Harness origin', () => {
+  const webContents = { id: 1 }
+  const window = { isDestroyed: () => false, webContents }
+  assert.equal(isMainWindowHarnessSender(window, webContents, 'http://127.0.0.1:1234/', 'http://127.0.0.1:1234'), true)
+  assert.equal(isMainWindowHarnessSender(window, webContents, 'http://127.0.0.1:1234/settings', 'http://127.0.0.1:1234'), true)
+  assert.equal(isMainWindowHarnessSender(window, webContents, 'http://127.0.0.1:5678/', 'http://127.0.0.1:1234'), false, 'foreign loopback origin')
+  assert.equal(isMainWindowHarnessSender(window, webContents, 'data:text/html,loading', 'http://127.0.0.1:1234'), false, 'shell page')
+  assert.equal(isMainWindowHarnessSender(window, { id: 2 }, 'http://127.0.0.1:1234/', 'http://127.0.0.1:1234'), false, 'other webContents')
+  assert.equal(isMainWindowHarnessSender(window, webContents, 'http://127.0.0.1:1234/', undefined), false, 'missing approved origin')
 })

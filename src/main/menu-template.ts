@@ -2,6 +2,7 @@
 import type { MenuItemConstructorOptions } from 'electron'
 import { shellText, type ShellLocale } from './locale.ts'
 import {
+  COMMUNITY_WEBSITE_URL,
   DEEPSEEK_OFFICIAL_URL,
   PROJECT_ISSUES_URL,
   PROJECT_REPO_URL,
@@ -30,6 +31,50 @@ export interface MenuEnvironment {
   restartEnabled?: boolean
   lanRunning?: boolean
   lanBusy?: boolean
+}
+
+export interface LanMenuState {
+  lanRunning: boolean
+  lanBusy: boolean
+}
+
+export interface LanMenuActions {
+  startLanLink(): void
+  showLanQr(): void
+  stopLanLink(): void
+}
+
+/** LAN-link entries, shared by the application menu, tray menu, and window context menu. */
+export function buildLanMenuItems(
+  locale: ShellLocale,
+  state: LanMenuState,
+  actions: LanMenuActions,
+): MenuItemConstructorOptions[] {
+  const t = (key: Parameters<typeof shellText>[1]): string => shellText(locale, key)
+  if (state.lanRunning) {
+    return [
+      { label: t('menu.showLanQr'), click: actions.showLanQr },
+      { type: 'separator' },
+      { label: t('menu.stopLanLink'), click: actions.stopLanLink },
+    ]
+  }
+  return [
+    { label: t('menu.startLanLink'), enabled: !state.lanBusy, click: actions.startLanLink },
+  ]
+}
+
+export interface CommunityMenuActions {
+  openExternal(url: string): void
+}
+
+/** Community links, shared by the Help menu and the tray Community submenu. */
+export function buildCommunityMenuItems(locale: ShellLocale, actions: CommunityMenuActions): MenuItemConstructorOptions[] {
+  const t = (key: Parameters<typeof shellText>[1]): string => shellText(locale, key)
+  return [
+    { label: t('menu.communityWebsite'), click: () => actions.openExternal(COMMUNITY_WEBSITE_URL) },
+    { label: t('menu.projectRepository'), click: () => actions.openExternal(PROJECT_REPO_URL) },
+    { label: t('menu.reportIssue'), click: () => actions.openExternal(PROJECT_ISSUES_URL) },
+  ]
 }
 
 export function buildAppMenuTemplate(environment: MenuEnvironment, actions: MenuActions): MenuItemConstructorOptions[] {
@@ -115,15 +160,7 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
 
   template.push({
     label: t('menu.extensions'),
-    submenu: [
-      ...(lanRunning
-        ? [
-            { label: t('menu.showLanQr'), click: actions.showLanQr } as MenuItemConstructorOptions,
-            { type: 'separator' } as MenuItemConstructorOptions,
-            { label: t('menu.stopLanLink'), click: actions.stopLanLink } as MenuItemConstructorOptions,
-          ]
-        : [{ label: t('menu.startLanLink'), enabled: !lanBusy, click: actions.startLanLink } as MenuItemConstructorOptions]),
-    ],
+    submenu: buildLanMenuItems(locale, { lanRunning, lanBusy }, actions),
   })
 
   const help: MenuItemConstructorOptions[] = []

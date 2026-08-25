@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { HARNESS_WEB_ARGS, HarnessSupervisor, type HarnessState } from '../src/main/supervisor.ts'
+import { addDesktopControlsPatch, HARNESS_WEB_ARGS, HarnessSupervisor, type HarnessState } from '../src/main/supervisor.ts'
 
 async function fixture(args: readonly string[], readyTimeoutMs = 2_000): Promise<{
   supervisor: HarnessSupervisor
@@ -21,6 +21,14 @@ async function fixture(args: readonly string[], readyTimeoutMs = 2_000): Promise
 
 test('desktop web runtime never opens the system browser', () => {
   assert.deepEqual(HARNESS_WEB_ARGS, ['--profile', 'web', '--no-open', '--port', '0'])
+})
+
+test('desktop controls patch stays before Web-app flags', () => {
+  assert.deepEqual(
+    addDesktopControlsPatch(HARNESS_WEB_ARGS, '/tmp/desktop-controls.yml'),
+    ['--profile', 'web', '--patch', '/tmp/desktop-controls.yml', '--no-open', '--port', '0'],
+  )
+  assert.deepEqual(addDesktopControlsPatch(['--profile', 'web'], '/tmp/desktop-controls.yml'), ['--profile', 'web'])
 })
 
 test('supervisor resolves the ready URL and records output', async () => {

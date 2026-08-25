@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-08-23。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-08-25。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -8,9 +8,9 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.3`（已发布 2026-08-23；内核 0.1.1-rc.2 未变，壳修订 +3） |
+| 最新代码基线 | 🚧 `0.1.1-rc.2.shell.4`（待发布；内核 0.1.1-rc.2 未变，壳修订 +4） |
 | 已发布 | ✅ `0.1.1-rc.2.shell.3`（2026-08-23，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 108 项单测、类型检查、官网门禁、构建通过 |
+| 本地门禁 | ✅ 118 项单测、类型检查、官网门禁、构建通过 |
 | 核心发布 | ✅ 0.1.1-rc.2.shell.3 Release 严格 8 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.3`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
 | 国内镜像 | ✅ 0.1.1-rc.2.shell.3 GitCode 镜像：dmg/exe/deb + 3×sha256（2026-08-23 本机 SOCKS5 下载 + 直传，匿名 Range GET 6/6） |
@@ -614,3 +614,58 @@ main 提交并准备推送：
 ---
 
 _更新于 2026-08-23_
+
+---
+
+## 二十三、Windows 菜单栏不可达 → 原生入口 + 应用内插件化入口（2026-08-24，未发布）
+
+**场景与根因**：真机验证发现 Windows 版本没有可见菜单栏（macOS 有系统菜单栏）。
+根因是窗口使用隐藏标题栏（`window-chrome.ts` 的 `titleBarStyle: 'hidden'` +
+`titleBarOverlay`）：macOS 应用菜单挂在系统菜单栏不受影响，Windows/Linux 的
+菜单栏是窗口一部分，被隐藏后 `Menu.setApplicationMenu` 注册的菜单用户不可达
+（Alt 也唤不出）。影响：**"扩展"菜单（LAN 手机配对）在 Windows 上完全无入口**，
+功能实现存在但不可用；同理失联的还有"关于、切换全屏、社区链接"。
+
+**已落地改动（尚未提交）**：
+
+1. `menu-template.ts`：LAN 菜单项提取为共享纯函数 `buildLanMenuItems`
+   （停/忙/连三态：连接移动设备 / 显示二维码 + 停止共享），社区链接提取为
+   `buildCommunityMenuItems`（社区官网/项目源代码/反馈问题），供应用菜单、
+   托盘、右键三处复用，行为与原来一致。
+2. 托盘菜单（`tray-template.ts`/`tray.ts`/`index.ts`）：重启与打开日志之间
+   加 LAN 组；日志/诊断之后加「社区」子菜单与「关于 dsh-desktop」。
+3. 窗口右键菜单（`window.ts` + `WindowContext` 新增可选 `lan`/`onShowAbout`）：
+   任意位置右键都会弹出（LAN 组保证非空），底部追加「切换全屏」与
+   「关于 dsh-desktop」；LAN 状态每次弹出时实时读取。
+4. 文案复用/新增：`menu.community`、`menu.communityWebsite`（中英）。
+
+验证：typecheck ✅；单测 108 → 113（新增托盘 LAN 四态、社区/关于、菜单项形状）；
+覆盖率 lines 91.08 / branches 82.87 / functions 83.76（阈值 80/75/70）✅；build ✅。
+5. 插件化补充：新增本地 `plugins/dsh-desktop-controls`，通过 Harness 的
+   `shell.overlay` 注入一个右上角 `⋮` 更多操作入口；仅暴露固定的 LAN 配对、全屏、关于三项
+   `dshDesktop` 桥接动作。Supervisor 只对默认生产启动挂载 `--patch`，并在 profile
+   查找路径建立 shell-owned 包链接；挂载失败时降级为原生托盘/右键入口，不阻断 Harness
+   启动。插件未依赖 `dsh-mobile-shell` 当前的 QR/代理 Web 产物，也不依赖历史上不可用的
+   `dsh-mobile-ui` 源码。
+
+新增桥接的来源校验：只接受当前主窗口、当前 Supervisor 批准的 loopback origin；
+data/error/loading 页面和其他 WebContents 均拒绝。当前完整验证：118 个单测、typecheck、
+build、coverage 全绿（lines 90.55 / branches 82.43 / functions 84.23；阈值
+80/75/70）。
+
+**待办**：Windows 真机/打包态冒烟（托盘 + 右键 + `⋮` 入口及三项点击）；macOS 右键同样
+出现新项（与系统菜单冗余，无冲突）。
+
+**Codex 调研（2026-08-24）**：`docs/codex-windows-reference.md`（19 KB，一手
+来源 + 标注不可核实项）。结论：Codex 在 Windows 有桌面 GUI（Microsoft Store
+MSIX 分发、闭源，窗口 chrome 无一手资料）；公开可验证的做法在 CLI/TUI 侧——
+footer 常驻 "`?` for shortcuts"、`?` 打开快捷键浮层、约 50 条斜杠命令把菜单
+平移到命令层、快捷键全不依赖 OS 菜单栏（Ctrl+T/Ctrl+O/Esc/Alt+A 等）。CLI→GUI
+桥为 `codex://threads/new?path=` deep link + `/app` 命令。
+
+**后续优化（下一步候选，未立项）**：
+
+1. 将当前三项入口扩展为完整「快捷帮助浮层」：补充诊断、日志和快捷键，并视需要
+   覆盖 loading/错误页；不把原生托盘/右键替换掉。
+2. 托盘/右键入口与插件入口并存，不冲突；发布随下次 shell bump（当前
+   `0.1.1-rc.2.shell.3` 已发布，本改动未打 tag）。

@@ -18,17 +18,17 @@ import {
   showWindow,
   type WindowContext,
 } from './window.ts'
-import { createTray, destroyTray, refreshTray } from './tray.ts'
+import { createTray, destroyTray, refreshTray, type TrayActions } from './tray.ts'
 import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } from './update-prompt.ts'
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
 import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport } from './diagnostics.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
-import type { MenuActions } from './menu-template.ts'
+import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
 import { LanService, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
-import { isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
+import { isMainWindowHarnessSender, isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
 
 const DEV_WEB_URL = process.env[DEV_WEB_URL_ENV]
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -51,6 +51,15 @@ const windowContext: WindowContext = {
   getLocale: () => currentLocale,
   onVisibilityChanged: refreshTray,
   onCloseToTray: () => { void explainCloseToTray() },
+  onShowAbout: () => { void showAboutDialog(currentLocale) },
+  lan: {
+    getState: (): LanMenuState => ({ lanRunning: lanService.isRunning, lanBusy: lanService.isBusy }),
+    actions: {
+      startLanLink: () => { void startLanLink() },
+      showLanQr: () => { void showLanQr() },
+      stopLanLink,
+    },
+  },
 }
 
 /** The shell state machine, wired to the Electron surfaces it drives. */
@@ -108,12 +117,13 @@ async function openLogsFolder(): Promise<void> {
   if (error !== '') console.warn(`dsh-desktop: opening logs failed: ${error}`)
 }
 
-async function showLanQr(): Promise<void> {
+async function showLanQr(): Promise<boolean> {
   const pairing = lanService.currentPairing
-  if (pairing === undefined) return
+  if (pairing === undefined) return false
   try {
     const qrSvg = await qrSvgFromText(pairing.pairingUrl, mobileShellRoot())
     showLanPairingWindow(windowContext.mainWindow, pairing, qrSvg, currentLocale)
+    return true
   } catch (error) {
     await dialog.showMessageBox({
       type: 'error',
@@ -121,15 +131,17 @@ async function showLanQr(): Promise<void> {
       message: error instanceof Error ? error.message : String(error),
       buttons: [shellText(currentLocale, 'common.ok')],
     })
+    return false
   }
 }
 
-async function startLanLink(): Promise<void> {
+async function startLanLink(): Promise<boolean> {
   try {
     const pairing = await lanService.start()
     refreshNativeSurfaces()
     const qrSvg = await qrSvgFromText(pairing.pairingUrl, mobileShellRoot())
     showLanPairingWindow(windowContext.mainWindow, pairing, qrSvg, currentLocale)
+    return true
   } catch (error) {
     await dialog.showMessageBox({
       type: 'error',
@@ -137,6 +149,7 @@ async function startLanLink(): Promise<void> {
       message: error instanceof Error ? error.message : String(error),
       buttons: [shellText(currentLocale, 'common.ok')],
     })
+    return false
   }
 }
 
@@ -158,6 +171,13 @@ function toggleMaximize(): void {
   else window.maximize()
 }
 
+function toggleFullscreen(): boolean {
+  const window = windowContext.mainWindow
+  if (window === undefined || window.isDestroyed()) return false
+  window.setFullScreen(!window.isFullScreen())
+  return true
+}
+
 const menuActions: MenuActions = {
   closeWindow: () => windowContext.mainWindow?.close(),
   quit: () => app.quit(),
@@ -173,7 +193,7 @@ const menuActions: MenuActions = {
   stopLanLink,
 }
 
-const trayActions = {
+const trayActions: TrayActions = {
   getLocale: (): ShellLocale => currentLocale,
   getState: (): HarnessState | undefined => shellApp.state,
   isRestarting: (): boolean => shellApp.restartInFlight,
@@ -184,6 +204,14 @@ const trayActions = {
   exportDiagnostics: (): void => { void exportDiagnosticReport(shellApp.state, currentLocale) },
   checkForUpdates: (): void => { void checkForUpdatesInteractively(currentLocale) },
   quit: (): void => app.quit(),
+  showAbout: (): void => { void showAboutDialog(currentLocale) },
+  openExternal: url => { void shell.openExternal(url) },
+  getLanState: (): LanMenuState => ({ lanRunning: lanService.isRunning, lanBusy: lanService.isBusy }),
+  getLanActions: (): LanMenuActions => ({
+    startLanLink: () => { void startLanLink() },
+    showLanQr: () => { void showLanQr() },
+    stopLanLink,
+  }),
 }
 
 // Shell-owned IPC handlers (retry, diagnostics, LAN pairing close) are
@@ -212,6 +240,18 @@ ipcMain.handle('shell:close-lan-pairing', (event) => {
   if (!isShellOwnedFrame(event.senderFrame?.url)) return false
   window.close()
   return true
+})
+
+ipcMain.handle('desktop:action', async (event, action: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
+  if (typeof action !== 'string') return false
+  if (action === 'startLanPairing') return startLanLink()
+  if (action === 'toggleFullscreen') return toggleFullscreen()
+  if (action === 'showAbout') {
+    await showAboutDialog(currentLocale)
+    return true
+  }
+  return false
 })
 
 function verifyHarness(root: string): void {

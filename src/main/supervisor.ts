@@ -15,6 +15,7 @@ import { dshBin, harnessRoot, nodeBin } from './paths.ts'
 import { decideRestart, exitsInWindow, parseReadyUrl, RESTART_BASE_DELAY_MS } from './restart-policy.ts'
 import { RollingLogWriter } from './diagnostics.ts'
 import { InFlight, ManagedChild } from './process-lifecycle.ts'
+import { prepareDesktopControlsMount } from './desktop-controls.ts'
 
 /** Give a broken first boot room before declaring failure. */
 const READY_TIMEOUT_MS = 90_000
@@ -27,6 +28,13 @@ const LOG_TAIL_LINES = 40
 
 /** Web-profile flags owned by the desktop shell. */
 export const HARNESS_WEB_ARGS = ['--profile', 'web', '--no-open', '--port', '0'] as const
+
+/** Insert a dsh-owned overlay before the first Web-app flag. */
+export function addDesktopControlsPatch(args: readonly string[], patch: string): readonly string[] {
+  const index = args.indexOf('--no-open')
+  if (index < 0) return args
+  return [...args.slice(0, index), '--patch', patch, ...args.slice(index)]
+}
 
 /** Supervisor-reported lifecycle state, consumed by the window controller. */
 export type HarnessState =
@@ -84,6 +92,7 @@ export class HarnessSupervisor {
   private readonly logWriter: RollingLogWriter
   private readonly command: string
   private readonly args: readonly string[]
+  private readonly defaultArgs: boolean
   private readonly dshHome: string
   private readonly env: NodeJS.ProcessEnv
   private readonly readyTimeoutMs: number
@@ -96,6 +105,7 @@ export class HarnessSupervisor {
     this.events = events
     const logDir = options.logDir ?? defaultLogDir()
     this.command = options.command ?? nodeBin()
+    this.defaultArgs = options.args === undefined
     this.args = options.args ?? [dshBin(), ...HARNESS_WEB_ARGS]
     const baseEnv = options.env ?? process.env
     this.dshHome = resolveDshHome(baseEnv, homedir())
@@ -120,10 +130,29 @@ export class HarnessSupervisor {
     this.logWriter.write(line)
   }
 
+  /**
+   * Mount the shell-owned client plugin only for the production invocation.
+   * Test fixtures and custom callers keep their exact argument list.
+   */
+  private resolvedArgs(): readonly string[] {
+    if (!this.defaultArgs) return this.args
+    let patch: string | undefined
+    try {
+      patch = prepareDesktopControlsMount(this.dshHome, harnessRoot())
+    } catch (error) {
+      console.warn(`dsh-desktop: desktop controls mount failed, booting without the in-app surface: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    if (patch === undefined) return this.args
+    // dsh's top-level parser forwards unknown app flags after the first one;
+    // keep its own --patch option before --no-open/--port or it is swallowed
+    // as a Web-app argument.
+    return addDesktopControlsPatch(this.args, patch)
+  }
+
   private spawnOnce(): ChildProcess {
     const child = this.managed.spawn({
       command: this.command,
-      args: this.args,
+      args: this.resolvedArgs(),
       // Run from the harness root so dsh's own cwd-relative lookups (if any)
       // resolve against its bundled closure, not the Electron app directory.
       // In tests this is undefined and spawn inherits the parent cwd.

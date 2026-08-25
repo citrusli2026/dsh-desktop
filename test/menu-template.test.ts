@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { MenuItemConstructorOptions } from 'electron'
-import { buildAppMenuTemplate, type MenuActions } from '../src/main/menu-template.ts'
+import { buildAppMenuTemplate, buildLanMenuItems, type MenuActions } from '../src/main/menu-template.ts'
 
 const actions: MenuActions = {
   closeWindow() {}, quit() {}, toggleMaximize() {}, restartHarness() {}, openLogs() {},
@@ -74,4 +74,18 @@ test('extensions menu exposes LAN pairing controls', () => {
   assert.ok(labels(running).includes('显示局域网配对二维码…'))
   assert.ok(labels(running).includes('停止局域网共享'))
   assert.ok(!labels(running).includes('连接移动设备…'))
+})
+
+test('lan menu items keep a stable shape for context-menu reuse', () => {
+  const stopped = buildLanMenuItems('en', { lanRunning: false, lanBusy: false }, actions)
+  assert.deepEqual(stopped.map(item => item.label), ['Connect a mobile device…'])
+  assert.equal(stopped[0]?.enabled, true)
+
+  const busy = buildLanMenuItems('en', { lanRunning: false, lanBusy: true }, actions)
+  assert.equal(busy[0]?.enabled, false)
+
+  const running = buildLanMenuItems('zh', { lanRunning: true, lanBusy: false }, actions)
+  assert.equal(running[0]?.label, '显示局域网配对二维码…')
+  assert.equal(running[1]?.type, 'separator')
+  assert.equal(running[2]?.label, '停止局域网共享')
 })

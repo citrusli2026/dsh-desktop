@@ -12,7 +12,7 @@ A dependable desktop workspace for [DeepSeek Harness](https://github.com/deepsee
 
 - **Zero setup** — bundles a pinned Node.js 22 runtime and the complete `@deepseek-ai/dsh` dependency closure; no Node install, nothing to configure.
 - **Isolated by default** — its own data home (`~/.dsh-desktop`) keeps settings, sessions, API keys, and plugins away from your CLI. `DSH_HOME=~/.dsh` shares them again (decision 0012).
-- **Dependable** — crash auto-restart with backoff, error-page retry, tray with live harness status, single-instance lock, window geometry persistence, and an exportable diagnostic report.
+- **Dependable** — crash auto-restart with backoff, error-page retry, tray with live harness status, single-instance lock, window geometry persistence, and an exportable diagnostic report. On Windows, desktop actions remain reachable from the in-app `⋮` control, window context menu, or tray even when the menu bar is hidden.
 - **Constrained renderer** — sandbox and context isolation stay on, Node integration stays off, and camera/location/notifications/filesystem are denied by default (decision 0014).
 - **Updates** — Windows updates in place; unsigned macOS checks for releases and opens the exact release page (decisions 0010, 0016).
 
@@ -30,7 +30,7 @@ Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the
 
 ## Versioning
 
-Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.1-rc.2.shell.3` bundles `@deepseek-ai/dsh` 0.1.1-rc.2 at shell revision 3. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically (decision 0009).
+Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.1-rc.2.shell.4` bundles `@deepseek-ai/dsh` 0.1.1-rc.2 at shell revision 4. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically (decision 0009).
 
 ## Development
 

@@ -1,0 +1,4 @@
+# Mount the browser half only in the desktop shell's Web profile.
+- insert:
+    - id: desktop-controls
+      name: 'dsh-desktop-controls'

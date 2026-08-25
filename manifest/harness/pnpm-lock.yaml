@@ -71,6 +71,9 @@ importers:
       '@deepseek-ai/dsh-workflow':
         specifier: ^0.1.0-rc.6
         version: 0.1.0-rc.8(110f1eea68a2c555932c00dd2a4c984c)
+      dsh-desktop-controls:
+        specifier: file:../../plugins/dsh-desktop-controls
+        version: file:../../plugins/dsh-desktop-controls
       pnpm:
         specifier: 11.8.0
         version: 11.8.0
@@ -2823,6 +2826,9 @@ packages:
   diff@9.0.0:
     resolution: {integrity: sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==}
     engines: {node: '>=0.3.1'}
+
+  dsh-desktop-controls@file:../../plugins/dsh-desktop-controls:
+    resolution: {directory: ../../plugins/dsh-desktop-controls, type: directory}
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -6575,6 +6581,8 @@ snapshots:
   detect-libc@2.1.2: {}
 
   diff@9.0.0: {}
+
+  dsh-desktop-controls@file:../../plugins/dsh-desktop-controls: {}
 
   dunder-proto@1.0.1:
     dependencies:

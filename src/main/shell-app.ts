@@ -46,6 +46,27 @@ export function isMainWindowSender(window: ShellIpcWindow | undefined, sender: u
   return true
 }
 
+/**
+ * Guard the small capability bridge exposed to the live Harness page. The
+ * renderer must still be the main window, and its current origin must be the
+ * origin the supervisor approved for this boot. No shell-owned data page can
+ * use this path, and a stale/foreign loopback page cannot either.
+ */
+export function isMainWindowHarnessSender(
+  window: ShellIpcWindow | undefined,
+  sender: unknown,
+  frameUrl: string | undefined,
+  allowedOrigin: string | undefined,
+): boolean {
+  if (window === undefined || window.isDestroyed()) return false
+  if (sender !== window.webContents || allowedOrigin === undefined || frameUrl === undefined) return false
+  try {
+    return new URL(frameUrl).origin === allowedOrigin
+  } catch {
+    return false
+  }
+}
+
 export class ShellApp {
   private readonly services: ShellAppServices
   private supervisor: HarnessSupervisor | undefined

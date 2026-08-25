@@ -7,10 +7,16 @@ import { shellText, type ShellLocale } from './locale.ts'
 import { hiddenTitleBarOptions } from './window-chrome.ts'
 import { ConfigFile } from './config-file.ts'
 import { MAX_RENDERER_RECOVERIES, recordRendererRecovery } from './renderer-recovery.ts'
+import { buildLanMenuItems, type LanMenuActions, type LanMenuState } from './menu-template.ts'
 
 type BuiltInPage =
   | { kind: 'loading' }
   | { kind: 'error'; attempts: number; logTail: string }
+
+export interface WindowLanApi {
+  getState(): LanMenuState
+  actions: LanMenuActions
+}
 
 export interface WindowContext {
   mainWindow?: BrowserWindow
@@ -23,6 +29,10 @@ export interface WindowContext {
   onVisibilityChanged?(): void
   onCloseToTray?(): void
   rendererRecoveryTimes?: number[]
+  /** LAN-link entries for the window context menu; discoverable without the native menu bar. */
+  lan?: WindowLanApi
+  /** Open the About dialog from the window context menu. */
+  onShowAbout?(): void
 }
 
 const windowStateFile = new ConfigFile<unknown>(
@@ -137,6 +147,22 @@ export function createMainWindow(context: WindowContext): BrowserWindow {
         { label: shellText(locale, 'context.openLink'), click: () => { void openExternalUrl(parameters.linkURL) } },
         { label: shellText(locale, 'context.copyLink'), click: () => clipboard.writeText(parameters.linkURL) },
       )
+    }
+    // The LAN group keeps the menu non-empty even on plain content, so the
+    // entry stays discoverable on Windows/Linux where the menu bar is hidden.
+    const lan = context.lan
+    if (lan !== undefined) {
+      if (items.length > 0) items.push({ type: 'separator' })
+      items.push(...buildLanMenuItems(locale, lan.getState(), lan.actions))
+    }
+    if (items.length > 0) {
+      items.push(
+        { type: 'separator' },
+        { role: 'togglefullscreen', label: shellText(locale, 'menu.fullScreen') },
+      )
+    }
+    if (context.onShowAbout !== undefined) {
+      items.push({ label: shellText(locale, 'app.about'), click: context.onShowAbout })
     }
     if (items.length > 0) Menu.buildFromTemplate(items).popup({ window })
   })

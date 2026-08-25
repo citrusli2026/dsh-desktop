@@ -3,11 +3,13 @@ import type { MenuItemConstructorOptions } from 'electron'
 import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
 import { statusLabel } from './tray-status.ts'
+import { buildCommunityMenuItems, buildLanMenuItems, type LanMenuActions, type LanMenuState } from './menu-template.ts'
 
 export interface TrayTemplateState {
   harness: HarnessState | undefined
   restarting: boolean
   windowVisible: boolean
+  lan: LanMenuState
 }
 
 export interface TrayTemplateActions {
@@ -17,6 +19,9 @@ export interface TrayTemplateActions {
   exportDiagnostics(): void
   checkForUpdates(): void
   quit(): void
+  showAbout(): void
+  openExternal(url: string): void
+  lan: LanMenuActions
 }
 
 export function buildTrayTemplate(
@@ -35,8 +40,13 @@ export function buildTrayTemplate(
       enabled: canRestart,
       click: actions.restartHarness,
     },
+    { type: 'separator' },
+    ...buildLanMenuItems(locale, state.lan, actions.lan),
     { label: t('menu.openLogs'), click: actions.openLogs },
     { label: t('menu.exportDiagnostics'), click: actions.exportDiagnostics },
+    { type: 'separator' },
+    { label: t('menu.community'), submenu: buildCommunityMenuItems(locale, actions) },
+    { label: t('app.about'), click: actions.showAbout },
     { type: 'separator' },
     { label: t('app.checkUpdates'), click: actions.checkForUpdates },
     { type: 'separator' },
