@@ -2,8 +2,10 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { MenuItemConstructorOptions } from 'electron'
 import { buildTrayTemplate, type TrayTemplateActions, type TrayTemplateState } from '../src/main/tray-template.ts'
+import { desktopShortcutLabel } from '../src/main/global-shortcut.ts'
 
 const actions: TrayTemplateActions = {
+  showWindow() {},
   toggleWindow() {}, restartHarness() {}, openLogs() {}, exportDiagnostics() {}, checkForUpdates() {}, quit() {},
   showAbout() {}, openExternal() {},
   lan: { startLanLink() {}, showLanQr() {}, stopLanLink() {} },
@@ -14,6 +16,7 @@ function state(overrides: Partial<TrayTemplateState> = {}): TrayTemplateState {
     harness: { phase: 'ready', url: 'http://127.0.0.1:3000' },
     restarting: false,
     windowVisible: true,
+    shortcutRegistered: true,
     lan: { lanRunning: false, lanBusy: false },
     ...overrides,
   }
@@ -22,15 +25,24 @@ function state(overrides: Partial<TrayTemplateState> = {}): TrayTemplateState {
 test('tray labels follow locale and window visibility', () => {
   const menu = buildTrayTemplate('en', state(), actions)
   assert.equal(menu[0]?.label, 'Hide dsh-desktop')
-  assert.equal(menu[2]?.label, 'Status: Running')
-  assert.equal(menu[3]?.enabled, true)
+  assert.equal(menu[1]?.label, 'Show dsh-desktop')
+  assert.equal(menu[2]?.label, `Shortcut enabled: ${desktopShortcutLabel(process.platform)}`)
+  assert.equal(menu[4]?.label, 'Status: Running')
+  assert.equal(menu[5]?.enabled, true)
 })
 
 test('tray disables restart while starting and uses Chinese consistently', () => {
   const menu = buildTrayTemplate('zh', state({ harness: { phase: 'starting' }, windowVisible: false }), actions)
   assert.equal(menu[0]?.label, '显示 dsh-desktop')
-  assert.equal(menu[2]?.label, '状态：正在启动…')
-  assert.equal(menu[3]?.enabled, false)
+  assert.equal(menu[1]?.label, '快速唤起 dsh-desktop')
+  assert.equal(menu[4]?.label, '状态：正在启动…')
+  assert.equal(menu[5]?.enabled, false)
+})
+
+test('tray explains when the global shortcut could not be registered', () => {
+  const menu = buildTrayTemplate('zh', state({ shortcutRegistered: false }), actions)
+  assert.equal(menu[2]?.label, `快捷键不可用：${desktopShortcutLabel(process.platform)}`)
+  assert.equal(menu[2]?.enabled, false)
 })
 
 test('tray offers the LAN start entry when link is stopped', () => {

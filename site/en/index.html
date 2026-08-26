@@ -60,8 +60,20 @@
     </div>
   </section>
 
+  <section class="access-card" aria-labelledby="shortcut-title">
+    <div class="access-card__copy">
+      <p class="access-card__eyebrow">DESKTOP SHORTCUT</p>
+      <h2 id="shortcut-title">Return without hunting for the window.</h2>
+      <p>Hide dsh-desktop to the tray, then press <code>Ctrl/Cmd + Shift + Space</code> from any app to show and focus the workspace. If another app owns the shortcut, the tray and context menu remain available.</p>
+    </div>
+    <div class="access-card__routes" aria-label="Desktop summon shortcut">
+      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">⌘/Ctrl</span><div><b>One global shortcut</b><span>Show and focus the desktop workspace</span></div></div>
+      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">Tray</span><div><b>Safe fallback</b><span>A conflict never blocks Harness startup</span></div></div>
+    </div>
+  </section>
+
   <h2>What the desktop shell adds</h2>
-  <ul><li>Bundled runtime and one-click startup for Windows, macOS, and Linux releases.</li><li>Native window, tray behavior, lifecycle supervision, and recovery diagnostics.</li><li>Isolated desktop data at <code>~/.dsh-desktop</code>, separate from the CLI by default.</li><li>Sandboxed renderer boundaries while the upstream Harness Web UI remains the source of agent behavior.</li></ul>
+  <ul><li>Bundled runtime and one-click startup for Windows, macOS, and Linux releases.</li><li>Native window, tray behavior, lifecycle supervision, and recovery diagnostics.</li><li>Global <code>Ctrl/Cmd + Shift + Space</code> shortcut to show and focus the workspace from any app.</li><li>Isolated desktop data at <code>~/.dsh-desktop</code>, separate from the CLI by default.</li><li>Sandboxed renderer boundaries while the upstream Harness Web UI remains the source of agent behavior.</li></ul>
 
   <h2>Start with the right guide</h2>
   <div class="seo-download-grid"><article class="seo-card"><h3>Download</h3><p>Choose a current installer and a mirror for your platform.</p><div class="seo-card__links"><a class="btn btn--primary btn--sm" href="/en/download">Open download page</a></div></article><article class="seo-card"><h3>Install</h3><p>Follow first-launch steps and configure your model provider.</p><div class="seo-card__links"><a class="btn btn--ghost btn--sm" href="/en/docs/install">Read install guide</a></div></article><article class="seo-card"><h3>FAQ</h3><p>Find answers about signing, data isolation, API keys, and checksums.</p><div class="seo-card__links"><a class="btn btn--ghost btn--sm" href="/en/docs/faq">Read FAQ</a></div></article></div>

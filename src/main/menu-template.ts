@@ -1,6 +1,7 @@
 /** Pure, platform-aware application-menu template. */
 import type { MenuItemConstructorOptions } from 'electron'
 import { shellText, type ShellLocale } from './locale.ts'
+import { DESKTOP_SUMMON_ACCELERATOR } from './global-shortcut.ts'
 import {
   COMMUNITY_WEBSITE_URL,
   DEEPSEEK_OFFICIAL_URL,
@@ -9,6 +10,7 @@ import {
 } from './links.ts'
 
 export interface MenuActions {
+  showWindow(): void
   closeWindow(): void
   quit(): void
   toggleMaximize(): void
@@ -164,6 +166,7 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
   })
 
   const help: MenuItemConstructorOptions[] = []
+  help.push({ label: t('menu.quickSummon'), accelerator: DESKTOP_SUMMON_ACCELERATOR, click: actions.showWindow }, { type: 'separator' })
   if (!isMac) help.push({ label: t('app.checkUpdates'), click: actions.checkForUpdates }, { type: 'separator' })
   help.push(
     { label: t('menu.restartHarness'), enabled: restartEnabled, click: actions.restartHarness },

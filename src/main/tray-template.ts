@@ -4,15 +4,18 @@ import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
 import { statusLabel } from './tray-status.ts'
 import { buildCommunityMenuItems, buildLanMenuItems, type LanMenuActions, type LanMenuState } from './menu-template.ts'
+import { DESKTOP_SUMMON_ACCELERATOR, desktopShortcutLabel } from './global-shortcut.ts'
 
 export interface TrayTemplateState {
   harness: HarnessState | undefined
   restarting: boolean
   windowVisible: boolean
+  shortcutRegistered: boolean
   lan: LanMenuState
 }
 
 export interface TrayTemplateActions {
+  showWindow(): void
   toggleWindow(): void
   restartHarness(): void
   openLogs(): void
@@ -33,6 +36,13 @@ export function buildTrayTemplate(
   const canRestart = !state.restarting && state.harness?.phase !== 'starting' && state.harness !== undefined
   return [
     { label: t(state.windowVisible ? 'tray.hide' : 'tray.show'), click: actions.toggleWindow },
+    { label: t('tray.quickSummon'), accelerator: DESKTOP_SUMMON_ACCELERATOR, click: actions.showWindow },
+    {
+      label: shellText(locale, state.shortcutRegistered ? 'tray.shortcutEnabled' : 'tray.shortcutUnavailable', {
+        shortcut: desktopShortcutLabel(process.platform),
+      }),
+      enabled: false,
+    },
     { type: 'separator' },
     { label: statusLabel(locale, state.harness, state.restarting), enabled: false },
     {

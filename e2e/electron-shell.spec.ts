@@ -318,7 +318,8 @@ shellTest('manual update check in dev mode explains the missing update source', 
   expect(dialog?.detail).toContain('Development builds do not have an update source')
 })
 
-shellTest('diagnostic export writes the report to the chosen path', async ({ electronApp, dshHome }) => {
+shellTest('diagnostic export writes the report to the chosen path', async ({ electronApp, window, dshHome }) => {
+  await packagedOrStubHeadline(window)
   const reportPath = join(dshHome, 'diagnostic-report.txt')
   const version = await electronApp.evaluate(({ app }) => app.getVersion())
   await electronApp.evaluate(({ dialog }, reportPath) => {

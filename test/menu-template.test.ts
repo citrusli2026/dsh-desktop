@@ -4,6 +4,7 @@ import type { MenuItemConstructorOptions } from 'electron'
 import { buildAppMenuTemplate, buildLanMenuItems, type MenuActions } from '../src/main/menu-template.ts'
 
 const actions: MenuActions = {
+  showWindow() {},
   closeWindow() {}, quit() {}, toggleMaximize() {}, restartHarness() {}, openLogs() {},
   exportDiagnostics() {}, checkForUpdates() {}, showAbout() {}, openExternal() {},
   startLanLink() {}, showLanQr() {}, stopLanLink() {},
@@ -43,6 +44,8 @@ test('Windows English menu has a reliable quit path and disables restart while u
   assert.ok(all.includes('Close Window'))
   const help = template.at(-1)?.submenu
   assert.ok(Array.isArray(help))
+  const summon = help.find(item => item.label === 'Show dsh-desktop')
+  assert.equal(summon?.accelerator, 'CommandOrControl+Shift+Space')
   assert.equal(help.find(item => item.label === 'Restart Harness…')?.enabled, false)
 })
 

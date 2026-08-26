@@ -23,6 +23,7 @@ DeepSeek Harness(`@deepseek-ai/dsh`,简称 **dsh**)的非官方 Electron 桌面�
 | **8 文件契约** | 每个 Release 严格:3 安装包(dmg/exe/deb)+ 3 `.sha256` + `latest.yml` + `.exe.blockmap`;校验器拒绝缺失或多余(决策 0016/0017) |
 | **deb 唯一 Linux 格式** | Debian/Ubuntu/UOS/Deepin/麒麟;依赖由用户侧 apt 解析(CI 实测:裸 runner 缺 libnotify4/libsecret,必须 `apt-get install -y ./<deb>`)(决策 0017) |
 | **GitCode 镜像** | `scripts/mirror-gitcode.mjs` 全自动:probe→下载→上传→校验;`GH_SOCKS5=127.0.0.1:7890` 是本机已验证最快下载路径(~1MB/s,公开代理约 0.2MB/s 且大文件易断);幂等可重跑 |
+| **全局唤起快捷键** | 发布版注册 `Ctrl/Cmd+Shift+Space`，只显示并聚焦窗口;冲突时不阻断启动，托盘/右键/菜单继续可用（决策 0018） |
 | **站点数据** | `site/data/release.json` 由 `scripts/gen-site-data.mjs` 生成,`site-refresh` bot 在 Release 后自动同步;`dsh-desktop.com` 是 GitHub Pages/Vercel 部署(发布入口见 README) |
 
 ## 快问快答

@@ -1,5 +1,5 @@
 /** Electron lifecycle assembly for the bundled DeepSeek Harness runtime. */
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme, session, shell, type MessageBoxOptions } from 'electron'
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, session, shell, type MessageBoxOptions } from 'electron'
 import { existsSync, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -29,6 +29,7 @@ import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-pref
 import { LanService, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
 import { isMainWindowHarnessSender, isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
+import { registerDesktopSummonShortcut, unregisterDesktopSummonShortcut } from './global-shortcut.ts'
 
 const DEV_WEB_URL = process.env[DEV_WEB_URL_ENV]
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -36,6 +37,7 @@ const MAC_UPDATE_CHECK_DELAY_MS = 15_000
 let currentLocale: ShellLocale = 'en'
 let localeController: ShellLocaleController | undefined
 let closeNoticeClaimed = false
+let desktopShortcutRegistered = false
 
 const lanService = new LanService({
   mobileShellRoot,
@@ -164,6 +166,23 @@ function toggleMainWindow(): void {
   else showWindow(windowContext)
 }
 
+function showMainWindow(): void {
+  showWindow(windowContext)
+}
+
+function registerDesktopShortcut(): void {
+  desktopShortcutRegistered = registerDesktopSummonShortcut(globalShortcut, showMainWindow)
+  if (!desktopShortcutRegistered) {
+    console.warn('dsh-desktop: global summon shortcut is unavailable or already in use')
+  }
+  refreshNativeSurfaces()
+}
+
+function releaseDesktopShortcut(): void {
+  unregisterDesktopSummonShortcut(globalShortcut)
+  desktopShortcutRegistered = false
+}
+
 function toggleMaximize(): void {
   const window = windowContext.mainWindow
   if (window === undefined || window.isDestroyed()) return
@@ -179,6 +198,7 @@ function toggleFullscreen(): boolean {
 }
 
 const menuActions: MenuActions = {
+  showWindow: showMainWindow,
   closeWindow: () => windowContext.mainWindow?.close(),
   quit: () => app.quit(),
   toggleMaximize,
@@ -197,7 +217,9 @@ const trayActions: TrayActions = {
   getLocale: (): ShellLocale => currentLocale,
   getState: (): HarnessState | undefined => shellApp.state,
   isRestarting: (): boolean => shellApp.restartInFlight,
+  isShortcutRegistered: (): boolean => desktopShortcutRegistered,
   isWindowVisible: (): boolean => windowContext.mainWindow?.isVisible() === true,
+  showWindow: showMainWindow,
   toggleWindow: toggleMainWindow,
   restartHarness: (): void => { void shellApp.requestRestart() },
   openLogs: (): void => { void openLogsFolder() },
@@ -278,6 +300,7 @@ async function boot(): Promise<string> {
 app.on('before-quit', (event) => {
   if (windowContext.quitInProgress) return
   windowContext.quitInProgress = true
+  releaseDesktopShortcut()
   closeLanPairingWindow()
   localeController?.dispose()
   destroyTray()
@@ -332,6 +355,7 @@ if (!gotLock) {
         windowContext.hideOnClose = false
         console.warn(`dsh-desktop: tray unavailable; closing the window will quit: ${error instanceof Error ? error.message : String(error)}`)
       }
+      registerDesktopShortcut()
     }
 
     try {

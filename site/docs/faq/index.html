@@ -50,6 +50,7 @@
   <details><summary>如何校验安装包没有被篡改？</summary><p>每个安装包都附带同名 <code>.sha256</code> 文件。macOS/Linux 使用 <code>shasum -a 256 -c 文件名.sha256</code>，Windows 使用 <code>CertUtil -hashfile 文件名 SHA256</code>，再与 Release 中的校验文件比较。</p></details>
   <details><summary>GitHub 下载慢怎么办？</summary><p>可以打开<a href="/download">下载页</a>中的 GitCode 镜像入口。镜像状态会随发布同步变化；如果镜像没有对应文件，请回到 GitHub Release 页面。</p></details>
   <details><summary>如何获取 API Key？</summary><p>在 <a href="https://platform.deepseek.com" target="_blank" rel="noopener">DeepSeek 开放平台</a>注册并进入 API Keys 页面创建密钥，然后在 dsh-desktop 的模型设置中粘贴。API 使用按量计费，请先确认账户余额。</p></details>
+  <details><summary>窗口收进托盘后如何快速打开？</summary><p>在任意应用中按 <code>Ctrl/Cmd + Shift + Space</code>（Windows/Linux 用 Ctrl，macOS 用 ⌘），dsh-desktop 会显示并获得焦点。若快捷键被占用，可使用系统托盘或窗口右键菜单；快捷键冲突不会影响 Harness 启动。</p></details>
 
   <div class="seo-next-links"><a href="/download">下载 DSH Desktop →</a><a href="/docs/install">查看安装指南 →</a><a href="/en/docs/faq">Read in English →</a></div>
 </div></main>
