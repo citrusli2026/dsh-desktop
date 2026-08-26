@@ -710,7 +710,7 @@ footer 常驻 "`?` for shortcuts"、`?` 打开快捷键浮层、约 50 条斜杠
 2. **用户友好与降级**：快捷键注册失败或与其他软件冲突时不阻断启动，托盘状态会显示“快捷键不可用”，用户仍可用托盘、窗口右键和应用菜单入口打开窗口；退出时只释放本壳持有的快捷键。
 3. **实现与验证**：新增 `src/main/global-shortcut.ts` 及四组单测，覆盖注册、回调、冲突、异常和平台文案；菜单/托盘/右键均复用同一唤回动作。补充中英文 README、安装/FAQ、首页介绍和 ADR 0018。另修复 Electron E2E 对话框 stub 的页面初始化竞态。本地 `pnpm run verify` 通过：123 项单测，覆盖率 lines 90.72 / branches 82.67 / functions 84.43；全量本地 guarded E2E 9/9。
 4. **发布**：Release workflow `32920479188` 成功，verify job `98032948669`、Windows build `98033270697`、Ubuntu build `98033270750`、macOS build `98033270751`、publish job `98034739524` 均成功；GitHub Release 于 `2026-08-26T02:01:32Z` 发布，8 个资产和三平台安装态/构建证明门禁通过。tag `v0.1.1-rc.2.shell.5` peeled 到 `df1727c5271cf057546daef2678df4e5c23965c3`。
-5. **镜像与官网**：GitCode Release 创建后，6 个面向用户的安装包/校验资产全部上传并在线验证（6/6）；Site Data Refresh run `32921179292` 成功并提交 `1c128bb`，`site/data/release.json` 已指向 shell.5 且 6/6 `gitcode_ok=true`。线上 `/api/downloads` 返回 200，实时统计为累计 184（mac 63 / win 105 / linux 16）。
+5. **镜像与官网**：GitCode Release 创建后，6 个面向用户的安装包/校验资产全部上传并在线验证（6/6）；GitCode 的 shell.5 tag 已精确对齐发布 commit `df1727c`。Site Data Refresh run `32921179292` 成功并提交 `1c128bb`，`site/data/release.json` 已指向 shell.5 且 6/6 `gitcode_ok=true`。线上 `/api/downloads` 返回 200，实时统计为累计 184（mac 63 / win 105 / linux 16）。
 
 **后续迭代路线（按用户价值排序）**：
 
