@@ -297,7 +297,8 @@ shellTest('settings UI drives locale/theme through the harness page into setting
   expect(persisted).toContain('preference: dark')
 })
 
-shellTest('manual update check in dev mode explains the missing update source', async ({ electronApp }) => {
+shellTest('manual update check in dev mode explains the missing update source', async ({ electronApp, window }) => {
+  await packagedOrStubHeadline(window)
   await electronApp.evaluate(({ dialog }) => {
     ;(globalThis as unknown as { __dshE2eDialogs: Array<Record<string, string>> }).__dshE2eDialogs = []
     ;(dialog as unknown as { showMessageBox: unknown }).showMessageBox = async (options: { title?: string; message?: string; detail?: string }) => {
