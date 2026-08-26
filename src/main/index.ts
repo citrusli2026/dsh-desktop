@@ -1,5 +1,5 @@
 /** Electron lifecycle assembly for the bundled DeepSeek Harness runtime. */
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, session, shell, type MessageBoxOptions } from 'electron'
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, Notification, session, shell, type MessageBoxOptions } from 'electron'
 import { existsSync, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -29,7 +29,9 @@ import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-pref
 import { LanService, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
 import { isMainWindowHarnessSender, isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
-import { registerDesktopSummonShortcut, unregisterDesktopSummonShortcut } from './global-shortcut.ts'
+import { DesktopPreferencesController, type DesktopPreferencesUpdate } from './desktop-preferences.ts'
+import { createShellPreferences } from './shell-preferences.ts'
+import { normalizePublicStatusSnapshot, notificationsForPublicStatus, type PublicStatusSnapshot } from './desktop-notifications.ts'
 
 const DEV_WEB_URL = process.env[DEV_WEB_URL_ENV]
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -37,7 +39,9 @@ const MAC_UPDATE_CHECK_DELAY_MS = 15_000
 let currentLocale: ShellLocale = 'en'
 let localeController: ShellLocaleController | undefined
 let closeNoticeClaimed = false
-let desktopShortcutRegistered = false
+let desktopPreferencesController: DesktopPreferencesController | undefined
+let lastPublicStatus: PublicStatusSnapshot | undefined
+let lastHarnessPhase: HarnessState['phase'] | undefined
 
 const lanService = new LanService({
   mobileShellRoot,
@@ -69,7 +73,9 @@ const shellApp = new ShellApp({
   createSupervisor: onState => new HarnessSupervisor({ onState }),
   onStateApplied: (state) => {
     if (windowContext.quitInProgress) return
-    installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), lanService.isRunning, lanService.isBusy)
+    notifyHarnessState(state)
+    if (state.phase !== 'ready') lastPublicStatus = undefined
+    installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), lanService.isRunning, lanService.isBusy, desktopPreferencesController?.snapshot.shortcut)
     refreshTray()
     if (state.phase === 'ready') void loadHarnessUrl(windowContext, state.url)
     else if (state.phase === 'crashed') void loadErrorPage(windowContext, state.attempts, state.logTail)
@@ -95,8 +101,34 @@ const shellApp = new ShellApp({
 
 function refreshNativeSurfaces(): void {
   if (windowContext.quitInProgress) return
-  installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), lanService.isRunning, lanService.isBusy)
+  installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), lanService.isRunning, lanService.isBusy, desktopPreferencesController?.snapshot.shortcut)
   refreshTray()
+}
+
+function notificationEnabled(): boolean {
+  const preferences = desktopPreferencesController?.snapshot
+  if (preferences?.notificationsAvailable !== true || preferences.notificationsEnabled !== true) return false
+  const window = windowContext.mainWindow
+  return window === undefined || window.isDestroyed() || !window.isVisible() || !window.isFocused()
+}
+
+function showDesktopNotification(title: string, body: string): void {
+  if (!notificationEnabled()) return
+  try {
+    new Notification({ title, body }).show()
+  } catch (error) {
+    console.warn(`dsh-desktop: notification failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+function notifyHarnessState(state: HarnessState): void {
+  const previous = lastHarnessPhase
+  lastHarnessPhase = state.phase
+  if (previous === 'ready' && state.phase === 'crashed') {
+    showDesktopNotification(shellText(currentLocale, 'notify.harnessStoppedTitle'), shellText(currentLocale, 'notify.harnessStoppedBody'))
+  } else if (previous === 'crashed' && state.phase === 'ready') {
+    showDesktopNotification(shellText(currentLocale, 'notify.harnessRecoveredTitle'), shellText(currentLocale, 'notify.harnessRecoveredBody'))
+  }
 }
 
 async function explainCloseToTray(): Promise<void> {
@@ -167,20 +199,20 @@ function toggleMainWindow(): void {
 }
 
 function showMainWindow(): void {
+  windowContext.startHidden = false
   showWindow(windowContext)
 }
 
-function registerDesktopShortcut(): void {
-  desktopShortcutRegistered = registerDesktopSummonShortcut(globalShortcut, showMainWindow)
-  if (!desktopShortcutRegistered) {
-    console.warn('dsh-desktop: global summon shortcut is unavailable or already in use')
-  }
-  refreshNativeSurfaces()
+function releaseDesktopShortcut(): void {
+  desktopPreferencesController?.dispose()
 }
 
-function releaseDesktopShortcut(): void {
-  unregisterDesktopSummonShortcut(globalShortcut)
-  desktopShortcutRegistered = false
+function toggleLaunchAtLogin(): void {
+  const controller = desktopPreferencesController
+  if (controller === undefined) return
+  const result = controller.update({ launchAtLogin: !controller.snapshot.launchAtLogin })
+  if (!result.ok) console.warn(`dsh-desktop: could not update launch-at-login: ${result.reason}`)
+  refreshNativeSurfaces()
 }
 
 function toggleMaximize(): void {
@@ -217,7 +249,11 @@ const trayActions: TrayActions = {
   getLocale: (): ShellLocale => currentLocale,
   getState: (): HarnessState | undefined => shellApp.state,
   isRestarting: (): boolean => shellApp.restartInFlight,
-  isShortcutRegistered: (): boolean => desktopShortcutRegistered,
+  getShortcut: (): string => desktopPreferencesController?.snapshot.shortcut ?? 'CommandOrControl+Shift+Space',
+  isShortcutRegistered: (): boolean => desktopPreferencesController?.snapshot.shortcutRegistered === true,
+  isLaunchAtLoginAvailable: (): boolean => desktopPreferencesController?.snapshot.launchAtLoginAvailable === true,
+  isLaunchAtLoginEnabled: (): boolean => desktopPreferencesController?.snapshot.launchAtLogin === true,
+  toggleLaunchAtLogin: (): void => { void toggleLaunchAtLogin() },
   isWindowVisible: (): boolean => windowContext.mainWindow?.isVisible() === true,
   showWindow: showMainWindow,
   toggleWindow: toggleMainWindow,
@@ -236,15 +272,9 @@ const trayActions: TrayActions = {
   }),
 }
 
-// Shell-owned IPC handlers (retry, diagnostics, LAN pairing close) are
-// exposed to the renderer only through the sandboxed preload. They must
-// accept calls only from shell-owned pages, which we render as data: URLs
-// (loading/error/LAN QR). The harness UI itself (served from
-// http://127.0.0.1) never needs these channels, so we reject any frame
-// whose URL is not a data: URL and, where a specific modal is involved,
-// verify the sender is exactly that modal window. This keeps a compromised
-// or curious harness page from invoking shell restarts, opening dialogs, or
-// closing other modals. See src/preload/index.ts for the bridge.
+// Shell-owned IPC handlers are exposed through the sandboxed preload. The
+// recovery channels remain data-page-only; the desktop-controls plugin gets a
+// separate allowlisted set of handlers from the verified Harness origin.
 ipcMain.handle('harness:retry', async (event) => {
   if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
   if (SMOKE_TEST && process.env[TEST_RETRY_FAIL_ENV] === '1') return false
@@ -274,6 +304,34 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     return true
   }
   return false
+})
+
+ipcMain.handle('desktop:preferences:get', (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return desktopPreferencesController?.snapshot ?? null
+})
+
+ipcMain.handle('desktop:preferences:update', (event, patch: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  if (typeof patch !== 'object' || patch === null || Array.isArray(patch)) return null
+  const candidate = patch as Record<string, unknown>
+  const update: DesktopPreferencesUpdate = {}
+  if (typeof candidate.shortcut === 'string') update.shortcut = candidate.shortcut
+  if (typeof candidate.launchAtLogin === 'boolean') update.launchAtLogin = candidate.launchAtLogin
+  if (typeof candidate.launchHidden === 'boolean') update.launchHidden = candidate.launchHidden
+  if (typeof candidate.notificationsEnabled === 'boolean') update.notificationsEnabled = candidate.notificationsEnabled
+  return desktopPreferencesController?.update(update) ?? null
+})
+
+ipcMain.handle('desktop:session-status', (event, raw: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
+  const next = normalizePublicStatusSnapshot(raw)
+  if (next === undefined) return false
+  for (const notification of notificationsForPublicStatus(lastPublicStatus, next, currentLocale)) {
+    showDesktopNotification(notification.title, notification.body)
+  }
+  lastPublicStatus = next
+  return true
 })
 
 function verifyHarness(root: string): void {
@@ -345,17 +403,34 @@ if (!gotLock) {
       refreshWindowTheme(windowContext)
     })
 
+    if (!SMOKE_TEST) {
+      desktopPreferencesController = new DesktopPreferencesController({
+        store: createShellPreferences(join(app.getPath('userData'), 'shell-preferences.json')),
+        registrar: globalShortcut,
+        onSummon: showMainWindow,
+        platform: process.platform,
+        packaged: app.isPackaged,
+        loginItems: {
+          getLoginItemSettings: () => app.getLoginItemSettings(),
+          setLoginItemSettings: settings => { app.setLoginItemSettings(settings) },
+        },
+        notificationsAvailable: Notification.isSupported(),
+      })
+      desktopPreferencesController.initialize()
+      windowContext.startHidden = desktopPreferencesController.shouldStartHidden()
+    }
+
     createMainWindow(windowContext)
-    installAppMenu(currentLocale, menuActions, false, false)
+    installAppMenu(currentLocale, menuActions, false, false, false, desktopPreferencesController?.snapshot.shortcut)
     if (!SMOKE_TEST) {
       try {
         createTray(trayActions)
         windowContext.hideOnClose = true
       } catch (error) {
         windowContext.hideOnClose = false
+        windowContext.startHidden = false
         console.warn(`dsh-desktop: tray unavailable; closing the window will quit: ${error instanceof Error ? error.message : String(error)}`)
       }
-      registerDesktopShortcut()
     }
 
     try {

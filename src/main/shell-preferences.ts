@@ -6,14 +6,44 @@
 import electron from 'electron'
 import { join } from 'node:path'
 import { ConfigFile } from './config-file.ts'
+import { DESKTOP_SUMMON_ACCELERATOR, normalizeDesktopAccelerator } from './global-shortcut.ts'
+
+export interface DesktopPreferences {
+  shortcut: string
+  launchAtLogin: boolean
+  launchHidden: boolean
+  notificationsEnabled: boolean
+}
 
 interface ShellPreferences {
   closeToTrayExplained?: boolean
+  desktopShortcut?: string
+  launchAtLogin?: boolean
+  launchHidden?: boolean
+  notificationsEnabled?: boolean
 }
 
 export interface ShellPreferencesStore {
   shouldExplainCloseToTray(): boolean
   markCloseToTrayExplained(): void
+  getDesktopPreferences(): DesktopPreferences
+  updateDesktopPreferences(patch: Partial<DesktopPreferences>): DesktopPreferences
+}
+
+export const DEFAULT_DESKTOP_PREFERENCES: DesktopPreferences = {
+  shortcut: DESKTOP_SUMMON_ACCELERATOR,
+  launchAtLogin: false,
+  launchHidden: false,
+  notificationsEnabled: true,
+}
+
+function desktopPreferencesOf(raw: ShellPreferences): DesktopPreferences {
+  return {
+    shortcut: normalizeDesktopAccelerator(raw.desktopShortcut) ?? DEFAULT_DESKTOP_PREFERENCES.shortcut,
+    launchAtLogin: raw.launchAtLogin === true,
+    launchHidden: raw.launchHidden === true,
+    notificationsEnabled: raw.notificationsEnabled !== false,
+  }
 }
 
 /** Build a preferences store over an explicit file path (testable without Electron). */
@@ -33,6 +63,20 @@ export function createShellPreferences(path: string): ShellPreferencesStore {
   return {
     shouldExplainCloseToTray: () => file.readSync().closeToTrayExplained !== true,
     markCloseToTrayExplained: () => file.update(current => ({ ...current, closeToTrayExplained: true })),
+    getDesktopPreferences: () => desktopPreferencesOf(file.readSync()),
+    updateDesktopPreferences: patch => {
+      file.update(current => {
+        const next = { ...desktopPreferencesOf(current), ...patch }
+        return {
+          ...current,
+          desktopShortcut: next.shortcut,
+          launchAtLogin: next.launchAtLogin,
+          launchHidden: next.launchHidden,
+          notificationsEnabled: next.notificationsEnabled,
+        }
+      })
+      return desktopPreferencesOf(file.readSync())
+    },
   }
 }
 

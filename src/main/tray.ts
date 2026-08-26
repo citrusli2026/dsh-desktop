@@ -12,7 +12,11 @@ export interface TrayActions {
   getLocale(): ShellLocale
   getState(): HarnessState | undefined
   isRestarting(): boolean
+  getShortcut(): string
   isShortcutRegistered(): boolean
+  isLaunchAtLoginAvailable(): boolean
+  isLaunchAtLoginEnabled(): boolean
+  toggleLaunchAtLogin(): void
   isWindowVisible(): boolean
   showWindow(): void
   toggleWindow(): void
@@ -37,7 +41,10 @@ function buildTrayMenu(): Menu {
     harness: current.getState(),
     restarting: current.isRestarting(),
     windowVisible: current.isWindowVisible(),
+    shortcutAccelerator: current.getShortcut(),
     shortcutRegistered: current.isShortcutRegistered(),
+    launchAtLoginAvailable: current.isLaunchAtLoginAvailable(),
+    launchAtLogin: current.isLaunchAtLoginEnabled(),
     lan: current.getLanState(),
   }
   const templateActions: TrayTemplateActions = {
@@ -50,6 +57,7 @@ function buildTrayMenu(): Menu {
     quit: current.quit,
     showAbout: current.showAbout,
     openExternal: current.openExternal,
+    toggleLaunchAtLogin: current.toggleLaunchAtLogin,
     lan: current.getLanActions(),
   }
   return Menu.buildFromTemplate(buildTrayTemplate(current.getLocale(), templateState, templateActions))

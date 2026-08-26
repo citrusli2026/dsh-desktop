@@ -4,7 +4,7 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-08-26 · 当前代码基线 `0.1.1-rc.2.shell.5`（已发布；内核
+最后更新: 2026-08-26 · 当前代码基线 `0.1.1-rc.2.shell.6`（未发布；内核
 `0.1.1-rc.2` 未变）
 
 ## 1. 产品概述
@@ -24,7 +24,9 @@ src/main/update-prompt.ts   跨平台更新与 macOS check-only 提示
 src/main/smoke.ts           CI 冒烟断言与退出约定
 src/main/supervisor.ts      Harness 子进程生命周期与退避重启
 src/main/desktop-controls.ts  shell-owned Web 插件挂载与降级
-src/main/global-shortcut.ts  桌面全局快捷键注册与平台文案
+src/main/global-shortcut.ts  桌面全局快捷键注册、校验与平台文案
+src/main/desktop-preferences.ts  快捷键、开机启动、启动后隐藏、通知偏好与原生副作用
+src/main/desktop-notifications.ts  公开会话/任务状态归一化与通知边沿纯函数
 src/main/lan.ts             局域网 Web 代理与配对二维码
 src/main/diagnostics.ts     日志轮转、遮罩、报告格式与导出
 src/main/restart-policy.ts  就绪协议、退避与重启预算纯函数
@@ -32,9 +34,9 @@ src/main/window-state.ts    窗口几何校验纯函数
 src/main/permissions.ts     Electron 会话权限默认拒绝
 src/main/menu.ts            应用菜单、About、诊断入口
 src/main/pages.ts           有 CSP 的加载页与错误恢复页
-src/main/shell-preferences.ts  壳偏好（close-to-tray 说明）
-src/preload/index.ts        沙箱桥接：仅对 shell 自有页面开放窄通道
-plugins/dsh-desktop-controls/  应用内桌面入口插件（shell.overlay）
+src/main/shell-preferences.ts  壳偏好（close-to-tray 与桌面偏好）
+src/preload/index.ts        沙箱桥接：错误恢复与已验证 Harness 来源的窄通道
+plugins/dsh-desktop-controls/  应用内桌面入口与偏好插件（shell.overlay/settings）
 ```
 
 ## 3. 验证契约
@@ -43,7 +45,7 @@ plugins/dsh-desktop-controls/  应用内桌面入口插件（shell.overlay）
 
 0. 依赖安全审计（官方 npm registry）;
 1. TypeScript typecheck;
-2. 123 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
+2. 134 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
 3. `site:check` 与 `check-api-downloads`（双语键、静态资源与下载接口契约）;
 4. 主进程/预加载构建; Harness 闭包与内置 Node bootstrap;
 5. 三条 xvfb 冒烟: 正常启动、错误页重试成功、强制重试失败后按钮恢复;

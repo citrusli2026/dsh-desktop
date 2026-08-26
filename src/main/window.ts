@@ -25,6 +25,8 @@ export interface WindowContext {
   builtInPage?: BuiltInPage
   quitInProgress: boolean
   hideOnClose: boolean
+  /** Skip the first ready-to-show reveal when the OS launched us to the tray. */
+  startHidden?: boolean
   getLocale(): ShellLocale
   onVisibilityChanged?(): void
   onCloseToTray?(): void
@@ -82,7 +84,14 @@ export function createMainWindow(context: WindowContext): BrowserWindow {
   })
   context.mainWindow = window
   if (state.isMaximized === true) window.maximize()
-  window.once('ready-to-show', () => window.show())
+  window.once('ready-to-show', () => {
+    if (context.startHidden === true) {
+      context.startHidden = false
+      context.onVisibilityChanged?.()
+      return
+    }
+    window.show()
+  })
 
   const scheduleSave = (): void => {
     if (saveStateTimer !== undefined) clearTimeout(saveStateTimer)
@@ -213,6 +222,7 @@ async function recoverRenderer(context: WindowContext, reason: string): Promise<
 }
 
 export function showWindow(context: WindowContext): void {
+  context.startHidden = false
   const window = context.mainWindow
   if (window === undefined || window.isDestroyed()) {
     const harnessUrl = context.harnessUrl

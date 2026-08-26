@@ -27,16 +27,16 @@ test('tray labels follow locale and window visibility', () => {
   assert.equal(menu[0]?.label, 'Hide dsh-desktop')
   assert.equal(menu[1]?.label, 'Show dsh-desktop')
   assert.equal(menu[2]?.label, `Shortcut enabled: ${desktopShortcutLabel(process.platform)}`)
-  assert.equal(menu[4]?.label, 'Status: Running')
-  assert.equal(menu[5]?.enabled, true)
+  assert.equal(menu[5]?.label, 'Status: Running')
+  assert.equal(menu[6]?.enabled, true)
 })
 
 test('tray disables restart while starting and uses Chinese consistently', () => {
   const menu = buildTrayTemplate('zh', state({ harness: { phase: 'starting' }, windowVisible: false }), actions)
   assert.equal(menu[0]?.label, '显示 dsh-desktop')
   assert.equal(menu[1]?.label, '快速唤起 dsh-desktop')
-  assert.equal(menu[4]?.label, '状态：正在启动…')
-  assert.equal(menu[5]?.enabled, false)
+  assert.equal(menu[5]?.label, '状态：正在启动…')
+  assert.equal(menu[6]?.enabled, false)
 })
 
 test('tray explains when the global shortcut could not be registered', () => {
@@ -75,4 +75,12 @@ test('tray offers community links and About on every platform', () => {
   const submenu = community.submenu as MenuItemConstructorOptions[]
   assert.deepEqual(submenu.map(item => item.label), ['社区官网', '项目源代码', '反馈问题'])
   assert.ok(menu.some(item => item.label === '关于 dsh-desktop'))
+})
+
+test('tray shows the selected shortcut and launch-at-login state', () => {
+  const menu = buildTrayTemplate('en', state({ shortcutAccelerator: 'Ctrl+Alt+K', launchAtLoginAvailable: true, launchAtLogin: true }), actions)
+  assert.equal(menu[2]?.label, `Shortcut enabled: ${desktopShortcutLabel('Ctrl+Alt+K', process.platform)}`)
+  assert.equal(menu[3]?.label, 'Launch at login: On')
+  assert.equal(menu[3]?.checked, true)
+  assert.equal(menu[3]?.enabled, true)
 })

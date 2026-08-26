@@ -19,6 +19,8 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /shell\.overlay/)
   assert.match(client, /startLanPairing/)
   assert.match(client, /dshDesktop/)
+  assert.match(client, /settings\.general\.item/)
+  assert.match(client, /reportSessionStatus/)
 })
 
 test('desktop controls mount returns undefined until all package files exist', async () => {

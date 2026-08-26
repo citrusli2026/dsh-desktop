@@ -287,7 +287,7 @@
           </article>
           <article class="feature-card" data-i18n="ft.p5">
             <h3>渲染层能力默认收敛</h3>
-            <p>保持 Electron 沙箱与上下文隔离、关闭 Node 集成并限制页面导航；媒体、定位、通知、屏幕采集和文件系统等额外权限默认拒绝，未来只能按需显式放行。</p>
+            <p>保持 Electron 沙箱与上下文隔离、关闭 Node 集成并限制页面导航；媒体、定位、Web 通知、屏幕采集和文件系统等额外权限默认拒绝。桌面状态通知是独立的本地壳功能，不读取屏幕。</p>
           </article>
           <article class="feature-card" data-i18n="ft.p6">
             <h3>问题发生时，带走一份可检查的报告</h3>
@@ -295,7 +295,11 @@
           </article>
           <article class="feature-card" data-i18n="ft.p7">
             <h3>不用找窗口，快捷键直接唤回</h3>
-            <p>窗口收进托盘后，在任意应用中按 <code>Ctrl/Cmd + Shift + Space</code>（Windows/Linux 用 Ctrl，macOS 用 ⌘）即可显示并聚焦 dsh-desktop。快捷键冲突时，托盘和右键入口仍然可用。</p>
+            <p>窗口收进托盘后，在任意应用中按自己的唤起快捷键即可显示并聚焦 dsh-desktop，默认是 <code>Ctrl/Cmd + Shift + Space</code>。快捷键冲突时，托盘和右键入口仍然可用。</p>
+          </article>
+          <article class="feature-card" data-i18n="ft.p8">
+            <h3>桌面习惯由你决定</h3>
+            <p>在 Harness 设置 → 通用中录入自己的唤起快捷键，选择是否开机启动、启动后隐藏，以及是否接收任务状态通知。配置只保存在本机；通知只在窗口未聚焦时提示。</p>
           </article>
       </div>
     </div>
@@ -329,7 +333,7 @@
         </details>
         <details>
           <summary data-i18n="faq.q6">桌面版会申请摄像头、定位或文件系统权限吗？</summary>
-          <p data-i18n="faq.a6">不会。当前功能不需要这些 Electron Web 权限，桌面壳默认拒绝媒体、定位、通知、采集和文件系统等额外请求；未来如确有需要，必须经过明确的白名单审查。</p>
+          <p data-i18n="faq.a6">不会。当前功能不需要这些 Electron Web 权限，渲染层默认拒绝媒体、定位、Web 通知、采集和文件系统等额外请求；桌面状态通知是可关闭的本地壳功能，不读取屏幕，也不上传。未来如确有需要，必须经过明确的白名单审查。</p>
         </details>
         <details>
           <summary data-i18n="faq.q7">桌面菜单为什么是中文或英文？</summary>
@@ -346,6 +350,14 @@
         <details>
           <summary data-i18n="faq.q10">GitHub 下载慢或连不上怎么办？</summary>
           <p class="faq-answer" data-i18n="faq.a10">国内网络可优先使用 <a href="https://gitcode.com/citrusli2026/dsh-electron-shell/releases" target="_blank" rel="noopener">GitCode 镜像</a>（中文界面自动排在 GitHub 前面；镜像不可用时自动只显示 GitHub）。如仍需走 GitHub，可在下载链接前加社区代理前缀，例如：<br /><code class="faq-command">https://ghproxy.net/https://github.com/citrusli2026/dsh-electron-shell/releases/download/…</code>公开代理（ghproxy.net / gh-proxy.com / ghfast.top）均为第三方免费服务，可用性不保证，一个不行就换另一个。</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q11">可以修改唤起快捷键或设置开机启动吗？</summary>
+          <p class="faq-answer" data-i18n="faq.a11">可以。在 dsh-desktop 的「设置 → 通用」中点击「重新设置」，按下包含修饰键的组合键（例如 <code>Ctrl + Alt + K</code>）。如果组合键已被其他程序占用，页面会提示更换；开机启动默认关闭，Windows/macOS 可分别选择是否启动后隐藏到托盘。Linux 当前不提供开机启动开关。</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q12">桌面通知会读取屏幕或上传数据吗？</summary>
+          <p class="faq-answer" data-i18n="faq.a12">不会。通知只使用 Harness 已公开的会话运行态和后台任务状态，不读取截图、不做视觉识别，也不会上传数据。它只在窗口未聚焦时提示完成、失败或需要确认，可在「设置 → 通用」关闭。</p>
         </details>
       </div>
     </div>

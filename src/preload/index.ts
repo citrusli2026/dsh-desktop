@@ -8,6 +8,7 @@
 /// <reference lib="dom" />
 import { contextBridge, ipcRenderer } from 'electron'
 import { MACOS_SIDEBAR_COLLAPSED_SAFE_TOP, MACOS_SIDEBAR_SAFE_TOP } from '../main/window-chrome.ts'
+import type { DesktopPreferencesResult, DesktopPreferencesSnapshot, DesktopPreferencesUpdate } from '../main/desktop-preferences.ts'
 
 function installWindowDragRegion(): void {
   if (document.querySelector('[data-dsh-window-drag-region]') !== null) return
@@ -61,4 +62,13 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Invoke one of the fixed, low-risk desktop controls from the Harness UI. */
   desktopAction: (action: 'startLanPairing' | 'toggleFullscreen' | 'showAbout'): Promise<boolean> =>
     ipcRenderer.invoke('desktop:action', action),
+  /** Read shell-only preferences without exposing the settings file to Web UI. */
+  getDesktopPreferences: (): Promise<DesktopPreferencesSnapshot | null> =>
+    ipcRenderer.invoke('desktop:preferences:get'),
+  /** Update one or more shell preferences through the allowlisted main handler. */
+  updateDesktopPreferences: (patch: DesktopPreferencesUpdate): Promise<DesktopPreferencesResult | null> =>
+    ipcRenderer.invoke('desktop:preferences:update', patch),
+  /** Report only the Harness public session/job state used for desktop notices. */
+  reportSessionStatus: (snapshot: unknown): Promise<boolean> =>
+    ipcRenderer.invoke('desktop:session-status', snapshot),
 })

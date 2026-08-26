@@ -13,8 +13,9 @@ A dependable desktop workspace for [DeepSeek Harness](https://github.com/deepsee
 - **Zero setup** — bundles a pinned Node.js 22 runtime and the complete `@deepseek-ai/dsh` dependency closure; no Node install, nothing to configure.
 - **Isolated by default** — its own data home (`~/.dsh-desktop`) keeps settings, sessions, API keys, and plugins away from your CLI. `DSH_HOME=~/.dsh` shares them again (decision 0012).
 - **Dependable** — crash auto-restart with backoff, error-page retry, tray with live harness status, single-instance lock, window geometry persistence, and an exportable diagnostic report. On Windows, desktop actions remain reachable from the in-app `⋮` control, window context menu, or tray even when the menu bar is hidden.
-- **Quick to return to** — press `Ctrl/Cmd + Shift + Space` from anywhere to show and focus the desktop workspace after it has been hidden to the tray. If another app owns the shortcut, the tray and context-menu fallbacks remain available.
-- **Constrained renderer** — sandbox and context isolation stay on, Node integration stays off, and camera/location/notifications/filesystem are denied by default (decision 0014).
+- **Quick to return to** — press the configurable summon shortcut from anywhere to show and focus the desktop workspace after it has been hidden to the tray. It defaults to `Ctrl/Cmd + Shift + Space`; if another app owns it, the tray and context-menu fallbacks remain available.
+- **Fits your desktop** — Harness Settings → General lets you record the shortcut, opt into launch at login and start hidden, and enable local status notices. These preferences stay in the shell's own data file.
+- **Constrained renderer** — sandbox and context isolation stay on, Node integration stays off, and camera/location/Web notifications/filesystem are denied by default (decision 0014). Optional desktop notices use only public Harness status and never read the screen.
 - **Updates** — Windows updates in place; unsigned macOS checks for releases and opens the exact release page (decisions 0010, 0016).
 
 ## Download

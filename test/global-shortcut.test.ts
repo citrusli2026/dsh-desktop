@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   DESKTOP_SUMMON_ACCELERATOR,
   desktopShortcutLabel,
+  normalizeDesktopAccelerator,
   registerDesktopSummonShortcut,
   unregisterDesktopSummonShortcut,
 } from '../src/main/global-shortcut.ts'
@@ -46,4 +47,24 @@ test('shortcut label follows the host platform', () => {
   assert.equal(desktopShortcutLabel('darwin'), '⌘ + Shift + Space')
   assert.equal(desktopShortcutLabel('win32'), 'Ctrl + Shift + Space')
   assert.equal(desktopShortcutLabel('linux'), 'Ctrl + Shift + Space')
+})
+
+test('normalizes custom accelerators and rejects modifier-only or malformed input', () => {
+  assert.equal(normalizeDesktopAccelerator('ctrl + alt + k'), 'Ctrl+Alt+K')
+  assert.equal(normalizeDesktopAccelerator('CmdOrCtrl+Shift+F12'), 'CommandOrControl+Shift+F12')
+  assert.equal(normalizeDesktopAccelerator('Shift'), undefined)
+  assert.equal(normalizeDesktopAccelerator('Ctrl+Ctrl+K'), undefined)
+  assert.equal(normalizeDesktopAccelerator('Ctrl+NotAKey'), undefined)
+  assert.equal(desktopShortcutLabel('Ctrl+Alt+K', 'win32'), 'Ctrl + Alt + K')
+  assert.equal(desktopShortcutLabel('CommandOrControl+Alt+K', 'darwin'), '⌘ + ⌥ + K')
+})
+
+test('custom registration passes the selected accelerator to Electron', () => {
+  let registered = ''
+  const registrar = {
+    register(accelerator: string): boolean { registered = accelerator; return true },
+    unregister() {},
+  }
+  assert.equal(registerDesktopSummonShortcut(registrar, () => {}, 'Ctrl+Alt+K'), true)
+  assert.equal(registered, 'Ctrl+Alt+K')
 })

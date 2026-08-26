@@ -52,3 +52,27 @@ test('malformed preferences fall back to the first-run explanation', async () =>
     await rm(join(path, '..'), { recursive: true, force: true })
   }
 })
+
+test('desktop preferences use safe defaults and preserve unrelated keys', async () => {
+  const path = await tempPath()
+  try {
+    const store = createShellPreferences(path)
+    assert.deepEqual(store.getDesktopPreferences(), {
+      shortcut: 'CommandOrControl+Shift+Space',
+      launchAtLogin: false,
+      launchHidden: false,
+      notificationsEnabled: true,
+    })
+    store.updateDesktopPreferences({ shortcut: 'Ctrl+Alt+K', launchAtLogin: true, launchHidden: true, notificationsEnabled: false })
+    assert.deepEqual(store.getDesktopPreferences(), {
+      shortcut: 'Ctrl+Alt+K',
+      launchAtLogin: true,
+      launchHidden: true,
+      notificationsEnabled: false,
+    })
+    const raw = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>
+    assert.equal(raw.closeToTrayExplained, undefined)
+  } finally {
+    await rm(join(path, '..'), { recursive: true, force: true })
+  }
+})

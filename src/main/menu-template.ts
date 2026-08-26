@@ -33,6 +33,7 @@ export interface MenuEnvironment {
   restartEnabled?: boolean
   lanRunning?: boolean
   lanBusy?: boolean
+  shortcutAccelerator?: string
 }
 
 export interface LanMenuState {
@@ -80,7 +81,7 @@ export function buildCommunityMenuItems(locale: ShellLocale, actions: CommunityM
 }
 
 export function buildAppMenuTemplate(environment: MenuEnvironment, actions: MenuActions): MenuItemConstructorOptions[] {
-  const { locale, platform, packaged, appName, restartEnabled = true, lanRunning = false, lanBusy = false } = environment
+  const { locale, platform, packaged, appName, restartEnabled = true, lanRunning = false, lanBusy = false, shortcutAccelerator = DESKTOP_SUMMON_ACCELERATOR } = environment
   const t = (key: Parameters<typeof shellText>[1]): string => shellText(locale, key)
   const isMac = platform === 'darwin'
   const template: MenuItemConstructorOptions[] = []
@@ -166,7 +167,7 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
   })
 
   const help: MenuItemConstructorOptions[] = []
-  help.push({ label: t('menu.quickSummon'), accelerator: DESKTOP_SUMMON_ACCELERATOR, click: actions.showWindow }, { type: 'separator' })
+  help.push({ label: t('menu.quickSummon'), accelerator: shortcutAccelerator, click: actions.showWindow }, { type: 'separator' })
   if (!isMac) help.push({ label: t('app.checkUpdates'), click: actions.checkForUpdates }, { type: 'separator' })
   help.push(
     { label: t('menu.restartHarness'), enabled: restartEnabled, click: actions.restartHarness },

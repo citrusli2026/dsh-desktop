@@ -24,3 +24,4 @@ This directory records the architecture decisions made while building dsh-electr
 | 0016 | Minimal dual-platform release surface / 最小双端发布面 | [EN](0016-minimal-dual-platform-release-surface.md) · [中文](0016-minimal-dual-platform-release-surface.zh.md) | Partially superseded by 0017 / 部分被 0017 取代 |
 | 0017 | Linux deb as the sole Linux release format / Linux 发布唯一格式 deb | [EN](0017-linux-deb-sole-format.md) · [中文](0017-linux-deb-sole-format.zh.md) | Accepted / 已接受 |
 | 0018 | Global shortcut for summoning the desktop shell / 桌面全局快捷键快速唤起 | [EN](0018-global-summon-shortcut.md) · [中文](0018-global-summon-shortcut.zh.md) | Accepted / 已接受 |
+| 0019 | Desktop preferences and status notifications / 桌面偏好与状态通知 | [EN](0019-desktop-preferences-and-status-notifications.md) · [中文](0019-desktop-preferences-and-status-notifications.zh.md) | Accepted / 已接受 |

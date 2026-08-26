@@ -11,6 +11,9 @@ export interface TrayTemplateState {
   restarting: boolean
   windowVisible: boolean
   shortcutRegistered: boolean
+  shortcutAccelerator?: string
+  launchAtLoginAvailable?: boolean
+  launchAtLogin?: boolean
   lan: LanMenuState
 }
 
@@ -24,6 +27,7 @@ export interface TrayTemplateActions {
   quit(): void
   showAbout(): void
   openExternal(url: string): void
+  toggleLaunchAtLogin?(): void
   lan: LanMenuActions
 }
 
@@ -34,14 +38,23 @@ export function buildTrayTemplate(
 ): MenuItemConstructorOptions[] {
   const t = (key: Parameters<typeof shellText>[1]): string => shellText(locale, key)
   const canRestart = !state.restarting && state.harness?.phase !== 'starting' && state.harness !== undefined
+  const shortcutAccelerator = state.shortcutAccelerator ?? DESKTOP_SUMMON_ACCELERATOR
+  const launchAtLoginAvailable = state.launchAtLoginAvailable === true
   return [
     { label: t(state.windowVisible ? 'tray.hide' : 'tray.show'), click: actions.toggleWindow },
-    { label: t('tray.quickSummon'), accelerator: DESKTOP_SUMMON_ACCELERATOR, click: actions.showWindow },
+    { label: t('tray.quickSummon'), accelerator: shortcutAccelerator, click: actions.showWindow },
     {
       label: shellText(locale, state.shortcutRegistered ? 'tray.shortcutEnabled' : 'tray.shortcutUnavailable', {
-        shortcut: desktopShortcutLabel(process.platform),
+        shortcut: desktopShortcutLabel(shortcutAccelerator, process.platform),
       }),
       enabled: false,
+    },
+    {
+      label: t(state.launchAtLogin === true ? 'tray.launchAtLoginEnabled' : 'tray.launchAtLoginDisabled'),
+      type: 'checkbox',
+      checked: state.launchAtLogin === true,
+      enabled: launchAtLoginAvailable,
+      click: actions.toggleLaunchAtLogin,
     },
     { type: 'separator' },
     { label: statusLabel(locale, state.harness, state.restarting), enabled: false },
