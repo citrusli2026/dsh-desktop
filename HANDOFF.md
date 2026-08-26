@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-08-25。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-08-26。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -8,13 +8,13 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.4`（2026-08-25 已发布；内核 0.1.1-rc.2 未变，壳修订 +4） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.4`（2026-08-25，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 118 项单测、类型检查、官网门禁、构建通过 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.4 Release 严格 8 文件门禁、attestation 核验与三平台 packaged smoke 通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.4`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.4 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证） |
-| 实时下载统计 | ✅ `/api/downloads` 优先读取同站 `release.json` 并通过 GitHub tag 端点实时计数；shell.4 线上验证 200，累计 173（mac 61 / win 97 / linux 15） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.5`（2026-08-26 已发布；内核 0.1.1-rc.2 未变，壳修订 +5） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.5`（2026-08-26，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 123 项单测、类型检查、官网门禁、构建通过；覆盖率 lines 90.72 / branches 82.67 / functions 84.43 |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.5 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.5`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.5 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证） |
+| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 184（mac 63 / win 105 / linux 16） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -701,4 +701,27 @@ footer 常驻 "`?` for shortcuts"、`?` 打开快捷键浮层、约 50 条斜杠
 
 ---
 
-_更新于 2026-08-25_
+## 二十五、v0.1.1-rc.2.shell.5 发布：全局快捷键快速唤回（2026-08-26）
+
+1. **本轮定位与取舍**：基于项目“官方 Harness 的桌面壳”定位，选择官方 WebUI 本身没有的桌面级能力：全局快捷键快速唤回窗口。默认快捷键为
+   `CommandOrControl+Shift+Space`，macOS 显示为 `⌘ + Shift + Space`，Windows/Linux
+   显示为 `Ctrl + Shift + Space`；触发后总是显示并聚焦主窗口，不做隐藏/切换语义。
+   本轮明确不做视觉识别、不复制官方已有的视觉能力。
+2. **用户友好与降级**：快捷键注册失败或与其他软件冲突时不阻断启动，托盘状态会显示“快捷键不可用”，用户仍可用托盘、窗口右键和应用菜单入口打开窗口；退出时只释放本壳持有的快捷键。
+3. **实现与验证**：新增 `src/main/global-shortcut.ts` 及四组单测，覆盖注册、回调、冲突、异常和平台文案；菜单/托盘/右键均复用同一唤回动作。补充中英文 README、安装/FAQ、首页介绍和 ADR 0018。另修复 Electron E2E 对话框 stub 的页面初始化竞态。本地 `pnpm run verify` 通过：123 项单测，覆盖率 lines 90.72 / branches 82.67 / functions 84.43；全量本地 guarded E2E 9/9。
+4. **发布**：Release workflow `32920479188` 成功，verify job `98032948669`、Windows build `98033270697`、Ubuntu build `98033270750`、macOS build `98033270751`、publish job `98034739524` 均成功；GitHub Release 于 `2026-08-26T02:01:32Z` 发布，8 个资产和三平台安装态/构建证明门禁通过。tag `v0.1.1-rc.2.shell.5` peeled 到 `df1727c5271cf057546daef2678df4e5c23965c3`。
+5. **镜像与官网**：GitCode Release 创建后，6 个面向用户的安装包/校验资产全部上传并在线验证（6/6）；Site Data Refresh run `32921179292` 成功并提交 `1c128bb`，`site/data/release.json` 已指向 shell.5 且 6/6 `gitcode_ok=true`。线上 `/api/downloads` 返回 200，实时统计为累计 184（mac 63 / win 105 / linux 16）。
+
+**后续迭代路线（按用户价值排序）**：
+
+1. **shell.6：自定义快捷键**。在设置页提供录入/清空/恢复默认，实时提示冲突；配置写入现有壳偏好文件，不触碰 Harness 数据。
+2. **shell.7：可选开机启动**。默认关闭，明确区分“开机启动”和“启动后隐藏到托盘”，并提供一键关闭，优先解决长期使用成本。
+3. **shell.8：桌面状态通知**。只呈现 Harness 已公开的任务状态/错误摘要，不读取屏幕、不做视觉识别；先确认上游事件边界和隐私文案，再决定是否进入设置。
+
+边界原则：继续围绕窗口、托盘、快捷键、更新、诊断和本地可用性做桌面壳增强；官方已有的 WebUI/视觉能力直接复用，不重复实现；每个新能力都必须保留原生入口和失败降级路径。
+
+发布链接：<https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.1-rc.2.shell.5>；官网：<https://dsh-desktop.com>。
+
+---
+
+_更新于 2026-08-26_
