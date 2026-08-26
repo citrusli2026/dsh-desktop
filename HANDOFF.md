@@ -8,13 +8,13 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.5`（2026-08-26 已发布；内核 0.1.1-rc.2 未变，壳修订 +5） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.5`（2026-08-26，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 123 项单测、类型检查、官网门禁、构建通过；覆盖率 lines 90.72 / branches 82.67 / functions 84.43 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.5 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.5`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.5 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证） |
-| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 184（mac 63 / win 105 / linux 16） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.6`（2026-08-26 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +6） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.6`（2026-08-26，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 134 项单测、类型检查、官网门禁、构建通过；覆盖率 lines 91.59 / branches 82.27 / functions 85.98 |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.6 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.6`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.6 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证，tag 与 `5efc463` 对齐） |
+| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 199（mac 65 / win 114 / linux 20） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -721,6 +721,22 @@ footer 常驻 "`?` for shortcuts"、`?` 打开快捷键浮层、约 50 条斜杠
 边界原则：继续围绕窗口、托盘、快捷键、更新、诊断和本地可用性做桌面壳增强；官方已有的 WebUI/视觉能力直接复用，不重复实现；每个新能力都必须保留原生入口和失败降级路径。
 
 发布链接：<https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.1-rc.2.shell.5>；官网：<https://dsh-desktop.com>。
+
+---
+
+## 二十六、v0.1.1-rc.2.shell.6 发布：桌面偏好与状态通知（2026-08-26）
+
+本轮按 shell.5 路线一次完成 shell.6/7/8，继续围绕桌面壳的窗口可达性与长期使用成本迭代；不重复实现官方已有的 WebUI/视觉能力，也不做视觉识别。
+
+1. **shell.6 自定义全局快捷键**：Harness「设置 → 通用」新增录入、清空、恢复默认与冲突提示；支持修饰键组合，默认仍为 `CommandOrControl+Shift+Space`。切换快捷键采用先注册后提交的回滚策略，冲突不阻断启动，托盘/右键/应用菜单继续可用。
+2. **shell.7 可选开机启动**：增加开机启动与「启动后隐藏到托盘」两个独立开关，默认关闭；仅在已打包的 macOS/Windows 上启用，Linux 与未打包开发环境明确显示不可用，不修改 Harness 的 `settings.yaml`。
+3. **shell.8 桌面状态通知**：桌面通知默认开启，可关闭；仅在窗口未聚焦或隐藏时提示会话停止/恢复、待确认交互，以及后台任务完成/终止/失败。主进程只接收插件从 Harness `useSessions` 暴露的公开状态边沿，首次状态只建立基线，不制造启动噪声；不读取屏幕、不做 OCR/视觉识别、不上传数据。
+4. **实现边界与持久化**：新增 `DesktopPreferencesController`、shell-owned `shell-preferences.json`、原生通知状态归一化模块与安全 IPC；`dsh-desktop-controls` 保持已有 `⋮` 入口，设置面板复用 Harness 令牌与无障碍焦点/键盘交互，不改变官方视觉层。
+5. **本地验证**：`pnpm run verify` 全绿；134 项单测、typecheck、site check、构建、覆盖率门槛通过；真实 Electron packaged UI、9/9 本地 guarded E2E 与跨平台发布门禁通过。测试覆盖率 lines 91.59 / branches 82.27 / functions 85.98。
+6. **发布元数据**：GitHub Release workflow `32933608077` 最终全绿（初次 Ubuntu packaged E2E 为瞬时导航竞态，按流程仅重跑失败 job 后成功）；verify `98226582005`、macOS `98226582553`、Windows `98226624290`、Ubuntu `98226581653`、publish `98227405812`。GitHub Release 于 `2026-08-26T15:06:58Z` 发布，8 个资产齐全；tag `v0.1.1-rc.2.shell.6` peeled 到 `5efc4630b197a3dad588b68be813df4610c22ac3`。
+7. **GitCode 与官网**：GitCode `main` 与 shell.6 tag 均已精确对齐 `5efc463`；dmg/exe/deb + 3×sha256 共 6/6 资产上传并以匿名 Range GET 验证。GitHub Actions Site Data Refresh 两次因 runner `startup_failure` 未执行，遂本地按 GitHub API 生成并提交 `b195b62`；正式域名已验证 `release.json` 指向 shell.6、6/6 `gitcode_ok=true`，首页保留快捷键/开机启动/桌面通知介绍，`/api/downloads` 返回 200。
+
+发布链接：<https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.1-rc.2.shell.6>；官网：<https://dsh-desktop.com>。
 
 ---
 
