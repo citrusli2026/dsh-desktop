@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-08-26。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-08-28。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -8,13 +8,13 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.6`（2026-08-26 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +6） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.6`（2026-08-26，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 134 项单测、类型检查、官网门禁、构建通过；覆盖率 lines 91.59 / branches 82.27 / functions 85.98 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.6 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.6`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.6 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证，tag 与 `5efc463` 对齐） |
-| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 199（mac 65 / win 114 / linux 20） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.7`（2026-08-28 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +7） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.7`（2026-08-28，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 135 项单测、类型检查、官网门禁、构建通过；覆盖率 lines 91.61 / branches 82.29 / functions 86.03 |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.7 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.7`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.7 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证，tag 与 `3b09006` 对齐） |
+| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 196（mac 66 / win 108 / linux 22） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -740,4 +740,42 @@ footer 常驻 "`?` for shortcuts"、`?` 打开快捷键浮层、约 50 条斜杠
 
 ---
 
-_更新于 2026-08-26_
+## 二十七、v0.1.1-rc.2.shell.7 发布：桌面入口帮助浮层与通知点击聚焦（2026-08-28）
+
+本轮按 HANDOFF 二十三节「后续优化候选」完成桌面入口补全，并补齐 shell.6 通知的点击缺口；
+继续围绕窗口可达性与本地可用性做桌面壳增强，不重复实现官方 WebUI/视觉能力。
+
+1. **⋮ 面板升级为完整帮助浮层**：在 LAN 配对、全屏、关于之外新增「打开日志文件夹」「导出
+   诊断报告」，复用托盘/菜单完全相同的动作（`desktop:action` 白名单 + 发送方校验）；面板每次
+   打开时从壳偏好快照重新读取并显示当前唤起快捷键；托盘、右键与应用菜单入口全部保留。
+2. **通知点击聚焦**：桌面状态通知点击后显示并聚焦主窗口（`focusWindowOnNotificationClick` +
+   `showMainWindow`）——窗口藏在托盘时点「任务已完成 / 需要你的确认」即可回到工作区；
+   不跳转会话、不读内容、不操作 Harness。
+3. **测试与文档**：新增 ADR 0020（中英）；插件 COPY 增补中英文案；单测 134 → 135。
+   `pnpm run verify` 全绿：135 项单测、覆盖率 lines 91.61 / branches 82.29 / functions 86.03、
+   site check + api-downloads、构建通过。
+4. **发布**：tag `v0.1.1-rc.2.shell.7` → `3b09006`（rebase 到 bot 提交 `981a04a` 后打 tag，
+   peeled 已核对）；release.yml 一次全绿（run `33091135183`），verify `98583942877`、macOS
+   `98584595490`、Ubuntu `98584595515`、Windows `98584595583`、publish `98586824826`；
+   GitHub Release 于 `2026-08-27T16:12:50Z` 发布，8 文件契约与 attestation 全部通过。
+5. **GitCode 镜像（本次走 backfill 降级路线）**：发版时本机 Clash SOCKS(7890) 未运行（Verge
+   未启动；启动后仅监听 7897 且无可出网节点，已恢复原状）、直连 GitHub 大文件约 2KB/s，
+   公共代理全部不可用（ghproxy.net/ghfast.top/ghproxy.cc 连不上；gh-proxy.com 对资产
+   403；ghproxy.cn 返回 HTML 拦截页），本机 `mirror-gitcode.mjs` 无法拉取源文件。
+   改用 backfill：run `33093867405` 约 65 分钟仅小文件落地、无安装包进展，取消重发；
+   run `33097876501` 完成 exe/deb/dmg 全部上传（`--check-only` 6/6 present）；run
+   `33104038448` 幂等无缺省。三个 sha256 与三个安装包 Range GET 均 302。
+6. **网站数据**：site-refresh run `33092065721`（自动触发）成功并提交 `ff44005`
+   （release.json 指向 shell.7、gitcode_ok 初始 false）；镜像 6/6 后本地重跑
+   `gen-site-data` 提交 `site/data/release.json`（stats 196 次：mac 66 / win 108 /
+   linux 22），`gitcode_ok` 全部刷新为 `true`。
+
+发布元数据：
+- Release run `33091135183`（成功）；Site Data Refresh run `33092065721`（成功）；
+- 线上验证：`/data/release.json` 指向 `v0.1.1-rc.2.shell.7` 且 6/6 `gitcode_ok=true`、
+  `/api/downloads` 返回 200（累计 220）；GitCode 镜像 6/6 present、GitCode tag 与
+  `3b09006` 精确对齐。
+
+---
+
+_更新于 2026-08-28_
