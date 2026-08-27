@@ -1,6 +1,16 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { normalizePublicStatusSnapshot, notificationsForPublicStatus } from '../src/main/desktop-notifications.ts'
+import { focusWindowOnNotificationClick, normalizePublicStatusSnapshot, notificationsForPublicStatus } from '../src/main/desktop-notifications.ts'
+
+test('notification click summons the shell window on every click', () => {
+  let listener: (() => void) | undefined
+  const notification = { on: (_event: string, next: () => void) => { listener = next } }
+  let focused = 0
+  focusWindowOnNotificationClick(notification, () => { focused += 1 })
+  listener?.()
+  listener?.()
+  assert.equal(focused, 2)
+})
 
 test('normalizes public session and job state and drops malformed entries', () => {
   const snapshot = normalizePublicStatusSnapshot({

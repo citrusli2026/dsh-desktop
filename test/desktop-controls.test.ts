@@ -18,6 +18,8 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   const client = await readFile(join(pluginRoot, 'lib/client.js'), 'utf8')
   assert.match(client, /shell\.overlay/)
   assert.match(client, /startLanPairing/)
+  assert.match(client, /openLogs/)
+  assert.match(client, /exportDiagnostics/)
   assert.match(client, /dshDesktop/)
   assert.match(client, /settings\.general\.item/)
   assert.match(client, /reportSessionStatus/)

@@ -118,6 +118,10 @@ window.__ModuleLoader__.load({
         margin-top: 10px;
         padding-top: 10px;
       }
+      [data-dsh-desktop-controls] [data-dsh-controls-shortcut] {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+      }
       [data-dsh-desktop-settings] {
         border-bottom: 1px solid var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
         color: var(--dsw-alias-label-primary, #1f232b);
@@ -184,6 +188,8 @@ window.__ModuleLoader__.load({
         trigger: "桌面入口", title: "桌面入口",
         copy: "Windows 顶部菜单隐藏时，可从这里或系统托盘继续操作。",
         lan: "连接移动设备", fullscreen: "切换全屏", about: "关于 dsh-desktop",
+        logs: "打开日志文件夹", diagnostics: "导出诊断报告",
+        shortcutLabel: "唤起窗口快捷键",
         hint: "也可以右键窗口任意位置，或点击系统托盘图标。",
         unavailable: "请右键窗口或点击系统托盘图标使用桌面入口。",
         settingsTitle: "桌面偏好", settingsCopy: "快捷键、开机启动和通知只保存在本机。",
@@ -199,6 +205,8 @@ window.__ModuleLoader__.load({
         trigger: "Desktop controls", title: "Desktop controls",
         copy: "When the Windows menu is hidden, use this panel or the system tray.",
         lan: "Connect a mobile device", fullscreen: "Toggle full screen", about: "About dsh-desktop",
+        logs: "Open logs folder", diagnostics: "Export diagnostics",
+        shortcutLabel: "Summon shortcut",
         hint: "You can also right-click anywhere in the window or use the tray icon.",
         unavailable: "Right-click the window or use the system tray for desktop controls.",
         settingsTitle: "Desktop preferences", settingsCopy: "Shortcuts, startup, and notifications stay on this device.",
@@ -342,6 +350,7 @@ window.__ModuleLoader__.load({
       const bridge = typeof window !== "undefined" ? window.dshDesktop : undefined;
       const [open, setOpen] = react.useState(false);
       const [busy, setBusy] = react.useState("");
+      const [preferences, setPreferences] = react.useState(null);
       const sessionState = useSessions((state) => state);
       const status = react.useMemo(() => publicStatusOf(sessionState), [sessionState]);
 
@@ -349,6 +358,12 @@ window.__ModuleLoader__.load({
         if (typeof bridge?.reportSessionStatus !== "function" || status === undefined) return;
         void bridge.reportSessionStatus(status);
       }, [bridge, status]);
+
+      react.useEffect(() => {
+        if (!open || typeof bridge?.getDesktopPreferences !== "function") return undefined;
+        void bridge.getDesktopPreferences().then((value) => { if (value !== null) setPreferences(value); });
+        return undefined;
+      }, [open, bridge]);
 
       react.useEffect(() => {
         if (!open) return undefined;
@@ -384,8 +399,11 @@ window.__ModuleLoader__.load({
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("startLanPairing"), children: copy.lan }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("toggleFullscreen"), children: copy.fullscreen }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("showAbout"), children: copy.about }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("openLogs"), children: copy.logs }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("exportDiagnostics"), children: copy.diagnostics }),
             ] }) : react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: copy.unavailable }),
             react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: copy.hint }),
+            preferences?.shortcutLabel ? react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: [copy.shortcutLabel, ": ", react_jsx_runtime.jsx("code", { "data-dsh-controls-shortcut": true, children: preferences.shortcutLabel })] }) : null,
           ] }) : null,
         ],
       });

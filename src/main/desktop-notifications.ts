@@ -101,6 +101,17 @@ function localized(locale: ShellLocale, key: 'sessionDone' | 'needsInput' | 'job
 }
 
 /**
+ * Make a desktop notice click summon the shell window, so a completion or
+ * waiting-for-input alert always leads back to the conversation.
+ */
+export function focusWindowOnNotificationClick(
+  notification: { on(event: 'click', listener: () => void): unknown },
+  showWindow: () => void,
+): void {
+  notification.on('click', showWindow)
+}
+
+/**
  * Return only true public-state edges. The first snapshot is a baseline, so a
  * renderer reload never produces a false notification for existing work.
  */

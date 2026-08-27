@@ -31,7 +31,7 @@ import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from 
 import { isMainWindowHarnessSender, isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
 import { DesktopPreferencesController, type DesktopPreferencesUpdate } from './desktop-preferences.ts'
 import { createShellPreferences } from './shell-preferences.ts'
-import { normalizePublicStatusSnapshot, notificationsForPublicStatus, type PublicStatusSnapshot } from './desktop-notifications.ts'
+import { focusWindowOnNotificationClick, normalizePublicStatusSnapshot, notificationsForPublicStatus, type PublicStatusSnapshot } from './desktop-notifications.ts'
 
 const DEV_WEB_URL = process.env[DEV_WEB_URL_ENV]
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -115,7 +115,9 @@ function notificationEnabled(): boolean {
 function showDesktopNotification(title: string, body: string): void {
   if (!notificationEnabled()) return
   try {
-    new Notification({ title, body }).show()
+    const notification = new Notification({ title, body })
+    focusWindowOnNotificationClick(notification, showMainWindow)
+    notification.show()
   } catch (error) {
     console.warn(`dsh-desktop: notification failed: ${error instanceof Error ? error.message : String(error)}`)
   }
@@ -303,6 +305,11 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     await showAboutDialog(currentLocale)
     return true
   }
+  if (action === 'openLogs') {
+    await openLogsFolder()
+    return true
+  }
+  if (action === 'exportDiagnostics') return exportDiagnosticReport(shellApp.state, currentLocale)
   return false
 })
 
