@@ -484,12 +484,15 @@ shellTest('packaged app shows a desktop notice for a real state edge and restore
   }
 
   // The desktop extensions live in their own Settings section now (like
-  // General/Models/Plugins), not embedded in General.
+  // General/Models/Plugins), not embedded in General. Scope to the dialog:
+  // the page also has the overlay trigger called 'Extensions'.
   await window.getByText('Settings', { exact: true }).first().click()
-  const extensionNav = window.getByText('Extension settings', { exact: true })
+  const extensionNav = window.locator('[role="dialog"]').getByText('Extensions').first()
   await extensionNav.waitFor({ timeout: 15_000 })
-  await extensionNav.first().click()
-  await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-settings]') !== null && document.body.innerText.includes('Summon shortcut'))).toBe(true)
+  await extensionNav.click()
+  await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-settings]') !== null
+    && document.querySelector('[data-dsh-desktop-lan-row]') !== null
+    && document.body.innerText.includes('Summon shortcut'))).toBe(true)
   const settings = window.locator('[data-dsh-desktop-settings]')
   await settings.screenshot({ path: testInfo.outputPath('02-desktop-preferences.png') })
 

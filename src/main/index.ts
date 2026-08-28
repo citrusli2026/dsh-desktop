@@ -300,6 +300,10 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
   if (typeof action !== 'string') return false
   if (action === 'startLanPairing') return startLanLink()
+  if (action === 'stopLanPairing') {
+    stopLanLink()
+    return true
+  }
   if (action === 'toggleFullscreen') return toggleFullscreen()
   if (action === 'showAbout') {
     await showAboutDialog(currentLocale)
@@ -311,6 +315,11 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
   }
   if (action === 'exportDiagnostics') return exportDiagnosticReport(shellApp.state, currentLocale)
   return false
+})
+
+ipcMain.handle('desktop:lan:state', (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return { running: lanService.isRunning, busy: lanService.isBusy }
 })
 
 ipcMain.handle('desktop:preferences:get', (event) => {

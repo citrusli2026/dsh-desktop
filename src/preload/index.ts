@@ -60,8 +60,11 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Close the shell-owned LAN pairing modal. */
   closeLanPairing: (): Promise<boolean> => ipcRenderer.invoke('shell:close-lan-pairing'),
   /** Invoke one of the fixed, low-risk desktop controls from the Harness UI. */
-  desktopAction: (action: 'startLanPairing' | 'toggleFullscreen' | 'showAbout' | 'openLogs' | 'exportDiagnostics'): Promise<boolean> =>
+  desktopAction: (action: 'startLanPairing' | 'stopLanPairing' | 'toggleFullscreen' | 'showAbout' | 'openLogs' | 'exportDiagnostics'): Promise<boolean> =>
     ipcRenderer.invoke('desktop:action', action),
+  /** Read the LAN pairing state for the extension settings surface. */
+  getLanState: (): Promise<{ running: boolean; busy: boolean } | null> =>
+    ipcRenderer.invoke('desktop:lan:state'),
   /** Read shell-only preferences without exposing the settings file to Web UI. */
   getDesktopPreferences: (): Promise<DesktopPreferencesSnapshot | null> =>
     ipcRenderer.invoke('desktop:preferences:get'),

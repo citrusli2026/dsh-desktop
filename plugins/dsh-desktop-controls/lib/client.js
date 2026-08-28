@@ -182,7 +182,8 @@ window.__ModuleLoader__.load({
         padding: 3px 6px;
         white-space: nowrap;
       }
-      [data-dsh-desktop-settings] [data-dsh-desktop-record] {
+      [data-dsh-desktop-settings] [data-dsh-desktop-record],
+      [data-dsh-desktop-settings] [data-dsh-desktop-lan-target] {
         background: transparent;
         border: 1px solid var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
         border-radius: 8px;
@@ -192,8 +193,16 @@ window.__ModuleLoader__.load({
         padding: 6px 11px;
         white-space: nowrap;
       }
-      [data-dsh-desktop-settings] [data-dsh-desktop-record]:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(31, 35, 43, .06)); }
-      [data-dsh-desktop-settings] [data-dsh-desktop-record][disabled] { cursor: wait; opacity: .65; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-record]:hover,
+      [data-dsh-desktop-settings] [data-dsh-desktop-lan-target]:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(31, 35, 43, .06)); }
+      [data-dsh-desktop-settings] [data-dsh-desktop-record][disabled],
+      [data-dsh-desktop-settings] [data-dsh-desktop-lan-target][disabled] { cursor: wait; opacity: .65; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-lan-actions] {
+        align-items: center;
+        display: inline-flex;
+        gap: 8px;
+        flex-shrink: 0;
+      }
       [data-dsh-desktop-settings] [data-dsh-desktop-checkbox] { height: 16px; width: 16px; }
       [data-dsh-desktop-settings] [data-dsh-desktop-status] {
         color: var(--dsw-alias-state-error-primary, #c33);
@@ -224,7 +233,9 @@ window.__ModuleLoader__.load({
         shortcutLabel: "唤起快捷键",
         hint: "也可以右键窗口任意位置，或点击系统托盘图标。",
         unavailable: "请右键窗口或点击系统托盘图标使用扩展入口。",
-        settingsTitle: "扩展设置", settingsCopy: "快捷键、开机启动和通知只保存在本机。",
+        settingsTitle: "扩展设置", settingsCopy: "连接移动设备、快捷键、开机启动和通知只保存在本机。",
+        lanSettings: "连接移动设备", lanSettingsDetail: "手机与电脑连接同一局域网，扫描二维码即可进入 Harness Web 界面。",
+        lanStart: "开始配对", lanShowQr: "显示二维码", lanStop: "停止共享",
         shortcut: "唤起快捷键", record: "重新设置", recording: "请按下快捷键…",
         shortcutHelp: "至少包含一个修饰键，例如 Ctrl + Alt + K。",
         launchAtLogin: "开机启动", launchAtLoginDetail: "登录系统后自动运行 dsh-desktop。",
@@ -240,7 +251,9 @@ window.__ModuleLoader__.load({
         shortcutLabel: "Summon shortcut",
         hint: "You can also right-click anywhere in the window or use the tray icon.",
         unavailable: "Right-click the window or use the system tray for extensions.",
-        settingsTitle: "Extension settings", settingsCopy: "Shortcuts, startup, and notifications stay on this device.",
+        settingsTitle: "Extensions", settingsCopy: "Mobile pairing, shortcuts, startup, and notifications stay on this device.",
+        lanSettings: "Connect a mobile device", lanSettingsDetail: "Same LAN as the computer; scan the QR code to enter the Harness Web UI.",
+        lanStart: "Start pairing", lanShowQr: "Show QR code", lanStop: "Stop sharing",
         shortcut: "Summon shortcut", record: "Change shortcut", recording: "Press a shortcut…",
         shortcutHelp: "Include at least one modifier, such as Ctrl + Alt + K.",
         launchAtLogin: "Launch at login", launchAtLoginDetail: "Start dsh-desktop when you sign in.",
@@ -355,6 +368,30 @@ window.__ModuleLoader__.load({
         }
       };
 
+      const [lanState, setLanState] = react.useState(null);
+      const [lanBusy, setLanBusy] = react.useState(false);
+
+      const refreshLanState = async () => {
+        if (typeof bridge?.getLanState !== "function") return;
+        const value = await bridge.getLanState();
+        if (value !== null) setLanState(value);
+      };
+
+      react.useEffect(() => {
+        void refreshLanState();
+      }, [bridge]);
+
+      const lanAction = async (action) => {
+        if (typeof bridge?.desktopAction !== "function") return;
+        setLanBusy(true);
+        try {
+          await bridge.desktopAction(action);
+        } finally {
+          setLanBusy(false);
+          void refreshLanState();
+        }
+      };
+
       react.useEffect(() => {
         if (!recording) return undefined;
         const onKeyDown = (event) => {
@@ -379,6 +416,13 @@ window.__ModuleLoader__.load({
         children: [
           react_jsx_runtime.jsx("h3", { "data-dsh-desktop-settings-heading": true, children: copy.settingsTitle }),
           react_jsx_runtime.jsx("p", { "data-dsh-desktop-settings-copy": true, children: copy.settingsCopy }),
+          typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-lan-row": true, children: [
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.lanSettings, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.lanSettingsDetail })] }),
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: lanBusy, onClick: () => void lanAction("startLanPairing"), children: lanState?.running === true ? copy.lanShowQr : copy.lanStart }),
+              lanState?.running === true ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-stop": true, "data-dsh-desktop-lan-target": true, disabled: lanBusy, onClick: () => void lanAction("stopLanPairing"), children: copy.lanStop }) : null,
+            ] }),
+          ] }) : null,
           react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.shortcut }),
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-shortcut": true, children: recording ? copy.recording : preferences.shortcutLabel }),
@@ -551,7 +595,7 @@ window.__ModuleLoader__.load({
       // 独立设置分区（与通用/模型/插件并列），排版随 Harness 设置页。
       ctx.slots.inject("settings.section", () => ctx.slots.register({
         name: "settings.section", id: "dsh-desktop-controls", order: 20,
-        label: () => document.documentElement.lang.toLowerCase().startsWith("zh") ? "扩展设置" : "Extension settings",
+        label: () => document.documentElement.lang.toLowerCase().startsWith("zh") ? "扩展设置" : "Extensions",
       }, DesktopSettingsSection));
     }
 
