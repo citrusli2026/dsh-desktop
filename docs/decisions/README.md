@@ -26,3 +26,4 @@ This directory records the architecture decisions made while building dsh-electr
 | 0018 | Global shortcut for summoning the desktop shell / 桌面全局快捷键快速唤起 | [EN](0018-global-summon-shortcut.md) · [中文](0018-global-summon-shortcut.zh.md) | Accepted / 已接受 |
 | 0019 | Desktop preferences and status notifications / 桌面偏好与状态通知 | [EN](0019-desktop-preferences-and-status-notifications.md) · [中文](0019-desktop-preferences-and-status-notifications.zh.md) | Accepted / 已接受 |
 | 0020 | Desktop entry help surface and notification click-to-focus / 桌面入口帮助浮层与通知点击聚焦 | [EN](0020-desktop-entry-help-surface.md) · [中文](0020-desktop-entry-help-surface.zh.md) | Accepted / 已接受 |
+| 0021 | Safe mode, recovery center, and portable presets / 安全模式、恢复中心与便携预设包 | [EN](0021-safe-mode-recovery-presets.md) · [中文](0021-safe-mode-recovery-presets.zh.md) | Accepted / 已接受 |
