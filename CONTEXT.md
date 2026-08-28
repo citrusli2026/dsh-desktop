@@ -27,6 +27,9 @@ DeepSeek Harness(`@deepseek-ai/dsh`,简称 **dsh**)的非官方 Electron 桌面�
 | **桌面偏好** | shell-owned 的快捷键、Windows/macOS 开机启动、启动后隐藏与本地通知开关;不写入 Harness `settings.yaml`,设置面板由 `dsh-desktop-controls` 插件提供（决策 0019） |
 | **桌面状态通知** | 主进程只接收插件从 Harness `useSessions` 暴露的会话/后台任务状态边沿，在窗口未聚焦时用 Electron 原生通知提示完成、失败或待确认;不读屏、不做视觉识别、不上传（决策 0019） |
 | **站点数据** | `site/data/release.json` 由 `scripts/gen-site-data.mjs` 生成,`site-refresh` bot 在 Release 后自动同步;`dsh-desktop.com` 是 GitHub Pages/Vercel 部署(发布入口见 README) |
+| **安全模式 (safe mode)** | 壳拥有的启动形态:仅官方 bundles + 壳控件,禁用 profile 中全部用户插件条目;禁用靠 `--patch` overlay `{id, disabled: true}`(与官方 telemetry 开关同构),绝不改动用户插件文件;双触发(启动失败/手动),标志持久于 shell-preferences.json,退出需显式动作(决策 0021) |
+| **恢复中心** | 错误恢复页四动作:重试 / 以安全模式启动(已在安全模式时为退出)/ 导出诊断 / 打开日志文件夹 |
+| **.dshpreset** | 便携 Agent 预设包(JSON,`dsh-preset/v1`):导出某用户预设(`$DSH_HOME/.agent-presets/<id>/agent.cordis.yml + preset.yml`),导入带冲突检测(跳过/替换/克隆)与信任警告;写回用户预设根即被官方预设选择器挂载(决策 0021) |
 
 ## 快问快答
 

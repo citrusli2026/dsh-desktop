@@ -4,8 +4,9 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-08-28 · 当前代码基线 `0.1.1-rc.2.shell.8`（未发布；内核
-`0.1.1-rc.2` 未变）
+最后更新: 2026-08-28 · 当前代码基线 `0.1.1-rc.2.shell.8` + shell.9 开发中
+（安全模式 / 恢复中心 / 便携预设包，规划见 `docs/safe-mode-and-presets-iteration-plan.md`;
+内核 `0.1.1-rc.2` 未变）
 
 ## 1. 产品概述
 
@@ -28,7 +29,9 @@ src/main/global-shortcut.ts  桌面全局快捷键注册、校验与平台文案
 src/main/desktop-preferences.ts  快捷键、开机启动、启动后隐藏、通知偏好与原生副作用
 src/main/desktop-notifications.ts  公开会话/任务状态归一化与通知边沿纯函数
 src/main/lan.ts             局域网 Web 代理与配对二维码
-src/main/diagnostics.ts     日志轮转、遮罩、报告格式与导出
+src/main/diagnostics.ts     日志轮转、遮罩、报告格式与导出版
+src/main/presets.ts         便携预设包(.dshpreset)导出/导入、冲突与信任检查
+src/main/safe-mode.ts       安全模式:用户 bundle 盘点、禁用覆盖层、失败签名检测
 src/main/restart-policy.ts  就绪协议、退避与重启预算纯函数
 src/main/window-state.ts    窗口几何校验纯函数
 src/main/permissions.ts     Electron 会话权限默认拒绝
@@ -45,13 +48,14 @@ plugins/dsh-desktop-controls/  应用内扩展入口帮助浮层与扩展设置�
 
 0. 依赖安全审计（官方 npm registry）;
 1. TypeScript typecheck;
-2. 135 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
+2. 147 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
 3. `site:check` 与 `check-api-downloads`（双语键、静态资源与下载接口契约）;
 4. 主进程/预加载构建; Harness 闭包与内置 Node bootstrap;
 5. 三条 xvfb 冒烟: 正常启动、错误页重试成功、强制重试失败后按钮恢复;
-6. 真实 Electron E2E（`run-e2e-guarded.mjs`，10 用例）: 语言同步、托盘单实例、
+6. 真实 Electron E2E（`run-e2e-guarded.mjs`，12 用例）: 语言同步、托盘单实例、
    设置面板 UI、更新检查、诊断导出、桌面状态通知（基线静默/未聚焦提示/点击
-   聚焦/偏好开关）、窗口几何恢复、真实第二实例、特殊路径、只读 DSH_HOME。
+   聚焦/偏好开关）、便携预设导入、窗口几何恢复、真实第二实例、特殊路径、
+   只读 DSH_HOME。
 
 tag Release（release.yml: verify → build 三平台并行 → publish）在 CI 之上
 另加质量门禁，并强制:
