@@ -4,7 +4,7 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-08-28 · 当前代码基线 `0.1.1-rc.2.shell.7`（未发布；内核
+最后更新: 2026-08-28 · 当前代码基线 `0.1.1-rc.2.shell.8`（未发布；内核
 `0.1.1-rc.2` 未变）
 
 ## 1. 产品概述
@@ -36,7 +36,7 @@ src/main/menu.ts            应用菜单、About、诊断入口
 src/main/pages.ts           有 CSP 的加载页与错误恢复页
 src/main/shell-preferences.ts  壳偏好（close-to-tray 与桌面偏好）
 src/preload/index.ts        沙箱桥接：错误恢复与已验证 Harness 来源的窄通道
-plugins/dsh-desktop-controls/  应用内桌面入口帮助浮层与偏好插件（shell.overlay/settings）
+plugins/dsh-desktop-controls/  应用内扩展入口帮助浮层与扩展设置插件（shell.overlay/settings.section）
 ```
 
 ## 3. 验证契约
@@ -49,9 +49,9 @@ plugins/dsh-desktop-controls/  应用内桌面入口帮助浮层与偏好插件�
 3. `site:check` 与 `check-api-downloads`（双语键、静态资源与下载接口契约）;
 4. 主进程/预加载构建; Harness 闭包与内置 Node bootstrap;
 5. 三条 xvfb 冒烟: 正常启动、错误页重试成功、强制重试失败后按钮恢复;
-6. 真实 Electron E2E（`run-e2e-guarded.mjs`，9 用例）: 语言同步、托盘单实例、
-   设置面板 UI、更新检查、诊断导出、窗口几何恢复、真实第二实例、特殊路径、
-   只读 DSH_HOME。
+6. 真实 Electron E2E（`run-e2e-guarded.mjs`，10 用例）: 语言同步、托盘单实例、
+   设置面板 UI、更新检查、诊断导出、桌面状态通知（基线静默/未聚焦提示/点击
+   聚焦/偏好开关）、窗口几何恢复、真实第二实例、特殊路径、只读 DSH_HOME。
 
 tag Release（release.yml: verify → build 三平台并行 → publish）在 CI 之上
 另加质量门禁，并强制:

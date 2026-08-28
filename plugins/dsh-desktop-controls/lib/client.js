@@ -32,19 +32,22 @@ window.__ModuleLoader__.load({
         border-radius: 999px;
         box-shadow: 0 4px 18px rgba(31, 35, 43, .12);
         color: var(--dsh-controls-text);
-        cursor: pointer;
+        cursor: grab;
         display: inline-flex;
         gap: 7px;
         min-height: 34px;
         padding: 0 11px 0 8px;
         pointer-events: auto;
-        transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+        touch-action: none;
+        transition: border-color .16s ease, box-shadow .16s ease;
+        user-select: none;
+        white-space: nowrap;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-trigger]:hover {
         border-color: color-mix(in srgb, var(--dsh-controls-accent) 48%, var(--dsh-controls-border));
         box-shadow: 0 6px 22px rgba(31, 35, 43, .16);
-        transform: translateY(-1px);
       }
+      [data-dsh-desktop-controls] [data-dsh-controls-trigger][data-dsh-controls-dragging] { cursor: grabbing; }
       [data-dsh-desktop-controls] [data-dsh-controls-trigger]:focus-visible,
       [data-dsh-desktop-controls] [data-dsh-controls-action]:focus-visible,
       [data-dsh-desktop-settings] button:focus-visible,
@@ -68,6 +71,7 @@ window.__ModuleLoader__.load({
         font-size: 12px;
         font-weight: 600;
         letter-spacing: .01em;
+        line-height: 1;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-panel] {
         background: var(--dsh-controls-panel);
@@ -91,7 +95,7 @@ window.__ModuleLoader__.load({
         line-height: 1.5;
         margin: 4px 0 12px;
       }
-      [data-dsh-desktop-controls] [data-dsh-controls-actions] { display: grid; gap: 6px; }
+      [data-dsh-desktop-controls] [data-dsh-controls-actions] { display: grid; gap: 4px; }
       [data-dsh-desktop-controls] [data-dsh-controls-action] {
         align-items: center;
         background: transparent;
@@ -101,15 +105,25 @@ window.__ModuleLoader__.load({
         cursor: pointer;
         display: flex;
         font-size: 13px;
-        justify-content: space-between;
-        padding: 9px 10px;
+        line-height: 1;
+        min-height: 34px;
+        overflow: hidden;
+        padding: 0 10px;
         text-align: left;
+        white-space: nowrap;
+        text-overflow: ellipsis;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-action]:hover {
         background: color-mix(in srgb, var(--dsh-controls-accent) 9%, transparent);
         border-color: color-mix(in srgb, var(--dsh-controls-accent) 18%, transparent);
       }
       [data-dsh-desktop-controls] [data-dsh-controls-action][disabled] { cursor: wait; opacity: .6; }
+      [data-dsh-desktop-controls] [data-dsh-controls-separator] {
+        background: var(--dsh-controls-border);
+        border: 0;
+        height: 1px;
+        margin: 6px 0;
+      }
       [data-dsh-desktop-controls] [data-dsh-controls-hint] {
         border-top: 1px solid var(--dsh-controls-border);
         color: var(--dsh-controls-muted);
@@ -122,27 +136,43 @@ window.__ModuleLoader__.load({
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 11px;
       }
-      [data-dsh-desktop-settings] {
-        border-bottom: 1px solid var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
+      /* 设置页「扩展设置」分区：与 Harness 设置页同款排版（标题→说明→条目行）。 */
+      [data-dsh-desktop-settings-section] {
         color: var(--dsw-alias-label-primary, #1f232b);
-        padding: 16px 0;
+        font-size: 13px;
+        line-height: 1.6;
       }
-      [data-dsh-desktop-settings] [data-dsh-desktop-settings-heading] { font-size: 14px; font-weight: 600; margin: 0; }
-      [data-dsh-desktop-settings] [data-dsh-desktop-settings-copy] { margin: 4px 0 14px; }
+      [data-dsh-desktop-settings] { padding: 0; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-settings-heading] {
+        font-size: 16px;
+        font-weight: 650;
+        line-height: 1.4;
+        margin: 0 0 6px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-settings-copy] { margin: 0 0 14px; }
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-row] {
         align-items: center;
+        border-bottom: 1px solid var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
         display: flex;
-        gap: 10px;
+        gap: 12px;
         justify-content: space-between;
-        min-height: 36px;
+        min-height: 44px;
+        padding: 8px 0;
+        margin: 0;
       }
-      [data-dsh-desktop-settings] [data-dsh-desktop-setting-row] + [data-dsh-desktop-setting-row] { margin-top: 6px; }
-      [data-dsh-desktop-settings] [data-dsh-desktop-setting-label] { font-size: 13px; line-height: 1.4; }
-      [data-dsh-desktop-settings] [data-dsh-desktop-setting-detail] {
-        color: var(--dsh-controls-muted);
+      [data-dsh-desktop-settings] [data-dsh-desktop-setting-row]:last-child { border-bottom: 0; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-setting-label] {
+        color: var(--dsw-alias-label-primary, #1f232b);
         display: block;
-        font-size: 11px;
+        font-size: 13.5px;
         line-height: 1.4;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-setting-detail] {
+        color: var(--dsw-alias-label-secondary, #6d7380);
+        display: block;
+        font-size: 12px;
+        line-height: 1.5;
+        margin-top: 2px;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-shortcut] {
         background: var(--dsw-alias-fill-l2, rgba(31, 35, 43, .08));
@@ -150,6 +180,7 @@ window.__ModuleLoader__.load({
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 12px;
         padding: 3px 6px;
+        white-space: nowrap;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-record] {
         background: transparent;
@@ -157,7 +188,9 @@ window.__ModuleLoader__.load({
         border-radius: 8px;
         color: var(--dsw-alias-label-primary, #1f232b);
         cursor: pointer;
-        padding: 6px 9px;
+        font-size: 12.5px;
+        padding: 6px 11px;
+        white-space: nowrap;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-record]:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(31, 35, 43, .06)); }
       [data-dsh-desktop-settings] [data-dsh-desktop-record][disabled] { cursor: wait; opacity: .65; }
@@ -185,14 +218,13 @@ window.__ModuleLoader__.load({
 
     const COPY = {
       zh: {
-        trigger: "桌面入口", title: "桌面入口",
-        copy: "Windows 顶部菜单隐藏时，可从这里或系统托盘继续操作。",
-        lan: "连接移动设备", fullscreen: "切换全屏", about: "关于 dsh-desktop",
-        logs: "打开日志文件夹", diagnostics: "导出诊断报告",
-        shortcutLabel: "唤起窗口快捷键",
+        trigger: "扩展入口", title: "扩展入口",
+        copy: "窗口菜单不可达时，从这里或系统托盘继续使用扩展功能。",
+        lan: "连接设备", fullscreen: "切换全屏", logs: "打开日志", diagnostics: "导出诊断", about: "关于",
+        shortcutLabel: "唤起快捷键",
         hint: "也可以右键窗口任意位置，或点击系统托盘图标。",
-        unavailable: "请右键窗口或点击系统托盘图标使用桌面入口。",
-        settingsTitle: "桌面偏好", settingsCopy: "快捷键、开机启动和通知只保存在本机。",
+        unavailable: "请右键窗口或点击系统托盘图标使用扩展入口。",
+        settingsTitle: "扩展设置", settingsCopy: "快捷键、开机启动和通知只保存在本机。",
         shortcut: "唤起快捷键", record: "重新设置", recording: "请按下快捷键…",
         shortcutHelp: "至少包含一个修饰键，例如 Ctrl + Alt + K。",
         launchAtLogin: "开机启动", launchAtLoginDetail: "登录系统后自动运行 dsh-desktop。",
@@ -202,14 +234,13 @@ window.__ModuleLoader__.load({
         invalid: "快捷键格式不正确。", conflict: "快捷键已被其它应用占用，请换一个。",
       },
       en: {
-        trigger: "Desktop controls", title: "Desktop controls",
-        copy: "When the Windows menu is hidden, use this panel or the system tray.",
-        lan: "Connect a mobile device", fullscreen: "Toggle full screen", about: "About dsh-desktop",
-        logs: "Open logs folder", diagnostics: "Export diagnostics",
+        trigger: "Extensions", title: "Extensions",
+        copy: "When the window menu is unreachable, keep using extensions from here or the system tray.",
+        lan: "Pair device", fullscreen: "Fullscreen", logs: "Open logs", diagnostics: "Diagnostics", about: "About",
         shortcutLabel: "Summon shortcut",
         hint: "You can also right-click anywhere in the window or use the tray icon.",
-        unavailable: "Right-click the window or use the system tray for desktop controls.",
-        settingsTitle: "Desktop preferences", settingsCopy: "Shortcuts, startup, and notifications stay on this device.",
+        unavailable: "Right-click the window or use the system tray for extensions.",
+        settingsTitle: "Extension settings", settingsCopy: "Shortcuts, startup, and notifications stay on this device.",
         shortcut: "Summon shortcut", record: "Change shortcut", recording: "Press a shortcut…",
         shortcutHelp: "Include at least one modifier, such as Ctrl + Alt + K.",
         launchAtLogin: "Launch at login", launchAtLoginDetail: "Start dsh-desktop when you sign in.",
@@ -271,10 +302,38 @@ window.__ModuleLoader__.load({
       return [...modifiers, key].join("+");
     }
 
-    function DesktopSettings() {
+    const POSITION_KEY = "dsh-desktop-controls.entryPosition";
+
+    function loadEntryPosition() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(POSITION_KEY) ?? "null");
+        if (typeof raw?.left === "number" && typeof raw?.top === "number") return raw;
+      } catch {}
+      return null;
+    }
+
+    function saveEntryPosition(position) {
+      try { localStorage.setItem(POSITION_KEY, JSON.stringify(position)); } catch {}
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), Math.max(min, max));
+    }
+
+    /* 扩展设置分区：单独入口，排版与 Harness 设置页一致。 */
+    function DesktopSettingsSection() {
       const zh = useChinese();
       const copy = zh ? COPY.zh : COPY.en;
       const bridge = typeof window !== "undefined" ? window.dshDesktop : undefined;
+      return react_jsx_runtime.jsxs("div", {
+        "data-dsh-desktop-settings-section": true,
+        children: [
+          react_jsx_runtime.jsx(DesktopSettings, { copy: copy, bridge: bridge }),
+        ],
+      });
+    }
+
+    function DesktopSettings({ copy, bridge }) {
       const [preferences, setPreferences] = react.useState(null);
       const [recording, setRecording] = react.useState(false);
       const [message, setMessage] = react.useState("");
@@ -322,7 +381,7 @@ window.__ModuleLoader__.load({
           react_jsx_runtime.jsx("p", { "data-dsh-desktop-settings-copy": true, children: copy.settingsCopy }),
           react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.shortcut }),
-            react_jsx_runtime.jsx("span", { "data-dsh-desktop-shortcut": true, children: recording ? copy.recording : preferences.shortcutLabel }),
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-shortcut": true, children: recording ? copy.recording : preferences.shortcutLabel }),
             react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-record": true, disabled: recording, onClick: () => { setMessage(""); setRecording(true); }, children: recording ? "…" : copy.record }),
           ] }),
           react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-detail": true, children: copy.shortcutHelp }),
@@ -351,6 +410,10 @@ window.__ModuleLoader__.load({
       const [open, setOpen] = react.useState(false);
       const [busy, setBusy] = react.useState("");
       const [preferences, setPreferences] = react.useState(null);
+      const [entryPosition, setEntryPosition] = react.useState(loadEntryPosition);
+      const [dragging, setDragging] = react.useState(false);
+      const dragRef = react.useRef(null);
+      const suppressClickRef = react.useRef(false);
       const sessionState = useSessions((state) => state);
       const status = react.useMemo(() => publicStatusOf(sessionState), [sessionState]);
 
@@ -385,22 +448,93 @@ window.__ModuleLoader__.load({
         }
       };
 
+      const onEntryPointerDown = (event) => {
+        if (open || event.button !== 0) return;
+        const container = event.currentTarget.parentElement;
+        if (container === null) return;
+        const bounds = container.getBoundingClientRect();
+        // Attach synchronously: effect-mounted listeners can miss the first
+        // moves of a fast drag, and a real pointer can leave the trigger.
+        const move = (moveEvent) => {
+          const drag = dragRef.current;
+          if (drag === null) return;
+          const dx = moveEvent.clientX - drag.startX;
+          const dy = moveEvent.clientY - drag.startY;
+          if (!drag.moved && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+          drag.moved = true;
+          const margin = 8;
+          const left = clamp(drag.left + dx, margin, window.innerWidth - drag.width - margin);
+          const top = clamp(drag.top + dy, margin, window.innerHeight - drag.height - margin);
+          drag.left = left;
+          drag.top = top;
+          drag.startX = moveEvent.clientX;
+          drag.startY = moveEvent.clientY;
+          setEntryPosition({ left: left, top: top });
+        };
+        const end = () => {
+          const drag = dragRef.current;
+          dragRef.current = null;
+          setDragging(false);
+          document.removeEventListener("pointermove", move, true);
+          document.removeEventListener("pointerup", end, true);
+          document.removeEventListener("pointercancel", end, true);
+          // A drag also concludes with a click event; absorb only that one.
+          suppressClickRef.current = drag === null ? false : drag.moved;
+          if (drag?.moved === true) saveEntryPosition({ left: drag.left, top: drag.top });
+        };
+        dragRef.current = {
+          startX: event.clientX,
+          startY: event.clientY,
+          left: bounds.left,
+          top: bounds.top,
+          width: bounds.width,
+          height: bounds.height,
+          moved: false,
+        };
+        document.addEventListener("pointermove", move, true);
+        document.addEventListener("pointerup", end, true);
+        document.addEventListener("pointercancel", end, true);
+        setDragging(true);
+        event.preventDefault();
+      };
+
+      const onEntryClick = () => {
+        if (suppressClickRef.current === true) {
+          suppressClickRef.current = false;
+          return;
+        }
+        setOpen((current) => !current);
+      };
+
+      const entryStyle = entryPosition === null
+        ? undefined
+        : { left: String(entryPosition.left) + "px", top: String(entryPosition.top) + "px", right: "auto" };
+
       return react_jsx_runtime.jsxs("div", {
         "data-dsh-desktop-controls": true,
+        style: entryStyle,
         children: [
-          react_jsx_runtime.jsxs("button", { type: "button", "data-dsh-controls-trigger": true, "aria-expanded": open, "aria-controls": "dsh-desktop-controls-panel", "aria-label": copy.trigger, onClick: () => setOpen((current) => !current), children: [
-            react_jsx_runtime.jsx("span", { "data-dsh-controls-mark": true, "aria-hidden": "true", children: "⋮" }),
-            react_jsx_runtime.jsx("span", { "data-dsh-controls-label": true, children: copy.trigger }),
-          ] }),
+          react_jsx_runtime.jsxs("button", {
+            type: "button", "data-dsh-controls-trigger": true, "aria-expanded": open,
+            "aria-controls": "dsh-desktop-controls-panel", "aria-label": copy.trigger,
+            "data-dsh-controls-dragging": dragging || null,
+            onPointerDown: onEntryPointerDown,
+            onClick: onEntryClick,
+            children: [
+              react_jsx_runtime.jsx("span", { "data-dsh-controls-mark": true, "aria-hidden": "true", children: "⋮" }),
+              react_jsx_runtime.jsx("span", { "data-dsh-controls-label": true, children: copy.trigger }),
+            ],
+          }),
           open ? react_jsx_runtime.jsxs("section", { id: "dsh-desktop-controls-panel", "data-dsh-controls-panel": true, role: "dialog", "aria-label": copy.title, children: [
             react_jsx_runtime.jsx("h2", { "data-dsh-controls-heading": true, children: copy.title }),
             react_jsx_runtime.jsx("p", { "data-dsh-controls-copy": true, children: copy.copy }),
             typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("startLanPairing"), children: copy.lan }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("toggleFullscreen"), children: copy.fullscreen }),
-              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("showAbout"), children: copy.about }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("openLogs"), children: copy.logs }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("exportDiagnostics"), children: copy.diagnostics }),
+              react_jsx_runtime.jsx("hr", { "data-dsh-controls-separator": true, "aria-hidden": "true" }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("showAbout"), children: copy.about }),
             ] }) : react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: copy.unavailable }),
             react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: copy.hint }),
             preferences?.shortcutLabel ? react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: [copy.shortcutLabel, ": ", react_jsx_runtime.jsx("code", { "data-dsh-controls-shortcut": true, children: preferences.shortcutLabel })] }) : null,
@@ -414,9 +548,11 @@ window.__ModuleLoader__.load({
       ctx.slots.inject("shell.overlay", () => ctx.slots.register({
         name: "shell.overlay", id: "dsh-desktop-controls", order: 100, label: "Desktop controls",
       }, DesktopControls));
-      ctx.slots.inject("settings.general.item", () => ctx.slots.register({
-        name: "settings.general.item", id: "dsh-desktop-preferences", order: 5, label: "Desktop preferences",
-      }, DesktopSettings));
+      // 独立设置分区（与通用/模型/插件并列），排版随 Harness 设置页。
+      ctx.slots.inject("settings.section", () => ctx.slots.register({
+        name: "settings.section", id: "dsh-desktop-controls", order: 20,
+        label: () => document.documentElement.lang.toLowerCase().startsWith("zh") ? "扩展设置" : "Extension settings",
+      }, DesktopSettingsSection));
     }
 
     exports.apply = apply;

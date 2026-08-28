@@ -778,4 +778,37 @@ footer 常驻 "`?` for shortcuts"、`?` 打开快捷键浮层、约 50 条斜杠
 
 ---
 
+## 二十八、通知功能端到端/视觉验证与官网专卡（2026-08-28，未发版）
+
+shell.6「桌面偏好与状态通知」当时只有单元测试（`test/desktop-notifications.test.ts`
+5 项：归一化/边沿/localize/点击聚焦绑定）；本次按用户要求补齐 E2E、视觉验证与官网单独介绍：
+
+1. **E2E（dev stub 模式）**：新增「桌面状态通知」用例——真实 preload 桥 →
+   `desktop:session-status` IPC → 主进程 `Notification`（打桩原型记录 show/click
+   监听器）。覆盖：首次报告仅建基线不提醒、未聚焦/隐藏才提示（本地化文案）、
+   重复状态不重复提醒、会话完成独立边沿、点击通知显示并聚焦窗口、偏好关闭后
+   新边沿静默。10 用例（原 9 + 1），ARCHITECTURE.md 验证契约同步为 10。
+2. **E2E（打包模式，`@smoke`）**：新增真实 Harness 用例——dismiss 首次引导
+   弹窗 → 打开 Settings → General 断言插件「Desktop preferences」区块渲染 →
+   隐藏窗口驱动真实状态边沿 → 断言原生通知 `Task completed / Research finished.`
+   且 click 监听器为 `showMainWindow`（调试期发现 `electronApp.evaluate(fn, arg)`
+   首参是 electron 模块、自定义参数在第二位，单参回调会拿到 module 导致 no-op，
+   已修正并注释）→ 点击后窗口恢复可见；三平台打包门禁自动纳入。
+3. **视觉验证**：打包用例产出三张截图（`01-real-app` 插件入口、`02-desktop-preferences`
+   设置面板含勾选的「Desktop notifications」开关、`03-restored-by-notice` 点击后
+   窗口恢复）。OS 级通知横幅本机无屏幕录制权限，无法截图；通知本体验证以主进程
+   打桩 + 真实边沿断言为准（与仓库既有「失败留截图、日志断言」标准一致）。
+4. **过程中发现并修复**：本机 `resources/harness/node_modules/dsh-desktop-controls`
+   仍是 shell.4 旧插件（无设置项注册），导致本地打包验证看不到「Desktop
+   preferences」区块；重新 `deploy-harness` 后刷新（发布 CI 每次 bootstrap，线上
+   包不受影响）。本地 `dist/` 未打包进 git，不随提交。
+5. **官网（缓存键 data-model 32→33 / app.js 33→34 / style.css 34→35）**：
+   中文首页在手机连接卡后新增同款「桌面通知」专卡（eyebrow/title/body/steps/note
+   五键 `notify.*`），英文 SEO 首页同步新增 `access-card`；双语字典 122 → 127 键。
+   `site:check` 通过（127 translations）。
+6. **本地门禁**：typecheck ✅；135 项单测 ✅；dev E2E 10/10 ✅（打包用例按设计
+   skip）；打包通知用例 `DSH_E2E_PACKAGED=1` ✅；`site:check` ✅。未发新 tag。
+
+---
+
 _更新于 2026-08-28_

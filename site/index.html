@@ -40,7 +40,7 @@
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="stylesheet" href="/assets/style.css?v=34" />
+<link rel="stylesheet" href="/assets/style.css?v=35" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -187,14 +187,25 @@
           <p data-i18n="ext.note">只集成 Web 壳，不需要 Android/iOS；代理与桌面端解耦，可独立产出 Web artifact。</p>
         </div>
       </article>
-      <article class="access-card" data-reveal style="--i:6" aria-labelledby="windows-access-title">
+      <article class="extension-card" data-reveal style="--i:6" aria-labelledby="desktop-notifications-title">
+        <div>
+          <p class="extension-card__eyebrow" data-i18n="notify.marker">桌面通知</p>
+          <h3 id="desktop-notifications-title" data-i18n="notify.title">任务完成或需要你确认时，通知你一声</h3>
+          <p class="extension-card__body" data-i18n="notify.body">窗口未聚焦或收进托盘时，桌面状态通知提示会话完成、失败、停止，或等待你的确认。只使用 Harness 已公开的会话与后台任务状态，点击通知即可唤回工作区。</p>
+        </div>
+        <div class="extension-card__details">
+          <ol data-i18n="notify.steps"><li>窗口未聚焦或隐藏在托盘时弹出系统通知</li><li>点击通知，直接显示并聚焦 dsh-desktop 窗口</li><li>在设置 → 扩展设置中随时关闭；配置只保存在本机</li></ol>
+          <p data-i18n="notify.note">不读取屏幕、不做视觉识别、不上传数据；首次状态只建立基线，启动时不制造无用提醒。</p>
+        </div>
+      </article>
+      <article class="access-card" data-reveal style="--i:7" aria-labelledby="windows-access-title">
         <div class="access-card__copy">
           <p class="access-card__eyebrow">WINDOWS 入口</p>
           <h3 id="windows-access-title">菜单可以隐藏，操作不会丢。</h3>
-          <p>Windows 隐藏标题栏时，右上角的 <code>⋮</code> 桌面入口仍然可见：连接移动设备、切换全屏、查看关于。右键窗口任意位置或打开系统托盘，还能继续使用完整的桌面入口。</p>
+          <p>Windows 隐藏标题栏时，右上角的 <code>⋮</code> 扩展入口仍然可见：连接设备、切换全屏、打开日志、导出诊断，「关于」放在最后。右键窗口任意位置或打开系统托盘，还能继续使用完整的扩展功能。</p>
         </div>
-        <div class="access-card__routes" aria-label="Windows 桌面入口">
-          <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">⋮</span><div><b>桌面入口</b><span>连接设备 · 全屏 · 关于</span></div></div>
+        <div class="access-card__routes" aria-label="Windows 扩展入口">
+          <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">⋮</span><div><b>扩展入口</b><span>连接设备 · 全屏 · 日志 · 诊断</span></div></div>
           <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">右键</span><div><b>窗口右键</b><span>任何页面状态都能找到入口</span></div></div>
           <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">托盘</span><div><b>系统托盘</b><span>窗口关闭或恢复时仍可操作</span></div></div>
         </div>
@@ -299,7 +310,7 @@
           </article>
           <article class="feature-card" data-i18n="ft.p8">
             <h3>桌面习惯由你决定</h3>
-            <p>在 Harness 设置 → 通用中录入自己的唤起快捷键，选择是否开机启动、启动后隐藏，以及是否接收任务状态通知。配置只保存在本机；通知只在窗口未聚焦时提示。</p>
+            <p>在 Harness 设置 → 扩展设置中录入自己的唤起快捷键，选择是否开机启动、启动后隐藏，以及是否接收任务状态通知。配置只保存在本机；通知只在窗口未聚焦时提示。</p>
           </article>
       </div>
     </div>
@@ -353,11 +364,11 @@
         </details>
         <details>
           <summary data-i18n="faq.q11">可以修改唤起快捷键或设置开机启动吗？</summary>
-          <p class="faq-answer" data-i18n="faq.a11">可以。在 dsh-desktop 的「设置 → 通用」中点击「重新设置」，按下包含修饰键的组合键（例如 <code>Ctrl + Alt + K</code>）。如果组合键已被其他程序占用，页面会提示更换；开机启动默认关闭，Windows/macOS 可分别选择是否启动后隐藏到托盘。Linux 当前不提供开机启动开关。</p>
+          <p class="faq-answer" data-i18n="faq.a11">可以。在 dsh-desktop 的「设置 → 扩展设置」中点击「重新设置」，按下包含修饰键的组合键（例如 <code>Ctrl + Alt + K</code>）。如果组合键已被其他程序占用，页面会提示更换；开机启动默认关闭，Windows/macOS 可分别选择是否启动后隐藏到托盘。Linux 当前不提供开机启动开关。</p>
         </details>
         <details>
           <summary data-i18n="faq.q12">桌面通知会读取屏幕或上传数据吗？</summary>
-          <p class="faq-answer" data-i18n="faq.a12">不会。通知只使用 Harness 已公开的会话运行态和后台任务状态，不读取截图、不做视觉识别，也不会上传数据。它只在窗口未聚焦时提示完成、失败或需要确认，可在「设置 → 通用」关闭。</p>
+          <p class="faq-answer" data-i18n="faq.a12">不会。通知只使用 Harness 已公开的会话运行态和后台任务状态，不读取截图、不做视觉识别，也不会上传数据。它只在窗口未聚焦时提示完成、失败或需要确认，可在「设置 → 扩展设置」关闭。</p>
         </details>
       </div>
     </div>
@@ -410,7 +421,7 @@
   </div>
 </footer>
 
-<script type="module" src="/assets/app.js?v=33"></script>
+<script type="module" src="/assets/app.js?v=34"></script>
 
 <!-- 下载后提示(校验方式 + 未签名处理 + GitHub Star 邀请),由 app.js 填充 -->
 <div class="download-toast" id="download-toast" role="status" aria-live="polite" hidden></div>

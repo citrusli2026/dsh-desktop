@@ -334,6 +334,176 @@ shellTest('diagnostic export writes the report to the chosen path', async ({ ele
   expect(text).toContain(version)
 })
 
+// Desktop status notices (shell.6/7): renderer → preload bridge → `desktop:session-status`
+// → native Notification. The bridge runs unchanged in dev-stub and packaged modes, so the
+// state-edge pipeline can be driven from either page. Record shown notices and their click
+// listener per native Notification instance via the main-process prototype.
+interface NoticeSnapshot { title: string; body: string; clicks: number }
+interface NoticeBridge {
+  dshDesktop?: {
+    getDesktopPreferences(): Promise<{ notificationsAvailable?: boolean; notificationsEnabled?: boolean } | null>
+    reportSessionStatus(status: unknown): Promise<boolean>
+    updateDesktopPreferences(patch: { notificationsEnabled: boolean }): Promise<unknown>
+  }
+}
+
+async function ensureNoticesAvailable(window: Page): Promise<void> {
+  const prefs = await window.evaluate(() => (window as unknown as NoticeBridge).dshDesktop?.getDesktopPreferences())
+  test.skip(prefs?.notificationsAvailable !== true || prefs?.notificationsEnabled !== true, 'status notices unavailable on this platform')
+}
+
+async function instrumentDesktopNotices(app: ElectronApplication): Promise<void> {
+  await app.evaluate(({ Notification }) => {
+    interface NoticeRecord { title: string; body: string; listeners: Array<() => void> }
+    const records: NoticeRecord[] = []
+    ;(globalThis as unknown as { __dshE2eNotices: NoticeRecord[] }).__dshE2eNotices = records
+    const prototype = Notification.prototype as unknown as { on: (event: string, listener: () => void) => unknown }
+    const originalOn = prototype.on
+    const byInstance = new WeakMap<object, NoticeRecord>()
+    prototype.on = function (this: unknown, event: string, listener: () => void): unknown {
+      if (event === 'click') {
+        let record = byInstance.get(this as object)
+        if (record === undefined) {
+          const instance = this as unknown as { title: string; body: string }
+          record = { title: instance.title ?? '', body: instance.body ?? '', listeners: [] }
+          byInstance.set(this as object, record)
+          records.push(record)
+        }
+        record.listeners.push(listener)
+        return this
+      }
+      return originalOn.call(this, event, listener)
+    }
+  })
+}
+
+function readNoticeRecords(app: ElectronApplication): Promise<NoticeSnapshot[]> {
+  return app.evaluate(() => (globalThis as unknown as {
+    __dshE2eNotices?: Array<{ title: string; body: string; listeners: Array<() => void> }>
+  }).__dshE2eNotices?.map(record => ({ title: record.title, body: record.body, clicks: record.listeners.length })) ?? [])
+}
+
+function clickNotice(app: ElectronApplication, index: number): Promise<void> {
+  // evaluate() receives the electron module first and the custom arg second.
+  return app.evaluate((_electron, index) => {
+    for (const listener of (globalThis as unknown as {
+      __dshE2eNotices?: Array<{ listeners: Array<() => void> }>
+    }).__dshE2eNotices?.[index]?.listeners ?? []) listener()
+  }, index)
+}
+
+function reportSessionStatus(page: Page, snapshot: unknown): Promise<unknown> {
+  return page.evaluate(value => (window as unknown as NoticeBridge).dshDesktop?.reportSessionStatus(value), snapshot)
+}
+
+async function mainWindowVisible(app: ElectronApplication): Promise<boolean> {
+  return app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isVisible() === true)
+}
+
+async function hideMainWindow(app: ElectronApplication): Promise<void> {
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.hide())
+  await expect.poll(() => mainWindowVisible(app)).toBe(false)
+}
+
+shellTest('desktop status notices fire on real state edges and clicking one restores the window', async ({ electronApp, window }) => {
+  // The packaged run checks the real Harness UI below; the state-edge pipeline
+  // needs the dev-stub page, so skip silently there.
+  test.skip(PACKAGED, 'packaged covers the pipeline against the real Harness')
+  await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
+  await ensureNoticesAvailable(window)
+  await instrumentDesktopNotices(electronApp)
+
+  // Baseline: the first report only establishes state, so booting work never notifies.
+  await reportSessionStatus(window, { sessions: [{ id: 's1', title: 'Research', running: true, jobs: [{ id: 'j1', label: 'Worker', status: 'running' }] }] })
+  await hideMainWindow(electronApp)
+
+  // A hidden window is the target case: a real edge fires with a localized body.
+  await reportSessionStatus(window, { sessions: [{ id: 's1', title: 'Research', running: true, jobs: [{ id: 'j1', label: 'Worker', status: 'completed' }] }] })
+  await expect.poll(() => readNoticeRecords(electronApp)).toEqual([{ title: 'Background task completed', body: 'Worker finished.', clicks: 1 }])
+
+  // Re-reporting the same state is not a new edge — no duplicate notice.
+  await reportSessionStatus(window, { sessions: [{ id: 's1', title: 'Research', running: true, jobs: [{ id: 'j1', label: 'Worker', status: 'completed' }] }] })
+  expect(await readNoticeRecords(electronApp)).toHaveLength(1)
+
+  // The session completing is its own edge; clicking that notice summons the window.
+  await reportSessionStatus(window, { sessions: [{ id: 's1', title: 'Research', running: false, jobs: [{ id: 'j1', label: 'Worker', status: 'completed' }] }] })
+  await expect.poll(() => readNoticeRecords(electronApp)).toEqual([
+    { title: 'Background task completed', body: 'Worker finished.', clicks: 1 },
+    { title: 'Task completed', body: 'Research finished.', clicks: 1 },
+  ])
+  await clickNotice(electronApp, 1)
+  await expect.poll(() => mainWindowVisible(electronApp)).toBe(true)
+
+  // The preference switch silences later edges; a hidden-window failure stays quiet.
+  await window.evaluate(() => (window as unknown as NoticeBridge).dshDesktop?.updateDesktopPreferences({ notificationsEnabled: false }))
+  await reportSessionStatus(window, { sessions: [{ id: 's1', title: 'Research', running: false, jobs: [{ id: 'j1', label: 'Worker', status: 'completed' }, { id: 'j2', label: 'Searcher', status: 'running' }] }] })
+  await hideMainWindow(electronApp)
+  await reportSessionStatus(window, { sessions: [{ id: 's1', title: 'Research', running: false, jobs: [{ id: 'j1', label: 'Worker', status: 'completed' }, { id: 'j2', label: 'Searcher', status: 'failed', detail: 'boom' }] }] })
+  expect(await readNoticeRecords(electronApp)).toHaveLength(2)
+})
+
+shellTest('packaged app shows a desktop notice for a real state edge and restores on click @smoke', async ({ electronApp, window }, testInfo) => {
+  test.skip(!PACKAGED, 'dev stub covers the pipeline; this is the real-Harness check')
+  // The window fixture already waited for the real render; the plugin surface
+  // proves the harness loaded the desktop-controls bundle.
+  await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-controls]') !== null)).toBe(true)
+  await ensureNoticesAvailable(window)
+  await instrumentDesktopNotices(electronApp)
+  await window.screenshot({ path: testInfo.outputPath('01-real-app.png') })
+
+  // Fresh harness installs show onboarding modals (internal-testing notice,
+  // API-key prompt); dismiss each as it appears before driving the UI.
+  for (;;) {
+    const blocker = window.getByRole('button', { name: /^(Continue|Configure later)$/, exact: true }).first()
+    if (await blocker.count() === 0) break
+    await blocker.click().catch(() => undefined)
+    await window.waitForTimeout(300)
+  }
+
+  // The overlay entry is draggable: pointer-drag moves it, must not open the
+  // panel, and a clean click afterwards still does.
+  const trigger = window.locator('[data-dsh-controls-trigger]')
+  await expect(trigger).toBeVisible()
+  const before = await trigger.boundingBox()
+  if (before !== null) {
+    await window.mouse.move(before.x + before.width / 2, before.y + before.height / 2)
+    await window.mouse.down()
+    await window.mouse.move(before.x - 120, before.y + 100, { steps: 8 })
+    await window.mouse.up()
+    await window.waitForTimeout(200)
+    const after = await trigger.boundingBox()
+    expect(after).not.toBeNull()
+    expect(Math.abs(after!.x - before.x)).toBeGreaterThan(60)
+    expect(Math.abs(after!.y - before.y)).toBeGreaterThan(40)
+    await expect(window.locator('[data-dsh-controls-panel]')).toHaveCount(0)
+    await trigger.click()
+    await expect(window.locator('[data-dsh-controls-panel]')).toBeVisible()
+    await window.screenshot({ path: testInfo.outputPath('04-extension-menu.png') })
+    await window.keyboard.press('Escape')
+    await expect(window.locator('[data-dsh-controls-panel]')).toHaveCount(0)
+  }
+
+  // The desktop extensions live in their own Settings section now (like
+  // General/Models/Plugins), not embedded in General.
+  await window.getByText('Settings', { exact: true }).first().click()
+  const extensionNav = window.getByText('Extension settings', { exact: true })
+  await extensionNav.waitFor({ timeout: 15_000 })
+  await extensionNav.first().click()
+  await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-settings]') !== null && document.body.innerText.includes('Summon shortcut'))).toBe(true)
+  const settings = window.locator('[data-dsh-desktop-settings]')
+  await settings.screenshot({ path: testInfo.outputPath('02-desktop-preferences.png') })
+
+  // Drive a hidden-window edge through the real page and restore via the notice.
+  await reportSessionStatus(window, { sessions: [{ id: 's1', title: 'Research', running: true, jobs: [{ id: 'j1', label: 'Worker', status: 'running' }] }] })
+  await hideMainWindow(electronApp)
+  await reportSessionStatus(window, { sessions: [{ id: 's1', title: 'Research', running: false, jobs: [{ id: 'j1', label: 'Worker', status: 'running' }] }] })
+  await expect.poll(() => readNoticeRecords(electronApp)).toEqual([{ title: 'Task completed', body: 'Research finished.', clicks: 1 }])
+  await clickNotice(electronApp, 0)
+  await expect.poll(() => mainWindowVisible(electronApp), { timeout: 20_000 }).toBe(true)
+  await window.screenshot({ path: testInfo.outputPath('03-restored-by-notice.png') })
+})
+
+
 shellTest('window geometry is restored after a restart', async ({ electronApp, window, relaunch }) => {
   await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
   await electronApp.evaluate(({ BrowserWindow }) => {

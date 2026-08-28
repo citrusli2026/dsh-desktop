@@ -21,7 +21,7 @@
 <link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en" />
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=34" />
+<link rel="stylesheet" href="/assets/style.css?v=35" />
 <link rel="stylesheet" href="/assets/seo.css?v=8" />
 <script>
   try {
@@ -51,10 +51,10 @@
     <div class="access-card__copy">
       <p class="access-card__eyebrow">WINDOWS ACCESS</p>
       <h2 id="windows-access-title">The menu can hide. Your controls don't.</h2>
-      <p>When Windows hides the title-bar menu, the <code>⋮</code> desktop entry stays visible for mobile pairing, full screen, and About. Right-click anywhere in the window or use the system tray for the complete desktop fallback.</p>
+      <p>When Windows hides the title-bar menu, the <code>⋮</code> extension entry stays visible for pairing devices, full screen, logs, and diagnostics, with About last. Right-click anywhere in the window or use the system tray for the complete extension fallback.</p>
     </div>
-    <div class="access-card__routes" aria-label="Windows desktop access routes">
-      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">⋮</span><div><b>In-app controls</b><span>Pair a device · Full screen · About</span></div></div>
+    <div class="access-card__routes" aria-label="Windows extension entry">
+      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">⋮</span><div><b>Extension entry</b><span>Pair a device · Fullscreen · Logs · Diagnostics</span></div></div>
       <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">Right-click</span><div><b>Window context menu</b><span>Available from any page</span></div></div>
       <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">Tray</span><div><b>System tray</b><span>Still available while the window recovers</span></div></div>
     </div>
@@ -76,7 +76,7 @@
     <div class="access-card__copy">
       <p class="access-card__eyebrow">DESKTOP PREFERENCES</p>
       <h2 id="desktop-preferences-title">Make the shell fit your day.</h2>
-      <p>Open Settings → General to record a summon shortcut, opt into launch at login, start hidden in the tray, and control local status notices. Preferences stay on this device.</p>
+      <p>Open Settings → Extension settings to record a summon shortcut, opt into launch at login, start hidden in the tray, and control local status notices. Preferences stay on this device.</p>
     </div>
     <div class="access-card__routes" aria-label="Desktop preferences">
       <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">⌘/Ctrl</span><div><b>Custom shortcut</b><span>Record a combination and see conflicts clearly</span></div></div>
@@ -84,8 +84,20 @@
     </div>
   </section>
 
+  <section class="access-card" aria-labelledby="desktop-notifications-title">
+    <div class="access-card__copy">
+      <p class="access-card__eyebrow">DESKTOP NOTIFICATIONS</p>
+      <h2 id="desktop-notifications-title">Finished, failed, or waiting on you — you will know.</h2>
+      <p>While the window is unfocused or tucked into the tray, system notices report sessions completing, failing, stopping, or waiting for your confirmation. They use only the public Harness session and job state; click a notice to summon the workspace back.</p>
+    </div>
+    <div class="access-card__routes" aria-label="Desktop status notices">
+      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">CLICK</span><div><b>Notices while unfocused</b><span>Click one to show and focus dsh-desktop</span></div></div>
+      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">OFF</span><div><b>Local and optional</b><span>Disable in Settings → Extension settings; no screen reads, no uploads</span></div></div>
+    </div>
+  </section>
+
   <h2>What the desktop shell adds</h2>
-  <ul><li>Bundled runtime and one-click startup for Windows, macOS, and Linux releases.</li><li>Native window, tray behavior, lifecycle supervision, and recovery diagnostics.</li><li>Custom global shortcut, optional launch-at-login, and local status notices from Settings → General.</li><li>Isolated desktop data at <code>~/.dsh-desktop</code>, separate from the CLI by default.</li><li>Sandboxed renderer boundaries while the upstream Harness Web UI remains the source of agent behavior.</li></ul>
+  <ul><li>Bundled runtime and one-click startup for Windows, macOS, and Linux releases.</li><li>Native window, tray behavior, lifecycle supervision, and recovery diagnostics.</li><li>Custom global shortcut, optional launch-at-login, and local status notices from Settings → Extension settings.</li><li>Isolated desktop data at <code>~/.dsh-desktop</code>, separate from the CLI by default.</li><li>Sandboxed renderer boundaries while the upstream Harness Web UI remains the source of agent behavior.</li></ul>
 
   <h2>Start with the right guide</h2>
   <div class="seo-download-grid"><article class="seo-card"><h3>Download</h3><p>Choose a current installer and a mirror for your platform.</p><div class="seo-card__links"><a class="btn btn--primary btn--sm" href="/en/download">Open download page</a></div></article><article class="seo-card"><h3>Install</h3><p>Follow first-launch steps and configure your model provider.</p><div class="seo-card__links"><a class="btn btn--ghost btn--sm" href="/en/docs/install">Read install guide</a></div></article><article class="seo-card"><h3>FAQ</h3><p>Find answers about signing, data isolation, API keys, and checksums.</p><div class="seo-card__links"><a class="btn btn--ghost btn--sm" href="/en/docs/faq">Read FAQ</a></div></article></div>
