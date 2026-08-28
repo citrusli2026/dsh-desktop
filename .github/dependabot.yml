@@ -1,12 +1,17 @@
 # Keep the pinned action majors and devDependencies from floating silently.
+# Major versions are handled by dedicated upgrade iterations, not dependabot:
+# the runtime must stay on a single-step Electron track and in sync with the
+# bundled Node version (see docs/safe-mode-and-presets-iteration-plan.md §7).
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    version-update-semver-scope: minor
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    version-update-semver-scope: minor
