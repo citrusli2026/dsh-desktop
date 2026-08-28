@@ -2,6 +2,7 @@
 import { app, BrowserWindow, clipboard, Menu, nativeTheme, screen, shell } from 'electron'
 import { join } from 'node:path'
 import { errorPageHtml, loadingPageHtml } from './pages.ts'
+import type { ComposedRow } from './safe-mode.ts'
 import { fitWindowState, MIN_WINDOW_HEIGHT, MIN_WINDOW_WIDTH, type WindowState } from './window-state.ts'
 import { shellText, type ShellLocale } from './locale.ts'
 import { hiddenTitleBarOptions } from './window-chrome.ts'
@@ -11,7 +12,7 @@ import { buildLanMenuItems, type LanMenuActions, type LanMenuState } from './men
 
 type BuiltInPage =
   | { kind: 'loading' }
-  | { kind: 'error'; attempts: number; logTail: string; safeMode: boolean }
+  | { kind: 'error'; attempts: number; logTail: string; safeMode: boolean; suspects: ComposedRow[] }
 
 export interface WindowLanApi {
   getState(): LanMenuState
@@ -249,9 +250,9 @@ export async function loadLoadingPage(context: WindowContext): Promise<void> {
   await navigateWindow(context, loadingPageHtml(context.getLocale()))
 }
 
-export async function loadErrorPage(context: WindowContext, attempts: number, logTail: string, safeMode = false): Promise<void> {
-  context.builtInPage = { kind: 'error', attempts, logTail, safeMode }
-  await navigateWindow(context, errorPageHtml(attempts, logTail, safeMode, context.getLocale()))
+export async function loadErrorPage(context: WindowContext, attempts: number, logTail: string, safeMode = false, suspects: ComposedRow[] = []): Promise<void> {
+  context.builtInPage = { kind: 'error', attempts, logTail, safeMode, suspects }
+  await navigateWindow(context, errorPageHtml(attempts, logTail, safeMode, suspects, context.getLocale()))
 }
 
 /** Re-render shell-owned pages and title after a live language switch. */
@@ -259,7 +260,7 @@ export async function refreshWindowLocale(context: WindowContext): Promise<void>
   context.mainWindow?.setTitle(shellText(context.getLocale(), 'window.title'))
   if (context.builtInPage?.kind === 'loading') await loadLoadingPage(context)
   else if (context.builtInPage?.kind === 'error') {
-    await loadErrorPage(context, context.builtInPage.attempts, context.builtInPage.logTail, context.builtInPage.safeMode)
+    await loadErrorPage(context, context.builtInPage.attempts, context.builtInPage.logTail, context.builtInPage.safeMode, context.builtInPage.suspects)
   }
 }
 

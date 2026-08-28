@@ -276,6 +276,7 @@ window.__ModuleLoader__.load({
         safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展，用于修复启动故障。",
         safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式",
         safeModeBanner: "安全模式：第三方插件已隔离",
+        safeModeSuspect: "疑似插件：{id}（{name}），可在官方「设置 → 插件」中卸载。",
         presetsTitle: "Agent 预设", presetsDetail: "导出或导入便携预设包（.dshpreset），在设备或伙伴之间共享。",
         presetsExport: "导出预设", presetsImport: "导入预设",
         presetExported: "已导出 {name}。", presetImported: "已导入 {name}。",
@@ -302,6 +303,7 @@ window.__ModuleLoader__.load({
         safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; run official and built-in extensions only, to repair startup.",
         safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode",
         safeModeBanner: "Safe Mode: third-party plugins are quarantined",
+        safeModeSuspect: "Suspected plugin: {id} ({name}). Uninstall it from Settings → Plugins.",
         presetsTitle: "Agent presets", presetsDetail: "Export or import portable preset packages (.dshpreset) to share between devices or teammates.",
         presetsExport: "Export preset", presetsImport: "Import preset",
         presetExported: "Exported {name}.", presetImported: "Imported {name}.",
@@ -560,6 +562,7 @@ window.__ModuleLoader__.load({
 
     function SafeModeBanner({ copy, bridge }) {
       const [active, setActive] = react.useState(false);
+      const [suspects, setSuspects] = react.useState([]);
       const [busy, setBusy] = react.useState(false);
       react.useEffect(() => {
         if (typeof bridge?.getDesktopPreferences !== "function") return undefined;
@@ -569,13 +572,20 @@ window.__ModuleLoader__.load({
         void bridge.getDesktopPreferences().then((value) => {
           if (value !== null && mounted) setActive(value.safeMode === true);
         });
+        if (typeof bridge?.getRecoverySuspects === "function") {
+          void bridge.getRecoverySuspects().then((value) => {
+            if (mounted && Array.isArray(value)) setSuspects(value);
+          });
+        }
         return () => { mounted = false; };
       }, [bridge]);
       if (!active) return null;
+      const suspect = suspects[0];
       return react_jsx_runtime.jsxs("div", {
         "data-dsh-safe-mode-banner": true, role: "status",
         children: [
           react_jsx_runtime.jsx("span", { children: copy.safeModeBanner }),
+          suspect === undefined ? null : react_jsx_runtime.jsx("span", { "data-dsh-safe-mode-suspect": true, children: copy.safeModeSuspect.replace("{id}", suspect.id).replace("{name}", suspect.name ?? "") }),
           react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => {
             setBusy(true);
             void bridge?.desktopAction?.("exitSafeMode").finally(() => setBusy(false));

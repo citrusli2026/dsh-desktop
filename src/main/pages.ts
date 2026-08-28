@@ -6,6 +6,7 @@
 
 import { shellText, type ShellLocale } from './locale.ts'
 import { asDataUrl, escapeHtml } from './shell-html.ts'
+import type { ComposedRow } from './safe-mode.ts'
 
 const STYLE = `
   :root { color-scheme: light dark; --bg: #f9f8f8; --panel: #ffffff; --line: #e7e7e9;
@@ -46,6 +47,9 @@ const STYLE = `
   button:disabled { opacity: .55; cursor: wait; }
   button.secondary { background: transparent; color: var(--muted); border-color: var(--line); }
   button.secondary:hover { color: var(--text); background: var(--signal-soft); }
+  .suspects { background: var(--signal-soft); color: var(--text); border-radius: 8px; font-size: 13px;
+              font-weight: 600; line-height: 1.6; margin: 4px 0 10px; padding: 10px 12px; }
+  .suspects code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
   button:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
   #hint { min-height: 1.2em; margin: 14px 0 0; color: var(--danger); }
   @media (prefers-reduced-motion: reduce) { .loading-line::after { animation: none; width: 100%; } }
@@ -69,20 +73,34 @@ export function loadingPageHtml(locale: ShellLocale = 'en'): string {
  * @param attempts - crash count inside the restart window.
  * @param logTail - the last harness output lines.
  * @param safeMode - whether the profile is currently booted in Safe Mode.
+ * @param suspects - failing-plugin rows extracted from the log tail.
  * @param locale - the active shell locale.
  */
-export function errorPageHtml(attempts: number, logTail: string, safeMode = false, locale: ShellLocale = 'en'): string {
+export function errorPageHtml(
+  attempts: number,
+  logTail: string,
+  safeMode = false,
+  suspects: readonly ComposedRow[] = [],
+  locale: ShellLocale = 'en',
+): string {
   const lang = locale === 'zh' ? 'zh-CN' : 'en'
   const retry = shellText(locale, 'page.retry')
   const retrying = shellText(locale, 'page.retrying')
   const retryFailed = shellText(locale, 'page.retryFailed')
   const safeModeLabel = safeMode ? shellText(locale, 'page.safeModeExit') : shellText(locale, 'page.safeModeStart')
+  const suspect = suspects[0]
+  const suspectLine = suspect === undefined
+    ? ''
+    : `<p class="suspects">${escapeHtml(shellText(locale, 'page.suspects'))}</p>`
+      .replace('{id}', escapeHtml(suspect.id))
+      .replace('{name}', escapeHtml(suspect.name ?? ''))
   return asDataUrl(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>dsh-desktop — ${escapeHtml(shellText(locale, 'page.errorTitle'))}</title>
     <meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
     <style>${STYLE}</style></head><body><main class="card">
     <div class="brand"><span>DSH-DESKTOP</span><span class="status status--error">${escapeHtml(shellText(locale, 'page.recoveryStatus'))}</span></div>
     <h1>${escapeHtml(shellText(locale, 'page.errorHeading'))}</h1>
     <p>${escapeHtml(shellText(locale, 'page.errorBody', { count: attempts }))}</p>
+    ${suspectLine}
     <p class="log-label">${escapeHtml(shellText(locale, 'page.logLabel'))}</p>
     <pre>${escapeHtml(logTail)}</pre>
     <div class="actions"><button type="button" onclick="retry()">${escapeHtml(retry)}</button>

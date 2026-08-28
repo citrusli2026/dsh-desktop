@@ -24,7 +24,7 @@ import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } fr
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
 import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport } from './diagnostics.ts'
-import { writeSafeModeOverlay } from './safe-mode.ts'
+import { collectPluginFailures, writeSafeModeOverlay, type ComposedRow } from './safe-mode.ts'
 import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage } from './presets.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
@@ -45,6 +45,8 @@ let closeNoticeClaimed = false
 let desktopPreferencesController: DesktopPreferencesController | undefined
 let lastPublicStatus: PublicStatusSnapshot | undefined
 let lastHarnessPhase: HarnessState['phase'] | undefined
+/** Suspected failing plugins extracted from the last crash; shown on the recovery pages. */
+let lastPluginFailures: ComposedRow[] = []
 
 const lanService = new LanService({
   mobileShellRoot,
@@ -101,11 +103,17 @@ const shellApp = new ShellApp({
     if (windowContext.quitInProgress) return
     notifyHarnessState(state)
     if (state.phase !== 'ready') lastPublicStatus = undefined
+    if (state.phase === 'ready') {
+      lastPluginFailures = []
+      void loadHarnessUrl(windowContext, state.url)
+    } else if (state.phase === 'crashed') {
+      lastPluginFailures = collectPluginFailures(state.logTail)
+      void loadErrorPage(windowContext, state.attempts, state.logTail, safeModeActive(), lastPluginFailures)
+    } else {
+      void loadLoadingPage(windowContext)
+    }
     installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), lanService.isRunning, lanService.isBusy, desktopPreferencesController?.snapshot.shortcut)
     refreshTray()
-    if (state.phase === 'ready') void loadHarnessUrl(windowContext, state.url)
-    else if (state.phase === 'crashed') void loadErrorPage(windowContext, state.attempts, state.logTail, safeModeActive())
-    else void loadLoadingPage(windowContext)
   },
   onRestartBusyChanged: refreshNativeSurfaces,
   restartLanProxy: () => lanService.restart(),
@@ -477,6 +485,11 @@ async function importPresetFlow(): Promise<{ imported: boolean; canceled?: boole
 ipcMain.handle('desktop:presets:list', (event) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
   return listUserPresets(desktopDshHome())
+})
+
+ipcMain.handle('desktop:suspects:get', (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return lastPluginFailures
 })
 
 ipcMain.handle('desktop:presets:export', (event, id: unknown) => {

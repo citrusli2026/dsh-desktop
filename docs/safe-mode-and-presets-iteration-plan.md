@@ -91,4 +91,5 @@ dependabot 已限制 `version-update-semver-scope: minor`,major 由专项迭代�
 | T8 | 🚫 砍除(记录于 §2) |
 | T9 | ✅ issue 全部关闭;site-refresh 为平台边界(记录于 §2) |
 | T10 | 🔄 ARCHITECTURE/CONTEXT 随本轮更新;README FAQ 与发布说明待发版前 |
-| shell.9 发布 | ⬜(先补打包 smoke 安全模式用例 + README/发布说明,再按 runbook 发布) |
+| 追加候选(2026-08-28) | A 坏插件定位引导 ✅(错误页嫌疑行 + 安全模式横幅嫌疑显示,IPC `desktop:suspects:get`);B 托盘最近会话 🚫(spike:会话选择是 harness 客户端内存 store,无 URL 深链,壳无合规入口);C 用量小部件 🚫(官方 conversation UI 已消费 `usage.outputTokens`/`tokenUsage`,重复风险) | ✅ |
+| shell.9 发布 | ⬜(剩发布说明 `docs/release-notes/v0.1.1-rc.2.shell.9.md`,然后按 runbook 发布) |

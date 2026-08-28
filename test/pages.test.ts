@@ -30,6 +30,13 @@ test('errorPageHtml retry script restores the button when the bridge is missing'
   assert.ok(html.includes('restore();'))
 })
 
+test('errorPageHtml names the suspected failing plugin when present', () => {
+  const html = decodeURIComponent(errorPageHtml(6, 'tail', false, [{ id: 'spike-broken', name: 'pkg-a' }]))
+  assert.ok(html.includes('page.suspects') || html.includes('Suspected failing plugin'))
+  assert.ok(html.includes('spike-broken'))
+  assert.ok(html.includes('pkg-a'))
+})
+
 test('loadingPageHtml and errorPageHtml render as data URLs', () => {
   assert.ok(loadingPageHtml().startsWith('data:text/html;charset=utf-8,'))
   assert.ok(errorPageHtml(6, 'tail').startsWith('data:text/html;charset=utf-8,'))
@@ -39,7 +46,7 @@ test('loadingPageHtml and errorPageHtml render as data URLs', () => {
   assert.ok(!loading.includes('class="spinner"'))
   assert.ok(!loading.includes('class="progress"'))
   assert.ok(decodeURIComponent(errorPageHtml(6, 'tail')).includes('Start again'))
-  assert.ok(decodeURIComponent(errorPageHtml(6, 'tail', false, 'zh')).includes('再次启动'))
+  assert.ok(decodeURIComponent(errorPageHtml(6, 'tail', false, [], 'zh')).includes('再次启动'))
 })
 
 test('built-in pages carry a restrictive CSP and the error page exposes local diagnostics', () => {

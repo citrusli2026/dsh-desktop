@@ -87,4 +87,7 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Pick a .dshpreset file and import it (trust warning + conflict flow). */
   importPreset: (): Promise<{ imported: boolean; canceled?: boolean; skipped?: boolean; invalid?: boolean; name?: string } | null> =>
     ipcRenderer.invoke('desktop:presets:import'),
+  /** Failing-plugin suspects extracted from the last crash (recovery banner). */
+  getRecoverySuspects: (): Promise<Array<{ id: string; name?: string }> | null> =>
+    ipcRenderer.invoke('desktop:suspects:get'),
 })
