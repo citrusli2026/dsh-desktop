@@ -210,6 +210,38 @@ window.__ModuleLoader__.load({
         line-height: 1.4;
         margin: 10px 0 0;
       }
+      /* 安全模式常驻横幅：位于视口底部，第三方插件隔离期间提醒。 */
+      [data-dsh-safe-mode-banner] {
+        align-items: center;
+        background: var(--dsh-controls-accent, #4d6bfe);
+        border-radius: 999px;
+        bottom: 14px;
+        box-shadow: 0 6px 22px rgba(31, 35, 43, .22);
+        color: #fff;
+        display: inline-flex;
+        font-size: 12px;
+        font-weight: 600;
+        gap: 12px;
+        left: 50%;
+        padding: 7px 8px 7px 14px;
+        pointer-events: auto;
+        position: fixed;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        z-index: 1300;
+      }
+      [data-dsh-safe-mode-banner] button {
+        background: rgba(255, 255, 255, .16);
+        border: 1px solid rgba(255, 255, 255, .35);
+        border-radius: 999px;
+        color: #fff;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+      }
+      [data-dsh-safe-mode-banner] button:hover { background: rgba(255, 255, 255, .26); }
+      [data-dsh-safe-mode-banner] button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
       @media (max-width: 680px) {
         [data-dsh-desktop-controls] { top: 12px; right: 12px; }
         [data-dsh-desktop-controls] [data-dsh-controls-label] { display: none; }
@@ -241,6 +273,14 @@ window.__ModuleLoader__.load({
         launchAtLogin: "开机启动", launchAtLoginDetail: "登录系统后自动运行 dsh-desktop。",
         launchHidden: "启动后隐藏到托盘", launchHiddenDetail: "需要时用快捷键或托盘唤起。",
         notifications: "桌面通知", notificationsDetail: "应用未聚焦时提示完成、失败或需要确认。",
+        safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展，用于修复启动故障。",
+        safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式",
+        safeModeBanner: "安全模式：第三方插件已隔离",
+        presetsTitle: "Agent 预设", presetsDetail: "导出或导入便携预设包（.dshpreset），在设备或伙伴之间共享。",
+        presetsExport: "导出预设", presetsImport: "导入预设",
+        presetExported: "已导出 {name}。", presetImported: "已导入 {name}。",
+        presetSkipped: "已跳过 {name}。", presetInvalid: "文件无效或操作失败。",
+        presetEmpty: "没有可导出的用户预设。",
         unsupported: "当前平台不支持此项。", saved: "已保存",
         invalid: "快捷键格式不正确。", conflict: "快捷键已被其它应用占用，请换一个。",
       },
@@ -259,6 +299,14 @@ window.__ModuleLoader__.load({
         launchAtLogin: "Launch at login", launchAtLoginDetail: "Start dsh-desktop when you sign in.",
         launchHidden: "Start hidden in the tray", launchHiddenDetail: "Summon it with the shortcut or tray when needed.",
         notifications: "Desktop notifications", notificationsDetail: "Notify when the app is unfocused about completion, failure, or input.",
+        safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; run official and built-in extensions only, to repair startup.",
+        safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode",
+        safeModeBanner: "Safe Mode: third-party plugins are quarantined",
+        presetsTitle: "Agent presets", presetsDetail: "Export or import portable preset packages (.dshpreset) to share between devices or teammates.",
+        presetsExport: "Export preset", presetsImport: "Import preset",
+        presetExported: "Exported {name}.", presetImported: "Imported {name}.",
+        presetSkipped: "Skipped {name}.", presetInvalid: "The file is invalid or the operation failed.",
+        presetEmpty: "There is no user preset to export.",
         unsupported: "This option is not available on the current platform.", saved: "Saved",
         invalid: "That shortcut format is not supported.", conflict: "That shortcut is already in use. Choose another one.",
       },
@@ -370,6 +418,7 @@ window.__ModuleLoader__.load({
 
       const [lanState, setLanState] = react.useState(null);
       const [lanBusy, setLanBusy] = react.useState(false);
+      const [safeBusy, setSafeBusy] = react.useState(false);
 
       const refreshLanState = async () => {
         if (typeof bridge?.getLanState !== "function") return;
@@ -409,6 +458,56 @@ window.__ModuleLoader__.load({
         return () => window.removeEventListener("keydown", onKeyDown, true);
       }, [recording, bridge]);
 
+      const safeAction = async () => {
+        if (typeof bridge?.desktopAction !== "function") return;
+        setSafeBusy(true);
+        try {
+          await bridge.desktopAction(preferences?.safeMode === true ? "exitSafeMode" : "enterSafeMode");
+        } finally {
+          setSafeBusy(false);
+        }
+      };
+
+      const [presets, setPresets] = react.useState([]);
+      const [presetId, setPresetId] = react.useState("");
+      const [presetBusy, setPresetBusy] = react.useState(false);
+
+      const refreshPresets = async () => {
+        if (typeof bridge?.listPresets !== "function") return;
+        const list = await bridge.listPresets();
+        if (list === null) return;
+        setPresets(list);
+        setPresetId((current) => list.some((preset) => preset.id === current) ? current : (list[0]?.id ?? ""));
+      };
+
+      react.useEffect(() => { void refreshPresets(); }, [bridge]);
+
+      const presetAction = async (kind) => {
+        if (typeof bridge?.listPresets !== "function") return;
+        setPresetBusy(true);
+        try {
+          if (kind === "export") {
+            if (presetId === "") {
+              setMessage(copy.presetEmpty);
+              return;
+            }
+            const result = await bridge.exportPreset(presetId);
+            if (result?.saved === true) setMessage(copy.presetExported.replace("{name}", result.name ?? presetId));
+            else if (result?.canceled !== true) setMessage(copy.presetInvalid);
+          } else {
+            const result = await bridge.importPreset();
+            if (result === null) return;
+            if (result.imported === true) setMessage(copy.presetImported.replace("{name}", result.name ?? ""));
+            else if (result.skipped === true) setMessage(copy.presetSkipped.replace("{name}", result.name ?? ""));
+            else if (result.invalid === true) setMessage(copy.presetInvalid);
+            else if (result.canceled !== true) setMessage(copy.presetInvalid);
+            void refreshPresets();
+          }
+        } finally {
+          setPresetBusy(false);
+        }
+      };
+
       if (typeof bridge?.getDesktopPreferences !== "function" || preferences === null) return null;
       const canLaunch = preferences.launchAtLoginAvailable === true;
       return react_jsx_runtime.jsxs("div", {
@@ -442,7 +541,45 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.notifications, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.notificationsDetail })] }),
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.notificationsEnabled === true, disabled: preferences.notificationsAvailable !== true, onChange: (event) => void update({ notificationsEnabled: event.target.checked }) }),
           ] }),
+          react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.safeMode, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.safeModeDetail })] }),
+            react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: safeBusy, onClick: () => void safeAction(), children: preferences.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
+          ] }),
+          typeof bridge?.listPresets === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.presetsTitle, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.presetsDetail })] }),
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+              react_jsx_runtime.jsx("select", { "data-dsh-preset-select": true, value: presetId, disabled: presetBusy || presets.length === 0, onChange: (event) => setPresetId(event.target.value), children: presets.map((preset) => react_jsx_runtime.jsx("option", { value: preset.id, children: preset.name }, preset.id)) }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: presetBusy, onClick: () => void presetAction("export"), children: copy.presetsExport }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: presetBusy, onClick: () => void presetAction("import"), children: copy.presetsImport }),
+            ] }),
+          ] }) : null,
           message === "" ? null : react_jsx_runtime.jsx("p", { "data-dsh-desktop-status": true, role: "status", children: message }),
+        ],
+      });
+    }
+
+    function SafeModeBanner({ copy, bridge }) {
+      const [active, setActive] = react.useState(false);
+      const [busy, setBusy] = react.useState(false);
+      react.useEffect(() => {
+        if (typeof bridge?.getDesktopPreferences !== "function") return undefined;
+        let mounted = true;
+        // Safe Mode restarts the harness, so this component remounts on every
+        // toggle; one read at mount is enough to keep the banner in sync.
+        void bridge.getDesktopPreferences().then((value) => {
+          if (value !== null && mounted) setActive(value.safeMode === true);
+        });
+        return () => { mounted = false; };
+      }, [bridge]);
+      if (!active) return null;
+      return react_jsx_runtime.jsxs("div", {
+        "data-dsh-safe-mode-banner": true, role: "status",
+        children: [
+          react_jsx_runtime.jsx("span", { children: copy.safeModeBanner }),
+          react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => {
+            setBusy(true);
+            void bridge?.desktopAction?.("exitSafeMode").finally(() => setBusy(false));
+          }, children: copy.safeModeExit }),
         ],
       });
     }
@@ -554,7 +691,10 @@ window.__ModuleLoader__.load({
         ? undefined
         : { left: String(entryPosition.left) + "px", top: String(entryPosition.top) + "px", right: "auto" };
 
-      return react_jsx_runtime.jsxs("div", {
+      return react_jsx_runtime.jsxs(react.Fragment, {
+        children: [
+          react_jsx_runtime.jsx(SafeModeBanner, { copy: copy, bridge: bridge }),
+          react_jsx_runtime.jsxs("div", {
         "data-dsh-desktop-controls": true,
         style: entryStyle,
         children: [
@@ -577,12 +717,15 @@ window.__ModuleLoader__.load({
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("toggleFullscreen"), children: copy.fullscreen }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("openLogs"), children: copy.logs }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("exportDiagnostics"), children: copy.diagnostics }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke(preferences?.safeMode === true ? "exitSafeMode" : "enterSafeMode"), children: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
               react_jsx_runtime.jsx("hr", { "data-dsh-controls-separator": true, "aria-hidden": "true" }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("showAbout"), children: copy.about }),
             ] }) : react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: copy.unavailable }),
             react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: copy.hint }),
             preferences?.shortcutLabel ? react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: [copy.shortcutLabel, ": ", react_jsx_runtime.jsx("code", { "data-dsh-controls-shortcut": true, children: preferences.shortcutLabel })] }) : null,
           ] }) : null,
+        ],
+      }),
         ],
       });
     }

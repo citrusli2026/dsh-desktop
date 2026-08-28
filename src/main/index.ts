@@ -1,6 +1,7 @@
 /** Electron lifecycle assembly for the bundled DeepSeek Harness runtime. */
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, Notification, session, shell, type MessageBoxOptions } from 'electron'
 import { existsSync, mkdirSync } from 'node:fs'
+import { readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
@@ -23,6 +24,8 @@ import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } fr
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
 import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport } from './diagnostics.ts'
+import { writeSafeModeOverlay } from './safe-mode.ts'
+import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage } from './presets.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
@@ -68,9 +71,32 @@ const windowContext: WindowContext = {
   },
 }
 
+/** Whether the profile should boot with the Safe Mode plugin quarantine. */
+function safeModeActive(): boolean {
+  return !SMOKE_TEST && desktopPreferencesController?.snapshot.safeMode === true
+}
+
+/** Enter or exit Safe Mode: persist the flag, then restart the harness. */
+async function applySafeMode(enabled: boolean): Promise<boolean> {
+  if (SMOKE_TEST || desktopPreferencesController === undefined) return false
+  const result = desktopPreferencesController.update({ safeMode: enabled })
+  if (!result.ok) return false
+  refreshNativeSurfaces()
+  return shellApp.runHarnessRestart()
+}
+
+/** Rebuild the Safe Mode overlay from the live profile and return its path. */
+async function safeModeOverlayPath(): Promise<string | undefined> {
+  const dshHome = resolveDshHome(process.env, homedir())
+  return writeSafeModeOverlay(dshHome, app.getPath('userData'))
+}
+
 /** The shell state machine, wired to the Electron surfaces it drives. */
 const shellApp = new ShellApp({
-  createSupervisor: onState => new HarnessSupervisor({ onState }),
+  createSupervisor: onState => new HarnessSupervisor(
+    { onState },
+    { safeMode: { enabled: safeModeActive, overlayFactory: safeModeOverlayPath } },
+  ),
   onStateApplied: (state) => {
     if (windowContext.quitInProgress) return
     notifyHarnessState(state)
@@ -78,7 +104,7 @@ const shellApp = new ShellApp({
     installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), lanService.isRunning, lanService.isBusy, desktopPreferencesController?.snapshot.shortcut)
     refreshTray()
     if (state.phase === 'ready') void loadHarnessUrl(windowContext, state.url)
-    else if (state.phase === 'crashed') void loadErrorPage(windowContext, state.attempts, state.logTail)
+    else if (state.phase === 'crashed') void loadErrorPage(windowContext, state.attempts, state.logTail, safeModeActive())
     else void loadLoadingPage(windowContext)
   },
   onRestartBusyChanged: refreshNativeSurfaces,
@@ -238,7 +264,7 @@ const menuActions: MenuActions = {
   toggleMaximize,
   restartHarness: () => { void shellApp.requestRestart() },
   openLogs: () => { void openLogsFolder() },
-  exportDiagnostics: () => { void exportDiagnosticReport(shellApp.state, currentLocale) },
+  exportDiagnostics: () => { void exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive()) },
   checkForUpdates: () => { void checkForUpdatesInteractively(currentLocale) },
   showAbout: () => { void showAboutDialog(currentLocale) },
   openExternal: url => { void shell.openExternal(url) },
@@ -261,7 +287,7 @@ const trayActions: TrayActions = {
   toggleWindow: toggleMainWindow,
   restartHarness: (): void => { void shellApp.requestRestart() },
   openLogs: (): void => { void openLogsFolder() },
-  exportDiagnostics: (): void => { void exportDiagnosticReport(shellApp.state, currentLocale) },
+  exportDiagnostics: (): void => { void exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive()) },
   checkForUpdates: (): void => { void checkForUpdatesInteractively(currentLocale) },
   quit: (): void => app.quit(),
   showAbout: (): void => { void showAboutDialog(currentLocale) },
@@ -283,9 +309,21 @@ ipcMain.handle('harness:retry', async (event) => {
   return shellApp.runHarnessRestart()
 })
 
+ipcMain.handle('harness:safe-mode', (event, enabled: unknown) => {
+  if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
+  if (typeof enabled !== 'boolean') return false
+  return applySafeMode(enabled)
+})
+
+ipcMain.handle('shell:open-logs', (event) => {
+  if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
+  void openLogsFolder()
+  return true
+})
+
 ipcMain.handle('shell:export-diagnostics', async (event) => {
   if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
-  return exportDiagnosticReport(shellApp.state, currentLocale)
+  return exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive())
 })
 
 ipcMain.handle('shell:close-lan-pairing', (event) => {
@@ -313,7 +351,9 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     await openLogsFolder()
     return true
   }
-  if (action === 'exportDiagnostics') return exportDiagnosticReport(shellApp.state, currentLocale)
+  if (action === 'exportDiagnostics') return exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive())
+  if (action === 'enterSafeMode') return applySafeMode(true)
+  if (action === 'exitSafeMode') return applySafeMode(false)
   return false
 })
 
@@ -348,6 +388,106 @@ ipcMain.handle('desktop:session-status', (event, raw: unknown) => {
   }
   lastPublicStatus = next
   return true
+})
+
+function desktopDshHome(): string {
+  return resolveDshHome(process.env, homedir())
+}
+
+async function exportPresetFlow(id: string): Promise<{ saved: boolean; canceled?: boolean; name?: string }> {
+  let pkg
+  try {
+    pkg = await buildPresetPackage(desktopDshHome(), id)
+  } catch (error) {
+    console.warn(`dsh-desktop: preset export failed: ${error instanceof Error ? error.message : String(error)}`)
+    await dialog.showMessageBox({ type: 'error', message: shellText(currentLocale, 'presets.invalid'), buttons: [shellText(currentLocale, 'common.ok')] })
+    return { saved: false }
+  }
+  const result = await dialog.showSaveDialog({
+    title: shellText(currentLocale, 'presets.exportTitle'),
+    defaultPath: join(app.getPath('downloads'), `${pkg.id}.dshpreset`),
+    filters: [{ name: 'dsh preset', extensions: ['dshpreset'] }],
+  })
+  if (result.canceled || result.filePath === undefined) return { saved: false, canceled: true }
+  try {
+    await writeFile(result.filePath, JSON.stringify(pkg, null, 2), { mode: 0o600 })
+  } catch (error) {
+    console.warn(`dsh-desktop: preset export failed: ${error instanceof Error ? error.message : String(error)}`)
+    await dialog.showMessageBox({ type: 'error', message: shellText(currentLocale, 'presets.invalid'), buttons: [shellText(currentLocale, 'common.ok')] })
+    return { saved: false }
+  }
+  return { saved: true, name: pkg.id }
+}
+
+async function importPresetFlow(): Promise<{ imported: boolean; canceled?: boolean; skipped?: boolean; invalid?: boolean; name?: string }> {
+  const open = await dialog.showOpenDialog({
+    title: shellText(currentLocale, 'presets.importTitle'),
+    properties: ['openFile'],
+    filters: [{ name: 'dsh preset', extensions: ['dshpreset'] }],
+  })
+  const filePath = open.filePaths[0]
+  if (open.canceled || filePath === undefined) return { imported: false, canceled: true }
+  let raw: string | undefined
+  try {
+    raw = await readFile(filePath, 'utf8')
+  } catch {
+    raw = undefined
+  }
+  const pkg = raw === undefined ? undefined : parsePresetPackage(raw)
+  if (pkg === undefined) {
+    await dialog.showMessageBox({ type: 'error', message: shellText(currentLocale, 'presets.invalid'), buttons: [shellText(currentLocale, 'common.ok')] })
+    return { imported: false, invalid: true }
+  }
+  const trust = await dialog.showMessageBox({
+    type: 'info',
+    title: shellText(currentLocale, 'presets.importTrustTitle'),
+    message: pkg.id,
+    detail: shellText(currentLocale, 'presets.importTrustBody'),
+    buttons: [shellText(currentLocale, 'common.continue'), shellText(currentLocale, 'common.cancel')],
+    defaultId: 1,
+    cancelId: 1,
+  })
+  if (trust.response !== 0) return { imported: false, canceled: true }
+  const existing = await listUserPresets(desktopDshHome()).then(list => list.some(preset => preset.id === pkg.id))
+  let mode: 'skip' | 'overwrite' | 'clone' = 'overwrite'
+  if (existing) {
+    const choices = await dialog.showMessageBox({
+      type: 'warning',
+      title: shellText(currentLocale, 'presets.conflictTitle'),
+      message: shellText(currentLocale, 'presets.conflictBody', { name: pkg.id }),
+      buttons: [
+        shellText(currentLocale, 'presets.conflictSkip'),
+        shellText(currentLocale, 'presets.conflictReplace'),
+        shellText(currentLocale, 'presets.conflictClone'),
+      ],
+      defaultId: 1,
+      cancelId: 0,
+    })
+    mode = (['skip', 'overwrite', 'clone'] as const)[choices.response] ?? 'skip'
+  }
+  const result = await importPresetPackage(desktopDshHome(), pkg, mode)
+  if (!result.ok) {
+    await dialog.showMessageBox({ type: 'error', message: shellText(currentLocale, 'presets.invalid'), buttons: [shellText(currentLocale, 'common.ok')] })
+    return { imported: false, invalid: true }
+  }
+  if (result.skipped === true) return { imported: false, skipped: true, name: pkg.id }
+  return { imported: true, name: result.renamedTo ?? result.id }
+}
+
+ipcMain.handle('desktop:presets:list', (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return listUserPresets(desktopDshHome())
+})
+
+ipcMain.handle('desktop:presets:export', (event, id: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  if (typeof id !== 'string') return null
+  return exportPresetFlow(id)
+})
+
+ipcMain.handle('desktop:presets:import', (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return importPresetFlow()
 })
 
 function verifyHarness(root: string): void {

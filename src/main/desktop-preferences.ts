@@ -115,6 +115,9 @@ export class DesktopPreferencesController {
     if (patch.notificationsEnabled !== undefined) {
       this.current = this.store.updateDesktopPreferences({ notificationsEnabled: patch.notificationsEnabled })
     }
+    if (patch.safeMode !== undefined) {
+      this.current = this.store.updateDesktopPreferences({ safeMode: patch.safeMode })
+    }
     return { ok: true, preferences: this.snapshot }
   }
 

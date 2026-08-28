@@ -1,11 +1,14 @@
 /** Local diagnostic export and bounded harness-log retention. */
 import electron from 'electron'
 import { closeSync, existsSync, openSync, readSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { appendFile } from 'node:fs/promises'
+import { appendFile, readFile } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
 import { basename, join } from 'node:path'
 import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
+import { collectPluginFailures, inspectPluginInventory, type ComposedRow, type PluginInventory } from './safe-mode.ts'
+import { resolveDshHome } from './dsh-home.ts'
+import { harnessRoot } from './paths.ts'
 
 export const MAX_LOG_BYTES = 5 * 1024 * 1024
 export const KEPT_LOG_FILES = 3
@@ -99,6 +102,11 @@ export interface DiagnosticFacts {
   arch: string
   harnessState: HarnessState | undefined
   logTail: string
+  /** Bundled @deepseek-ai/dsh version from the harness closure. */
+  harnessVersion: string
+  safeMode: boolean
+  pluginInventory: PluginInventory | undefined
+  pluginFailures: ComposedRow[]
 }
 
 function stateLine(state: HarnessState | undefined): string {
@@ -107,8 +115,18 @@ function stateLine(state: HarnessState | undefined): string {
   return 'starting'
 }
 
-export function formatDiagnosticReport(facts: DiagnosticFacts): string {
+function inventoryLines(inventory: PluginInventory | undefined): string[] {
+  if (inventory === undefined) return ['# unavailable (profile manifest not readable)']
   return [
+    `bundles=${inventory.bundles.join(',')}`,
+    `user_bundles=${inventory.userBundles.join(',')}`,
+    `composed_rows=${inventory.composedRows.map(row => row.id).join(',')}`,
+    `damaged_bundles=${inventory.damagedBundles.join(',')}`,
+  ]
+}
+
+export function formatDiagnosticReport(facts: DiagnosticFacts): string {
+  const lines = [
     '# dsh-desktop diagnostic report',
     `created_at=${facts.createdAt}`,
     `app_version=${facts.appVersion}`,
@@ -118,17 +136,28 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
     `platform=${facts.platform} ${facts.platformRelease}`,
     `arch=${facts.arch}`,
     `harness_state=${stateLine(facts.harnessState)}`,
+    `harness_version=${facts.harnessVersion}`,
+    `safe_mode=${facts.safeMode ? 'true' : 'false'}`,
     'generated_locally=true',
     'uploaded_automatically=false',
+    '',
+    '# Plugin inventory',
+    ...inventoryLines(facts.pluginInventory),
+    '',
+    '# Suspected failing plugins (from harness output)',
+    ...(facts.pluginFailures.length === 0
+      ? ['none']
+      : facts.pluginFailures.map(row => `${row.id} (${row.name})`)),
     '',
     `# Harness log tail (up to ${DIAGNOSTIC_LOG_BYTES / 1024} KiB; common secrets and home path masked)`,
     redactDiagnosticsLog(facts.logTail).trimEnd(),
     '',
-  ].join('\n')
+  ]
+  return lines.join('\n')
 }
 
 /** Ask for a destination, write a local-only report, then offer to reveal it. */
-export async function exportDiagnosticReport(state: HarnessState | undefined, locale: ShellLocale = 'en'): Promise<boolean> {
+export async function exportDiagnosticReport(state: HarnessState | undefined, locale: ShellLocale = 'en', safeMode = false): Promise<boolean> {
   const api = electron as unknown as typeof import('electron')
   const warning = await api.dialog.showMessageBox({
     type: 'info',
@@ -151,6 +180,20 @@ export async function exportDiagnosticReport(state: HarnessState | undefined, lo
 
   try {
     const logPath = join(api.app.getPath('userData'), 'logs', 'harness.log')
+    let harnessVersion = 'unknown'
+    try {
+      const harnessPackage = JSON.parse(await readFile(join(harnessRoot(), 'node_modules', '@deepseek-ai', 'dsh', 'package.json'), 'utf8')) as { version?: string }
+      harnessVersion = harnessPackage.version ?? 'unknown'
+    } catch {
+      harnessVersion = 'unknown'
+    }
+    let pluginInventory: PluginInventory | undefined
+    try {
+      pluginInventory = await inspectPluginInventory(resolveDshHome(process.env, homedir()))
+    } catch {
+      pluginInventory = undefined
+    }
+    const logTail = readLogTail(logPath)
     const report = formatDiagnosticReport({
       createdAt: new Date().toISOString(),
       appVersion: api.app.getVersion(),
@@ -161,7 +204,11 @@ export async function exportDiagnosticReport(state: HarnessState | undefined, lo
       platformRelease: release(),
       arch: process.arch,
       harnessState: state,
-      logTail: readLogTail(logPath),
+      logTail,
+      harnessVersion,
+      safeMode,
+      pluginInventory,
+      pluginFailures: collectPluginFailures(logTail),
     })
     writeFileSync(result.filePath, report, { mode: 0o600 })
   } catch (error) {

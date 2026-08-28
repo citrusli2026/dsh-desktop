@@ -13,6 +13,8 @@ export interface DesktopPreferences {
   launchAtLogin: boolean
   launchHidden: boolean
   notificationsEnabled: boolean
+  /** Safe Mode persists until the user exits it explicitly (decision 0021). */
+  safeMode: boolean
 }
 
 interface ShellPreferences {
@@ -21,6 +23,7 @@ interface ShellPreferences {
   launchAtLogin?: boolean
   launchHidden?: boolean
   notificationsEnabled?: boolean
+  safeMode?: boolean
 }
 
 export interface ShellPreferencesStore {
@@ -35,6 +38,7 @@ export const DEFAULT_DESKTOP_PREFERENCES: DesktopPreferences = {
   launchAtLogin: false,
   launchHidden: false,
   notificationsEnabled: true,
+  safeMode: false,
 }
 
 function desktopPreferencesOf(raw: ShellPreferences): DesktopPreferences {
@@ -43,6 +47,7 @@ function desktopPreferencesOf(raw: ShellPreferences): DesktopPreferences {
     launchAtLogin: raw.launchAtLogin === true,
     launchHidden: raw.launchHidden === true,
     notificationsEnabled: raw.notificationsEnabled !== false,
+    safeMode: raw.safeMode === true,
   }
 }
 
@@ -73,6 +78,7 @@ export function createShellPreferences(path: string): ShellPreferencesStore {
           launchAtLogin: next.launchAtLogin,
           launchHidden: next.launchHidden,
           notificationsEnabled: next.notificationsEnabled,
+          safeMode: next.safeMode,
         }
       })
       return desktopPreferencesOf(file.readSync())

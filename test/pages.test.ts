@@ -39,7 +39,7 @@ test('loadingPageHtml and errorPageHtml render as data URLs', () => {
   assert.ok(!loading.includes('class="spinner"'))
   assert.ok(!loading.includes('class="progress"'))
   assert.ok(decodeURIComponent(errorPageHtml(6, 'tail')).includes('Start again'))
-  assert.ok(decodeURIComponent(errorPageHtml(6, 'tail', 'zh')).includes('再次启动'))
+  assert.ok(decodeURIComponent(errorPageHtml(6, 'tail', false, 'zh')).includes('再次启动'))
 })
 
 test('built-in pages carry a restrictive CSP and the error page exposes local diagnostics', () => {

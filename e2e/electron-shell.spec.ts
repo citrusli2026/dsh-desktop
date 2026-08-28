@@ -334,6 +334,27 @@ shellTest('diagnostic export writes the report to the chosen path', async ({ ele
   expect(text).toContain(version)
 })
 
+shellTest('portable preset import lands a user preset under the user preset root', async ({ electronApp, window, dshHome }) => {
+  await packagedOrStubHeadline(window)
+  const presetFile = join(dshHome, 'team.dshpreset')
+  await writeFile(presetFile, JSON.stringify({
+    format: 'dsh-preset/v1',
+    id: 'team-workflow',
+    metadata: { name: 'Team Workflow' },
+    composition: '- id: custom-prompt\n  config:\n    instructions: keep\n',
+  }))
+  await electronApp.evaluate(({ dialog }, presetFile) => {
+    ;(dialog as unknown as { showMessageBox: unknown }).showMessageBox = async () => ({ response: 0 })
+    ;(dialog as unknown as { showOpenDialog: unknown }).showOpenDialog = async () => ({ canceled: false, filePaths: [presetFile] })
+  }, presetFile)
+  const result = await window.evaluate(() => (window as unknown as {
+    dshDesktop?: { importPreset(): Promise<unknown> }
+  }).dshDesktop?.importPreset())
+  expect(result).toEqual({ imported: true, name: 'team-workflow' })
+  const written = await readFile(join(dshHome, '.agent-presets', 'team-workflow', 'agent.cordis.yml'), 'utf8')
+  expect(written.trim()).toContain('custom-prompt')
+})
+
 // Desktop status notices (shell.6/7): renderer → preload bridge → `desktop:session-status`
 // → native Notification. The bridge runs unchanged in dev-stub and packaged modes, so the
 // state-edge pipeline can be driven from either page. Record shown notices and their click

@@ -55,12 +55,16 @@ if (document.readyState === 'loading') {
 contextBridge.exposeInMainWorld('dshDesktop', {
   /** Ask the main process to start the harness again. Resolves true on ready. */
   retryHarness: (): Promise<boolean> => ipcRenderer.invoke('harness:retry'),
+  /** Enter (true) or exit (false) Safe Mode and restart the harness. */
+  safeModeBoot: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('harness:safe-mode', enabled),
   /** Export a local diagnostic report from the built-in error page. */
   exportDiagnostics: (): Promise<boolean> => ipcRenderer.invoke('shell:export-diagnostics'),
+  /** Reveal the shell's local logs directory from the built-in error page. */
+  openLogsFolder: (): Promise<boolean> => ipcRenderer.invoke('shell:open-logs'),
   /** Close the shell-owned LAN pairing modal. */
   closeLanPairing: (): Promise<boolean> => ipcRenderer.invoke('shell:close-lan-pairing'),
   /** Invoke one of the fixed, low-risk desktop controls from the Harness UI. */
-  desktopAction: (action: 'startLanPairing' | 'stopLanPairing' | 'toggleFullscreen' | 'showAbout' | 'openLogs' | 'exportDiagnostics'): Promise<boolean> =>
+  desktopAction: (action: 'startLanPairing' | 'stopLanPairing' | 'toggleFullscreen' | 'showAbout' | 'openLogs' | 'exportDiagnostics' | 'enterSafeMode' | 'exitSafeMode'): Promise<boolean> =>
     ipcRenderer.invoke('desktop:action', action),
   /** Read the LAN pairing state for the extension settings surface. */
   getLanState: (): Promise<{ running: boolean; busy: boolean } | null> =>
@@ -74,4 +78,13 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Report only the Harness public session/job state used for desktop notices. */
   reportSessionStatus: (snapshot: unknown): Promise<boolean> =>
     ipcRenderer.invoke('desktop:session-status', snapshot),
+  /** List user-writable agent presets for the settings surface. */
+  listPresets: (): Promise<Array<{ id: string; name: string }> | null> =>
+    ipcRenderer.invoke('desktop:presets:list'),
+  /** Export one user preset as a .dshpreset file. */
+  exportPreset: (id: string): Promise<{ saved: boolean; canceled?: boolean; name?: string } | null> =>
+    ipcRenderer.invoke('desktop:presets:export', id),
+  /** Pick a .dshpreset file and import it (trust warning + conflict flow). */
+  importPreset: (): Promise<{ imported: boolean; canceled?: boolean; skipped?: boolean; invalid?: boolean; name?: string } | null> =>
+    ipcRenderer.invoke('desktop:presets:import'),
 })

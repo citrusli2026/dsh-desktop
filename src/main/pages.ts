@@ -64,16 +64,19 @@ export function loadingPageHtml(locale: ShellLocale = 'en'): string {
 }
 
 /**
- * The gave-up error page: restart budget exhausted, with the log tail so the
- * user can report the failure.
+ * The recovery center: restart budget exhausted, with the log tail and the
+ * recovery actions (retry, Safe Mode toggle, export, open logs).
  * @param attempts - crash count inside the restart window.
  * @param logTail - the last harness output lines.
+ * @param safeMode - whether the profile is currently booted in Safe Mode.
+ * @param locale - the active shell locale.
  */
-export function errorPageHtml(attempts: number, logTail: string, locale: ShellLocale = 'en'): string {
+export function errorPageHtml(attempts: number, logTail: string, safeMode = false, locale: ShellLocale = 'en'): string {
   const lang = locale === 'zh' ? 'zh-CN' : 'en'
   const retry = shellText(locale, 'page.retry')
   const retrying = shellText(locale, 'page.retrying')
   const retryFailed = shellText(locale, 'page.retryFailed')
+  const safeModeLabel = safeMode ? shellText(locale, 'page.safeModeExit') : shellText(locale, 'page.safeModeStart')
   return asDataUrl(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>dsh-desktop — ${escapeHtml(shellText(locale, 'page.errorTitle'))}</title>
     <meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
     <style>${STYLE}</style></head><body><main class="card">
@@ -83,7 +86,9 @@ export function errorPageHtml(attempts: number, logTail: string, locale: ShellLo
     <p class="log-label">${escapeHtml(shellText(locale, 'page.logLabel'))}</p>
     <pre>${escapeHtml(logTail)}</pre>
     <div class="actions"><button type="button" onclick="retry()">${escapeHtml(retry)}</button>
-    <button type="button" class="secondary" onclick="exportReport()">${escapeHtml(shellText(locale, 'page.export'))}</button></div>
+    <button type="button" onclick="bootSafe()">${escapeHtml(safeModeLabel)}</button>
+    <button type="button" class="secondary" onclick="exportReport()">${escapeHtml(shellText(locale, 'page.export'))}</button>
+    <button type="button" class="secondary" onclick="openLogs()">${escapeHtml(shellText(locale, 'page.openLogs'))}</button></div>
     <p id="hint" aria-live="polite"></p>
     <script>
       function retry() {
@@ -110,8 +115,20 @@ export function errorPageHtml(attempts: number, logTail: string, locale: ShellLo
           restore();
         }
       }
+      function bootSafe() {
+        var bridge = window.dshDesktop && window.dshDesktop.safeModeBoot;
+        var enabled = ${JSON.stringify(!safeMode)};
+        if (!bridge) return;
+        var button = document.querySelectorAll('button')[1];
+        button.disabled = true;
+        bridge(enabled).catch(function () { button.disabled = false; });
+      }
       function exportReport() {
         var bridge = window.dshDesktop && window.dshDesktop.exportDiagnostics;
+        if (bridge) bridge();
+      }
+      function openLogs() {
+        var bridge = window.dshDesktop && window.dshDesktop.openLogsFolder;
         if (bridge) bridge();
       }
     </script>

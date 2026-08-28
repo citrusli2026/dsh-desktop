@@ -9,6 +9,7 @@ function createStore(initial: Partial<DesktopPreferences> = {}): ShellPreference
     launchAtLogin: false,
     launchHidden: false,
     notificationsEnabled: true,
+    safeMode: false,
     ...initial,
   }
   return {

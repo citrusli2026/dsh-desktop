@@ -29,11 +29,22 @@ const LOG_TAIL_LINES = 40
 /** Web-profile flags owned by the desktop shell. */
 export const HARNESS_WEB_ARGS = ['--profile', 'web', '--no-open', '--port', '0'] as const
 
-/** Insert a dsh-owned overlay before the first Web-app flag. */
+/** Insert dsh-owned patches before the first Web-app flag. */
 export function addDesktopControlsPatch(args: readonly string[], patch: string): readonly string[] {
+  return insertPatches(args, [patch])
+}
+
+/** Insert `--patch <file>` entries before the first Web-app flag. */
+export function insertPatches(args: readonly string[], patches: readonly string[]): readonly string[] {
   const index = args.indexOf('--no-open')
   if (index < 0) return args
-  return [...args.slice(0, index), '--patch', patch, ...args.slice(index)]
+  const inserted = [...args]
+  let cursor = index
+  for (const patch of patches) {
+    inserted.splice(cursor, 0, '--patch', patch)
+    cursor += 2
+  }
+  return inserted
 }
 
 /** Supervisor-reported lifecycle state, consumed by the window controller. */
@@ -55,6 +66,12 @@ export interface SupervisorOptions {
   env?: NodeJS.ProcessEnv
   readyTimeoutMs?: number
   cwd?: string
+  /** Safe Mode (decision 0021): evaluated per spawn; the overlay file is
+   * (re)built from the live profile on every start. */
+  safeMode?: {
+    enabled(): boolean
+    overlayFactory(): Promise<string | undefined>
+  }
 }
 
 function defaultLogDir(): string {
@@ -97,6 +114,7 @@ export class HarnessSupervisor {
   private readonly env: NodeJS.ProcessEnv
   private readonly readyTimeoutMs: number
   private readonly cwd: string | undefined
+  private readonly safeMode: NonNullable<SupervisorOptions['safeMode']> | undefined
 
   constructor(
     events: SupervisorEvents,
@@ -112,6 +130,7 @@ export class HarnessSupervisor {
     this.env = { ...baseEnv, DSH_HOME: this.dshHome }
     this.readyTimeoutMs = options.readyTimeoutMs ?? READY_TIMEOUT_MS
     this.cwd = options.cwd ?? defaultCwd()
+    this.safeMode = options.safeMode
     mkdirSync(logDir, { recursive: true })
     const logPath = join(logDir, 'harness.log')
     this.logWriter = new RollingLogWriter(logPath)
@@ -131,28 +150,44 @@ export class HarnessSupervisor {
   }
 
   /**
-   * Mount the shell-owned client plugin only for the production invocation.
-   * Test fixtures and custom callers keep their exact argument list.
+   * Compose the spawn arguments for the production invocation: the shell-owned
+   * controls patch, plus the Safe Mode disable overlay when active. Test
+   * fixtures and custom callers keep their exact argument list.
    */
-  private resolvedArgs(): readonly string[] {
+  private async composedArgs(): Promise<readonly string[]> {
     if (!this.defaultArgs) return this.args
-    let patch: string | undefined
+    const patches: string[] = []
     try {
-      patch = prepareDesktopControlsMount(this.dshHome, harnessRoot())
+      const control = prepareDesktopControlsMount(this.dshHome, harnessRoot())
+      if (control !== undefined) patches.push(control)
     } catch (error) {
       console.warn(`dsh-desktop: desktop controls mount failed, booting without the in-app surface: ${error instanceof Error ? error.message : String(error)}`)
     }
-    if (patch === undefined) return this.args
+    if (this.safeMode?.enabled()) {
+      try {
+        const overlay = await this.safeMode.overlayFactory()
+        if (overlay !== undefined) patches.push(overlay)
+      } catch (error) {
+        console.warn(`dsh-desktop: safe mode overlay failed, booting without it: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    if (patches.length === 0) return this.args
     // dsh's top-level parser forwards unknown app flags after the first one;
-    // keep its own --patch option before --no-open/--port or it is swallowed
-    // as a Web-app argument.
-    return addDesktopControlsPatch(this.args, patch)
+    // keep its own --patch options before --no-open/--port or they are
+    // swallowed as Web-app arguments.
+    return insertPatches(this.args, patches)
   }
 
-  private spawnOnce(): ChildProcess {
+  private async trySpawn(): Promise<void> {
+    const args = await this.composedArgs()
+    if (this.stopping) return
+    this.spawnOnce(args)
+  }
+
+  private spawnOnce(args: readonly string[]): ChildProcess {
     const child = this.managed.spawn({
       command: this.command,
-      args: this.resolvedArgs(),
+      args,
       // Run from the harness root so dsh's own cwd-relative lookups (if any)
       // resolve against its bundled closure, not the Electron app directory.
       // In tests this is undefined and spawn inherits the parent cwd.
@@ -228,7 +263,7 @@ export class HarnessSupervisor {
     this.events.onState({ phase: 'starting' })
     this.restartTimer = setTimeout(() => {
       this.restartTimer = undefined
-      this.spawnOnce()
+      void this.trySpawn().catch(error => { this.failStart(error) })
     }, this.restartDelay)
     this.restartTimer.unref()
   }
@@ -261,7 +296,7 @@ export class HarnessSupervisor {
       this.readyTimer = setTimeout(() => {
         this.failStart(new Error(`harness not ready within ${this.readyTimeoutMs} ms`))
       }, this.readyTimeoutMs)
-      this.spawnOnce()
+      void this.trySpawn().catch(error => { this.failStart(error) })
     })
   }
 

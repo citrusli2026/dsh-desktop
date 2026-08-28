@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { addDesktopControlsPatch, HARNESS_WEB_ARGS, HarnessSupervisor, type HarnessState } from '../src/main/supervisor.ts'
+import { addDesktopControlsPatch, HARNESS_WEB_ARGS, insertPatches, HarnessSupervisor, type HarnessState } from '../src/main/supervisor.ts'
 
 async function fixture(args: readonly string[], readyTimeoutMs = 2_000): Promise<{
   supervisor: HarnessSupervisor
@@ -29,6 +29,14 @@ test('desktop controls patch stays before Web-app flags', () => {
     ['--profile', 'web', '--patch', '/tmp/desktop-controls.yml', '--no-open', '--port', '0'],
   )
   assert.deepEqual(addDesktopControlsPatch(['--profile', 'web'], '/tmp/desktop-controls.yml'), ['--profile', 'web'])
+})
+
+test('insertPatches keeps multiple overlays in order before Web-app flags', () => {
+  assert.deepEqual(
+    insertPatches(HARNESS_WEB_ARGS, ['/tmp/controls.yml', '/tmp/safe-mode.patch.yml']),
+    ['--profile', 'web', '--patch', '/tmp/controls.yml', '--patch', '/tmp/safe-mode.patch.yml', '--no-open', '--port', '0'],
+  )
+  assert.deepEqual(insertPatches(['--profile', 'web'], ['/tmp/controls.yml']), ['--profile', 'web'])
 })
 
 test('supervisor resolves the ready URL and records output', async () => {

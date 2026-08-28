@@ -73,8 +73,21 @@ test('formatDiagnosticReport records versions and crash state without upload', (
     appVersion: '1.0.0.shell.1', electronVersion: '43.0.0', chromiumVersion: '142', nodeVersion: '22',
     platform: 'darwin', platformRelease: '25.0.0', arch: 'arm64',
     harnessState: { phase: 'crashed', attempts: 6, logTail: 'ignored' }, logTail: 'hello',
+    harnessVersion: '0.1.1-rc.2', safeMode: true,
+    pluginInventory: {
+      bundles: ['@deepseek-ai/dsh-base', 'user-plugin'],
+      userBundles: ['user-plugin'],
+      composedRows: [{ id: 'user-a', name: 'user-plugin' }],
+      damagedBundles: [],
+    },
+    pluginFailures: [{ id: 'user-a', name: 'user-plugin' }],
   })
   assert.match(report, /app_version=1\.0\.0\.shell\.1/)
   assert.match(report, /harness_state=crashed \(attempts=6\)/)
+  assert.match(report, /harness_version=0\.1\.1-rc\.2/)
+  assert.match(report, /safe_mode=true/)
+  assert.match(report, /user_bundles=user-plugin/)
+  assert.match(report, /composed_rows=user-a/)
+  assert.match(report, /user-a \(user-plugin\)/)
   assert.match(report, /uploaded_automatically=false/)
 })

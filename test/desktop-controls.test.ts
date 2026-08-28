@@ -31,6 +31,14 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /stopLanPairing/)
   assert.match(client, /lanStart/)
   assert.match(client, /lanStop/)
+  assert.match(client, /safeModeBanner/)
+  assert.match(client, /enterSafeMode/)
+  assert.match(client, /exitSafeMode/)
+  assert.match(client, /data-dsh-safe-mode-banner/)
+  assert.match(client, /listPresets/)
+  assert.match(client, /exportPreset/)
+  assert.match(client, /importPreset/)
+  assert.match(client, /presetsTitle/)
 })
 
 test('desktop controls mount returns undefined until all package files exist', async () => {

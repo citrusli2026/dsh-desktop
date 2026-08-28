@@ -11,7 +11,7 @@ import { buildLanMenuItems, type LanMenuActions, type LanMenuState } from './men
 
 type BuiltInPage =
   | { kind: 'loading' }
-  | { kind: 'error'; attempts: number; logTail: string }
+  | { kind: 'error'; attempts: number; logTail: string; safeMode: boolean }
 
 export interface WindowLanApi {
   getState(): LanMenuState
@@ -249,9 +249,9 @@ export async function loadLoadingPage(context: WindowContext): Promise<void> {
   await navigateWindow(context, loadingPageHtml(context.getLocale()))
 }
 
-export async function loadErrorPage(context: WindowContext, attempts: number, logTail: string): Promise<void> {
-  context.builtInPage = { kind: 'error', attempts, logTail }
-  await navigateWindow(context, errorPageHtml(attempts, logTail, context.getLocale()))
+export async function loadErrorPage(context: WindowContext, attempts: number, logTail: string, safeMode = false): Promise<void> {
+  context.builtInPage = { kind: 'error', attempts, logTail, safeMode }
+  await navigateWindow(context, errorPageHtml(attempts, logTail, safeMode, context.getLocale()))
 }
 
 /** Re-render shell-owned pages and title after a live language switch. */
@@ -259,7 +259,7 @@ export async function refreshWindowLocale(context: WindowContext): Promise<void>
   context.mainWindow?.setTitle(shellText(context.getLocale(), 'window.title'))
   if (context.builtInPage?.kind === 'loading') await loadLoadingPage(context)
   else if (context.builtInPage?.kind === 'error') {
-    await loadErrorPage(context, context.builtInPage.attempts, context.builtInPage.logTail)
+    await loadErrorPage(context, context.builtInPage.attempts, context.builtInPage.logTail, context.builtInPage.safeMode)
   }
 }
 
