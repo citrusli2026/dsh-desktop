@@ -82,6 +82,7 @@ GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名
 | 本地静态预览 | `python3 -m http.server 4173 --directory site` |
 | 重新生成下载数据 | `node scripts/gen-site-data.mjs` |
 | 校验汇总制品 | `node scripts/check-release-assets.mjs <目录> <v-tag>` |
+| 写发布说明 | `node scripts/write-release-notes.mjs v<tag>` → 填完随 bump 提交；CI 缺文件/留占位符即失败 |
 | 手动刷新官网数据 | Actions → Site Data Refresh → Run workflow |
 | 补齐 GitCode 镜像 | 使用 `$gitcode-release-publisher` 上传 dmg/exe 与 `.sha256` → 再触发一次 Site Data Refresh |
 | 回补历史版本 | 同上（需维护者已登录 GitCode）；GitHub 侧 GitCode Mirror Backfill 仅小文件实际可用 |
@@ -92,6 +93,8 @@ GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名
 
 ### 发布后 checklist（每次打 tag 后逐项确认）
 
+0. **发布说明**：`docs/release-notes/v<tag>.md` 已随 bump 提交且无 `<...>` 占位符
+   （脚本脚手架 + `check` 子命令；CI publish 缺文件即失败）。
 1. **GitHub Release**：`gh release view v<tag>` 确认严格 6 文件（DMG + DMG.sha256 +
    EXE + EXE.sha256 + EXE.blockmap + latest.yml），`isDraft=false`。
 2. **Site Data Refresh**：Release 完成会自动触发；确认 run 成功且 `site/data/release.json`

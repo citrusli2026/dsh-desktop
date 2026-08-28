@@ -79,6 +79,20 @@ pnpm run verify   # typecheck, 107 unit tests + coverage, site checks, build
 Commit the bump (message style: `chore: bump dsh kernel to X
 (shell revision resets to 0)`).
 
+### 4.5 Release notes (mandatory, every version)
+
+Every tag must ship `docs/release-notes/v<version>.md` — the GitHub Release
+body is built from it by the publish job, which **fails when the file is
+missing or still has `<...>` placeholders** (see `docs/release-notes/README.md`).
+
+```sh
+node scripts/write-release-notes.mjs v<version>   # scaffold a draft
+# fill the <...> placeholders: features, verification, English Summary
+node scripts/write-release-notes.mjs check v<version>   # local gate, exit 0 = ready
+```
+
+Commit the notes with the bump commit so the tag carries them.
+
 ### 5. Cut the release
 
 ```sh
@@ -219,6 +233,8 @@ GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-electron-she
 
 | Symptom | Cause / fix |
 |---|---|
+| publish fails: `release-notes: missing docs/release-notes/v<tag>.md` | every release must write notes; scaffold with `node scripts/write-release-notes.mjs v<tag>`, fill it, commit, re-run (or re-push the tag) |
+| publish fails/ warns: `still contains placeholder <>` | fill every `<...>` in the notes file before tagging |
 | `audit-harness-peers` fails after bump | new kernel peer gap; add the package to the manifest and re-install |
 | `main` push rejected | bot sync landed; `git pull --rebase`, re-tag if the tag was already cut |
 | backfill run cancels at ~120 min with installers missing | normal; re-dispatch (idempotent), expect 2–3 runs |

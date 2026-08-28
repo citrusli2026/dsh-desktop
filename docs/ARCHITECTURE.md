@@ -77,8 +77,9 @@ tag Release（release.yml: verify → build 三平台并行 → publish）在 CI
      `.exe.blockmap`; 校验和实算匹配、updater 元数据引用本次 exe，
      多一个少一个都拒绝;
 - publish（仅 tag 触发）: tag→commit 解引用门禁（拒绝对齐失败）→
-  资产下载 → 8 文件契约校验 → 每安装包 attestation 验证 → release
-  创建/上传。
+  发布说明门禁（`docs/release-notes/v<tag>.md` 缺失或留占位符即失败，
+  正文即 GitHub Release 内容）→ 资产下载 → 8 文件契约校验 → 每安装包
+  attestation 验证 → release 创建/上传。
 
 测试硬化的规划、成本护栏与已知边界（NSIS 覆盖安装挂死、macOS dmg
 安装路径无自动化等）见 `docs/test-hardening-plan.md`; 2026-08-23
