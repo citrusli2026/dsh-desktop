@@ -2,8 +2,6 @@
 
 [English](README.md) · [官网](https://dsh-desktop.com)
 
-> 命名规则:应用、安装包与 GitHub 仓库统一叫 `dsh-desktop`(决策 0022 改回)。
-
 DeepSeek Harness 的可靠桌面工作台:官方 WebUI 的桌面封装,下载安装即用,
 功能与 `npx @deepseek-ai/dsh web` 完全一致。社区维护,MIT 开源,与 DeepSeek AI 无关联;
 DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打包。
