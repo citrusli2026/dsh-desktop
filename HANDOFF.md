@@ -8,13 +8,13 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.8`（2026-08-28 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +8） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.8`（2026-08-28，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 135 项单测、类型检查、官网门禁、构建通过；dev E2E 10/10 + 打包通知用例 1/1 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.8 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.8`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.8 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证 302，tag 与 `5ff86ae` 对齐） |
-| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 213（mac 71 / win 115 / linux 27） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.9`（2026-08-28 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +9） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.9`（2026-08-28，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 154 项单测、类型检查、官网门禁、构建通过；dev E2E 12 用例（11 过 + 1 按设计 skip）；mac 打包安全模式两阶段冒烟本地通过 |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.9 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke（含坏插件 → 安全模式恢复两阶段用例）与安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.9`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.9 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证 302，main 与 tag 均对齐 `f743773`） |
+| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 218（mac 71 / win 120 / linux 27） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -854,5 +854,68 @@ shell.6「桌面偏好与状态通知」当时只有单元测试（`test/desktop
   `5ff86ae` 精确对齐。
 
 ---
+## 三十、v0.1.1-rc.2.shell.9 发布:安全模式、恢复中心与便携预设包(2026-08-28)
+
+本轮按迭代计划(`docs/safe-mode-and-presets-iteration-plan.md`,ADR 0021)完成
+"救援与分享"版本:安全模式、恢复中心、诊断增强、`.dshpreset` 便携预设包,
+并顺带完成发布链路/依赖治理(修 release.yml heredoc 触发 bug、关 3 个 dependabot
+major PR、dependabot 限 minor、6 个过期 issue 清理)。
+
+1. **功能**:
+   - **安全模式(0021)**:非破坏性插件隔离(仅官方 bundles + 壳控件,`--patch` overlay
+     `{id, disabled: true}` 禁用用户插件行——与官方 telemetry 开关同构,spike 已实测);
+     双触发(启动失败/手动)、标志持久化于 shell-preferences.json、顶部横幅+显式退出;
+     坏插件失败签名检测 `failed to apply loader entry <id> (<name>)`。
+   - **恢复中心**:错误页四动作(重试/以安全模式启动/导出诊断/打开日志);自动检测到
+     插件失败时页面与横幅点名疑似插件(id+包名),引导官方「设置 → 插件」。
+   - **诊断增强**:插件清单(bundles/用户 bundle/组合行)、坏插件候选、safeMode 状态、
+     壳/内核版本进入报告。
+   - **便携预设包 .dshpreset**:导出/导入 + 冲突检测(跳过/替换/克隆)+ 信任提醒;
+     写回 `$DSH_HOME/.agent-presets`(官方选预器挂载,不覆盖内置)。
+   - **打包门禁**:`DSH_DESKTOP_SAFE_BREAK=1` 两阶段 packaged smoke(坏插件 fixture →
+     普通启动确证失败 → 安全模式恢复渲染+banner),release.yml 三平台自动纳入。
+   - 评估并砍除:B 托盘最近会话(dsh 会话无 URL 深链)、C 用量小部件(官方已消费
+     usage 数据,重复风险)、通用文件预览(与官方重叠)。
+2. **本地门禁**:154 项单测(135 → +19)、typecheck、site:check、build 全绿;
+   dev E2E 12 用例(11 过 + 1 按设计 skip,新增预设导入流);mac 打包产物
+   两阶段安全模式冒烟本地全链路通过。
+3. **发布首发波折 — release.yml 触发 bug(重要修复合入本版)**:
+   - 首发 tag push 后 release.yml 只产生无 jobs 幽灵 run——根因是 8eae475(强制逐版
+     发布说明)在 publish 步骤引入的 bash heredoc 顶格/YAML 块标量缩进矛盾,workflow
+     解析失败;此前多次 push 均留幽灵 failure run,被误记"平台噪声"(本节纠正)。
+   - 修复 `f743773`:标准安装/校验块移入 `docs/release-notes/install-block.md`
+     (publish 步骤 `cat` 拼接;`write-release-notes.mjs check` 只扫 v<tag>.md,
+     占位符安全)。
+   - 教训:workflow 改动后必须做一次真实 tag 触发验证;push 幽灵 run(failure、
+     jobs 为空、started_at 为 null/有值但无 job)应视为 workflow 语法错误信号。
+4. **发布**:tag `v0.1.1-rc.2.shell.9` → `f743773`(peeled 核对);
+   Release run `33216322093` verify/mac/ubuntu 一次成功,Windows build 打包 E2E
+   瞬时导航竞态("Execution context was destroyed")按惯例 rerun failed 后全绿,
+   publish 8 文件契约+attestation+三平台 smoke 通过;GitHub Release 于
+   2026-08-28 发布(8 资产:三安装包+三 .sha256+blockmap+latest.yml)。
+5. **GitCode 镜像(backfill,含一次事故修复)**:
+   - 首轮 backfill `33217422888` 成功(6/6 资产 302),但发现 GitCode tag 指向旧
+     commit `8eae475`(release 创建时服务端以旧 main 位置打点)——**更正过程教训:
+     删除 GitCode 已有 tag 会级联删除其 release(资产 404)**;
+   - 更正:本地 `git push gitcode main`(8eae475→feaa26d)+ 重建 tag 指向 `f743773`,
+     再 dispatch backfill `33217667801` 重建 release,6/6 Range GET 302 恢复;
+   - 最终:GitCode main=`feaa26d`、tag 与 `f743773` 对齐(annotated 对象 `b91241f7`)。
+6. **网站数据**:site-refresh 自动 run `33217407930`(workflow_run 触发,长探测);
+   本地 `gen-site-data` 复核无变化(已随 `feaa26d` 提交:tag=shell.9、6/6
+   `gitcode_ok=true`、stats 218:mac 71 / win 120 / linux 27)。
+7. **依赖治理**(本轮附带):关闭 #2/#13/#14 三个 dependabot major PR(@types/node 26
+   非 LTS 且与捆绑 Node 22 错配、electron 44.0.0 audit 3 漏洞、esbuild 无紧迫);
+   dependabot 增加 `version-update-semver-scope: minor`;「运行时升级专项」立项
+   (Electron 44.x.y 单步 + 捆绑 Node 24 LTS + @types/node 24,见计划文档 §6);
+   关闭 6 个过期告警 issue(#3/#4/#9/#10/#12/#8)。
+
+发布元数据:
+- Release run `33216322093`(成功);Site Data Refresh run `33217407930`(自动);
+- 线上验证:`/data/release.json` 指向 `v0.1.1-rc.2.shell.9` 且 6/6 `gitcode_ok=true`、
+  `/api/downloads` 返回 200(累计 218:mac 71 / win 120 / linux 27);GitCode 镜像
+  6/6 present、GitCode main/tag 与 `f743773`/`feaa26d` 精确对齐。
+
+---
 
 _更新于 2026-08-28_
+
