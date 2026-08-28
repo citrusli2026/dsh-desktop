@@ -15,7 +15,7 @@ set -uo pipefail
 LOG="$HOME/Library/Logs/dsh-gitcode-mirror.log"
 ENV_FILE="$HOME/.gitcode-mirror.env"
 REPO_DIR="${DSH_DESKTOP_REPO:-$HOME/dsh-desktop}"
-GITCODE_REPO="citrusli2026/dsh-electron-shell"
+GITCODE_REPO="citrusli2026/dsh-desktop"
 
 log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" >> "$LOG"; }
 

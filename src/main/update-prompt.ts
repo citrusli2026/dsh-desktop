@@ -5,7 +5,7 @@ import { isNewerVersion, latestPublishedRelease } from './update-check.ts'
 import { shellText, type ShellLocale } from './locale.ts'
 
 const { autoUpdater } = electronUpdater
-const RELEASES_API_URL = 'https://api.github.com/repos/citrusli2026/dsh-electron-shell/releases?per_page=20'
+const RELEASES_API_URL = 'https://api.github.com/repos/citrusli2026/dsh-desktop/releases?per_page=20'
 
 /**
  * Optional GitHub token for the macOS update check. Unauthenticated requests

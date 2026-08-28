@@ -1,4 +1,4 @@
-# site/ — dsh-electron-shell 官网
+# site/ — dsh-desktop 官网
 
 纯静态站点(零构建、零依赖),介绍项目并提供多平台下载,部署于 Vercel。
 
@@ -73,7 +73,7 @@ GitCode v5 API 与网页均不提供任何下载计数(资产对象只有 name/t
 
 ## Vercel 接入(一次性)
 
-1. <https://vercel.com/new> → Import `citrusli2026/dsh-electron-shell`;
+1. <https://vercel.com/new> → Import `citrusli2026/dsh-desktop`;
 2. **Root Directory** 设为 `site`(其余留空,无需构建命令);
 3. Deploy。之后每次 push 到 main 自动部署。
 

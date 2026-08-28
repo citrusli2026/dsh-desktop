@@ -1,7 +1,7 @@
 # 0013:产品命名——应用与安装包用 `dsh-desktop`,仓库保持 `dsh-electron-shell`
 
 - 日期:2026-08-15
-- 状态:已接受
+- 状态:已被 [0022](0022-repo-rename-dsh-desktop.zh.md) 取代(仓库改回 `dsh-desktop`)
 - English:[0013](0013-product-naming.md)
 
 ## 背景

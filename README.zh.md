@@ -2,7 +2,7 @@
 
 [English](README.md) · [官网](https://dsh-desktop.com)
 
-> 命名规则:应用与安装包叫 `dsh-desktop`;GitHub 仓库沿用原名 `dsh-electron-shell`。
+> 命名规则:应用、安装包与 GitHub 仓库统一叫 `dsh-desktop`(决策 0022 改回)。
 
 DeepSeek Harness 的可靠桌面工作台:官方 WebUI 的桌面封装,下载安装即用,
 功能与 `npx @deepseek-ai/dsh web` 完全一致。社区维护,MIT 开源,与 DeepSeek AI 无关联;
@@ -33,8 +33,8 @@ DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打�
 | Linux | `dsh-desktop-<版本>-amd64.deb`(Debian/Ubuntu/UOS/Deepin/麒麟) |
 
 从[官网](https://dsh-desktop.com)(按可用性展示 GitHub 与 GitCode 镜像)或
-[GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases)下载。
-校验:核对旁侧的 `.sha256`,或 `gh attestation verify <文件> -R citrusli2026/dsh-electron-shell`
+[GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases)下载。
+校验:核对旁侧的 `.sha256`,或 `gh attestation verify <文件> -R citrusli2026/dsh-desktop`
 验证来源证明,各平台完整步骤见[官网 FAQ](https://dsh-desktop.com/#faq)。
 
 ## 常见问题
