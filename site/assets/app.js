@@ -1,4 +1,4 @@
-/* dsh-electron-shell 官网脚本 v3 (ESM):
+/* dsh-desktop 官网脚本 v3 (ESM):
    - 中英切换;macOS DMG / Windows EXE / Linux DEB 三端下载
    - data/release.json 渲染下载矩阵;失败回退 GitHub API;再失败保留静态兜底
    - 平台识别 CTA / 复制 / 滚动 reveal
@@ -6,7 +6,7 @@
    零依赖,渐进增强。 */
 import { I18N, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=34'
 
-var REPO = 'citrusli2026/dsh-electron-shell'
+var REPO = 'citrusli2026/dsh-desktop'
 var RELEASES_URL = 'https://github.com/' + REPO + '/releases'
 var isHomePage = !!document.querySelector('.hero')
 
@@ -366,7 +366,7 @@ function showDownloadToast(os) {
     '<div class="download-toast__head"><b>' + t('toast.title') + '</b>'
     + '<button class="download-toast__close" type="button" aria-label="' + t('toast.close') + '">×</button></div>'
     + '<p class="download-toast__first">' + firstOpen + '</p>'
-    + '<a class="download-toast__star" href="https://github.com/citrusli2026/dsh-electron-shell" target="_blank" rel="noopener">'
+    + '<a class="download-toast__star" href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">'
     + '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M8 .5 10 5.4l5.2.4-4 3.4 1.2 5L8 11.2 3.6 14.2l1.2-5-4-3.4L6 5.4 8 .5Z"/></svg>'
     + t('toast.star') + '</a>'
   toast.hidden = false

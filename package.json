@@ -7,7 +7,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/citrusli2026/dsh-electron-shell.git"
+    "url": "git+https://github.com/citrusli2026/dsh-desktop.git"
   },
   "type": "module",
   "packageManager": "pnpm@11.8.0",

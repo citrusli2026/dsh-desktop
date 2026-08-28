@@ -2,7 +2,7 @@
 
 [中文](README.zh.md) · [Website / 官网](https://dsh-desktop.com)
 
-> Naming: the app and its download artifacts are `dsh-desktop`; the GitHub repository keeps its original name `dsh-electron-shell`. 命名规则:应用与安装包叫 `dsh-desktop`;GitHub 仓库沿用原名 `dsh-electron-shell`。
+> Naming: one name everywhere — the app, its download artifacts, and the GitHub repository are all `dsh-desktop` (repository renamed back in decision 0022). 命名规则:应用、安装包与 GitHub 仓库统一叫 `dsh-desktop`(决策 0022 改回)。
 
 A dependable desktop workspace for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`): the official WebUI, packaged for your desktop — download, install, and talk. Functionally identical to `npx @deepseek-ai/dsh web`. Community-maintained, MIT-licensed, no affiliation with DeepSeek AI; DeepSeek Harness is a DeepSeek trademark and this repo only repackages it under MIT.
 
@@ -30,7 +30,7 @@ Installers per platform (plus `latest.yml` and `.exe.blockmap` in the release fo
 | Windows | `dsh-desktop-setup-<version>.exe` (NSIS) |
 | Linux | `dsh-desktop-<version>-amd64.deb` (Debian/Ubuntu/UOS/Deepin/麒麟) |
 
-Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the GitCode mirror) or [GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases). Verify what you downloaded with the sibling `.sha256`, or `gh attestation verify <file> -R citrusli2026/dsh-electron-shell` for provenance — full steps per platform in the [website FAQ](https://dsh-desktop.com/#faq).
+Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the GitCode mirror) or [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases). Verify what you downloaded with the sibling `.sha256`, or `gh attestation verify <file> -R citrusli2026/dsh-desktop` for provenance — full steps per platform in the [website FAQ](https://dsh-desktop.com/#faq).
 
 ## FAQ
 

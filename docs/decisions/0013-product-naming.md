@@ -1,7 +1,7 @@
 # 0013: Product naming — app and artifacts are `dsh-desktop`, repository keeps `dsh-electron-shell`
 
 - Date: 2026-08-15
-- Status: accepted
+- Status: superseded by [0022](0022-repo-rename-dsh-desktop.md) (repository renamed back to `dsh-desktop`)
 - 中文:[0013](0013-product-naming.zh.md)
 
 ## Context

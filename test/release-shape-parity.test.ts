@@ -55,10 +55,10 @@ test('splitCompositeVersion agrees with release-shape parseCompositeVersion', ()
 
 test('latestPublishedRelease picks the same winner release-shape would', () => {
   const payload = [
-    { draft: false, tag_name: 'v0.1.0-rc.8.shell.2', html_url: 'https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.0-rc.8.shell.2' },
-    { draft: false, tag_name: 'v0.1.1-rc.2.shell.0', html_url: 'https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.1-rc.2.shell.0' },
-    { draft: false, tag_name: 'v0.1.1-rc.2.shell.1', html_url: 'https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v0.1.1-rc.2.shell.1' },
-    { draft: true, tag_name: 'v9.9.9.shell.9', html_url: 'https://github.com/citrusli2026/dsh-electron-shell/releases/tag/v9.9.9.shell.9' },
+    { draft: false, tag_name: 'v0.1.0-rc.8.shell.2', html_url: 'https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.0-rc.8.shell.2' },
+    { draft: false, tag_name: 'v0.1.1-rc.2.shell.0', html_url: 'https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.1-rc.2.shell.0' },
+    { draft: false, tag_name: 'v0.1.1-rc.2.shell.1', html_url: 'https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.1-rc.2.shell.1' },
+    { draft: true, tag_name: 'v9.9.9.shell.9', html_url: 'https://github.com/citrusli2026/dsh-desktop/releases/tag/v9.9.9.shell.9' },
   ]
   const winner = latestPublishedRelease(payload)
   assert.ok(winner !== undefined)

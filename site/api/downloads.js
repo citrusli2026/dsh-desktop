@@ -18,7 +18,7 @@
  * Security: repo / tag are never user-controlled; no SSRF surface.
  */
 
-const REPO = 'citrusli2026/dsh-electron-shell'
+const REPO = 'citrusli2026/dsh-desktop'
 const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://dsh-desktop.com'
 const CACHE_MAX_AGE = 300
 const GH_HEADERS = {

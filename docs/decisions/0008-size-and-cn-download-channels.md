@@ -1,7 +1,7 @@
 # 0008: Size reduction and download channels for Chinese networks
 
 - Date: 2026-02-09
-- Status: accepted
+- Status: partially superseded by [0022](0022-repo-rename-dsh-desktop.md) (mirror paths renamed back to `dsh-desktop/<tag>/`)
 - 中文:[0008](0008-size-and-cn-download-channels.zh.md)
 
 ## Context

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// gen-site-data.mjs — fetch the latest dsh-electron-shell release from the GitHub
+// gen-site-data.mjs — fetch the latest dsh-desktop release from the GitHub
 // API and write site/data/release.json for the static download site.
 //
 // Usage:
@@ -17,12 +17,12 @@ import { classifyPublicAsset, SHA256_LINE } from './release-shape.mjs'
 
 export { classifyPublicAsset } from './release-shape.mjs'
 
-const REPO = process.env.REPO || 'citrusli2026/dsh-electron-shell'
+const REPO = process.env.REPO || 'citrusli2026/dsh-desktop'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = path.join(ROOT, 'site', 'data', 'release.json')
 
 /** GitCode mirror (华为云 CDN,国内直连);下载链接按 tag+文件名拼出并逐一验证。 */
-const GITCODE_REPO = process.env.GITCODE_REPO || 'citrusli2026/dsh-electron-shell'
+const GITCODE_REPO = process.env.GITCODE_REPO || 'citrusli2026/dsh-desktop'
 const GITCODE_BASE = `https://gitcode.com/${GITCODE_REPO}/releases/download`
 
 const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || ''
@@ -33,7 +33,7 @@ async function api(url) {
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'User-Agent': 'dsh-electron-shell-site-generator',
+      'User-Agent': 'dsh-desktop-site-generator',
     },
   })
   if (!res.ok) {
@@ -46,7 +46,7 @@ async function readChecksum(asset) {
   const response = await fetch(asset.browser_download_url, {
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'User-Agent': 'dsh-electron-shell-site-generator',
+      'User-Agent': 'dsh-desktop-site-generator',
     },
   })
   if (!response.ok) throw new Error(`checksum download ${response.status} for ${asset.name}`)

@@ -9,7 +9,7 @@ permissions:
   contents: write
   # Build provenance: OIDC + attestations let actions/attest@v4 sign the
   # installers with GitHub's key; users can then verify them with
-  # `gh attestation verify <file> -R citrusli2026/dsh-electron-shell`.
+  # `gh attestation verify <file> -R citrusli2026/dsh-desktop`.
   id-token: write
   attestations: write
 
@@ -199,7 +199,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: dsh-electron-shell-${{ matrix.os }}
+          name: dsh-desktop-${{ matrix.os }}
           path: ${{ matrix.upload }}
           if-no-files-found: error
 

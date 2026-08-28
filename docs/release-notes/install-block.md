@@ -8,7 +8,7 @@
 
 **验证安装包来源（可选但推荐）**
 ```sh
-gh attestation verify <下载的安装包> -R citrusli2026/dsh-electron-shell
+gh attestation verify <下载的安装包> -R citrusli2026/dsh-desktop
 shasum -a 256 -c <安装包>.sha256
 ```
 安装包由公开 CI（GitHub Actions）构建，来源证明可随时验证。

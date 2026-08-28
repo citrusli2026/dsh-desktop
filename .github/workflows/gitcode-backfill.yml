@@ -46,7 +46,7 @@ jobs:
             curl -sf -X POST "$API/releases" \
               -H "PRIVATE-TOKEN: $GITCODE_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"tag_name\": \"$TAG\", \"name\": \"dsh-electron-shell $TAG\", \"prerelease\": true, \"body\": \"Mirrored from https://github.com/citrusli2026/dsh-electron-shell/releases\"}"
+              -d "{\"tag_name\": \"$TAG\", \"name\": \"dsh-desktop $TAG\", \"prerelease\": true, \"body\": \"Mirrored from https://github.com/citrusli2026/dsh-desktop/releases\"}"
 
       - name: Upload only assets missing on GitCode
         run: |

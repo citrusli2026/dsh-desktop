@@ -44,7 +44,7 @@ import { classifyPublicAsset, SHA256_LINE } from './release-shape.mjs'
 const execFileP = promisify(execFile)
 
 const GITCODE_REPO = process.env.GITCODE_REPO
-const GITHUB_REPO = process.env.GITHUB_REPO ?? 'citrusli2026/dsh-electron-shell'
+const GITHUB_REPO = process.env.GITHUB_REPO ?? 'citrusli2026/dsh-desktop'
 const GH_BASE = (process.env.GH_PROXY_PREFIX ?? 'https://github.com').replace(/\/+$/, '')
 const DOWNLOAD_HEADER_BYTES = 1024
 
@@ -96,7 +96,7 @@ async function resolveAssetSet(tag, files) {
       .map(asset => ({ name: asset.name, size: asset.size }))
   }
   const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/tags/${encodeURIComponent(tag)}`, {
-    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'dsh-electron-shell-mirror' },
+    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'dsh-desktop-mirror' },
   })
   if (!response.ok) throw new Error(`GitHub release ${tag} -> HTTP ${response.status}`)
   const release = await response.json()
@@ -119,7 +119,7 @@ async function ensureGitCodeRelease(token, repo, tag) {
     headers,
     body: JSON.stringify({
       tag_name: tag,
-      name: `dsh-electron-shell ${tag}`,
+      name: `dsh-desktop ${tag}`,
       prerelease: true,
       body: `Mirrored from https://github.com/${GITHUB_REPO}/releases`,
     }),
@@ -161,7 +161,7 @@ async function main() {
 
   if (checkOnly) {
     // Probe-only: report what GitCode already serves without touching anything.
-    const probeRepo = GITCODE_REPO ?? 'citrusli2026/dsh-electron-shell'
+    const probeRepo = GITCODE_REPO ?? 'citrusli2026/dsh-desktop'
     let present = 0
     for (const asset of assets) {
       const ok = await gitCodeHas(probeRepo, tag, asset.name)

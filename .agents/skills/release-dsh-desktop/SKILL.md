@@ -12,7 +12,7 @@ are all part of the release, not afterthoughts.
 
 ## Prerequisites
 
-1. `gh` authenticated to `citrusli2026/dsh-electron-shell` (workflow
+1. `gh` authenticated to `citrusli2026/dsh-desktop` (workflow
    dispatch, run watching, release verification).
 2. Working tree clean; `main` fetched. Remote bot commits are common
    (`dsh-shell-bot` site syncs) — always `git pull --rebase` right
@@ -118,12 +118,12 @@ similar SOCKS endpoint) is the verified fastest path (~1 MB/s), falling back
 to `GH_PROXY_PREFIX` when the SOCKS tunnel is down:
 
 ```sh
-GITCODE_TOKEN=<gitcode personal token> GITCODE_REPO=citrusli2026/dsh-electron-shell \
+GITCODE_TOKEN=<gitcode personal token> GITCODE_REPO=citrusli2026/dsh-desktop \
   GH_SOCKS5=127.0.0.1:7890 \
   node scripts/mirror-gitcode.mjs v<version>
 
 # fallback: public HTTP proxy prefix
-GITCODE_TOKEN=<gitcode personal token> GITCODE_REPO=citrusli2026/dsh-electron-shell \
+GITCODE_TOKEN=<gitcode personal token> GITCODE_REPO=citrusli2026/dsh-desktop \
   GH_PROXY_PREFIX=<proxy prefix, e.g. https://ghproxy.net/https://github.com> \
   node scripts/mirror-gitcode.mjs v<version>
 ```
@@ -169,7 +169,7 @@ Verify every asset with a one-byte Range GET (302/200/206 = present,
 
 ```sh
 for f in <asset...>; do curl -s -o /dev/null -w "%{http_code}" \
-  -r 0-1023 "https://gitcode.com/citrusli2026/dsh-electron-shell/releases/download/v<version>/$f"; done
+  -r 0-1023 "https://gitcode.com/citrusli2026/dsh-desktop/releases/download/v<version>/$f"; done
 ```
 
 ### 7. Site data
@@ -218,7 +218,7 @@ Fill commands:
 gh run list --workflow=release.yml --limit 1 --json databaseId,status --jq '.[0]'
 gh run list --workflow=site-refresh.yml --limit 1 --json databaseId,status --jq '.[0]'
 git rev-parse --short v<version>^{}     # peeled tag commit, cross-check the mirror tag
-GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-electron-shell \
+GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-desktop \
   node scripts/mirror-gitcode.mjs v<version> --check-only   # 6× present
 ```
 

@@ -47,7 +47,7 @@ jobs:
         run: |
           npm install -g wrangler
           for file in artifacts/*; do
-            wrangler r2 object put "dsh-electron-shell/$TAG/$(basename "$file")" --file "$file"
+            wrangler r2 object put "dsh-desktop/$TAG/$(basename "$file")" --file "$file"
           done
       - name: Report mirror location
-        run: echo "Mirrored under dsh-electron-shell/$TAG/ in the configured R2 bucket"
+        run: echo "Mirrored under dsh-desktop/$TAG/ in the configured R2 bucket"

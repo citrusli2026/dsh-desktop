@@ -47,7 +47,7 @@ npmRebuild: false
 publish:
   provider: github
   owner: citrusli2026
-  repo: dsh-electron-shell
+  repo: dsh-desktop
 
 mac:
   category: public.app-category.developer-tools

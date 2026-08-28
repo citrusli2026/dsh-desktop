@@ -1,7 +1,7 @@
 # 0008:体积优化与国内下载通道
 
 - 日期:2026-02-09
-- 状态:已接受
+- 状态:部分被 [0022](0022-repo-rename-dsh-desktop.zh.md) 取代(镜像路径改回 `dsh-desktop/<tag>/`)
 - English:[0008](0008-size-and-cn-download-channels.md)
 
 ## 背景

@@ -93,7 +93,7 @@ export function latestPublishedRelease(payload: unknown): PublishedRelease | und
     } catch {
       continue
     }
-    if (url.protocol !== 'https:' || url.hostname !== 'github.com' || !url.pathname.startsWith('/citrusli2026/dsh-electron-shell/releases/')) continue
+    if (url.protocol !== 'https:' || url.hostname !== 'github.com' || !url.pathname.startsWith('/citrusli2026/dsh-desktop/releases/')) continue
     if (latest === undefined || compareVersions(candidate, latest.version)! > 0) {
       latest = { version: candidate, htmlUrl: url.href }
     }
