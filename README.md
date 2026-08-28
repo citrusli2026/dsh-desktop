@@ -15,6 +15,8 @@ A dependable desktop workspace for [DeepSeek Harness](https://github.com/deepsee
 - **Dependable** — crash auto-restart with backoff, error-page retry, tray with live harness status, single-instance lock, window geometry persistence, and an exportable diagnostic report. On Windows, desktop actions remain reachable from the in-app `⋮` control, window context menu, or tray even when the menu bar is hidden — the `⋮` panel also opens the logs folder, exports diagnostics, and shows the current summon shortcut.
 - **Quick to return to** — press the configurable summon shortcut from anywhere to show and focus the desktop workspace after it has been hidden to the tray. It defaults to `Ctrl/Cmd + Shift + Space`; if another app owns it, the tray and context-menu fallbacks remain available.
 - **Fits your desktop** — Settings → Extensions lets you record the shortcut, opt into launch at login and start hidden, and enable local status notices. These preferences stay in the shell's own data file.
+- **Recovers from a broken plugin** — Safe Mode (the error page, `⋮` panel, or the Extensions setting) boots with third-party plugins quarantined while official and built-in extensions keep running; the diagnostic report names the suspected failing plugin.
+- **Portable agent presets** — Settings → Extensions exports a preset as one `.dshpreset` file and imports it elsewhere with conflict checks (skip / replace / clone) and a trust warning.
 - **Constrained renderer** — sandbox and context isolation stay on, Node integration stays off, and camera/location/Web notifications/filesystem are denied by default (decision 0014). Optional desktop notices use only public Harness status and never read the screen; clicking a notice focuses the workspace.
 - **Updates** — Windows updates in place; unsigned macOS checks for releases and opens the exact release page (decisions 0010, 0016).
 
@@ -29,6 +31,13 @@ Installers per platform (plus `latest.yml` and `.exe.blockmap` in the release fo
 | Linux | `dsh-desktop-<version>-amd64.deb` (Debian/Ubuntu/UOS/Deepin/麒麟) |
 
 Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the GitCode mirror) or [GitHub Releases](https://github.com/citrusli2026/dsh-electron-shell/releases). Verify what you downloaded with the sibling `.sha256`, or `gh attestation verify <file> -R citrusli2026/dsh-electron-shell` for provenance — full steps per platform in the [website FAQ](https://dsh-desktop.com/#faq).
+
+## FAQ
+
+- **A plugin breaks the workspace and Harness will not start.** Start Safe Mode from the error page (`Start in Safe Mode`) or the `⋮` panel / Extensions setting. Third-party plugins are quarantined while the official bundles and built-in extensions keep running; the exported diagnostic report lists the plugins and flags the suspected culprit, and the official Settings → Plugins manager stays available for uninstalling it. Exit Safe Mode once it is fixed.
+- **Share an agent preset with a teammate or another machine.** Settings → Extensions → Agent presets exports the selected preset as one `.dshpreset` file; the other side imports it from the same panel. Imports check for a name conflict (skip / replace / clone) and install as a *user* preset — never replacing a built-in one.
+- **Where are desktop preferences stored?** In the shell's own `shell-preferences.json` under the Electron user-data directory — separate from Harness `settings.yaml` and from CLI data (`DSH_HOME`).
+- **Diagnostic report?** The error page or `⋮` → Export diagnostics writes a local-only report (recent harness output, plugin inventory, suspected failing plugins, shell/harness versions) to a path you choose.
 
 ## Versioning
 

@@ -73,7 +73,7 @@ const windowContext: WindowContext = {
 
 /** Whether the profile should boot with the Safe Mode plugin quarantine. */
 function safeModeActive(): boolean {
-  return !SMOKE_TEST && desktopPreferencesController?.snapshot.safeMode === true
+  return desktopPreferencesController?.snapshot.safeMode === true
 }
 
 /** Enter or exit Safe Mode: persist the flag, then restart the harness. */
@@ -559,19 +559,21 @@ if (!gotLock) {
       refreshWindowTheme(windowContext)
     })
 
+    // The controller also exists in smoke mode (read-only snapshot for the
+    // Safe Mode banner assertion); native side effects stay gated below.
+    desktopPreferencesController = new DesktopPreferencesController({
+      store: createShellPreferences(join(app.getPath('userData'), 'shell-preferences.json')),
+      registrar: globalShortcut,
+      onSummon: showMainWindow,
+      platform: process.platform,
+      packaged: app.isPackaged,
+      loginItems: {
+        getLoginItemSettings: () => app.getLoginItemSettings(),
+        setLoginItemSettings: settings => { app.setLoginItemSettings(settings) },
+      },
+      notificationsAvailable: Notification.isSupported(),
+    })
     if (!SMOKE_TEST) {
-      desktopPreferencesController = new DesktopPreferencesController({
-        store: createShellPreferences(join(app.getPath('userData'), 'shell-preferences.json')),
-        registrar: globalShortcut,
-        onSummon: showMainWindow,
-        platform: process.platform,
-        packaged: app.isPackaged,
-        loginItems: {
-          getLoginItemSettings: () => app.getLoginItemSettings(),
-          setLoginItemSettings: settings => { app.setLoginItemSettings(settings) },
-        },
-        notificationsAvailable: Notification.isSupported(),
-      })
       desktopPreferencesController.initialize()
       windowContext.startHidden = desktopPreferencesController.shouldStartHidden()
     }

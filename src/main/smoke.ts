@@ -8,6 +8,7 @@ import {
   SMOKE_EXIT_FAIL,
   SMOKE_EXIT_OK,
   SMOKE_FLAG,
+  SMOKE_SAFE_ENV,
   SMOKE_UI_FLAG,
   TEST_FAIL_HARNESS_ENV,
   TEST_RETRY_FAIL_ENV,
@@ -47,6 +48,7 @@ const SMOKE_UI_POLL_MS = 800
  * dir for diagnostics. Must be called after boot() resolved.
  */
 export async function smokeUiRender(url: string, window: BrowserWindow): Promise<void> {
+  const safeMode = process.env[SMOKE_SAFE_ENV] === '1'
   const deadline = Date.now() + SMOKE_UI_DEADLINE_MS
   let rendered = false
   let diagnostic = ''
@@ -55,6 +57,9 @@ export async function smokeUiRender(url: string, window: BrowserWindow): Promise
       "(() => ({ boot: !!document.querySelector('[data-dsh-boot]')," +
         " failed: document.body.innerText.includes('Failed to load plugins')," +
         " control: !!document.querySelector('input, textarea, [role=\"textbox\"]')," +
+        " safeBanner: !!document.querySelector('[data-dsh-safe-mode-banner]')," +
+        " controlsEls: document.querySelectorAll('[data-dsh-desktop-controls]').length," +
+        " bridge: typeof window.dshDesktop," +
         " textLen: document.body.innerText.trim().length }))()",
     ).catch((error: unknown) => {
       diagnostic = String(error)
@@ -64,11 +69,11 @@ export async function smokeUiRender(url: string, window: BrowserWindow): Promise
       if (diagnostic !== '') await new Promise(resolve => setTimeout(resolve, SMOKE_UI_POLL_MS))
       continue
     }
-    if (!state.boot && !state.failed && state.control && state.textLen > 10) {
+    if (!state.boot && !state.failed && state.control && state.textLen > 10 && (!safeMode || state.safeBanner)) {
       rendered = true
       break
     }
-    if (diagnostic === '') diagnostic = `boot=${state.boot} failed=${state.failed} control=${state.control} textLen=${state.textLen}`
+    if (diagnostic === '') diagnostic = `boot=${state.boot} failed=${state.failed} control=${state.control} safeBanner=${state.safeBanner} controlsEls=${state.controlsEls} bridge=${state.bridge} textLen=${state.textLen}`
     await new Promise(resolve => setTimeout(resolve, SMOKE_UI_POLL_MS))
   }
   if (rendered) {

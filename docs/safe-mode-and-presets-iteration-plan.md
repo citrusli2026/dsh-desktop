@@ -44,7 +44,7 @@
 |---|---|---|---|
 | 单测 | safe-mode 纯函数(覆盖层生成/幂等/状态机/标志清退)、detectPluginFailure 签名、presets 包往返+冲突分支、诊断报告字段、supervisor insertPatches | +18 | ✅ 147 项(原 135)→ 全绿 |
 | dev E2E | ①预设导入流(stub 预设,走真实主进程 dialog 打桩);**Safe Mode 恢复中心流调整**:dev stub 模式 boot 短路无法产生错误页(架构校验),全链路放入打包 smoke 门禁 | +1 | ✅ 12 用例(11 过 + 1 按设计 skip) |
-| 打包 smoke(@smoke,三平台) | 坏插件 fixture profile(仓库内 stub 包,hermetic)→ 普通启动断言首屏失败 → 安全模式重启断言恢复渲染+横幅 | +1 | 🔄 发版前实现(计划于 shell.9 发布链) |
+| 打包 smoke(@smoke,三平台) | 坏插件 fixture profile(两阶段:普通启动确证失败→安全模式重启断言恢复渲染+横幅);`DSH_DESKTOP_SAFE_BREAK=1`,release.yml 三平台步骤已加 | +1 | ✅ mac 本地全链路通过(2026-08-28) |
 | 门禁 | `pnpm run verify`:typecheck、135+单测与覆盖率门槛、site:check、build;发布时全量 verify + 8 文件契约 + GitCode + site-refresh | — | ✅ 本机 typecheck/test/build 全绿(147 单测) |
 
 ## 4. 发布顺序

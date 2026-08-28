@@ -127,6 +127,16 @@ jobs:
         env:
           DSH_SMOKE_UI: "1"
         run: xvfb-run -a node scripts/smoke-packaged.mjs
+      - name: "Smoke packaged app — Safe Mode recovers from a broken plugin (S2.5)"
+        if: matrix.os != 'ubuntu-24.04'
+        env:
+          DSH_DESKTOP_SAFE_BREAK: "1"
+        run: node scripts/smoke-packaged.mjs
+      - name: "Smoke packaged app — Safe Mode recovers from a broken plugin (S2.5, headless)"
+        if: matrix.os == 'ubuntu-24.04'
+        env:
+          DSH_DESKTOP_SAFE_BREAK: "1"
+        run: xvfb-run -a node scripts/smoke-packaged.mjs
       - name: "Smoke packaged app — fault injection: harness start failure (S1)"
         if: matrix.os != 'ubuntu-24.04'
         env:

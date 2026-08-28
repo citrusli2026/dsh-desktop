@@ -27,3 +27,6 @@ export const TEST_RETRY_FAIL_ENV = 'DSH_DESKTOP_TEST_RETRY_FAIL'
 
 /** Dev-mode override: load an external web URL instead of the bundled harness. */
 export const DEV_WEB_URL_ENV = 'DSH_DESKTOP_DEV_WEB_URL'
+
+/** Smoke variant: additionally assert the Safe Mode banner rests in the DOM. */
+export const SMOKE_SAFE_ENV = 'DSH_DESKTOP_SMOKE_SAFE'
