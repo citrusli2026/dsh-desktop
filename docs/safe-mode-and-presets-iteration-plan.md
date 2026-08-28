@@ -60,7 +60,27 @@
 预设市场/远程下载、插件安全市场、Agent Browser、Tailscale 远程。上游发新 rc 版
 则先插内核 bump 迭代。
 
-## 6. 状态跟踪
+## 6. 运行时升级专项(下一迭代候选,2026-08-28 立项)
+
+依赖升级原则:安全更新(advisory)即时跟进;其余只在有收益且可全量验证时升。
+dependabot 已限制 `version-update-semver-scope: minor`,major 由专项迭代人工处理
+(2026-08-28 已关闭 #2/#13/#14 三个不合规 major PR,理由记录于其评论)。
+
+| 项 | 目标 | 触发条件 |
+|---|---|---|
+| Electron 43.x → 44.x | 保持"中间一代"单步跟踪;43 仍处支持窗口,45/46 发布后将出窗口 | `44.x.y` 发布且 `security:audit` 通过(44.0.0 依赖树带 3 漏洞,已否决) |
+| 捆绑 Node 22 → 24 LTS | 与上游 dsh 的 Node 要求对齐;22 为 Maintenance LTS(2027-04 EOL) | @deepseek-ai/dsh 上游许可(内核 bump 迭代) |
+| @types/node 22 → 24 | 跟随捆绑 Node 版本,不超前 | 随上面两项一同升级 |
+| esbuild 0.25 → 0.28 | 构建工具,无紧迫 | 随专项顺手验证 |
+
+验证要求(专项内):`pnpm run verify:full` + 三平台打包 smoke + 安装态 + 更新链
+(Dependabot major PR 不进主干,只在本专项合入)。
+
+> 本轮(shell.9)启动的审核结论:dependabot 的本意不是"推荐升级版本",而是
+> 暴露新版本;**是否升级由策略决定**,CI 的 `security:audit` 门禁负责拦截
+> 未经验证的依赖树。
+
+## 7. 状态跟踪
 
 | 项 | 状态 |
 |---|---|
