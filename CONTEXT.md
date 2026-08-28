@@ -1,7 +1,7 @@
 # CONTEXT — dsh-desktop 领域词汇与入口
 
 单上下文速查:本文件用最短篇幅给出项目公认词汇;深层事实以箭头指向的文档为准。
-产品与仓库统一叫 `dsh-desktop`(决策 0022,推翻 0013 保留旧仓库名的决定;`appId` 沿用 `io.github.citrusli2026.dsh-electron-shell` 不变,永不重建旧仓库 `citrusli2026/dsh-electron-shell`)。
+产品与仓库统一叫 `dsh-desktop`;`appId` 为 `io.github.citrusli2026.dsh-electron-shell`(包标识,勿改)。永不重建 `citrusli2026/dsh-electron-shell` 仓库,否则旧链接重定向失效。
 
 ## 这是什么
 

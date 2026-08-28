@@ -2,8 +2,6 @@
 
 [中文](README.zh.md) · [Website / 官网](https://dsh-desktop.com)
 
-> Naming: one name everywhere — the app, its download artifacts, and the GitHub repository are all `dsh-desktop` (repository renamed back in decision 0022). 命名规则:应用、安装包与 GitHub 仓库统一叫 `dsh-desktop`(决策 0022 改回)。
-
 A dependable desktop workspace for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`): the official WebUI, packaged for your desktop — download, install, and talk. Functionally identical to `npx @deepseek-ai/dsh web`. Community-maintained, MIT-licensed, no affiliation with DeepSeek AI; DeepSeek Harness is a DeepSeek trademark and this repo only repackages it under MIT.
 
 **Website**: [dsh-desktop.com](https://dsh-desktop.com) — product intro, downloads (GitHub and the verified GitCode mirror, in whichever order is usable), and a FAQ covering unsigned-macOS first launch, SmartScreen, checksum & provenance verification. The site syncs with GitHub Releases automatically.
