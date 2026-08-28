@@ -8,13 +8,13 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.7`（2026-08-28 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +7） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.7`（2026-08-28，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 135 项单测、类型检查、官网门禁、构建通过；覆盖率 lines 91.61 / branches 82.29 / functions 86.03 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.7 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.7`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.7 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证，tag 与 `3b09006` 对齐） |
-| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 196（mac 66 / win 108 / linux 22） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.8`（2026-08-28 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +8） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.8`（2026-08-28，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 135 项单测、类型检查、官网门禁、构建通过；dev E2E 10/10 + 打包通知用例 1/1 |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.8 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.8`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.8 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证 302，tag 与 `5ff86ae` 对齐） |
+| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 213（mac 71 / win 115 / linux 27） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -808,6 +808,47 @@ shell.6「桌面偏好与状态通知」当时只有单元测试（`test/desktop
    `site:check` 通过（127 translations）。
 6. **本地门禁**：typecheck ✅；135 项单测 ✅；dev E2E 10/10 ✅（打包用例按设计
    skip）；打包通知用例 `DSH_E2E_PACKAGED=1` ✅；`site:check` ✅。未发新 tag。
+
+## 二十九、v0.1.1-rc.2.shell.8 发布：扩展入口打磨 + 手机配对入设置（2026-08-28）
+
+本轮按用户设计反馈完成应用内扩展入口与设置的统一重构，并补上手机扫码配对的
+设置入口；通知功能的验证（上一轮）随本次一起发布。
+
+1. **扩展入口可拖动**：`⋮` 浮层按钮改为指针拖拽（document 级 pointer 监听、
+   4px 阈值区分拖动/点击、拖后不误开面板、拖拽落点 localStorage 持久化）；
+   拖拽属手动/合成输入均可靠（打包 e2e 断言位移与点击语义）。
+2. **独立「扩展设置」分区**：桌面偏好从 Harness「设置 → 通用」内嵌改为
+   `settings.section` 独立分区（扩展设置 / Extensions，紧跟 Agent presets，
+   与通用/模型/插件并列，带内置图标），排版对齐 Harness 设置页
+   （标题→说明→条目行、16px 标题、边框分隔、checkbox 右置）；英文标签
+   短化为 Extensions 防左栏截断。单测契约、打包 e2e 导航同步更新。
+3. **扩展菜单规整**：动作改为 连接设备 / 切换全屏 / 打开日志 / 导出诊断 一组
+   （统一短名、nowrap+ellipsis 对齐），「关于」置底并加分隔线；入口/面板改名
+   「扩展入口 / Extensions」，站点、README、插件 README 全部同步。
+4. **手机扫码配对入设置**：设置分区顶部新增「连接移动设备」行（开始配对 /
+   显示二维码 / 停止共享 + 实时状态）；新增 `desktop:lan:state` IPC 与
+   `stopLanPairing` 动作（同样强发送方校验），preload 暴露 `getLanState`；
+   实际触发生成的配对窗口（局域网地址 + 一次性配对码）已截图验收。
+5. **发版历程**：首轮 Release（run 33129828575）在 verify/build 阶段被用户叫停
+   （要求把手机配对功能一起迭代进同一版本），tag 撤除后在新增 `5ff86ae`
+   （LAN 配对）上重打并重发；tag `v0.1.1-rc.2.shell.8` → `5ff86ae`（peeled 核对）。
+6. **门禁**：typecheck ✅、135 单测 ✅、dev E2E 10/10（+1 按设计 skip）、打包通知
+   用例（含拖动/新分区/LAN 行断言）✅、`pnpm run verify` 全绿、site-check 127 键。
+7. **GitCode 镜像（backfill 路线）**：本机 mirror-gitcode 直连失败——GitHub 资产
+   CDN 大文件稳定断流（exe 21MB/38min 后回退重下）；公开代理不可用
+   （ghproxy.net/ghfast.top 连不上、gh-proxy.com 2KB/s、ghproxy.cn 拦截页）；
+   SOCKS 7890/7897 服务未运行。改用 backfill：第一轮（33133816441）完成
+   exe/deb + 3×sha256（302），dmg 未完成即失败；第二轮（33137010159）补传
+   dmg 成功。6/6 匿名 Range GET 302。
+8. **网站数据**：site-refresh 自动 run `33131498912` 成功（bot 提交 `49dff15`，
+   gitcode_ok 初始 false）；镜像 6/6 后本地 `gen-site-data` 重新生成并提交
+   （stats 213 次：mac 71 / win 115 / linux 27），`gitcode_ok` 全部 `true`。
+
+发布元数据：
+- Release run `33130948432`（成功）；Site Data Refresh run `33131498912`（自动，成功）；
+- 线上验证：`/data/release.json` 指向 `v0.1.1-rc.2.shell.8` 且 6/6 `gitcode_ok=true`、
+  `/api/downloads` 返回 200（累计 213）；GitCode 镜像 6/6 present、GitCode tag 与
+  `5ff86ae` 精确对齐。
 
 ---
 
