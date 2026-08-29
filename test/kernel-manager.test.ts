@@ -10,12 +10,14 @@ import {
   clearKernelFailed,
   createKernelLaunchGuard,
   failedVersions,
+  fetchLatestKernelVersion,
   installKernel,
   kernelState,
   kernelsDir,
   markKernelFailed,
   overlayBinPath,
   readActiveOverlay,
+  REGISTRY_URL,
   writeActiveOverlay,
 } from '../src/main/kernel-manager.ts'
 
@@ -172,4 +174,45 @@ test('installKernel clears the failed marker of the same version on success', as
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
+})
+
+test('installKernel forwards the injected child env to pnpm', async () => {
+  const dir = kernelsDir(await mkdtemp(join(tmpdir(), 'dsh-kernel-')))
+  try {
+    await makeOverlayKernel(dir, '0.1.1-rc.3')
+    let observedEnv: NodeJS.ProcessEnv | undefined
+    const fakeSpawn = ((_file: string, _args: readonly string[], options: { env?: NodeJS.ProcessEnv }) => {
+      observedEnv = options.env
+      return {
+        on: (event: string, callback: (code?: number) => void) => { if (event === 'close') callback(0) },
+        kill: () => {},
+      }
+    }) as unknown as typeof spawn
+    const pending = installKernel({
+      dir,
+      version: '0.1.1-rc.3',
+      nodeBin: 'node',
+      pnpmBin: 'pnpm',
+      env: { HTTPS_PROXY: 'http://127.0.0.1:7890' },
+      spawnImpl: fakeSpawn,
+    })
+    assert.deepEqual(await pending, { ok: true })
+    assert.equal(observedEnv?.HTTPS_PROXY, 'http://127.0.0.1:7890')
+    assert.equal(observedEnv?.npm_config_save_exact, 'true')
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('fetchLatestKernelVersion gives up when the registry never answers', async () => {
+  // Honors the abort signal, unlike a black-holed socket the timeout is for.
+  const hangingFetch = ((_url: string, init?: { signal?: AbortSignal }) => new Promise<Response>((_resolve, reject) => {
+    init?.signal?.addEventListener('abort', () => reject(new Error('aborted')))
+  })) as unknown as typeof fetch
+  assert.equal(await fetchLatestKernelVersion(hangingFetch, REGISTRY_URL, 20), undefined)
+})
+
+test('fetchLatestKernelVersion reads dist-tags.latest', async () => {
+  const registryFetch = (async () => Response.json({ 'dist-tags': { latest: '0.2.0' } })) as unknown as typeof fetch
+  assert.equal(await fetchLatestKernelVersion(registryFetch), '0.2.0')
 })

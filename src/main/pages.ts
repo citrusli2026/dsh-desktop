@@ -139,7 +139,10 @@ export function errorPageHtml(
         if (!bridge) return;
         var button = document.querySelectorAll('button')[1];
         button.disabled = true;
-        bridge(enabled).catch(function () { button.disabled = false; });
+        // A resolved false (store write failure) must re-enable the button,
+        // not leave it stuck disabled.
+        function restore() { button.disabled = false; }
+        bridge(enabled).then(function (ok) { if (!ok) restore(); }).catch(restore);
       }
       function exportReport() {
         var bridge = window.dshDesktop && window.dshDesktop.exportDiagnostics;

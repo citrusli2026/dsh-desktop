@@ -26,6 +26,9 @@ const CAPTURE_FALLBACKS_LINUX = [
 export function captureCommand(platform, file) {
   if (platform === "darwin") return { command: "screencapture", args: ["-x", file] };
   if (platform === "win32") {
+    // PowerShell single-quoted strings escape a quote by doubling it; %TEMP%
+    // legitimately contains one (e.g. C:\Users\O'Brien\...).
+    const psFile = file.replace(/'/g, "''");
     return {
       command: "powershell",
       args: ["-NoProfile", "-Command",
@@ -33,7 +36,7 @@ export function captureCommand(platform, file) {
         "$b=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; " +
         "$bmp=New-Object System.Drawing.Bitmap $b.Width,$b.Height; " +
         "$g=[System.Drawing.Graphics]::FromImage($bmp); " +
-        `$g.CopyFromScreen($b.Location,[System.Drawing.Point]::Empty,$b.Size); $bmp.Save('${file}',[System.Drawing.Imaging.ImageFormat]::Png)`],
+        `$g.CopyFromScreen($b.Location,[System.Drawing.Point]::Empty,$b.Size); $bmp.Save('${psFile}',[System.Drawing.Imaging.ImageFormat]::Png)`],
     };
   }
   return undefined;

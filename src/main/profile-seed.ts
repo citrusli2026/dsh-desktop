@@ -100,7 +100,10 @@ export async function seedCuratedProfile(options: CuratedSeedOptions): Promise<C
         }
         rmSync(link)
       } else {
-        rmSync(link, { recursive: true, force: true })
+        // A real file or directory sits at the seed path of this brand-new
+        // profile — user-owned content, not a leftover link. Leave it alone.
+        skipped.push(name)
+        continue
       }
     } catch {
       // Missing link: create it below.

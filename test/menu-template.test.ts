@@ -79,12 +79,13 @@ test('extensions menu exposes LAN pairing controls', () => {
   assert.ok(!labels(running).includes('连接移动设备…'))
 })
 
-test('extensions menu mirrors the desktop-controls overlay (pairing, Safe Mode, About)', () => {
+test('extensions menu mirrors the desktop-controls overlay (pairing, Safe Mode, restart, About)', () => {
   const inactive = buildAppMenuTemplate({ locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop' }, actions)
   const extensions = inactive.find(item => item.label === '扩展')?.submenu
   assert.ok(Array.isArray(extensions))
   assert.ok(labels(extensions).includes('连接移动设备…'))
   assert.ok(labels(extensions).includes('以安全模式启动'))
+  assert.ok(labels(extensions).includes('重启 Harness…'))
   assert.ok(labels(extensions).includes('关于 dsh-desktop'))
   assert.ok(!labels(extensions).includes('切换全屏'))
   assert.ok(!labels(extensions).includes('打开日志目录'))
@@ -96,6 +97,16 @@ test('extensions menu mirrors the desktop-controls overlay (pairing, Safe Mode, 
   const activeExtensions = active.find(item => item.label === '扩展')?.submenu
   assert.ok(Array.isArray(activeExtensions))
   assert.ok(labels(activeExtensions).includes('退出安全模式'))
+})
+
+test('extensions menu disables restart while the harness cannot restart', () => {
+  const template = buildAppMenuTemplate({
+    locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop', restartEnabled: false,
+  }, actions)
+  const extensions = template.find(item => item.label === '扩展')?.submenu
+  assert.ok(Array.isArray(extensions))
+  const restart = extensions.find(item => item.label === '重启 Harness…')
+  assert.equal(restart?.enabled, false)
 })
 
 test('help menu leaves logs and diagnostics to the About dialog', () => {

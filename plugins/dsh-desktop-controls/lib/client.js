@@ -264,31 +264,31 @@ window.__ModuleLoader__.load({
     const COPY = {
       zh: {
         trigger: "扩展入口", title: "扩展入口",
-        copy: "窗口菜单不可达时，从这里或系统托盘继续使用扩展功能。",
-        lan: "连接设备", about: "关于",
-        shortcutLabel: "唤起快捷键",
-        hint: "也可以右键窗口任意位置，或点击系统托盘图标。",
+        about: "关于",
+        restartHarness: "重启 Harness",
         unavailable: "请右键窗口或点击系统托盘图标使用扩展入口。",
-        settingsTitle: "扩展设置", settingsCopy: "连接移动设备、快捷键、开机启动和通知只保存在本机。",
-        lanSettings: "连接移动设备", lanSettingsDetail: "手机与电脑连接同一局域网，扫描二维码即可进入 Harness Web 界面。",
+        settingsTitle: "扩展设置", settingsCopy: "连接移动设备、快捷键、开机启动和通知只保存在本机；扩展功能也可从系统托盘或右键窗口进入。",
+        lanSettings: "连接移动设备", lanSettingsDetail: "手机与电脑连接同一局域网，扫码即可进入 Harness Web 界面。",
         lanStart: "开始配对", lanShowQr: "显示二维码", lanStop: "停止共享",
         shortcut: "唤起快捷键", record: "重新设置", recording: "请按下快捷键…",
         shortcutHelp: "至少包含一个修饰键，例如 Ctrl + Alt + K。",
-        launchAtLogin: "开机启动", launchAtLoginDetail: "登录系统后自动运行 dsh-desktop。",
-        launchHidden: "启动后隐藏到托盘", launchHiddenDetail: "需要时用快捷键或托盘唤起。",
-        notifications: "桌面通知", notificationsDetail: "应用未聚焦时提示完成、失败或需要确认。",
-        screenCapture: "屏幕捕获", screenCaptureDetail: "默认关闭。开启后 Agent 可用 screen_capture 工具截取屏幕（需要视觉模型），截图总是作为附件进入会话；切换后自动重启内核。",
-        safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展，用于修复启动故障。",
+        launchAtLogin: "开机启动",
+        launchHidden: "启动后隐藏到托盘",
+        notifications: "桌面通知",
+        screenCapture: "屏幕捕获", screenCaptureDetail: "开启后 Agent 可截屏并作为会话附件（需要视觉模型）；切换后自动重启内核。",
+        screenCapturePermission: "尚未授权屏幕录制：请在 系统设置 → 隐私与安全性 → 屏幕录制 中允许 dsh-desktop，然后重试。",
+        safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展。",
         safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式",
-        market: "插件市场", marketDetail: "社区插件市场 dsh-market：在 Harness 设置里浏览并一键安装数千个社区插件与主题。",
+        market: "插件市场", marketDetail: "在 Harness 设置里浏览并一键安装社区插件与主题。",
         marketInstall: "安装插件市场", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketFailed: "安装未完成，请检查网络后重试。",
         balance: "余额", recharge: "充值",
         kernel: "内核版本", kernelBundled: "内置", kernelOverlay: "已切换",
         kernelCheck: "检查新版", kernelInstall: "安装最新", kernelRestore: "恢复内置",
+        kernelUpToDate: "已是最新版本。",
         kernelInstalling: "正在安装并切换，可能需要几分钟…", kernelFailed: "操作未完成，请重试。",
         safeModeBanner: "安全模式：第三方插件已隔离",
         safeModeSuspect: "疑似插件：{id}（{name}），可在官方「设置 → 插件」中卸载。",
-        presetsTitle: "Agent 预设", presetsDetail: "导出或导入便携预设包（.dshpreset），在设备或伙伴之间共享。",
+        presetsTitle: "Agent 预设", presetsDetail: "导出或导入 .dshpreset 便携预设包，备份或分享 Agent 预设。",
         presetsExport: "导出预设", presetsImport: "导入预设",
         presetExported: "已导出 {name}。", presetImported: "已导入 {name}。",
         presetSkipped: "已跳过 {name}。", presetInvalid: "文件无效或操作失败。",
@@ -298,31 +298,31 @@ window.__ModuleLoader__.load({
       },
       en: {
         trigger: "Extensions", title: "Extensions",
-        copy: "When the window menu is unreachable, keep using extensions from here or the system tray.",
-        lan: "Pair device", about: "About",
-        shortcutLabel: "Summon shortcut",
-        hint: "You can also right-click anywhere in the window or use the tray icon.",
+        about: "About",
+        restartHarness: "Restart Harness",
         unavailable: "Right-click the window or use the system tray for extensions.",
-        settingsTitle: "Extensions", settingsCopy: "Mobile pairing, shortcuts, startup, and notifications stay on this device.",
+        settingsTitle: "Extensions", settingsCopy: "Mobile pairing, shortcuts, startup, and notifications stay on this device; extensions are also reachable from the tray or a right-click.",
         lanSettings: "Connect a mobile device", lanSettingsDetail: "Same LAN as the computer; scan the QR code to enter the Harness Web UI.",
         lanStart: "Start pairing", lanShowQr: "Show QR code", lanStop: "Stop sharing",
         shortcut: "Summon shortcut", record: "Change shortcut", recording: "Press a shortcut…",
         shortcutHelp: "Include at least one modifier, such as Ctrl + Alt + K.",
-        launchAtLogin: "Launch at login", launchAtLoginDetail: "Start dsh-desktop when you sign in.",
-        launchHidden: "Start hidden in the tray", launchHiddenDetail: "Summon it with the shortcut or tray when needed.",
-        notifications: "Desktop notifications", notificationsDetail: "Notify when the app is unfocused about completion, failure, or input.",
-        screenCapture: "Screen capture", screenCaptureDetail: "Off by default. When enabled the agent may use the screen_capture tool (requires a vision model); screenshots always enter the conversation as attachments, and the kernel restarts on toggle.",
-        safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; run official and built-in extensions only, to repair startup.",
+        launchAtLogin: "Launch at login",
+        launchHidden: "Start hidden in the tray",
+        notifications: "Desktop notifications",
+        screenCapture: "Screen capture", screenCaptureDetail: "Lets the agent capture the screen as conversation attachments (vision model required); the kernel restarts on toggle.",
+        screenCapturePermission: "Screen recording is not authorized; allow dsh-desktop in System Settings → Privacy → Screen Recording, then retry.",
+        safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; official and built-in extensions only.",
         safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode",
-        market: "Plugin market", marketDetail: "The community market dsh-market: browse and one-click-install thousands of community plugins and themes from Harness settings.",
+        market: "Plugin market", marketDetail: "Browse and one-click-install community plugins and themes from Harness settings.",
         marketInstall: "Install the market", marketInstalledHint: "Installed · open Settings → Plugin Market", marketFailed: "Install did not finish; check your network and retry.",
         balance: "Balance", recharge: "Recharge",
         kernel: "Kernel version", kernelBundled: "bundled", kernelOverlay: "switched",
         kernelCheck: "Check for newer", kernelInstall: "Install latest", kernelRestore: "Restore bundled",
+        kernelUpToDate: "You're on the latest version.",
         kernelInstalling: "Installing and switching — this can take a few minutes…", kernelFailed: "The operation did not finish; please retry.",
         safeModeBanner: "Safe Mode: third-party plugins are quarantined",
         safeModeSuspect: "Suspected plugin: {id} ({name}). Uninstall it from Settings → Plugins.",
-        presetsTitle: "Agent presets", presetsDetail: "Export or import portable preset packages (.dshpreset) to share between devices or teammates.",
+        presetsTitle: "Agent presets", presetsDetail: "Export or import .dshpreset portable packages to back up or share agent presets.",
         presetsExport: "Export preset", presetsImport: "Import preset",
         presetExported: "Exported {name}.", presetImported: "Imported {name}.",
         presetSkipped: "Skipped {name}.", presetInvalid: "The file is invalid or the operation failed.",
@@ -432,7 +432,10 @@ window.__ModuleLoader__.load({
           setPreferences(result.preferences);
           setMessage(copy.saved);
         } else {
-          setMessage(result.reason === "conflict" ? copy.conflict : result.reason === "invalid" ? copy.invalid : copy.unsupported);
+          setMessage(result.reason === "conflict" ? copy.conflict
+            : result.reason === "invalid" ? copy.invalid
+            : result.reason === "screen-permission" ? copy.screenCapturePermission
+            : copy.unsupported);
         }
       };
 
@@ -472,8 +475,8 @@ window.__ModuleLoader__.load({
       }, [bridge]);
 
       const kernelRefresh = () => {
-        if (typeof bridge?.getKernelState !== "function") return;
-        void bridge.getKernelState().then((value) => { if (value !== null) setKernel(value); });
+        if (typeof bridge?.getKernelState !== "function") return Promise.resolve(null);
+        return bridge.getKernelState().then((value) => { if (value !== null) setKernel(value); return value; });
       };
 
       const kernelAction = async (kind) => {
@@ -481,14 +484,20 @@ window.__ModuleLoader__.load({
         setKernelBusy(kind);
         try {
           if (kind === "check") {
-            if (await bridge.desktopAction("kernelCheckUpdates") !== true) setMessage(copy.kernelFailed);
+            const ok = await bridge.desktopAction("kernelCheckUpdates") === true;
+            const state = await kernelRefresh();
+            // A successful check must always say something: the registry
+            // matching the running kernel is a result, not a silence.
+            if (!ok || state?.latestVersion === undefined) setMessage(copy.kernelFailed);
+            else if (state.latestVersion === (state.overlayVersion ?? state.bundledVersion)) setMessage(copy.kernelUpToDate);
           } else if (kind === "install") {
             setMessage(copy.kernelInstalling);
             if (await bridge.desktopAction("kernelInstall") !== true) setMessage(copy.kernelFailed);
+            kernelRefresh();
           } else if (kind === "restore") {
-            await bridge.desktopAction("kernelRestore");
+            if (await bridge.desktopAction("kernelRestore") !== true) setMessage(copy.kernelFailed);
+            kernelRefresh();
           }
-          kernelRefresh();
         } finally {
           setKernelBusy("");
         }
@@ -597,22 +606,20 @@ window.__ModuleLoader__.load({
             ] }),
           ] }) : null,
           react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
-            react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.shortcut }),
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.shortcut, recording ? react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.shortcutHelp }) : null] }),
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-shortcut": true, children: recording ? copy.recording : preferences.shortcutLabel }),
             react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-record": true, disabled: recording, onClick: () => { setMessage(""); setRecording(true); }, children: recording ? "…" : copy.record }),
           ] }),
-          react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-detail": true, children: copy.shortcutHelp }),
           react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
-            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.launchAtLogin, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.launchAtLoginDetail })] }),
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.launchAtLogin, !canLaunch ? react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.unsupported }) : null] }),
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.launchAtLogin === true, disabled: !canLaunch, onChange: (event) => void update({ launchAtLogin: event.target.checked }) }),
           ] }),
-          !canLaunch ? react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-detail": true, children: copy.unsupported }) : null,
           react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
-            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.launchHidden, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.launchHiddenDetail })] }),
+            react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.launchHidden }),
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.launchHidden === true, disabled: !canLaunch || preferences.launchAtLogin !== true, onChange: (event) => void update({ launchHidden: event.target.checked }) }),
           ] }),
           react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
-            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.notifications, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.notificationsDetail })] }),
+            react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.notifications }),
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.notificationsEnabled === true, disabled: preferences.notificationsAvailable !== true, onChange: (event) => void update({ notificationsEnabled: event.target.checked }) }),
           ] }),
           react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
@@ -698,6 +705,7 @@ window.__ModuleLoader__.load({
       const [open, setOpen] = react.useState(false);
       const [busy, setBusy] = react.useState("");
       const [preferences, setPreferences] = react.useState(null);
+      const [lanState, setLanState] = react.useState(null);
       const [entryPosition, setEntryPosition] = react.useState(loadEntryPosition);
       const [dragging, setDragging] = react.useState(false);
       const dragRef = react.useRef(null);
@@ -717,6 +725,14 @@ window.__ModuleLoader__.load({
       }, [open, bridge]);
 
       react.useEffect(() => {
+        // Mirror the native extension surfaces: the pairing entry reflects the
+        // live LAN state (start / show QR + stop) each time the panel opens.
+        if (!open || typeof bridge?.getLanState !== "function") return undefined;
+        void bridge.getLanState().then((value) => { if (value !== null) setLanState(value); });
+        return undefined;
+      }, [open, bridge]);
+
+      react.useEffect(() => {
         if (!open) return undefined;
         const onKeyDown = (event) => {
           if (event.key === "Escape") setOpen(false);
@@ -729,8 +745,9 @@ window.__ModuleLoader__.load({
         if (typeof bridge?.desktopAction !== "function") return;
         setBusy(action);
         try {
-          await bridge.desktopAction(action);
-          setOpen(false);
+          // A false result (e.g. a failed preferences write for Safe Mode)
+          // keeps the panel open; closing it would pretend success.
+          if (await bridge.desktopAction(action) === true) setOpen(false);
         } finally {
           setBusy("");
         }
@@ -818,15 +835,16 @@ window.__ModuleLoader__.load({
           }),
           open ? react_jsx_runtime.jsxs("section", { id: "dsh-desktop-controls-panel", "data-dsh-controls-panel": true, role: "dialog", "aria-label": copy.title, children: [
             react_jsx_runtime.jsx("h2", { "data-dsh-controls-heading": true, children: copy.title }),
-            react_jsx_runtime.jsx("p", { "data-dsh-controls-copy": true, children: copy.copy }),
             typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
-              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("startLanPairing"), children: copy.lan }),
+              lanState?.running === true ? react_jsx_runtime.jsxs(react.Fragment, { children: [
+                react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("showLanPairing"), children: copy.lanShowQr }),
+                react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("stopLanPairing"), children: copy.lanStop }),
+              ] }) : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("startLanPairing"), children: copy.lanStart }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke(preferences?.safeMode === true ? "exitSafeMode" : "enterSafeMode"), children: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("restartHarness"), children: copy.restartHarness }),
               react_jsx_runtime.jsx("hr", { "data-dsh-controls-separator": true, "aria-hidden": "true" }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("showAbout"), children: copy.about }),
             ] }) : react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: copy.unavailable }),
-            react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: copy.hint }),
-            preferences?.shortcutLabel ? react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: [copy.shortcutLabel, ": ", react_jsx_runtime.jsx("code", { "data-dsh-controls-shortcut": true, children: preferences.shortcutLabel })] }) : null,
           ] }) : null,
         ],
       }),

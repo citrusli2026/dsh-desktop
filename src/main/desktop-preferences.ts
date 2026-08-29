@@ -32,7 +32,9 @@ export type DesktopPreferencesUpdate = Partial<DesktopPreferences>
 
 export type DesktopPreferencesResult =
   | { ok: true; preferences: DesktopPreferencesSnapshot }
-  | { ok: false; reason: 'conflict' | 'invalid' | 'unavailable' | 'requires-login'; preferences: DesktopPreferencesSnapshot }
+  // 'screen-permission' is produced by the shell's macOS TCC gate on the
+  // screen-capture toggle, not by the controller itself.
+  | { ok: false; reason: 'conflict' | 'invalid' | 'unavailable' | 'requires-login' | 'screen-permission'; preferences: DesktopPreferencesSnapshot }
 
 export interface DesktopPreferencesControllerOptions {
   store: ShellPreferencesStore

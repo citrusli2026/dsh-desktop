@@ -12,6 +12,9 @@ import { parse } from 'yaml'
 
 export const DEEPSEEK_BALANCE_URL = 'https://api.deepseek.com/user/balance'
 export const BALANCE_CACHE_TTL_MS = 5 * 60_000
+/** Bound the balance lookup: a hung network must not leave the settings row
+ *  and tray line silently missing forever. */
+export const BALANCE_FETCH_TIMEOUT_MS = 10_000
 
 export interface DeepSeekBalance {
   currency: string
@@ -52,11 +55,16 @@ export function parseBalancePayload(payload: unknown): DeepSeekBalance | undefin
   return { currency, totalBalance, isAvailable: isAvailable === true }
 }
 
-type FetchLike = (url: string, init?: { headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>
+export type FetchLike = (url: string, init?: { headers?: Record<string, string>; signal?: AbortSignal }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>
 
-export async function fetchBalance(apiKey: string, fetchImpl: FetchLike = fetch as unknown as FetchLike, url: string = DEEPSEEK_BALANCE_URL): Promise<DeepSeekBalance | undefined> {
+export async function fetchBalance(
+  apiKey: string,
+  fetchImpl: FetchLike = fetch as unknown as FetchLike,
+  url: string = DEEPSEEK_BALANCE_URL,
+  timeoutMs: number = BALANCE_FETCH_TIMEOUT_MS,
+): Promise<DeepSeekBalance | undefined> {
   try {
-    const response = await fetchImpl(url, { headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' } })
+    const response = await fetchImpl(url, { headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' }, signal: AbortSignal.timeout(timeoutMs) })
     if (!response.ok) return undefined
     return parseBalancePayload(await response.json())
   } catch {

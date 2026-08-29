@@ -67,6 +67,27 @@ test('an existing profile is never rewritten and bundles are never reinstalled',
   }
 })
 
+test('a real directory at a seed path is left alone and not referenced', async () => {
+  const vendor = await makeVendorRoot(['dshmarket', 'dsh-better-sidebar', '@linxin666/dsh-client-ui-task-board'])
+  const home = await makeHome()
+  try {
+    const userDir = join(home, 'profiles', 'node_modules', 'dsh-better-sidebar')
+    await mkdir(userDir, { recursive: true })
+    await writeFile(join(userDir, 'package.json'), JSON.stringify({ name: 'user-content' }))
+
+    const outcome = await seedCuratedProfile({ dshHome: home, bundledNodeModules: vendor })
+    assert.deepEqual(outcome.skipped, ['dsh-better-sidebar'])
+    assert.ok(outcome.seeded.includes('dshmarket'))
+    // The user-owned directory survives untouched and stays out of the manifest.
+    assert.equal(await readFile(join(userDir, 'package.json'), 'utf8'), JSON.stringify({ name: 'user-content' }))
+    const manifest = JSON.parse(await readFile(profileManifestPath(home), 'utf8'))
+    assert.ok(!manifest.dsh.profile.bundles.includes('dsh-better-sidebar'))
+  } finally {
+    await rm(home, { recursive: true, force: true })
+    await rm(vendor, { recursive: true, force: true })
+  }
+})
+
 test('seeds missing from the closure are skipped without failing the rest', async () => {
   const vendor = await makeVendorRoot(['dshmarket'])
   const home = await makeHome()

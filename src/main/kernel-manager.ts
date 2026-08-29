@@ -14,6 +14,9 @@ import { dshBin } from './paths.ts'
 
 export const KERNEL_PACKAGE = '@deepseek-ai/dsh'
 export const REGISTRY_URL = 'https://registry.npmjs.org/@deepseek-ai/dsh'
+/** Bound the registry lookup: a black-holed network must surface as a failed
+ *  check (the UI shows a retry hint), not an eternally spinning button. */
+export const REGISTRY_FETCH_TIMEOUT_MS = 15_000
 /** Give a switched kernel one supervised boot to reach ready; otherwise roll back. */
 export const KERNEL_HEALTH_TIMEOUT_MS = 90_000
 
@@ -177,9 +180,16 @@ export function kernelState(harnessRoot: string, dir: string): KernelState {
 }
 
 /** Latest published version from the npm registry (dist-tags.latest). */
-export async function fetchLatestKernelVersion(fetchImpl: typeof fetch, url: string = REGISTRY_URL): Promise<string | undefined> {
+export async function fetchLatestKernelVersion(
+  fetchImpl: typeof fetch,
+  url: string = REGISTRY_URL,
+  timeoutMs: number = REGISTRY_FETCH_TIMEOUT_MS,
+): Promise<string | undefined> {
   try {
-    const response = await fetchImpl(url, { headers: { Accept: 'application/vnd.npm.install-v1+json' } })
+    const response = await fetchImpl(url, {
+      headers: { Accept: 'application/vnd.npm.install-v1+json' },
+      signal: AbortSignal.timeout(timeoutMs),
+    })
     if (!response.ok) return undefined
     const payload = (await response.json()) as { 'dist-tags'?: { latest?: unknown } }
     const latest = payload['dist-tags']?.latest
@@ -195,6 +205,9 @@ export interface InstallKernelOptions {
   nodeBin: string
   pnpmBin: string
   timeoutMs?: number
+  /** Base environment for the pnpm child; defaults to process.env. The shell
+   *  injects the bundled-shim PATH and system-proxy vars (install-env). */
+  env?: NodeJS.ProcessEnv
   spawnImpl?: typeof spawn
 }
 
@@ -220,7 +233,7 @@ export async function installKernel(options: InstallKernelOptions): Promise<Inst
     const child = spawnImpl(nodeBin, [pnpmBin, 'add', `${KERNEL_PACKAGE}@${version}`, '--config.node-linker=hoisted', '--config.dangerouslyAllowAllBuilds=true'], {
       cwd: target,
       stdio: 'ignore',
-      env: { ...process.env, npm_config_save_exact: 'true' },
+      env: { ...(options.env ?? process.env), npm_config_save_exact: 'true' },
     })
     const timer = setTimeout(() => { child.kill(); resolve({ ok: false, reason: 'timeout' }) }, timeoutMs)
     child.on('close', (code) => {

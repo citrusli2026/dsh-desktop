@@ -1,5 +1,5 @@
 /** Electron lifecycle assembly for the bundled DeepSeek Harness runtime. */
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, Notification, session, shell, type MessageBoxOptions } from 'electron'
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, net, Notification, session, shell, systemPreferences, type MessageBoxOptions } from 'electron'
 import { existsSync, mkdirSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
@@ -9,7 +9,7 @@ import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
 import { readProfileBundles, seedCuratedProfile } from './profile-seed.ts'
-import { BalanceService, formatBalance, readDeepSeekApiKey } from './balance.ts'
+import { BalanceService, formatBalance, readDeepSeekApiKey, type FetchLike } from './balance.ts'
 import {
   activeKernelBin,
   createKernelLaunchGuard,
@@ -22,6 +22,7 @@ import {
   type KernelLaunchGuard,
   writeActiveOverlay,
 } from './kernel-manager.ts'
+import { ensureInstallShims, prependPath, proxyEnvFromResolveProxy } from './install-env.ts'
 import { installAppMenu, showAboutDialog, type AboutMaintenanceActions } from './menu.ts'
 import { denyUnexpectedPermissions } from './permissions.ts'
 import {
@@ -48,7 +49,7 @@ import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-pref
 import { LanService, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
 import { isMainWindowHarnessSender, isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
-import { DesktopPreferencesController, type DesktopPreferencesUpdate } from './desktop-preferences.ts'
+import { DesktopPreferencesController, type DesktopPreferencesResult, type DesktopPreferencesUpdate } from './desktop-preferences.ts'
 import { createShellPreferences } from './shell-preferences.ts'
 import { focusWindowOnNotificationClick, normalizePublicStatusSnapshot, notificationsForPublicStatus, type PublicStatusSnapshot } from './desktop-notifications.ts'
 
@@ -72,7 +73,12 @@ const lanService = new LanService({
   nodeExecutable: () => nodeBin(),
   getTargetUrl: () => shellApp.state?.phase === 'ready' ? shellApp.state.url : undefined,
   onLog: line => console.log(`dsh-desktop: ${line}`),
-  onStateChanged: () => refreshNativeSurfaces(),
+  onStateChanged: () => {
+    // A dead proxy or an expired pairing leaves the QR window pointing at a
+    // dead port — close it instead of letting a stale code linger.
+    if (lanService.currentPairing === undefined) closeLanPairingWindow()
+    refreshNativeSurfaces()
+  },
 })
 
 const windowContext: WindowContext = {
@@ -89,6 +95,14 @@ const windowContext: WindowContext = {
       showLanQr: () => { void showLanQr() },
       stopLanLink,
     },
+  },
+  safeMode: {
+    isActive: () => safeModeActive(),
+    toggle: toggleSafeMode,
+  },
+  harness: {
+    restartEnabled: () => shellApp.restartEnabled(),
+    restart: () => { void shellApp.requestRestart() },
   },
 }
 
@@ -107,12 +121,16 @@ async function applySafeMode(enabled: boolean): Promise<boolean> {
 }
 
 const DSHMARKET_PACKAGE = 'dshmarket'
-const DSHMARKET_INSTALL_TIMEOUT_MS = 120_000
+const DSHMARKET_INSTALL_TIMEOUT_MS = 300_000
 
 /** Cached tray text for the DeepSeek balance; refreshed opportunistically. */
 let lastBalanceText: string | undefined
 let latestKernelVersion: string | undefined
-const balanceService = new BalanceService(async () => readDeepSeekApiKey(resolveDshHome(process.env, homedir())))
+// Chromium's fetch follows the system proxy; Node's does not. Every
+// main-process network call goes through it so real machines behind a
+// system-level proxy keep working (GUI launches carry no proxy env vars).
+const mainFetch = net.fetch.bind(net) as unknown as typeof fetch
+const balanceService = new BalanceService(async () => readDeepSeekApiKey(resolveDshHome(process.env, homedir())), mainFetch as unknown as FetchLike)
 
 function kernelDir(): string {
   return kernelsDir(app.getPath('userData'))
@@ -176,6 +194,35 @@ async function switchKernel(version: string): Promise<boolean> {
 }
 
 /**
+ * Environment for install children (market bundle, kernel overlay): the
+ * bundled pnpm/node launchers go to the front of PATH — the dsh CLI forwards
+ * `plugin add` to a bare `pnpm`, which a GUI-launched packaged app cannot
+ * find — and the system proxy is translated into the env vars pnpm reads.
+ *
+ * The same env is also the harness supervisor's spawn env: the market plugin
+ * installs through the running kernel's CLI, so its pnpm must be the same
+ * one that created the profile's store — a user's corepack pnpm of a
+ * different major rejects the node_modules with ERR_PNPM_UNEXPECTED_STORE.
+ */
+let harnessChildEnv: NodeJS.ProcessEnv = { ...process.env }
+async function installChildEnv(): Promise<NodeJS.ProcessEnv> {
+  let env: NodeJS.ProcessEnv = { ...process.env, DSH_HOME: desktopDshHome() }
+  try {
+    env = prependPath(env, ensureInstallShims(app.getPath('userData'), { nodeBin: nodeBin(), pnpmBin: pnpmBinPath() }))
+  } catch (error) {
+    console.warn(`dsh-desktop: install shims unavailable: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  try {
+    const resolveProxy = await session.defaultSession.resolveProxy('https://registry.npmjs.org')
+    env = { ...env, ...proxyEnvFromResolveProxy(resolveProxy, process.env) }
+  } catch {
+    // Proxy resolution is best-effort; direct connectivity still works.
+  }
+  harnessChildEnv = env
+  return env
+}
+
+/**
  * Install the community plugin market (dsh-market) into the user's profile
  * with the bundled dsh CLI — the same `dsh plugin add` a CLI user would run,
  * pointed at the desktop DSH_HOME. Network is required; a restart picks the
@@ -188,17 +235,29 @@ async function installDshMarket(): Promise<boolean> {
   const child = spawn(
     nodeBin(root),
     [dshBin(root), 'plugin', '--profile', WEB_PROFILE, 'add', DSHMARKET_PACKAGE],
-    { env: { ...process.env, DSH_HOME: resolveDshHome(process.env, homedir()) }, stdio: 'ignore' },
+    { env: await installChildEnv(), stdio: ['ignore', 'ignore', 'pipe'] },
   )
+  // Keep the CLI's stderr tail: its failures are environment problems
+  // (missing pnpm, registry refused) that the UI can only hint at.
+  let stderrTail = ''
+  child.stderr?.on('data', (chunk: Buffer) => { stderrTail = `${stderrTail}${chunk.toString()}`.slice(-2_000) })
   const code = await new Promise<number>((resolve) => {
     const timer = setTimeout(() => { child.kill(); resolve(1) }, DSHMARKET_INSTALL_TIMEOUT_MS)
     timer.unref()
     child.on('close', (value) => { clearTimeout(timer); resolve(value ?? 1) })
     child.on('error', () => { clearTimeout(timer); resolve(1) })
   })
-  if (code !== 0) return false
+  if (code !== 0) {
+    console.warn(`dsh-desktop: dshmarket install failed (exit ${code})${stderrTail.trim() === '' ? '' : `: ${stderrTail.trim()}`}`)
+    return false
+  }
   refreshNativeSurfaces()
-  return shellApp.runHarnessRestart()
+  // The install landed even if the restart fails (crash page offers retry);
+  // reporting it as a failed install would send users hunting for a network
+  // problem they do not have.
+  const restarted = await shellApp.runHarnessRestart()
+  if (!restarted) console.warn('dsh-desktop: dshmarket installed; the restart failed — it loads on the next boot')
+  return true
 }
 
 /** Rebuild the Safe Mode overlay from the live profile and return its path. */
@@ -214,7 +273,7 @@ const shellApp = new ShellApp({
     {
       safeMode: { enabled: safeModeActive, overlayFactory: safeModeOverlayPath },
       env: {
-        ...process.env,
+        ...harnessChildEnv,
         DSH_HOME: resolveDshHome(process.env, homedir()),
         // Screen capture model tool (decision 0027): opt-in; re-evaluated per
         // supervisor creation, i.e. per restart.
@@ -488,6 +547,7 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
   if (typeof action !== 'string') return false
   if (action === 'startLanPairing') return startLanLink()
+  if (action === 'showLanPairing') return showLanQr()
   if (action === 'stopLanPairing') {
     stopLanLink()
     return true
@@ -502,18 +562,24 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     return true
   }
   if (action === 'kernelCheckUpdates') {
-    latestKernelVersion = await fetchLatestKernelVersion(fetch)
+    latestKernelVersion = await fetchLatestKernelVersion(mainFetch)
     return latestKernelVersion !== undefined
   }
   if (action === 'kernelInstall') {
     if (SMOKE_TEST || latestKernelVersion === undefined) return false
-    const installed = await installKernel({ dir: kernelDir(), version: latestKernelVersion, nodeBin: nodeBin(), pnpmBin: pnpmBinPath() })
+    const installed = await installKernel({ dir: kernelDir(), version: latestKernelVersion, nodeBin: nodeBin(), pnpmBin: pnpmBinPath(), env: await installChildEnv() })
     if (!installed.ok) return false
     return switchKernel(latestKernelVersion)
   }
   if (action === 'kernelRestore') {
     writeActiveOverlay(kernelDir(), undefined)
     return shellApp.runHarnessRestart()
+  }
+  if (action === 'restartHarness') {
+    // Fire-and-forget: requestRestart confirms with the user before stopping
+    // a ready harness, so the panel can close right away.
+    void shellApp.requestRestart()
+    return true
   }
   if (action === 'enterSafeMode') return applySafeMode(true)
   if (action === 'exitSafeMode') return applySafeMode(false)
@@ -550,6 +616,14 @@ ipcMain.handle('desktop:preferences:update', (event, patch: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
   if (typeof patch !== 'object' || patch === null || Array.isArray(patch)) return null
   const candidate = patch as Record<string, unknown>
+  // macOS TCC gate (decision 0027): screencapture without the Screen
+  // Recording permission exits 0 but captures only the wallpaper — refuse
+  // the toggle instead of letting the tool attach useless images.
+  if (candidate.screenCapture === true && process.platform === 'darwin'
+    && systemPreferences.getMediaAccessStatus('screen') !== 'granted') {
+    const snapshot = desktopPreferencesController?.snapshot
+    if (snapshot !== undefined) return { ok: false, reason: 'screen-permission', preferences: snapshot } satisfies DesktopPreferencesResult
+  }
   const update: DesktopPreferencesUpdate = {}
   if (typeof candidate.shortcut === 'string') update.shortcut = candidate.shortcut
   if (typeof candidate.launchAtLogin === 'boolean') update.launchAtLogin = candidate.launchAtLogin
@@ -734,6 +808,10 @@ if (!gotLock) {
 } else {
   app.on('second-instance', () => showWindow(windowContext))
   void app.whenReady().then(async () => {
+    // Windows toasts only display when the AUMID matches the Start Menu
+    // shortcut (electron-builder uses the appId); without it desktop
+    // notifications silently never show.
+    if (process.platform === 'win32') app.setAppUserModelId('io.github.citrusli2026.dsh-electron-shell')
     denyUnexpectedPermissions(session.defaultSession)
     const settingsPath = join(resolveDshHome(process.env, homedir()), 'settings.yaml')
     localeController = await ShellLocaleController.create(settingsPath, app.getPreferredSystemLanguages())
@@ -780,6 +858,10 @@ if (!gotLock) {
     } catch (error) {
       console.warn(`dsh-desktop: curated seed skipped: ${error instanceof Error ? error.message : String(error)}`)
     }
+
+    // The harness (and the market installs it spawns) needs the bundled-pnpm
+    // PATH and the translated system proxy before its first boot.
+    harnessChildEnv = await installChildEnv()
 
     createMainWindow(windowContext)
     installAppMenu(currentLocale, menuActions, false, false, false, false, desktopPreferencesController?.snapshot.shortcut)

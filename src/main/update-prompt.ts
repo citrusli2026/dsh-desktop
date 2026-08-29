@@ -23,7 +23,9 @@ function githubAuthHeaders(): Record<string, string> {
 
 export async function checkMacUpdate(manual: boolean, locale: ShellLocale): Promise<void> {
   try {
-    const response = await net.fetch(RELEASES_API_URL, { headers: githubAuthHeaders() })
+    // Bound the request: a black-holed connection must surface as the
+    // failure dialog (manual checks), not a silently pending menu action.
+    const response = await net.fetch(RELEASES_API_URL, { headers: githubAuthHeaders(), signal: AbortSignal.timeout(15_000) })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const payload: unknown = await response.json()
     const latest = latestPublishedRelease(payload)

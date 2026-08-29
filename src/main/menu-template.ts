@@ -180,6 +180,10 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
     submenu: [
       ...buildLanMenuItems(locale, { lanRunning, lanBusy }, actions),
       ...buildSafeModeMenuItems(locale, safeMode, actions),
+      // Restart (decision 0028): the extension surfaces' plugin-refresh
+      // action; sits with the trio so a misbehaving plugin is fixable from
+      // every surface.
+      { label: t('menu.restartHarness'), enabled: restartEnabled, click: actions.restartHarness },
       { type: 'separator' },
       { label: t('app.about'), click: actions.showAbout },
     ],

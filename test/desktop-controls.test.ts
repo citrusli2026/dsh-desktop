@@ -32,6 +32,8 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /getBalance/)
   assert.match(client, /getKernelState/)
   assert.match(client, /kernelInstall/)
+  // A successful check with no newer kernel must still answer the user.
+  assert.match(client, /kernelUpToDate/)
   assert.match(client, /dshDesktop/)
 
   // Host half: opt-in screen capture model tool (decision 0027, route C).
@@ -51,9 +53,14 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /stopLanPairing/)
   assert.match(client, /lanStart/)
   assert.match(client, /lanStop/)
+  // The overlay panel mirrors the native surfaces' state-aware pairing entry.
+  assert.match(client, /showLanPairing/)
+  assert.match(client, /lanShowQr/)
   assert.match(client, /safeModeBanner/)
   assert.match(client, /enterSafeMode/)
   assert.match(client, /exitSafeMode/)
+  // Restart joined the extension surfaces (decision 0028).
+  assert.match(client, /restartHarness/)
   assert.match(client, /data-dsh-safe-mode-banner/)
   assert.match(client, /getRecoverySuspects/)
   assert.match(client, /safeModeSuspect/)
