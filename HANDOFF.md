@@ -8,13 +8,13 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.10`（2026-08-29 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +10） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.10`（2026-08-29，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 172 项单测、类型检查、官网门禁、构建全绿；dev E2E 12 用例；发布前双轴审查（代码标准 + ADR 规格）补内核启动回滚缺口 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.10 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.10`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.10 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证 302；main `dd9e450` 与 tag `65fa82e` 对齐） |
-| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 326（mac 94 / win 163 / linux 69） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.12`（2026-08-30 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +12） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.12`（2026-08-30，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 181 项单测、类型检查、官网门禁、构建全绿；修复 registry timeout 测试在 CI 被取消的问题；Release verify 的 Electron E2E 10 passed / 2 skipped |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.12 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.12`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`；bot 提交 `cd9cc64`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.12 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证 206；main `cd9cc64` 与 tag `6c61455` 对齐） |
+| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；核验时累计安装包下载 369（mac 103 / win 191 / linux 75） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -977,7 +977,25 @@ major PR、dependabot 限 minor、6 个过期 issue 清理)。
   linux 69);GitCode 镜像 6/6 present,main `dd9e450` / tag `65fa82e` 与
   GitHub 精确对齐。
 
+## 三十二、v0.1.1-rc.2.shell.12 发布：插件市场、统一扩展入口与更新链修复（2026-08-30）
+
+本轮承接 shell.10 之后的功能合并，内核 `0.1.1-rc.2` 未变，壳修订从 +10 到 +12：
+插件市场官网说明、扩展入口统一、真机安装链/跨平台修复，以及注册表超时测试稳定性修复。
+
+1. **最新功能说明**（详见 `docs/release-notes/v0.1.1-rc.2.shell.12.md`）：
+   - 首次启动准备 dsh-market、Better Sidebar、Task Board；在 Harness 设置 → 插件市场浏览和一键安装/更新，老用户可从扩展设置补装。
+   - 右键菜单、托盘、扩展菜单、浮层统一提供安全模式与重启 Harness；连接设备入口跟随配对状态。
+   - 插件/内核安装使用随包 pnpm 并透传系统代理；注册表、余额、更新检查有明确超时/失败反馈；macOS 录屏权限、Windows 通知 AUMID、失效配对窗口与安全模式重试等跨平台修复。
+2. **失败原因与修复**：`.shell.11` 的 release run `33262965438` 停在 verify；`kernel-manager` 两个超时测试因 `AbortSignal.timeout` 的 unref timer 被 Node 取消。改用显式 `AbortController` + 可清理计时器，重新发布为 `.shell.12`。
+3. **发布**：tag `v0.1.1-rc.2.shell.12` → `6c61455573e636c4b7f961aaf9ecf0a05227d025`；Release run `33263539678` 全绿：verify、三端 build、8 文件资产契约、attestation、packaged smoke、publish 均成功；GitHub Release 于 `2026-08-29T16:51:28Z` 发布。
+4. **GitCode 镜像**：`mirror-gitcode.mjs` 本机 HTTP 代理重试后上传 dmg/exe/deb + 3×sha256；6/6 Range GET 返回 `206`；GitCode main `cd9cc64`，tag 仍对齐 `6c61455`。
+5. **网站数据**：Site Data Refresh run `33264103836` 成功（第 4 次探测确认镜像），bot 提交 `cd9cc64`；`site/data/release.json` 和正式域名 `/data/release.json` 指向 `.shell.12`，6/6 `gitcode_ok=true`。官网首页已包含 dsh-market / 插件市场双语说明；`/api/downloads` 返回 200，核验时在线累计 369（mac 103 / win 191 / linux 75）。
+
+发布元数据：
+- Release run `33263539678`（成功）；Site Data Refresh run `33264103836`（成功，提交 `cd9cc64`）。
+- tag peeled commit `6c61455`；GitCode 6 个用户资产 Range GET `6×206`。
+- 线上验证：`https://dsh-desktop.com/data/release.json` 指向 `v0.1.1-rc.2.shell.12`；`/api/downloads` 返回 200；首页双语插件市场说明已上线。
+
 ---
 
-_更新于 2026-08-29_
-
+_更新于 2026-08-30_
