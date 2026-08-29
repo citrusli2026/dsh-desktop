@@ -4,8 +4,9 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-08-28 · 当前代码基线 `0.1.1-rc.2.shell.8` + shell.9 开发中
-（安全模式 / 恢复中心 / 便携预设包，规划见 `docs/safe-mode-and-presets-iteration-plan.md`;
+最后更新: 2026-08-29 · 当前代码基线 `0.1.1-rc.2.shell.10`
+（shell.9 之后: 扩展入口仅承载扩展动作 ADR 0023、首启 curated 种子 bundle ADR 0024、
+余额读数 ADR 0025、内核 overlay 第二更新链 ADR 0026、opt-in 截屏工具 ADR 0027;
 内核 `0.1.1-rc.2` 未变）
 
 ## 1. 产品概述
@@ -24,13 +25,16 @@ src/main/tray.ts            托盘状态与生命周期入口
 src/main/update-prompt.ts   跨平台更新与 macOS check-only 提示
 src/main/smoke.ts           CI 冒烟断言与退出约定
 src/main/supervisor.ts      Harness 子进程生命周期与退避重启
+src/main/kernel-manager.ts  内核 overlay(0026):选择/安装/健康守卫与失败回滚
 src/main/desktop-controls.ts  shell-owned Web 插件挂载与降级
 src/main/global-shortcut.ts  桌面全局快捷键注册、校验与平台文案
 src/main/desktop-preferences.ts  快捷键、开机启动、启动后隐藏、通知偏好与原生副作用
 src/main/desktop-notifications.ts  公开会话/任务状态归一化与通知边沿纯函数
+src/main/balance.ts         DeepSeek 余额读数(0025):凭证读取、缓存与托盘行
 src/main/lan.ts             局域网 Web 代理与配对二维码
 src/main/diagnostics.ts     日志轮转、遮罩、报告格式与导出版
 src/main/presets.ts         便携预设包(.dshpreset)导出/导入、冲突与信任检查
+src/main/profile-seed.ts    首启 curated 种子 bundle(0024):清单门控与符号链接
 src/main/safe-mode.ts       安全模式:用户 bundle 盘点、禁用覆盖层、失败签名检测
 src/main/restart-policy.ts  就绪协议、退避与重启预算纯函数
 src/main/window-state.ts    窗口几何校验纯函数
@@ -48,7 +52,7 @@ plugins/dsh-desktop-controls/  应用内扩展入口帮助浮层与扩展设置�
 
 0. 依赖安全审计（官方 npm registry）;
 1. TypeScript typecheck;
-2. 147 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
+2. 172 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
 3. `site:check` 与 `check-api-downloads`（双语键、静态资源与下载接口契约）;
 4. 主进程/预加载构建; Harness 闭包与内置 Node bootstrap;
 5. 三条 xvfb 冒烟: 正常启动、错误页重试成功、强制重试失败后按钮恢复;
