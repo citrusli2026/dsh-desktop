@@ -63,6 +63,7 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       launchHidden: false,
       notificationsEnabled: true,
       safeMode: false,
+      screenCapture: false,
     })
     store.updateDesktopPreferences({ shortcut: 'Ctrl+Alt+K', launchAtLogin: true, launchHidden: true, notificationsEnabled: false })
     assert.deepEqual(store.getDesktopPreferences(), {
@@ -71,6 +72,7 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       launchHidden: true,
       notificationsEnabled: false,
       safeMode: false,
+      screenCapture: false,
     })
     const raw = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>
     assert.equal(raw.closeToTrayExplained, undefined)

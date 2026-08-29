@@ -33,6 +33,14 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /getKernelState/)
   assert.match(client, /kernelInstall/)
   assert.match(client, /dshDesktop/)
+
+  // Host half: opt-in screen capture model tool (decision 0027, route C).
+  const host = await readFile(join(pluginRoot, 'lib/index.js'), 'utf8')
+  assert.match(host, /DSH_DESKTOP_SCREEN_CAPTURE/)
+  assert.match(host, /screen_capture/)
+  assert.match(host, /saveImage/)
+  assert.match(host, /inputModalities/)
+  assert.doesNotMatch(host, /vision route|visionRoute/)
   assert.match(client, /settings\.section/)
   assert.doesNotMatch(client, /settings\.general\.item/)
   assert.match(client, /reportSessionStatus/)

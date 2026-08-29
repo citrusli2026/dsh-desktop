@@ -208,6 +208,13 @@ const shellApp = new ShellApp({
     { onState },
     {
       safeMode: { enabled: safeModeActive, overlayFactory: safeModeOverlayPath },
+      env: {
+        ...process.env,
+        DSH_HOME: resolveDshHome(process.env, homedir()),
+        // Screen capture model tool (decision 0027): opt-in; re-evaluated per
+        // supervisor creation, i.e. per restart.
+        DSH_DESKTOP_SCREEN_CAPTURE: desktopPreferencesController?.snapshot.screenCapture === true ? '1' : '0',
+      },
       // Kernel overlay (decision 0026): re-read per spawn so a switch or
       // rollback lands on the next restart.
       dshBinOverride: () => {
@@ -544,7 +551,12 @@ ipcMain.handle('desktop:preferences:update', (event, patch: unknown) => {
   if (typeof candidate.launchAtLogin === 'boolean') update.launchAtLogin = candidate.launchAtLogin
   if (typeof candidate.launchHidden === 'boolean') update.launchHidden = candidate.launchHidden
   if (typeof candidate.notificationsEnabled === 'boolean') update.notificationsEnabled = candidate.notificationsEnabled
-  return desktopPreferencesController?.update(update) ?? null
+  if (typeof candidate.screenCapture === 'boolean') update.screenCapture = candidate.screenCapture
+  const result = desktopPreferencesController?.update(update) ?? null
+  // The screen capture flag reaches the harness through its spawn env; a
+  // change lands on the next kernel boot (same restart semantics as Safe Mode).
+  if (update.screenCapture !== undefined) void shellApp.runHarnessRestart()
+  return result
 })
 
 ipcMain.handle('desktop:session-status', (event, raw: unknown) => {
