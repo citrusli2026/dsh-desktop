@@ -15,8 +15,7 @@ export interface MenuActions {
   quit(): void
   toggleMaximize(): void
   restartHarness(): void
-  openLogs(): void
-  exportDiagnostics(): void
+  toggleSafeMode(): void
   checkForUpdates(): void
   showAbout(): void
   openExternal(url: string): void
@@ -31,6 +30,7 @@ export interface MenuEnvironment {
   packaged: boolean
   appName: string
   restartEnabled?: boolean
+  safeMode?: boolean
   lanRunning?: boolean
   lanBusy?: boolean
   shortcutAccelerator?: string
@@ -80,8 +80,22 @@ export function buildCommunityMenuItems(locale: ShellLocale, actions: CommunityM
   ]
 }
 
+/** Safe Mode + About entries shared by the app Extensions menu and the tray,
+ *  mirroring the desktop-controls overlay so all extension surfaces agree. */
+export function buildSafeModeMenuItems(
+  locale: ShellLocale,
+  safeMode: boolean,
+  actions: { toggleSafeMode(): void },
+): MenuItemConstructorOptions[] {
+  const t = (key: Parameters<typeof shellText>[1]): string => shellText(locale, key)
+  return [
+    { type: 'separator' },
+    { label: t(safeMode ? 'menu.safeModeExit' : 'menu.safeModeStart'), click: actions.toggleSafeMode },
+  ]
+}
+
 export function buildAppMenuTemplate(environment: MenuEnvironment, actions: MenuActions): MenuItemConstructorOptions[] {
-  const { locale, platform, packaged, appName, restartEnabled = true, lanRunning = false, lanBusy = false, shortcutAccelerator = DESKTOP_SUMMON_ACCELERATOR } = environment
+  const { locale, platform, packaged, appName, restartEnabled = true, safeMode = false, lanRunning = false, lanBusy = false, shortcutAccelerator = DESKTOP_SUMMON_ACCELERATOR } = environment
   const t = (key: Parameters<typeof shellText>[1]): string => shellText(locale, key)
   const isMac = platform === 'darwin'
   const template: MenuItemConstructorOptions[] = []
@@ -163,7 +177,12 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
 
   template.push({
     label: t('menu.extensions'),
-    submenu: buildLanMenuItems(locale, { lanRunning, lanBusy }, actions),
+    submenu: [
+      ...buildLanMenuItems(locale, { lanRunning, lanBusy }, actions),
+      ...buildSafeModeMenuItems(locale, safeMode, actions),
+      { type: 'separator' },
+      { label: t('app.about'), click: actions.showAbout },
+    ],
   })
 
   const help: MenuItemConstructorOptions[] = []
@@ -171,8 +190,6 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
   if (!isMac) help.push({ label: t('app.checkUpdates'), click: actions.checkForUpdates }, { type: 'separator' })
   help.push(
     { label: t('menu.restartHarness'), enabled: restartEnabled, click: actions.restartHarness },
-    { label: t('menu.openLogs'), click: actions.openLogs },
-    { label: t('menu.exportDiagnostics'), click: actions.exportDiagnostics },
     { type: 'separator' },
     { label: t('menu.projectRepository'), click: () => actions.openExternal(PROJECT_REPO_URL) },
     { label: t('menu.reportIssue'), click: () => actions.openExternal(PROJECT_ISSUES_URL) },

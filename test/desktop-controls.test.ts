@@ -18,8 +18,12 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   const client = await readFile(join(pluginRoot, 'lib/client.js'), 'utf8')
   assert.match(client, /shell\.overlay/)
   assert.match(client, /startLanPairing/)
-  assert.match(client, /openLogs/)
-  assert.match(client, /exportDiagnostics/)
+  // The overlay carries extension actions only (pairing, Safe Mode, About);
+  // fullscreen, logs, and diagnostics belong to other surfaces.
+  assert.doesNotMatch(client, /toggleFullscreen/)
+  assert.doesNotMatch(client, /openLogs/)
+  assert.doesNotMatch(client, /exportDiagnostics/)
+  assert.match(client, /showAbout/)
   assert.match(client, /dshDesktop/)
   assert.match(client, /settings\.section/)
   assert.doesNotMatch(client, /settings\.general\.item/)

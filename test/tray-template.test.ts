@@ -6,7 +6,7 @@ import { desktopShortcutLabel } from '../src/main/global-shortcut.ts'
 
 const actions: TrayTemplateActions = {
   showWindow() {},
-  toggleWindow() {}, restartHarness() {}, openLogs() {}, exportDiagnostics() {}, checkForUpdates() {}, quit() {},
+  toggleWindow() {}, restartHarness() {}, toggleSafeMode() {}, checkForUpdates() {}, quit() {},
   showAbout() {}, openExternal() {},
   lan: { startLanLink() {}, showLanQr() {}, stopLanLink() {} },
 }
@@ -65,6 +65,17 @@ test('tray swaps LAN entries to QR and stop while running', () => {
   assert.ok(labels.includes('显示局域网配对二维码…'))
   assert.ok(labels.includes('停止局域网共享'))
   assert.ok(!labels.includes('连接移动设备…'))
+})
+
+test('tray mirrors the extension surfaces: Safe Mode present, logs and diagnostics absent', () => {
+  const menu = buildTrayTemplate('zh', state(), actions)
+  const labels = menu.map(item => item.label)
+  assert.ok(labels.includes('以安全模式启动'))
+  assert.ok(!labels.includes('打开日志目录'))
+  assert.ok(!labels.includes('导出诊断报告…'))
+
+  const active = buildTrayTemplate('zh', state({ safeMode: true }), actions)
+  assert.ok(active.map(item => item.label).includes('退出安全模式'))
 })
 
 test('tray offers community links and About on every platform', () => {
