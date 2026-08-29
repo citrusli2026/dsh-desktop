@@ -275,6 +275,8 @@ window.__ModuleLoader__.load({
         notifications: "桌面通知", notificationsDetail: "应用未聚焦时提示完成、失败或需要确认。",
         safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展，用于修复启动故障。",
         safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式",
+        market: "插件市场", marketDetail: "社区插件市场 dsh-market：在 Harness 设置里浏览并一键安装数千个社区插件与主题。",
+        marketInstall: "安装插件市场", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketFailed: "安装未完成，请检查网络后重试。",
         safeModeBanner: "安全模式：第三方插件已隔离",
         safeModeSuspect: "疑似插件：{id}（{name}），可在官方「设置 → 插件」中卸载。",
         presetsTitle: "Agent 预设", presetsDetail: "导出或导入便携预设包（.dshpreset），在设备或伙伴之间共享。",
@@ -302,6 +304,8 @@ window.__ModuleLoader__.load({
         notifications: "Desktop notifications", notificationsDetail: "Notify when the app is unfocused about completion, failure, or input.",
         safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; run official and built-in extensions only, to repair startup.",
         safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode",
+        market: "Plugin market", marketDetail: "The community market dsh-market: browse and one-click-install thousands of community plugins and themes from Harness settings.",
+        marketInstall: "Install the market", marketInstalledHint: "Installed · open Settings → Plugin Market", marketFailed: "Install did not finish; check your network and retry.",
         safeModeBanner: "Safe Mode: third-party plugins are quarantined",
         safeModeSuspect: "Suspected plugin: {id} ({name}). Uninstall it from Settings → Plugins.",
         presetsTitle: "Agent presets", presetsDetail: "Export or import portable preset packages (.dshpreset) to share between devices or teammates.",
@@ -421,6 +425,27 @@ window.__ModuleLoader__.load({
       const [lanState, setLanState] = react.useState(null);
       const [lanBusy, setLanBusy] = react.useState(false);
       const [safeBusy, setSafeBusy] = react.useState(false);
+      const [marketInstalled, setMarketInstalled] = react.useState(null);
+      const [marketBusy, setMarketBusy] = react.useState(false);
+
+      react.useEffect(() => {
+        if (typeof bridge?.getBundledPlugins !== "function") return;
+        void bridge.getBundledPlugins().then((value) => {
+          if (value !== null) setMarketInstalled(value.dshMarketInstalled === true);
+        });
+      }, [bridge]);
+
+      const marketAction = async () => {
+        if (typeof bridge?.desktopAction !== "function") return;
+        setMarketBusy(true);
+        try {
+          const ok = await bridge.desktopAction("installDshMarket");
+          if (ok === true) setMarketInstalled(true);
+          setMessage(ok === true ? copy.marketInstalledHint : copy.marketFailed);
+        } finally {
+          setMarketBusy(false);
+        }
+      };
 
       const refreshLanState = async () => {
         if (typeof bridge?.getLanState !== "function") return;
@@ -545,8 +570,14 @@ window.__ModuleLoader__.load({
           ] }),
           react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.safeMode, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.safeModeDetail })] }),
-            react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: safeBusy, onClick: () => void safeAction(), children: preferences.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
+            react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: safeBusy, onClick: () => void safeAction(), children: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
           ] }),
+          typeof bridge?.getBundledPlugins === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.market, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.marketDetail })] }),
+            marketInstalled === true
+              ? react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-detail": true, children: copy.marketInstalledHint })
+              : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => void marketAction(), children: marketBusy ? "…" : copy.marketInstall }),
+          ] }) : null,
           typeof bridge?.listPresets === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.presetsTitle, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.presetsDetail })] }),
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
