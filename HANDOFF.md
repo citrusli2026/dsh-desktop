@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-08-28。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-08-29。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -8,13 +8,13 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.9`（2026-08-28 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +9） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.9`（2026-08-28，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 154 项单测、类型检查、官网门禁、构建通过；dev E2E 12 用例（11 过 + 1 按设计 skip）；mac 打包安全模式两阶段冒烟本地通过 |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.9 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke（含坏插件 → 安全模式恢复两阶段用例）与安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.9`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.9 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产已上传并在线验证 302，main 与 tag 均对齐 `f743773`） |
-| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 218（mac 71 / win 120 / linux 27） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.10`（2026-08-29 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +10） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.10`（2026-08-29，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 172 项单测、类型检查、官网门禁、构建全绿；dev E2E 12 用例；发布前双轴审查（代码标准 + ADR 规格）补内核启动回滚缺口 |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.10 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.10`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.10 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证 302；main `dd9e450` 与 tag `65fa82e` 对齐） |
+| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；当前累计安装包下载 326（mac 94 / win 163 / linux 69） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -917,5 +917,67 @@ major PR、dependabot 限 minor、6 个过期 issue 清理)。
 
 ---
 
-_更新于 2026-08-28_
+## 三十一、v0.1.1-rc.2.shell.10 发布:余额读数、内核更新链与 curated 种子(2026-08-29)
+
+本轮发布 shell.9 之后合并的四条功能链(ADR 0023-0027):DeepSeek 余额读数、
+内核独立更新链(overlay)、curated 首启种子 + 插件市场入口、opt-in 截屏工具,
+外加发布前审查发现的启动路径内核回滚缺口修复。内核 `0.1.1-rc.2` 未变,壳修订 +10。
+
+1. **功能**(详见 `docs/release-notes/v0.1.1-rc.2.shell.10.md`):
+   - ADR 0025 余额读数(托盘行 + 扩展设置只读行,按需拉取 5 分钟缓存,
+     密钥不出主进程);
+   - ADR 0026 内核 overlay 第二更新链(检查/安装/切换 + 90s 健康启动守卫,
+     坏内核自动回滚到随包地板);发布前双轴审查补上「应用启动路径」同样带
+     一次性守卫(0da45f0),重装成功清除失败标记;
+   - ADR 0024 curated 种子(dshmarket / dsh-better-sidebar / task-board 离线
+     符号链接种,已有剖面绝不改写)+ 插件市场入口;ADR 0023 扩展入口统一
+     三件套(配对/安全模式/关于);ADR 0027 opt-in 截屏(默认关,经官方附件
+     服务回填对话,绝不静默注入)。
+2. **本地门禁**:172 项单测、类型检查、官网门禁、构建全绿;dev E2E 12 用例;
+   发布前完成双轴审查(代码标准 + ADR 规格),据此补 0da45f0。
+3. **发布**:tag `v0.1.1-rc.2.shell.10` → `65fa82e`(peeled 核对);Release run
+   `33239725927` 一次全绿,8 资产契约 + attestation + 三平台 packaged smoke 通过,
+   GitHub Release 于 2026-08-29T07:10Z 发布。
+4. **GitCode 镜像(本机分段续传 + 显式本地上传,本轮主要波折)**:
+   - 三个安装包的 GitHub 下载在本机反复停滞:mirror-gitcode.mjs 常规跑法
+     (每资产单 curl,21 分钟硬限)先后三次各只拿到 0-8MB 即停摆
+     (SOCKS 通道先 ~22KB/s 后 0 B/s;含上一会话遗留的同型残骸);
+     sha256 三小文件早已在位,卡壳全在安装包下载。
+   - 解法:90 秒短窗口 + `curl -C -` 断点续传、Clash HTTP 口与 SOCKS 口逐窗
+     轮换的分段下载脚本(暂存 `/tmp/mirror-shell10`),92 分钟拉满三包
+     (共 669MB,字节数逐一等于 release 元数据),sha256 全部校验通过后走
+     `mirror-gitcode.mjs v<tag> <file...>` 显式本地文件模式上传——3/3 一次
+     成功(每包 attempt 1/3),Range GET 6/6 302。
+   - 现值事实:同一 Clash 实例的 HTTP 口(~260KB/s)当时快于 SOCKS 口
+     (~185KB/s),与 shell.1/2 时代「永远选 SOCKS」的结论相反;ghproxy.net
+     前缀已死(0 字节)。速度随时段波动剧烈(dmg/exe 峰值窗口 ~1MB/s,
+     deb 尾段掉到 ~20KB/s)——短窗口分段 + 双口轮换是对付波动的关键,
+     脚本已留存在 `/tmp/mirror-shell10/download-loop.sh`(bash 3.2 兼容写法)。
+   - GitCode 仓库对齐:main 落后在 feaa26d → push 至 `dd9e450`;GitCode tag
+     打点在旧 main(与 shell.9 同款「release 创建时以旧 main 位置打点」)→
+     `git push --force gitcode v<tag>` 强推修正到 `65fa82e`,release 的
+     target_commitish 随之更新且 6 资产未受影响(补充 shell.9 教训:删除
+     tag 会级联删 release,但强推更新 tag 不会)。
+5. **网站数据**:site-refresh 自动 run `33244624212` 在镜像完成前跑完,安装包
+   `gitcode_ok=false`;镜像就位后本地重生成。注意本机直连 github.com 现已
+   完全不可达(gen-site-data 连续 ConnectTimeout),需
+   `NODE_USE_ENV_PROXY=1 HTTPS_PROXY=http://127.0.0.1:7890`(Node 24 环境代理;
+   GitCode 探测走代理同样可达,不会假阴性)——6/6 `gitcode_ok=true`,
+   stats 326:mac 94 / win 163 / linux 69,提交 `bea98e0`。
+6. **顺带观察(未修)**:gitcode-mirror-daemon launchd 任务历次都因
+   `node: command not found` 失败(launchd 环境无 PATH,见
+   `~/Library/Logs/dsh-gitcode-mirror.log`),守护兜底实际从未生效——
+   后续应让 daemon 自解析 node 绝对路径。
+
+发布元数据:
+- Release run `33239725927`(成功);Site Data Refresh run `33244624212`(自动,
+  镜像前跑,gitcode_ok 假阴性已由 `bea98e0` 纠正);
+- 线上验证:`/data/release.json` 指向 `v0.1.1-rc.2.shell.10` 且 6/6
+  `gitcode_ok=true`、`/api/downloads` 返回 200(累计 326:mac 94 / win 163 /
+  linux 69);GitCode 镜像 6/6 present,main `dd9e450` / tag `65fa82e` 与
+  GitHub 精确对齐。
+
+---
+
+_更新于 2026-08-29_
 
