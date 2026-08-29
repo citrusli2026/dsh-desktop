@@ -273,6 +273,7 @@ window.__ModuleLoader__.load({
         launchAtLogin: "开机启动", launchAtLoginDetail: "登录系统后自动运行 dsh-desktop。",
         launchHidden: "启动后隐藏到托盘", launchHiddenDetail: "需要时用快捷键或托盘唤起。",
         notifications: "桌面通知", notificationsDetail: "应用未聚焦时提示完成、失败或需要确认。",
+        screenCapture: "屏幕捕获", screenCaptureDetail: "默认关闭。开启后 Agent 可用 screen_capture 工具截取屏幕（需要视觉模型），截图总是作为附件进入会话；切换后自动重启内核。",
         safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展，用于修复启动故障。",
         safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式",
         market: "插件市场", marketDetail: "社区插件市场 dsh-market：在 Harness 设置里浏览并一键安装数千个社区插件与主题。",
@@ -306,6 +307,7 @@ window.__ModuleLoader__.load({
         launchAtLogin: "Launch at login", launchAtLoginDetail: "Start dsh-desktop when you sign in.",
         launchHidden: "Start hidden in the tray", launchHiddenDetail: "Summon it with the shortcut or tray when needed.",
         notifications: "Desktop notifications", notificationsDetail: "Notify when the app is unfocused about completion, failure, or input.",
+        screenCapture: "Screen capture", screenCaptureDetail: "Off by default. When enabled the agent may use the screen_capture tool (requires a vision model); screenshots always enter the conversation as attachments, and the kernel restarts on toggle.",
         safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; run official and built-in extensions only, to repair startup.",
         safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode",
         market: "Plugin market", marketDetail: "The community market dsh-market: browse and one-click-install thousands of community plugins and themes from Harness settings.",
@@ -608,6 +610,10 @@ window.__ModuleLoader__.load({
           react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.notifications, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.notificationsDetail })] }),
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.notificationsEnabled === true, disabled: preferences.notificationsAvailable !== true, onChange: (event) => void update({ notificationsEnabled: event.target.checked }) }),
+          ] }),
+          react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.screenCapture, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.screenCaptureDetail })] }),
+            react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.screenCapture === true, onChange: (event) => void update({ screenCapture: event.target.checked }) }),
           ] }),
           react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.safeMode, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.safeModeDetail })] }),

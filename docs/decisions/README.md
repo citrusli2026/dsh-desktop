@@ -32,3 +32,4 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0024 | Curated first-run bundles and the market entry / 精选首启预装与插件市场入口 | [EN](0024-curated-first-run-bundles.md) · [中文](0024-curated-first-run-bundles.zh.md) | Accepted / 已接受 |
 | 0025 | DeepSeek balance readout in tray and extension settings / 托盘与扩展设置中的 DeepSeek 余额展示 | [EN](0025-deepseek-balance-readout.md) · [中文](0025-deepseek-balance-readout.zh.md) | Accepted / 已接受 |
 | 0026 | Kernel overlay — the second update chain / 内核 overlay——第二条更新链 | [EN](0026-kernel-overlay-second-update-chain.md) · [中文](0026-kernel-overlay-second-update-chain.zh.md) | Accepted / 已接受 |
+| 0027 | Opt-in screen capture tool — vision via the native pipeline / opt-in 屏幕捕获工具——走原生管线的视觉能力 | [EN](0027-optin-screen-capture-tool.md) · [中文](0027-optin-screen-capture-tool.zh.md) | Accepted / 已接受 |

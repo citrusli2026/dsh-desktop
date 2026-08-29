@@ -118,6 +118,9 @@ export class DesktopPreferencesController {
     if (patch.safeMode !== undefined) {
       this.current = this.store.updateDesktopPreferences({ safeMode: patch.safeMode })
     }
+    if (patch.screenCapture !== undefined) {
+      this.current = this.store.updateDesktopPreferences({ screenCapture: patch.screenCapture })
+    }
     return { ok: true, preferences: this.snapshot }
   }
 

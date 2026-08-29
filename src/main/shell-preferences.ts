@@ -15,6 +15,8 @@ export interface DesktopPreferences {
   notificationsEnabled: boolean
   /** Safe Mode persists until the user exits it explicitly (decision 0021). */
   safeMode: boolean
+  /** Screen capture model tool (decision 0027): opt-in, default off. */
+  screenCapture: boolean
 }
 
 interface ShellPreferences {
@@ -24,6 +26,7 @@ interface ShellPreferences {
   launchHidden?: boolean
   notificationsEnabled?: boolean
   safeMode?: boolean
+  screenCapture?: boolean
 }
 
 export interface ShellPreferencesStore {
@@ -39,6 +42,7 @@ export const DEFAULT_DESKTOP_PREFERENCES: DesktopPreferences = {
   launchHidden: false,
   notificationsEnabled: true,
   safeMode: false,
+  screenCapture: false,
 }
 
 function desktopPreferencesOf(raw: ShellPreferences): DesktopPreferences {
@@ -48,6 +52,7 @@ function desktopPreferencesOf(raw: ShellPreferences): DesktopPreferences {
     launchHidden: raw.launchHidden === true,
     notificationsEnabled: raw.notificationsEnabled !== false,
     safeMode: raw.safeMode === true,
+    screenCapture: raw.screenCapture === true,
   }
 }
 
@@ -79,6 +84,7 @@ export function createShellPreferences(path: string): ShellPreferencesStore {
           launchHidden: next.launchHidden,
           notificationsEnabled: next.notificationsEnabled,
           safeMode: next.safeMode,
+          screenCapture: next.screenCapture,
         }
       })
       return desktopPreferencesOf(file.readSync())
