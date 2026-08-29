@@ -33,3 +33,4 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0025 | DeepSeek balance readout in tray and extension settings / 托盘与扩展设置中的 DeepSeek 余额展示 | [EN](0025-deepseek-balance-readout.md) · [中文](0025-deepseek-balance-readout.zh.md) | Accepted / 已接受 |
 | 0026 | Kernel overlay — the second update chain / 内核 overlay——第二条更新链 | [EN](0026-kernel-overlay-second-update-chain.md) · [中文](0026-kernel-overlay-second-update-chain.zh.md) | Accepted / 已接受 |
 | 0027 | Opt-in screen capture tool — vision via the native pipeline / opt-in 屏幕捕获工具——走原生管线的视觉能力 | [EN](0027-optin-screen-capture-tool.md) · [中文](0027-optin-screen-capture-tool.zh.md) | Accepted / 已接受 |
+| 0028 | Extension surfaces gain a restart action / 扩展面增加重启动作 | [EN](0028-extension-surface-restart.md) · [中文](0028-extension-surface-restart.zh.md) | Accepted / 已接受 |
