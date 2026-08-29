@@ -185,10 +185,12 @@ export async function fetchLatestKernelVersion(
   url: string = REGISTRY_URL,
   timeoutMs: number = REGISTRY_FETCH_TIMEOUT_MS,
 ): Promise<string | undefined> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const response = await fetchImpl(url, {
       headers: { Accept: 'application/vnd.npm.install-v1+json' },
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: controller.signal,
     })
     if (!response.ok) return undefined
     const payload = (await response.json()) as { 'dist-tags'?: { latest?: unknown } }
@@ -196,6 +198,8 @@ export async function fetchLatestKernelVersion(
     return typeof latest === 'string' ? latest : undefined
   } catch {
     return undefined
+  } finally {
+    clearTimeout(timer)
   }
 }
 
