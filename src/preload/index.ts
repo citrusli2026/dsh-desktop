@@ -64,8 +64,11 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Close the shell-owned LAN pairing modal. */
   closeLanPairing: (): Promise<boolean> => ipcRenderer.invoke('shell:close-lan-pairing'),
   /** Invoke one of the fixed, low-risk desktop controls from the Harness UI. */
-  desktopAction: (action: 'startLanPairing' | 'stopLanPairing' | 'showAbout' | 'enterSafeMode' | 'exitSafeMode'): Promise<boolean> =>
+  desktopAction: (action: 'startLanPairing' | 'stopLanPairing' | 'showAbout' | 'enterSafeMode' | 'exitSafeMode' | 'installDshMarket'): Promise<boolean> =>
     ipcRenderer.invoke('desktop:action', action),
+  /** Read which curated bundles the profile already carries (settings row). */
+  getBundledPlugins: (): Promise<{ dshMarketInstalled: boolean } | null> =>
+    ipcRenderer.invoke('desktop:bundled-plugins'),
   /** Read the LAN pairing state for the extension settings surface. */
   getLanState: (): Promise<{ running: boolean; busy: boolean } | null> =>
     ipcRenderer.invoke('desktop:lan:state'),

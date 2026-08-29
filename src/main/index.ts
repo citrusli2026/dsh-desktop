@@ -2,11 +2,13 @@
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, Notification, session, shell, type MessageBoxOptions } from 'electron'
 import { existsSync, mkdirSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
+import { spawn } from 'node:child_process'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
+import { readProfileBundles, seedCuratedProfile } from './profile-seed.ts'
 import { installAppMenu, showAboutDialog, type AboutMaintenanceActions } from './menu.ts'
 import { denyUnexpectedPermissions } from './permissions.ts'
 import {
@@ -24,7 +26,7 @@ import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } fr
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
 import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport } from './diagnostics.ts'
-import { collectPluginFailures, writeSafeModeOverlay, type ComposedRow } from './safe-mode.ts'
+import { collectPluginFailures, writeSafeModeOverlay, WEB_PROFILE, type ComposedRow } from './safe-mode.ts'
 import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage } from './presets.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
@@ -83,6 +85,35 @@ async function applySafeMode(enabled: boolean): Promise<boolean> {
   if (SMOKE_TEST || desktopPreferencesController === undefined) return false
   const result = desktopPreferencesController.update({ safeMode: enabled })
   if (!result.ok) return false
+  refreshNativeSurfaces()
+  return shellApp.runHarnessRestart()
+}
+
+const DSHMARKET_PACKAGE = 'dshmarket'
+const DSHMARKET_INSTALL_TIMEOUT_MS = 120_000
+
+/**
+ * Install the community plugin market (dsh-market) into the user's profile
+ * with the bundled dsh CLI — the same `dsh plugin add` a CLI user would run,
+ * pointed at the desktop DSH_HOME. Network is required; a restart picks the
+ * new bundle up. The package stays user-owned: visible in 设置 → 插件,
+ * updatable/uninstallable by the market itself, quarantined by Safe Mode.
+ */
+async function installDshMarket(): Promise<boolean> {
+  if (SMOKE_TEST) return false
+  const root = harnessRoot()
+  const child = spawn(
+    nodeBin(root),
+    [dshBin(root), 'plugin', '--profile', WEB_PROFILE, 'add', DSHMARKET_PACKAGE],
+    { env: { ...process.env, DSH_HOME: resolveDshHome(process.env, homedir()) }, stdio: 'ignore' },
+  )
+  const code = await new Promise<number>((resolve) => {
+    const timer = setTimeout(() => { child.kill(); resolve(1) }, DSHMARKET_INSTALL_TIMEOUT_MS)
+    timer.unref()
+    child.on('close', (value) => { clearTimeout(timer); resolve(value ?? 1) })
+    child.on('error', () => { clearTimeout(timer); resolve(1) })
+  })
+  if (code !== 0) return false
   refreshNativeSurfaces()
   return shellApp.runHarnessRestart()
 }
@@ -355,7 +386,7 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     return true
   }
   if (action === 'showAbout') {
-    await showAboutDialog(currentLocale)
+    await showAboutDialog(currentLocale, aboutMaintenance())
     return true
   }
   if (action === 'openLogs') {
@@ -363,9 +394,15 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     return true
   }
   if (action === 'exportDiagnostics') return exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive())
+  if (action === 'installDshMarket') return installDshMarket()
   if (action === 'enterSafeMode') return applySafeMode(true)
   if (action === 'exitSafeMode') return applySafeMode(false)
   return false
+})
+
+ipcMain.handle('desktop:bundled-plugins', async (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return { dshMarketInstalled: (await readProfileBundles(desktopDshHome())).includes(DSHMARKET_PACKAGE) }
 })
 
 ipcMain.handle('desktop:lan:state', (event) => {
@@ -592,6 +629,19 @@ if (!gotLock) {
     if (!SMOKE_TEST) {
       desktopPreferencesController.initialize()
       windowContext.startHidden = desktopPreferencesController.shouldStartHidden()
+    }
+
+    // First-run curated seeding (decision 0024) must land before the first
+    // harness boot: the loader reads the profile manifest once and never
+    // rewrites an existing one. Failure degrades to the stock template boot.
+    try {
+      const seed = await seedCuratedProfile({
+        dshHome: resolveDshHome(process.env, homedir()),
+        bundledNodeModules: join(harnessRoot(), 'node_modules'),
+      })
+      if (seed.seeded.length > 0) console.log(`dsh-desktop: seeded curated bundles: ${seed.seeded.join(', ')}`)
+    } catch (error) {
+      console.warn(`dsh-desktop: curated seed skipped: ${error instanceof Error ? error.message : String(error)}`)
     }
 
     createMainWindow(windowContext)

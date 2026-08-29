@@ -29,3 +29,4 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0021 | Safe mode, recovery center, and portable presets / 安全模式、恢复中心与便携预设包 | [EN](0021-safe-mode-recovery-presets.md) · [中文](0021-safe-mode-recovery-presets.zh.md) | Accepted / 已接受 |
 | 0022 | Repository renamed back to dsh-desktop / 仓库改回 dsh-desktop | [EN](0022-repo-rename-dsh-desktop.md) · [中文](0022-repo-rename-dsh-desktop.zh.md) | Accepted / 已接受 |
 | 0023 | Extension surfaces carry extension actions only / 扩展面只放扩展动作 | [EN](0023-extension-surface-actions.md) · [中文](0023-extension-surface-actions.zh.md) | Accepted / 已接受 |
+| 0024 | Curated first-run bundles and the market entry / 精选首启预装与插件市场入口 | [EN](0024-curated-first-run-bundles.md) · [中文](0024-curated-first-run-bundles.zh.md) | Accepted / 已接受 |
