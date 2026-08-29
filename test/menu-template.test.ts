@@ -5,8 +5,8 @@ import { buildAppMenuTemplate, buildLanMenuItems, type MenuActions } from '../sr
 
 const actions: MenuActions = {
   showWindow() {},
-  closeWindow() {}, quit() {}, toggleMaximize() {}, restartHarness() {}, openLogs() {},
-  exportDiagnostics() {}, checkForUpdates() {}, showAbout() {}, openExternal() {},
+  closeWindow() {}, quit() {}, toggleMaximize() {}, restartHarness() {}, toggleSafeMode() {},
+  checkForUpdates() {}, showAbout() {}, openExternal() {},
   startLanLink() {}, showLanQr() {}, stopLanLink() {},
 }
 
@@ -77,6 +77,31 @@ test('extensions menu exposes LAN pairing controls', () => {
   assert.ok(labels(running).includes('显示局域网配对二维码…'))
   assert.ok(labels(running).includes('停止局域网共享'))
   assert.ok(!labels(running).includes('连接移动设备…'))
+})
+
+test('extensions menu mirrors the desktop-controls overlay (pairing, Safe Mode, About)', () => {
+  const inactive = buildAppMenuTemplate({ locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop' }, actions)
+  const extensions = inactive.find(item => item.label === '扩展')?.submenu
+  assert.ok(Array.isArray(extensions))
+  assert.ok(labels(extensions).includes('连接移动设备…'))
+  assert.ok(labels(extensions).includes('以安全模式启动'))
+  assert.ok(labels(extensions).includes('关于 dsh-desktop'))
+  assert.ok(!labels(extensions).includes('切换全屏'))
+  assert.ok(!labels(extensions).includes('打开日志目录'))
+  assert.ok(!labels(extensions).includes('导出诊断报告…'))
+
+  const active = buildAppMenuTemplate({
+    locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop', safeMode: true,
+  }, actions)
+  const activeExtensions = active.find(item => item.label === '扩展')?.submenu
+  assert.ok(Array.isArray(activeExtensions))
+  assert.ok(labels(activeExtensions).includes('退出安全模式'))
+})
+
+test('help menu leaves logs and diagnostics to the About dialog', () => {
+  const template = buildAppMenuTemplate({ locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop' }, actions)
+  assert.ok(!labels(template).includes('打开日志目录'))
+  assert.ok(!labels(template).includes('导出诊断报告…'))
 })
 
 test('lan menu items keep a stable shape for context-menu reuse', () => {

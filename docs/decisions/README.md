@@ -28,3 +28,4 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0020 | Desktop entry help surface and notification click-to-focus / 桌面入口帮助浮层与通知点击聚焦 | [EN](0020-desktop-entry-help-surface.md) · [中文](0020-desktop-entry-help-surface.zh.md) | Accepted / 已接受 |
 | 0021 | Safe mode, recovery center, and portable presets / 安全模式、恢复中心与便携预设包 | [EN](0021-safe-mode-recovery-presets.md) · [中文](0021-safe-mode-recovery-presets.zh.md) | Accepted / 已接受 |
 | 0022 | Repository renamed back to dsh-desktop / 仓库改回 dsh-desktop | [EN](0022-repo-rename-dsh-desktop.md) · [中文](0022-repo-rename-dsh-desktop.zh.md) | Accepted / 已接受 |
+| 0023 | Extension surfaces carry extension actions only / 扩展面只放扩展动作 | [EN](0023-extension-surface-actions.md) · [中文](0023-extension-surface-actions.zh.md) | Accepted / 已接受 |

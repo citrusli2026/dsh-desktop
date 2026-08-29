@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
-import { installAppMenu, showAboutDialog } from './menu.ts'
+import { installAppMenu, showAboutDialog, type AboutMaintenanceActions } from './menu.ts'
 import { denyUnexpectedPermissions } from './permissions.ts'
 import {
   createMainWindow,
@@ -62,7 +62,7 @@ const windowContext: WindowContext = {
   getLocale: () => currentLocale,
   onVisibilityChanged: refreshTray,
   onCloseToTray: () => { void explainCloseToTray() },
-  onShowAbout: () => { void showAboutDialog(currentLocale) },
+  onShowAbout: () => { void showAboutDialog(currentLocale, aboutMaintenance()) },
   lan: {
     getState: (): LanMenuState => ({ lanRunning: lanService.isRunning, lanBusy: lanService.isBusy }),
     actions: {
@@ -112,7 +112,7 @@ const shellApp = new ShellApp({
     } else {
       void loadLoadingPage(windowContext)
     }
-    installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), lanService.isRunning, lanService.isBusy, desktopPreferencesController?.snapshot.shortcut)
+    installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), safeModeActive(), lanService.isRunning, lanService.isBusy, desktopPreferencesController?.snapshot.shortcut)
     refreshTray()
   },
   onRestartBusyChanged: refreshNativeSurfaces,
@@ -135,7 +135,7 @@ const shellApp = new ShellApp({
 
 function refreshNativeSurfaces(): void {
   if (windowContext.quitInProgress) return
-  installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), lanService.isRunning, lanService.isBusy, desktopPreferencesController?.snapshot.shortcut)
+  installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), safeModeActive(), lanService.isRunning, lanService.isBusy, desktopPreferencesController?.snapshot.shortcut)
   refreshTray()
 }
 
@@ -258,11 +258,16 @@ function toggleMaximize(): void {
   else window.maximize()
 }
 
-function toggleFullscreen(): boolean {
-  const window = windowContext.mainWindow
-  if (window === undefined || window.isDestroyed()) return false
-  window.setFullScreen(!window.isFullScreen())
-  return true
+/** Log/diagnostic entries surfaced inside the About dialog. */
+function aboutMaintenance(): AboutMaintenanceActions {
+  return {
+    openLogs: () => { void openLogsFolder() },
+    exportDiagnostics: () => { void exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive()) },
+  }
+}
+
+function toggleSafeMode(): void {
+  void applySafeMode(!safeModeActive())
 }
 
 const menuActions: MenuActions = {
@@ -271,10 +276,9 @@ const menuActions: MenuActions = {
   quit: () => app.quit(),
   toggleMaximize,
   restartHarness: () => { void shellApp.requestRestart() },
-  openLogs: () => { void openLogsFolder() },
-  exportDiagnostics: () => { void exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive()) },
+  toggleSafeMode,
   checkForUpdates: () => { void checkForUpdatesInteractively(currentLocale) },
-  showAbout: () => { void showAboutDialog(currentLocale) },
+  showAbout: () => { void showAboutDialog(currentLocale, aboutMaintenance()) },
   openExternal: url => { void shell.openExternal(url) },
   startLanLink: () => { void startLanLink() },
   showLanQr: () => { void showLanQr() },
@@ -294,11 +298,11 @@ const trayActions: TrayActions = {
   showWindow: showMainWindow,
   toggleWindow: toggleMainWindow,
   restartHarness: (): void => { void shellApp.requestRestart() },
-  openLogs: (): void => { void openLogsFolder() },
-  exportDiagnostics: (): void => { void exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive()) },
+  isSafeMode: (): boolean => safeModeActive(),
+  toggleSafeMode: (): void => { toggleSafeMode() },
   checkForUpdates: (): void => { void checkForUpdatesInteractively(currentLocale) },
   quit: (): void => app.quit(),
-  showAbout: (): void => { void showAboutDialog(currentLocale) },
+  showAbout: (): void => { void showAboutDialog(currentLocale, aboutMaintenance()) },
   openExternal: url => { void shell.openExternal(url) },
   getLanState: (): LanMenuState => ({ lanRunning: lanService.isRunning, lanBusy: lanService.isBusy }),
   getLanActions: (): LanMenuActions => ({
@@ -350,7 +354,6 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     stopLanLink()
     return true
   }
-  if (action === 'toggleFullscreen') return toggleFullscreen()
   if (action === 'showAbout') {
     await showAboutDialog(currentLocale)
     return true
@@ -592,7 +595,7 @@ if (!gotLock) {
     }
 
     createMainWindow(windowContext)
-    installAppMenu(currentLocale, menuActions, false, false, false, desktopPreferencesController?.snapshot.shortcut)
+    installAppMenu(currentLocale, menuActions, false, false, false, false, desktopPreferencesController?.snapshot.shortcut)
     if (!SMOKE_TEST) {
       try {
         createTray(trayActions)

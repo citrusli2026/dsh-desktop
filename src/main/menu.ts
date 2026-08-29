@@ -35,8 +35,15 @@ function iconImage(): Electron.NativeImage {
   return nativeImage.createFromPath(join(app.getAppPath(), 'build', 'icon.png'))
 }
 
+/** Maintenance actions surfaced as About-dialog buttons (decision: diagnostics
+ *  live in About, not in the extension surfaces). */
+export interface AboutMaintenanceActions {
+  openLogs(): void
+  exportDiagnostics(): void
+}
+
 /** A consistent About dialog whose actions establish community and official provenance. */
-export async function showAboutDialog(locale: ShellLocale): Promise<void> {
+export async function showAboutDialog(locale: ShellLocale, maintenance?: AboutMaintenanceActions): Promise<void> {
   const links = [
     COMMUNITY_WEBSITE_URL,
     PROJECT_REPO_URL,
@@ -50,16 +57,27 @@ export async function showAboutDialog(locale: ShellLocale): Promise<void> {
     detail: aboutDetail(locale),
     icon: iconImage(),
     buttons: [
+      ...(maintenance !== undefined ? [
+        shellText(locale, 'menu.openLogs'),
+        shellText(locale, 'menu.exportDiagnostics'),
+      ] : []),
       shellText(locale, 'about.communityWebsite'),
       shellText(locale, 'about.projectRepository'),
       shellText(locale, 'about.harnessOfficial'),
       shellText(locale, 'about.deepseekOfficial'),
       shellText(locale, 'common.close'),
     ],
-    defaultId: 4,
-    cancelId: 4,
+    defaultId: maintenance !== undefined ? 6 : 4,
+    cancelId: maintenance !== undefined ? 6 : 4,
     noLink: true,
   })
+  if (maintenance !== undefined) {
+    if (response === 0) return maintenance.openLogs()
+    if (response === 1) return maintenance.exportDiagnostics()
+    const target = links[response - 2]
+    if (target !== undefined) await shell.openExternal(target)
+    return
+  }
   const target = links[response]
   if (target !== undefined) await shell.openExternal(target)
 }
@@ -68,6 +86,7 @@ export function installAppMenu(
   locale: ShellLocale,
   actions: MenuActions,
   restartEnabled = true,
+  safeMode = false,
   lanRunning = false,
   lanBusy = false,
   shortcutAccelerator?: string,
@@ -78,6 +97,7 @@ export function installAppMenu(
     packaged: app.isPackaged,
     appName: app.name,
     restartEnabled,
+    safeMode,
     lanRunning,
     lanBusy,
     shortcutAccelerator,

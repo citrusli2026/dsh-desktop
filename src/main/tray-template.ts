@@ -3,7 +3,7 @@ import type { MenuItemConstructorOptions } from 'electron'
 import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
 import { statusLabel } from './tray-status.ts'
-import { buildCommunityMenuItems, buildLanMenuItems, type LanMenuActions, type LanMenuState } from './menu-template.ts'
+import { buildCommunityMenuItems, buildLanMenuItems, buildSafeModeMenuItems, type LanMenuActions, type LanMenuState } from './menu-template.ts'
 import { DESKTOP_SUMMON_ACCELERATOR, desktopShortcutLabel } from './global-shortcut.ts'
 
 export interface TrayTemplateState {
@@ -14,6 +14,7 @@ export interface TrayTemplateState {
   shortcutAccelerator?: string
   launchAtLoginAvailable?: boolean
   launchAtLogin?: boolean
+  safeMode?: boolean
   lan: LanMenuState
 }
 
@@ -21,8 +22,7 @@ export interface TrayTemplateActions {
   showWindow(): void
   toggleWindow(): void
   restartHarness(): void
-  openLogs(): void
-  exportDiagnostics(): void
+  toggleSafeMode(): void
   checkForUpdates(): void
   quit(): void
   showAbout(): void
@@ -65,9 +65,7 @@ export function buildTrayTemplate(
     },
     { type: 'separator' },
     ...buildLanMenuItems(locale, state.lan, actions.lan),
-    { label: t('menu.openLogs'), click: actions.openLogs },
-    { label: t('menu.exportDiagnostics'), click: actions.exportDiagnostics },
-    { type: 'separator' },
+    ...buildSafeModeMenuItems(locale, state.safeMode === true, actions),
     { label: t('menu.community'), submenu: buildCommunityMenuItems(locale, actions) },
     { label: t('app.about'), click: actions.showAbout },
     { type: 'separator' },

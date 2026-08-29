@@ -261,7 +261,7 @@ window.__ModuleLoader__.load({
       zh: {
         trigger: "扩展入口", title: "扩展入口",
         copy: "窗口菜单不可达时，从这里或系统托盘继续使用扩展功能。",
-        lan: "连接设备", fullscreen: "切换全屏", logs: "打开日志", diagnostics: "导出诊断", about: "关于",
+        lan: "连接设备", about: "关于",
         shortcutLabel: "唤起快捷键",
         hint: "也可以右键窗口任意位置，或点击系统托盘图标。",
         unavailable: "请右键窗口或点击系统托盘图标使用扩展入口。",
@@ -288,7 +288,7 @@ window.__ModuleLoader__.load({
       en: {
         trigger: "Extensions", title: "Extensions",
         copy: "When the window menu is unreachable, keep using extensions from here or the system tray.",
-        lan: "Pair device", fullscreen: "Fullscreen", logs: "Open logs", diagnostics: "Diagnostics", about: "About",
+        lan: "Pair device", about: "About",
         shortcutLabel: "Summon shortcut",
         hint: "You can also right-click anywhere in the window or use the tray icon.",
         unavailable: "Right-click the window or use the system tray for extensions.",
@@ -724,9 +724,6 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsx("p", { "data-dsh-controls-copy": true, children: copy.copy }),
             typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("startLanPairing"), children: copy.lan }),
-              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("toggleFullscreen"), children: copy.fullscreen }),
-              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("openLogs"), children: copy.logs }),
-              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("exportDiagnostics"), children: copy.diagnostics }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke(preferences?.safeMode === true ? "exitSafeMode" : "enterSafeMode"), children: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
               react_jsx_runtime.jsx("hr", { "data-dsh-controls-separator": true, "aria-hidden": "true" }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("showAbout"), children: copy.about }),

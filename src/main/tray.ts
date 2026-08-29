@@ -17,12 +17,12 @@ export interface TrayActions {
   isLaunchAtLoginAvailable(): boolean
   isLaunchAtLoginEnabled(): boolean
   toggleLaunchAtLogin(): void
+  isSafeMode(): boolean
   isWindowVisible(): boolean
   showWindow(): void
   toggleWindow(): void
   restartHarness(): void
-  openLogs(): void
-  exportDiagnostics(): void
+  toggleSafeMode(): void
   checkForUpdates(): void
   quit(): void
   showAbout(): void
@@ -45,14 +45,14 @@ function buildTrayMenu(): Menu {
     shortcutRegistered: current.isShortcutRegistered(),
     launchAtLoginAvailable: current.isLaunchAtLoginAvailable(),
     launchAtLogin: current.isLaunchAtLoginEnabled(),
+    safeMode: current.isSafeMode(),
     lan: current.getLanState(),
   }
   const templateActions: TrayTemplateActions = {
     showWindow: current.showWindow,
     toggleWindow: current.toggleWindow,
     restartHarness: current.restartHarness,
-    openLogs: current.openLogs,
-    exportDiagnostics: current.exportDiagnostics,
+    toggleSafeMode: current.toggleSafeMode,
     checkForUpdates: current.checkForUpdates,
     quit: current.quit,
     showAbout: current.showAbout,
