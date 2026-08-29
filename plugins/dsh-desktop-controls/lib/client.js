@@ -18,7 +18,11 @@ window.__ModuleLoader__.load({
         font-family: inherit;
         pointer-events: none;
         position: fixed;
-        top: 48px;
+        /* Below the window title strip plus the seeded sidebar plugins' own
+           floating cluster (Windows pans it down by --dsh-title-bar-strip);
+           the default must not land in that band or the entry is unreachable
+           until dragged. Users move it freely afterwards. */
+        top: 88px;
         right: 16px;
         z-index: 1200;
       }
