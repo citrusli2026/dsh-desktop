@@ -9,6 +9,17 @@ import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
 import { readProfileBundles, seedCuratedProfile } from './profile-seed.ts'
+import { BalanceService, formatBalance, readDeepSeekApiKey } from './balance.ts'
+import {
+  activeKernelBin,
+  fetchLatestKernelVersion,
+  installKernel,
+  KERNEL_HEALTH_TIMEOUT_MS,
+  kernelState,
+  kernelsDir,
+  markKernelFailed,
+  writeActiveOverlay,
+} from './kernel-manager.ts'
 import { installAppMenu, showAboutDialog, type AboutMaintenanceActions } from './menu.ts'
 import { denyUnexpectedPermissions } from './permissions.ts'
 import {
@@ -30,6 +41,7 @@ import { collectPluginFailures, writeSafeModeOverlay, WEB_PROFILE, type Composed
 import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage } from './presets.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
+import { DEEPSEEK_PLATFORM_URL } from './links.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
 import { LanService, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
@@ -92,6 +104,72 @@ async function applySafeMode(enabled: boolean): Promise<boolean> {
 const DSHMARKET_PACKAGE = 'dshmarket'
 const DSHMARKET_INSTALL_TIMEOUT_MS = 120_000
 
+/** Cached tray text for the DeepSeek balance; refreshed opportunistically. */
+let lastBalanceText: string | undefined
+let latestKernelVersion: string | undefined
+const balanceService = new BalanceService(async () => readDeepSeekApiKey(resolveDshHome(process.env, homedir())))
+
+function kernelDir(): string {
+  return kernelsDir(app.getPath('userData'))
+}
+
+function pnpmBinPath(): string {
+  return join(harnessRoot(), 'node_modules', 'pnpm', 'bin', 'pnpm.cjs')
+}
+
+/** Re-read the balance; the tray line updates on the next menu build. */
+async function refreshBalance(): Promise<void> {
+  try {
+    const balance = await balanceService.current()
+    const text = balance === undefined ? undefined : formatBalance(balance)
+    if (text !== lastBalanceText) {
+      lastBalanceText = text
+      refreshTray()
+    }
+  } catch {
+    // Balance is best-effort; surfaces just stay hidden.
+  }
+}
+
+/** Wait for the harness to reach (or fail) readiness after a kernel switch. */
+async function waitForHarnessReady(timeoutMs = KERNEL_HEALTH_TIMEOUT_MS): Promise<boolean> {
+  // The supervisor first tears the old child down; the phase can still read
+  // 'ready' from the previous boot during that window.
+  await new Promise(resolve => setTimeout(resolve, 3_000))
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    const phase = shellApp.state?.phase
+    if (phase === 'ready') return true
+    if (phase === 'crashed') return false
+    await new Promise(resolve => setTimeout(resolve, 1_000))
+  }
+  return false
+}
+
+function rollbackKernel(version: string): void {
+  console.warn(`dsh-desktop: kernel ${version} failed its health boot; rolling back to the bundled kernel`)
+  markKernelFailed(kernelDir(), version)
+  writeActiveOverlay(kernelDir(), undefined)
+  void shellApp.runHarnessRestart()
+}
+
+/** Switch to an installed overlay kernel and health-check the boot; any
+ *  failure rolls back to the bundled kernel and marks the overlay bad. */
+async function switchKernel(version: string): Promise<boolean> {
+  writeActiveOverlay(kernelDir(), version)
+  const restarted = await shellApp.runHarnessRestart()
+  if (!restarted) {
+    rollbackKernel(version)
+    return false
+  }
+  const ready = await waitForHarnessReady()
+  if (!ready) {
+    rollbackKernel(version)
+    return false
+  }
+  return true
+}
+
 /**
  * Install the community plugin market (dsh-market) into the user's profile
  * with the bundled dsh CLI — the same `dsh plugin add` a CLI user would run,
@@ -128,7 +206,18 @@ async function safeModeOverlayPath(): Promise<string | undefined> {
 const shellApp = new ShellApp({
   createSupervisor: onState => new HarnessSupervisor(
     { onState },
-    { safeMode: { enabled: safeModeActive, overlayFactory: safeModeOverlayPath } },
+    {
+      safeMode: { enabled: safeModeActive, overlayFactory: safeModeOverlayPath },
+      // Kernel overlay (decision 0026): re-read per spawn so a switch or
+      // rollback lands on the next restart.
+      dshBinOverride: () => {
+        try {
+          return activeKernelBin(harnessRoot(), kernelsDir(app.getPath('userData')))
+        } catch {
+          return undefined
+        }
+      },
+    },
   ),
   onStateApplied: (state) => {
     if (windowContext.quitInProgress) return
@@ -168,6 +257,7 @@ function refreshNativeSurfaces(): void {
   if (windowContext.quitInProgress) return
   installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), safeModeActive(), lanService.isRunning, lanService.isBusy, desktopPreferencesController?.snapshot.shortcut)
   refreshTray()
+  void refreshBalance()
 }
 
 function notificationEnabled(): boolean {
@@ -331,6 +421,7 @@ const trayActions: TrayActions = {
   restartHarness: (): void => { void shellApp.requestRestart() },
   isSafeMode: (): boolean => safeModeActive(),
   toggleSafeMode: (): void => { toggleSafeMode() },
+  getBalance: (): string | undefined => lastBalanceText,
   checkForUpdates: (): void => { void checkForUpdatesInteractively(currentLocale) },
   quit: (): void => app.quit(),
   showAbout: (): void => { void showAboutDialog(currentLocale, aboutMaintenance()) },
@@ -395,6 +486,24 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
   }
   if (action === 'exportDiagnostics') return exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive())
   if (action === 'installDshMarket') return installDshMarket()
+  if (action === 'openRecharge') {
+    void shell.openExternal(DEEPSEEK_PLATFORM_URL)
+    return true
+  }
+  if (action === 'kernelCheckUpdates') {
+    latestKernelVersion = await fetchLatestKernelVersion(fetch)
+    return latestKernelVersion !== undefined
+  }
+  if (action === 'kernelInstall') {
+    if (SMOKE_TEST || latestKernelVersion === undefined) return false
+    const installed = await installKernel({ dir: kernelDir(), version: latestKernelVersion, nodeBin: nodeBin(), pnpmBin: pnpmBinPath() })
+    if (!installed.ok) return false
+    return switchKernel(latestKernelVersion)
+  }
+  if (action === 'kernelRestore') {
+    writeActiveOverlay(kernelDir(), undefined)
+    return shellApp.runHarnessRestart()
+  }
   if (action === 'enterSafeMode') return applySafeMode(true)
   if (action === 'exitSafeMode') return applySafeMode(false)
   return false
@@ -403,6 +512,17 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
 ipcMain.handle('desktop:bundled-plugins', async (event) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
   return { dshMarketInstalled: (await readProfileBundles(desktopDshHome())).includes(DSHMARKET_PACKAGE) }
+})
+
+ipcMain.handle('desktop:balance', async (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  const balance = await balanceService.current()
+  return balance === undefined ? null : { balance: formatBalance(balance) }
+})
+
+ipcMain.handle('desktop:kernel:state', (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return { ...kernelState(harnessRoot(), kernelDir()), latestVersion: latestKernelVersion }
 })
 
 ipcMain.handle('desktop:lan:state', (event) => {

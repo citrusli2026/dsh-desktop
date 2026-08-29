@@ -72,6 +72,11 @@ export interface SupervisorOptions {
     enabled(): boolean
     overlayFactory(): Promise<string | undefined>
   }
+  /** Kernel overlay (decision 0026): re-evaluated per spawn so a kernel
+   * switch or rollback takes effect on the next restart without rebuilding
+   * the supervisor. Returns the absolute bin path to spawn, or undefined to
+   * keep the bundled kernel. */
+  dshBinOverride?: () => string | undefined
 }
 
 function defaultLogDir(): string {
@@ -115,6 +120,7 @@ export class HarnessSupervisor {
   private readonly readyTimeoutMs: number
   private readonly cwd: string | undefined
   private readonly safeMode: NonNullable<SupervisorOptions['safeMode']> | undefined
+  private readonly dshBinOverride: (() => string | undefined) | undefined
 
   constructor(
     events: SupervisorEvents,
@@ -125,6 +131,7 @@ export class HarnessSupervisor {
     this.command = options.command ?? nodeBin()
     this.defaultArgs = options.args === undefined
     this.args = options.args ?? [dshBin(), ...HARNESS_WEB_ARGS]
+    this.dshBinOverride = options.dshBinOverride
     const baseEnv = options.env ?? process.env
     this.dshHome = resolveDshHome(baseEnv, homedir())
     this.env = { ...baseEnv, DSH_HOME: this.dshHome }
@@ -171,11 +178,12 @@ export class HarnessSupervisor {
         console.warn(`dsh-desktop: safe mode overlay failed, booting without it: ${error instanceof Error ? error.message : String(error)}`)
       }
     }
-    if (patches.length === 0) return this.args
+    const base = [this.dshBinOverride?.() ?? this.args[0]!, ...this.args.slice(1)]
+    if (patches.length === 0) return base
     // dsh's top-level parser forwards unknown app flags after the first one;
     // keep its own --patch options before --no-open/--port or they are
     // swallowed as Web-app arguments.
-    return insertPatches(this.args, patches)
+    return insertPatches(base, patches)
   }
 
   private async trySpawn(): Promise<void> {

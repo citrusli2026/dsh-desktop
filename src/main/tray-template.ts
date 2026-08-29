@@ -4,6 +4,7 @@ import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
 import { statusLabel } from './tray-status.ts'
 import { buildCommunityMenuItems, buildLanMenuItems, buildSafeModeMenuItems, type LanMenuActions, type LanMenuState } from './menu-template.ts'
+import { DEEPSEEK_PLATFORM_URL } from './links.ts'
 import { DESKTOP_SUMMON_ACCELERATOR, desktopShortcutLabel } from './global-shortcut.ts'
 
 export interface TrayTemplateState {
@@ -15,6 +16,8 @@ export interface TrayTemplateState {
   launchAtLoginAvailable?: boolean
   launchAtLogin?: boolean
   safeMode?: boolean
+  /** Formatted DeepSeek balance line; hidden when absent (no key / no data). */
+  balance?: string
   lan: LanMenuState
 }
 
@@ -63,6 +66,12 @@ export function buildTrayTemplate(
       enabled: canRestart,
       click: actions.restartHarness,
     },
+    // Balance line doubles as the recharge shortcut (decision 0025); hidden
+    // when no key is configured or the fetch has not landed yet.
+    ...(state.balance !== undefined ? [{
+      label: shellText(locale, 'tray.balance', { balance: state.balance }),
+      click: () => actions.openExternal(DEEPSEEK_PLATFORM_URL),
+    } as MenuItemConstructorOptions] : []),
     { type: 'separator' },
     ...buildLanMenuItems(locale, state.lan, actions.lan),
     ...buildSafeModeMenuItems(locale, state.safeMode === true, actions),

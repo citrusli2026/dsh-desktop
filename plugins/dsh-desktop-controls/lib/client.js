@@ -277,6 +277,10 @@ window.__ModuleLoader__.load({
         safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式",
         market: "插件市场", marketDetail: "社区插件市场 dsh-market：在 Harness 设置里浏览并一键安装数千个社区插件与主题。",
         marketInstall: "安装插件市场", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketFailed: "安装未完成，请检查网络后重试。",
+        balance: "余额", recharge: "充值",
+        kernel: "内核版本", kernelBundled: "内置", kernelOverlay: "已切换",
+        kernelCheck: "检查新版", kernelInstall: "安装最新", kernelRestore: "恢复内置",
+        kernelInstalling: "正在安装并切换，可能需要几分钟…", kernelFailed: "操作未完成，请重试。",
         safeModeBanner: "安全模式：第三方插件已隔离",
         safeModeSuspect: "疑似插件：{id}（{name}），可在官方「设置 → 插件」中卸载。",
         presetsTitle: "Agent 预设", presetsDetail: "导出或导入便携预设包（.dshpreset），在设备或伙伴之间共享。",
@@ -306,6 +310,10 @@ window.__ModuleLoader__.load({
         safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode",
         market: "Plugin market", marketDetail: "The community market dsh-market: browse and one-click-install thousands of community plugins and themes from Harness settings.",
         marketInstall: "Install the market", marketInstalledHint: "Installed · open Settings → Plugin Market", marketFailed: "Install did not finish; check your network and retry.",
+        balance: "Balance", recharge: "Recharge",
+        kernel: "Kernel version", kernelBundled: "bundled", kernelOverlay: "switched",
+        kernelCheck: "Check for newer", kernelInstall: "Install latest", kernelRestore: "Restore bundled",
+        kernelInstalling: "Installing and switching — this can take a few minutes…", kernelFailed: "The operation did not finish; please retry.",
         safeModeBanner: "Safe Mode: third-party plugins are quarantined",
         safeModeSuspect: "Suspected plugin: {id} ({name}). Uninstall it from Settings → Plugins.",
         presetsTitle: "Agent presets", presetsDetail: "Export or import portable preset packages (.dshpreset) to share between devices or teammates.",
@@ -447,6 +455,39 @@ window.__ModuleLoader__.load({
         }
       };
 
+      const [balanceText, setBalanceText] = react.useState(null);
+      const [kernel, setKernel] = react.useState(null);
+      const [kernelBusy, setKernelBusy] = react.useState("");
+
+      react.useEffect(() => {
+        if (typeof bridge?.getBalance === "function") void bridge.getBalance().then((value) => { if (value !== null) setBalanceText(value.balance); });
+        if (typeof bridge?.getKernelState !== "function") return;
+        void bridge.getKernelState().then((value) => { if (value !== null) setKernel(value); });
+      }, [bridge]);
+
+      const kernelRefresh = () => {
+        if (typeof bridge?.getKernelState !== "function") return;
+        void bridge.getKernelState().then((value) => { if (value !== null) setKernel(value); });
+      };
+
+      const kernelAction = async (kind) => {
+        if (typeof bridge?.desktopAction !== "function") return;
+        setKernelBusy(kind);
+        try {
+          if (kind === "check") {
+            if (await bridge.desktopAction("kernelCheckUpdates") !== true) setMessage(copy.kernelFailed);
+          } else if (kind === "install") {
+            setMessage(copy.kernelInstalling);
+            if (await bridge.desktopAction("kernelInstall") !== true) setMessage(copy.kernelFailed);
+          } else if (kind === "restore") {
+            await bridge.desktopAction("kernelRestore");
+          }
+          kernelRefresh();
+        } finally {
+          setKernelBusy("");
+        }
+      };
+
       const refreshLanState = async () => {
         if (typeof bridge?.getLanState !== "function") return;
         const value = await bridge.getLanState();
@@ -577,6 +618,21 @@ window.__ModuleLoader__.load({
             marketInstalled === true
               ? react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-detail": true, children: copy.marketInstalledHint })
               : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => void marketAction(), children: marketBusy ? "…" : copy.marketInstall }),
+          ] }) : null,
+          balanceText !== null ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
+            react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.balance }),
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+              react_jsx_runtime.jsx("span", { "data-dsh-desktop-shortcut": true, children: balanceText }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, onClick: () => void bridge.desktopAction("openRecharge"), children: copy.recharge }),
+            ] }),
+          ] }) : null,
+          kernel !== null ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.kernel, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: `${kernel.overlayVersion ?? kernel.bundledVersion ?? "?"}（${kernel.overlayVersion ? copy.kernelOverlay : copy.kernelBundled}）` })] }),
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: kernelBusy !== "", onClick: () => void kernelAction("check"), children: kernelBusy === "check" ? "…" : copy.kernelCheck }),
+              kernel.latestVersion && kernel.latestVersion !== (kernel.overlayVersion ?? kernel.bundledVersion) ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: kernelBusy !== "", onClick: () => void kernelAction("install"), children: kernelBusy === "install" ? "…" : copy.kernelInstall }) : null,
+              kernel.overlayVersion ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: kernelBusy !== "", onClick: () => void kernelAction("restore"), children: copy.kernelRestore }) : null,
+            ] }),
           ] }) : null,
           typeof bridge?.listPresets === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.presetsTitle, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.presetsDetail })] }),
