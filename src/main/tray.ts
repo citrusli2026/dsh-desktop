@@ -18,6 +18,7 @@ export interface TrayActions {
   isLaunchAtLoginEnabled(): boolean
   toggleLaunchAtLogin(): void
   isSafeMode(): boolean
+  getBalance?(): string | undefined
   isWindowVisible(): boolean
   showWindow(): void
   toggleWindow(): void
@@ -46,6 +47,7 @@ function buildTrayMenu(): Menu {
     launchAtLoginAvailable: current.isLaunchAtLoginAvailable(),
     launchAtLogin: current.isLaunchAtLoginEnabled(),
     safeMode: current.isSafeMode(),
+    balance: current.getBalance?.(),
     lan: current.getLanState(),
   }
   const templateActions: TrayTemplateActions = {

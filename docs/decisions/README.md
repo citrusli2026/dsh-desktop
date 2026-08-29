@@ -30,3 +30,5 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0022 | Repository renamed back to dsh-desktop / 仓库改回 dsh-desktop | [EN](0022-repo-rename-dsh-desktop.md) · [中文](0022-repo-rename-dsh-desktop.zh.md) | Accepted / 已接受 |
 | 0023 | Extension surfaces carry extension actions only / 扩展面只放扩展动作 | [EN](0023-extension-surface-actions.md) · [中文](0023-extension-surface-actions.zh.md) | Accepted / 已接受 |
 | 0024 | Curated first-run bundles and the market entry / 精选首启预装与插件市场入口 | [EN](0024-curated-first-run-bundles.md) · [中文](0024-curated-first-run-bundles.zh.md) | Accepted / 已接受 |
+| 0025 | DeepSeek balance readout in tray and extension settings / 托盘与扩展设置中的 DeepSeek 余额展示 | [EN](0025-deepseek-balance-readout.md) · [中文](0025-deepseek-balance-readout.zh.md) | Accepted / 已接受 |
+| 0026 | Kernel overlay — the second update chain / 内核 overlay——第二条更新链 | [EN](0026-kernel-overlay-second-update-chain.md) · [中文](0026-kernel-overlay-second-update-chain.zh.md) | Accepted / 已接受 |
