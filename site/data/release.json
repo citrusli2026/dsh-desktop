@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-29T17:07:08.387Z",
+  "generated_at": "2026-08-29T17:43:51.088Z",
   "repo": {
     "full_name": "citrusli2026/dsh-desktop",
     "html_url": "https://github.com/citrusli2026/dsh-desktop",
@@ -7,9 +7,9 @@
     "license": "MIT"
   },
   "stats": {
-    "installer_downloads": 332,
-    "mac_downloads": 95,
-    "win_downloads": 166,
+    "installer_downloads": 335,
+    "mac_downloads": 96,
+    "win_downloads": 168,
     "linux_downloads": 71,
     "releases": 27
   },
@@ -33,7 +33,7 @@
       {
         "name": "dsh-desktop-0.1.1-rc.2.shell.12-amd64.deb.sha256",
         "size": 108,
-        "downloads": 4,
+        "downloads": 6,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.1-rc.2.shell.12/dsh-desktop-0.1.1-rc.2.shell.12-amd64.deb.sha256",
         "kind": "checksum",
         "sha256": "334fad83cf6a63c096eca71e189b95b45d306d02f743a77b85467962b8418589",
@@ -43,7 +43,7 @@
       {
         "name": "dsh-desktop-0.1.1-rc.2.shell.12-arm64-mac.dmg",
         "size": 242331450,
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.1-rc.2.shell.12/dsh-desktop-0.1.1-rc.2.shell.12-arm64-mac.dmg",
         "kind": "installer",
         "sha256": null,
@@ -53,7 +53,7 @@
       {
         "name": "dsh-desktop-0.1.1-rc.2.shell.12-arm64-mac.dmg.sha256",
         "size": 112,
-        "downloads": 3,
+        "downloads": 6,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.1-rc.2.shell.12/dsh-desktop-0.1.1-rc.2.shell.12-arm64-mac.dmg.sha256",
         "kind": "checksum",
         "sha256": "f258269cb421ed7a53e9e7a411a142d44ed83a87b4f89b893de00b96d6046f6c",
@@ -63,7 +63,7 @@
       {
         "name": "dsh-desktop-setup-0.1.1-rc.2.shell.12.exe",
         "size": 217600211,
-        "downloads": 0,
+        "downloads": 2,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.1-rc.2.shell.12/dsh-desktop-setup-0.1.1-rc.2.shell.12.exe",
         "kind": "installer",
         "sha256": null,
@@ -73,7 +73,7 @@
       {
         "name": "dsh-desktop-setup-0.1.1-rc.2.shell.12.exe.sha256",
         "size": 108,
-        "downloads": 3,
+        "downloads": 6,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.1-rc.2.shell.12/dsh-desktop-setup-0.1.1-rc.2.shell.12.exe.sha256",
         "kind": "checksum",
         "sha256": "eacc85beada1acb578b89324923e9b8cba8770bdb0f8816711c83a25a1842d9e",
