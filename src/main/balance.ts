@@ -11,7 +11,6 @@ import { join } from 'node:path'
 import { parse } from 'yaml'
 
 export const DEEPSEEK_BALANCE_URL = 'https://api.deepseek.com/user/balance'
-export const DEEPSEEK_PLATFORM_URL = 'https://platform.deepseek.com'
 export const BALANCE_CACHE_TTL_MS = 5 * 60_000
 
 export interface DeepSeekBalance {

@@ -121,6 +121,46 @@ export function activeKernelBin(harnessRoot: string, dir: string): string {
   return dshBin(harnessRoot)
 }
 
+/**
+ * One-shot guard for the launch boot of the overlay selected at start-up
+ * (decision 0026). A switch to an overlay mid-session gets its own health
+ * window; the launch boot gets the same guarantee: a crash before readiness
+ * rolls back to the bundled kernel and marks the overlay failed. Disarmed
+ * permanently after the first terminal boot phase.
+ */
+export class KernelLaunchGuard {
+  private armed = true
+  private readonly dir: string
+  private readonly version: string
+
+  constructor(dir: string, version: string) {
+    this.dir = dir
+    this.version = version
+  }
+
+  /** Observe one boot phase; returns the version to roll back exactly once,
+   *  when the guarded overlay's first boot crashes before readiness and the
+   *  pointer still selects it. */
+  observe(phase: 'starting' | 'ready' | 'crashed'): string | undefined {
+    if (!this.armed) return undefined
+    if (phase !== 'ready' && phase !== 'crashed') return undefined
+    this.armed = false
+    if (phase !== 'crashed') return undefined
+    return readActiveOverlay(this.dir)?.version === this.version ? this.version : undefined
+  }
+}
+
+/** Guard for the boot of the overlay selected at start-up; undefined when the
+ *  launch boot runs the bundled kernel (no overlay, or a failed/missing one —
+ *  exactly the states the rollback warns about). */
+export function createKernelLaunchGuard(dir: string): KernelLaunchGuard | undefined {
+  const active = readActiveOverlay(dir)
+  if (active === undefined
+    || failedVersions(dir).includes(active.version)
+    || overlayBinPath(dir, active.version) === undefined) return undefined
+  return new KernelLaunchGuard(dir, active.version)
+}
+
 export function kernelState(harnessRoot: string, dir: string): KernelState {
   const active = readActiveOverlay(dir)
   const failed = failedVersions(dir)
@@ -185,8 +225,14 @@ export async function installKernel(options: InstallKernelOptions): Promise<Inst
     const timer = setTimeout(() => { child.kill(); resolve({ ok: false, reason: 'timeout' }) }, timeoutMs)
     child.on('close', (code) => {
       clearTimeout(timer)
-      if (code === 0 && overlayBinPath(dir, version) !== undefined) resolve({ ok: true })
-      else resolve({ ok: false, reason: code === 0 ? 'bin-missing' : `exit-${code ?? 'error'}` })
+      if (code === 0 && overlayBinPath(dir, version) !== undefined) {
+        // A fresh install of the same version clears its failed marker
+        // (decision 0026): reinstall is the documented way out of exclusion.
+        clearKernelFailed(dir, version)
+        resolve({ ok: true })
+      } else {
+        resolve({ ok: false, reason: code === 0 ? 'bin-missing' : `exit-${code ?? 'error'}` })
+      }
     })
     child.on('error', () => { clearTimeout(timer); resolve({ ok: false, reason: 'spawn-failed' }) })
   })

@@ -5,4 +5,4 @@ export const PROJECT_RELEASES_URL = `${PROJECT_REPO_URL}/releases`
 export const PROJECT_ISSUES_URL = `${PROJECT_REPO_URL}/issues`
 export const DEEPSEEK_HARNESS_URL = 'https://www.deepseek.com/harness/'
 export const DEEPSEEK_OFFICIAL_URL = 'https://www.deepseek.com/'
-export const DEEPSEEK_PLATFORM_URL = 'https://platform.deepseek.com'
+export const DEEPSEEK_PLATFORM_RECHARGE_URL = 'https://platform.deepseek.com/top_up'

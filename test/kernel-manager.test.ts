@@ -3,9 +3,14 @@ import assert from 'node:assert/strict'
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { spawn } from 'node:child_process'
 import {
   activeKernelBin,
   bundledKernelVersion,
+  clearKernelFailed,
+  createKernelLaunchGuard,
+  failedVersions,
+  installKernel,
   kernelState,
   kernelsDir,
   markKernelFailed,
@@ -87,5 +92,84 @@ test('kernel state reports installed and failed versions', async () => {
   } finally {
     await rm(dir, { recursive: true, force: true })
     await rm(closure, { recursive: true, force: true })
+  }
+})
+
+test('launch guard rolls back exactly once when the overlay crashes before readiness', async () => {
+  const dir = kernelsDir(await mkdtemp(join(tmpdir(), 'dsh-kernel-')))
+  try {
+    await makeOverlayKernel(dir, '0.1.1-rc.3')
+    writeActiveOverlay(dir, '0.1.1-rc.3')
+    const guard = createKernelLaunchGuard(dir)
+    assert.ok(guard !== undefined)
+    assert.equal(guard.observe('starting'), undefined)
+    assert.equal(guard.observe('crashed'), '0.1.1-rc.3')
+    assert.equal(guard.observe('crashed'), undefined)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('launch guard is absent when the launch boot runs the bundled kernel', async () => {
+  const dir = kernelsDir(await mkdtemp(join(tmpdir(), 'dsh-kernel-')))
+  try {
+    assert.equal(createKernelLaunchGuard(dir), undefined)
+    await makeOverlayKernel(dir, '0.1.1-rc.3')
+    markKernelFailed(dir, '0.1.1-rc.3')
+    writeActiveOverlay(dir, '0.1.1-rc.3')
+    assert.equal(createKernelLaunchGuard(dir), undefined)
+    clearKernelFailed(dir, '0.1.1-rc.3')
+    await makeOverlayKernel(dir, '0.9.9-broken', { broken: true })
+    writeActiveOverlay(dir, '0.9.9-broken')
+    assert.equal(createKernelLaunchGuard(dir), undefined)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('launch guard never rolls back after readiness or a deselected overlay', async () => {
+  const dir = kernelsDir(await mkdtemp(join(tmpdir(), 'dsh-kernel-')))
+  try {
+    await makeOverlayKernel(dir, '0.1.1-rc.3')
+    writeActiveOverlay(dir, '0.1.1-rc.3')
+    const guard = createKernelLaunchGuard(dir)!
+    assert.equal(guard.observe('ready'), undefined)
+    assert.equal(guard.observe('crashed'), undefined)
+
+    await makeOverlayKernel(dir, '0.2.0')
+    writeActiveOverlay(dir, '0.2.0')
+    const second = createKernelLaunchGuard(dir)!
+    writeActiveOverlay(dir, undefined)
+    assert.equal(second.observe('crashed'), undefined)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('installKernel clears the failed marker of the same version on success', async () => {
+  const dir = kernelsDir(await mkdtemp(join(tmpdir(), 'dsh-kernel-')))
+  try {
+    await makeOverlayKernel(dir, '0.1.1-rc.3')
+    markKernelFailed(dir, '0.1.1-rc.3')
+    assert.deepEqual(failedVersions(dir), ['0.1.1-rc.3'])
+
+    const handlers = new Map<string, (code?: number) => void>()
+    const fakeSpawn = (() => ({
+      on: (event: string, callback: (code?: number) => void) => { handlers.set(event, callback) },
+      kill: () => {},
+    })) as unknown as typeof spawn
+    const pending = installKernel({
+      dir,
+      version: '0.1.1-rc.3',
+      nodeBin: 'node',
+      pnpmBin: 'pnpm',
+      timeoutMs: 5_000,
+      spawnImpl: fakeSpawn,
+    })
+    handlers.get('close')?.(0)
+    assert.deepEqual(await pending, { ok: true })
+    assert.deepEqual(failedVersions(dir), [])
+  } finally {
+    await rm(dir, { recursive: true, force: true })
   }
 })

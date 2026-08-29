@@ -4,7 +4,7 @@ import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
 import { statusLabel } from './tray-status.ts'
 import { buildCommunityMenuItems, buildLanMenuItems, buildSafeModeMenuItems, type LanMenuActions, type LanMenuState } from './menu-template.ts'
-import { DEEPSEEK_PLATFORM_URL } from './links.ts'
+import { DEEPSEEK_PLATFORM_RECHARGE_URL } from './links.ts'
 import { DESKTOP_SUMMON_ACCELERATOR, desktopShortcutLabel } from './global-shortcut.ts'
 
 export interface TrayTemplateState {
@@ -70,7 +70,7 @@ export function buildTrayTemplate(
     // when no key is configured or the fetch has not landed yet.
     ...(state.balance !== undefined ? [{
       label: shellText(locale, 'tray.balance', { balance: state.balance }),
-      click: () => actions.openExternal(DEEPSEEK_PLATFORM_URL),
+      click: () => actions.openExternal(DEEPSEEK_PLATFORM_RECHARGE_URL),
     } as MenuItemConstructorOptions] : []),
     { type: 'separator' },
     ...buildLanMenuItems(locale, state.lan, actions.lan),

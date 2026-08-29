@@ -12,12 +12,14 @@ import { readProfileBundles, seedCuratedProfile } from './profile-seed.ts'
 import { BalanceService, formatBalance, readDeepSeekApiKey } from './balance.ts'
 import {
   activeKernelBin,
+  createKernelLaunchGuard,
   fetchLatestKernelVersion,
   installKernel,
   KERNEL_HEALTH_TIMEOUT_MS,
   kernelState,
   kernelsDir,
   markKernelFailed,
+  type KernelLaunchGuard,
   writeActiveOverlay,
 } from './kernel-manager.ts'
 import { installAppMenu, showAboutDialog, type AboutMaintenanceActions } from './menu.ts'
@@ -41,7 +43,7 @@ import { collectPluginFailures, writeSafeModeOverlay, WEB_PROFILE, type Composed
 import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage } from './presets.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
-import { DEEPSEEK_PLATFORM_URL } from './links.ts'
+import { DEEPSEEK_PLATFORM_RECHARGE_URL } from './links.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
 import { LanService, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
@@ -59,6 +61,9 @@ let closeNoticeClaimed = false
 let desktopPreferencesController: DesktopPreferencesController | undefined
 let lastPublicStatus: PublicStatusSnapshot | undefined
 let lastHarnessPhase: HarnessState['phase'] | undefined
+/** Decision 0026: one healthy boot is guaranteed for the overlay selected at
+ *  launch; its failure rolls the shell back to the bundled kernel. */
+let kernelLaunchGuard: KernelLaunchGuard | undefined
 /** Suspected failing plugins extracted from the last crash; shown on the recovery pages. */
 let lastPluginFailures: ComposedRow[] = []
 
@@ -228,6 +233,10 @@ const shellApp = new ShellApp({
   ),
   onStateApplied: (state) => {
     if (windowContext.quitInProgress) return
+    // Decision 0026: an overlay selected at launch that crashes before its
+    // first boot reaches readiness is rolled back to the bundled kernel.
+    const rollbackVersion = kernelLaunchGuard?.observe(state.phase)
+    if (rollbackVersion !== undefined) rollbackKernel(rollbackVersion)
     notifyHarnessState(state)
     if (state.phase !== 'ready') lastPublicStatus = undefined
     if (state.phase === 'ready') {
@@ -487,14 +496,9 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     await showAboutDialog(currentLocale, aboutMaintenance())
     return true
   }
-  if (action === 'openLogs') {
-    await openLogsFolder()
-    return true
-  }
-  if (action === 'exportDiagnostics') return exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive())
   if (action === 'installDshMarket') return installDshMarket()
   if (action === 'openRecharge') {
-    void shell.openExternal(DEEPSEEK_PLATFORM_URL)
+    void shell.openExternal(DEEPSEEK_PLATFORM_RECHARGE_URL)
     return true
   }
   if (action === 'kernelCheckUpdates') {
@@ -693,6 +697,7 @@ async function boot(): Promise<string> {
     shellApp.applyState({ phase: 'crashed', attempts: 6, logTail: 'simulated crash (smoke)' })
     throw new Error('simulated boot failure (smoke)')
   }
+  if (!SMOKE_TEST) kernelLaunchGuard = createKernelLaunchGuard(kernelDir())
   return shellApp.startHarness()
 }
 
