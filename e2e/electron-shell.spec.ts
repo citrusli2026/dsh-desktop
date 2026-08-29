@@ -324,10 +324,17 @@ shellTest('diagnostic export writes the report to the chosen path', async ({ ele
   const reportPath = join(dshHome, 'diagnostic-report.txt')
   const version = await electronApp.evaluate(({ app }) => app.getVersion())
   await electronApp.evaluate(({ dialog }, reportPath) => {
-    ;(dialog as unknown as { showMessageBox: unknown }).showMessageBox = async () => ({ response: 0 })
+    // Two message boxes share this stub: the About dialog (7 buttons — pick
+    // "Export Diagnostic Report…", index 1) and the export's own Continue/Cancel
+    // warning (2 buttons — pick Continue, index 0).
+    ;(dialog as unknown as { showMessageBox: unknown }).showMessageBox = async (options: { buttons?: string[] }) => ({
+      response: (options?.buttons?.length ?? 0) > 2 ? 1 : 0,
+    })
     ;(dialog as unknown as { showSaveDialog: unknown }).showSaveDialog = async () => ({ canceled: false, filePath: reportPath })
   }, reportPath)
-  await clickMenuItem(electronApp, 'Export Diagnostic Report…')
+  // Diagnostics live inside the About dialog (decision 0023): open it and pick
+  // the "Export Diagnostic Report…" button (index 1 of the maintenance trio).
+  await clickMenuItem(electronApp, 'About dsh-desktop')
   await expect.poll(async () => readFile(reportPath, 'utf8').then(() => true, () => false)).toBe(true)
   const text = await readFile(reportPath, 'utf8')
   expect(text).toContain('dsh-desktop')
