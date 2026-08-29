@@ -473,43 +473,55 @@ shellTest('desktop status notices fire on real state edges and clicking one rest
 shellTest('packaged app shows a desktop notice for a real state edge and restores on click @smoke', async ({ electronApp, window }, testInfo) => {
   test.skip(!PACKAGED, 'dev stub covers the pipeline; this is the real-Harness check')
   // The window fixture already waited for the real render; the plugin surface
-  // proves the harness loaded the desktop-controls bundle.
-  await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-controls]') !== null)).toBe(true)
+  // proves the harness loaded the desktop-controls bundle. Packaged first
+  // boots can render slowly (the fixture allows 120 s), so keep the poll above
+  // the default expect timeout.
+  await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-controls]') !== null), { timeout: 60_000 }).toBe(true)
   await ensureNoticesAvailable(window)
   await instrumentDesktopNotices(electronApp)
   await window.screenshot({ path: testInfo.outputPath('01-real-app.png') })
 
   // Fresh harness installs show onboarding modals (internal-testing notice,
   // API-key prompt); dismiss each as it appears before driving the UI.
-  for (;;) {
-    const blocker = window.getByRole('button', { name: /^(Continue|Configure later)$/, exact: true }).first()
-    if (await blocker.count() === 0) break
-    await blocker.click().catch(() => undefined)
-    await window.waitForTimeout(300)
+  const dismissOnboarding = async () => {
+    for (;;) {
+      const blocker = window.getByRole('button', { name: /^(Continue|Configure later)$/, exact: true }).first()
+      if (await blocker.count() === 0) break
+      await blocker.click().catch(() => undefined)
+      await window.waitForTimeout(300)
+    }
   }
+  await dismissOnboarding()
 
   // The overlay entry is draggable: pointer-drag moves it, must not open the
   // panel, and a clean click afterwards still does.
   const trigger = window.locator('[data-dsh-controls-trigger]')
   await expect(trigger).toBeVisible()
-  const before = await trigger.boundingBox()
-  if (before !== null) {
-    await window.mouse.move(before.x + before.width / 2, before.y + before.height / 2)
-    await window.mouse.down()
-    await window.mouse.move(before.x - 120, before.y + 100, { steps: 8 })
-    await window.mouse.up()
-    await window.waitForTimeout(200)
-    const after = await trigger.boundingBox()
-    expect(after).not.toBeNull()
-    expect(Math.abs(after!.x - before.x)).toBeGreaterThan(60)
-    expect(Math.abs(after!.y - before.y)).toBeGreaterThan(40)
-    await expect(window.locator('[data-dsh-controls-panel]')).toHaveCount(0)
-    await trigger.click()
-    await expect(window.locator('[data-dsh-controls-panel]')).toBeVisible()
-    await window.screenshot({ path: testInfo.outputPath('04-extension-menu.png') })
-    await window.keyboard.press('Escape')
-    await expect(window.locator('[data-dsh-controls-panel]')).toHaveCount(0)
+  // Slow packaged boots (Windows CI in particular) can surface a first-run
+  // overlay mid-gesture, and an overlay swallows the pointerdown, so the drag
+  // moves nothing. Retry only when it did not move; a genuinely broken drag
+  // still fails after all attempts.
+  let moved = false
+  for (let attempt = 0; attempt < 3 && !moved; attempt++) {
+    await dismissOnboarding()
+    const before = await trigger.boundingBox()
+    if (before !== null) {
+      await window.mouse.move(before.x + before.width / 2, before.y + before.height / 2)
+      await window.mouse.down()
+      await window.mouse.move(before.x - 120, before.y + 100, { steps: 8 })
+      await window.mouse.up()
+      await window.waitForTimeout(200)
+      const after = await trigger.boundingBox()
+      moved = after !== null && Math.abs(after.x - before.x) > 60 && Math.abs(after.y - before.y) > 40
+    }
   }
+  expect(moved).toBe(true)
+  await expect(window.locator('[data-dsh-controls-panel]')).toHaveCount(0)
+  await trigger.click()
+  await expect(window.locator('[data-dsh-controls-panel]')).toBeVisible()
+  await window.screenshot({ path: testInfo.outputPath('04-extension-menu.png') })
+  await window.keyboard.press('Escape')
+  await expect(window.locator('[data-dsh-controls-panel]')).toHaveCount(0)
 
   // The desktop extensions live in their own Settings section now (like
   // General/Models/Plugins), not embedded in General. Scope to the dialog:
