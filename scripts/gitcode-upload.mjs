@@ -41,12 +41,16 @@ export async function getUploadTarget(api, tag, name, token) {
 
 async function putFile(path, { url, headers }) {
   // PUT via curl: Node fetch(undici) caps response-header wait at 300s, which a
-  // ~200MB upload to OBS can exceed before the server answers.
-  const args = ['-sfS', '--max-time', '1200', '-o', '/dev/null', '-T', path]
+  // ~200MB upload to OBS can exceed before the server answers. The outer
+  // timeout must leave one full attempt room: cross-border OBS runs at
+  // ~150 KB/s, so the largest installer (~242 MB) needs ~27 min; the 21 min
+  // cap used to cut such transfers short on every attempt and the files never
+  // landed (observed shell.10 backfill: three installers, zero completions).
+  const args = ['-sfS', '--max-time', '1800', '-o', '/dev/null', '-T', path]
   for (const [key, value] of Object.entries(headers)) args.push('-H', `${key}: ${value}`)
   args.push(url)
   try {
-    await execFileP('curl', args, { maxBuffer: 4 * 1024 * 1024, timeout: 21 * 60_000 })
+    await execFileP('curl', args, { maxBuffer: 4 * 1024 * 1024, timeout: 33 * 60_000 })
   } catch (error) {
     throw new Error(String(error.stderr || error.message).slice(0, 300))
   }
