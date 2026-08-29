@@ -42,15 +42,16 @@ export async function getUploadTarget(api, tag, name, token) {
 async function putFile(path, { url, headers }) {
   // PUT via curl: Node fetch(undici) caps response-header wait at 300s, which a
   // ~200MB upload to OBS can exceed before the server answers. The outer
-  // timeout must leave one full attempt room: cross-border OBS runs at
-  // ~150 KB/s, so the largest installer (~242 MB) needs ~27 min; the 21 min
-  // cap used to cut such transfers short on every attempt and the files never
-  // landed (observed shell.10 backfill: three installers, zero completions).
-  const args = ['-sfS', '--max-time', '1800', '-o', '/dev/null', '-T', path]
+  // timeout must leave one full attempt room: cross-border OBS runs at well
+  // under 150 KB/s in practice, so the largest installer (~242 MB) needs on
+  // the order of 50 min; the 21 min cap used to cut such transfers short on
+  // every attempt and the files never landed (shell.10 backfill: three
+  // installers, zero completions in the 120-min budget).
+  const args = ['-sfS', '--max-time', '3000', '-o', '/dev/null', '-T', path]
   for (const [key, value] of Object.entries(headers)) args.push('-H', `${key}: ${value}`)
   args.push(url)
   try {
-    await execFileP('curl', args, { maxBuffer: 4 * 1024 * 1024, timeout: 33 * 60_000 })
+    await execFileP('curl', args, { maxBuffer: 4 * 1024 * 1024, timeout: 55 * 60_000 })
   } catch (error) {
     throw new Error(String(error.stderr || error.message).slice(0, 300))
   }
@@ -77,16 +78,17 @@ async function uploadOne(api, tag, token, path) {
 
 /**
  * Upload every given file to the GitCode release, smallest first (a slow
- * run should land checksums before the big binaries). Never rejects; the
- * result carries the failed file names.
+ * run should land checksums before the big binaries), with the large ones
+ * in flight together: OBS throttles per connection, so three sequential
+ * ~220 MB transfers at ~100 KB/s need ~2 h — more than the backfill job
+ * budget — while the same transfers in parallel finish in ~50 min. Files
+ * upload independently; the result carries the failed file names.
  */
 export async function uploadGitCodeAssets({ token, repo, tag, files }) {
   const api = `https://api.gitcode.com/api/v5/repos/${repo}`
-  const failed = []
   const ordered = [...files].sort((a, b) => statSync(a).size - statSync(b).size)
-  for (const file of ordered) {
-    if (!(await uploadOne(api, tag, token, file))) failed.push(file)
-  }
+  const attempts = await Promise.all(ordered.map(async (file) => ({ file, ok: await uploadOne(api, tag, token, file) })))
+  const failed = attempts.filter((result) => !result.ok).map((result) => result.file)
   return { ok: failed.length === 0, failed }
 }
 
