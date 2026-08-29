@@ -198,12 +198,15 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle }>({
 async function packagedOrStubHeadline(window: Page): Promise<void> {
   if (PACKAGED) {
     // Real render already waited for in the window fixture; a form control
-    // (prompt input or settings surface) proves the app mounted.
+    // (prompt input or settings surface) proves the app mounted. The first
+    // boot replaces the loading overlay with the harness page, so an
+    // evaluate landing on the navigation can throw — treat it as "not there
+    // yet" and keep polling.
     await expect.poll(
       () => window.evaluate(() => ({
         failed: document.body.innerText.includes('Failed to load plugins'),
         control: document.querySelector('input, textarea, [role="textbox"]') !== null,
-      })),
+      })).catch(() => ({ failed: true, control: false })),
       { timeout: 60_000 },
     ).toEqual({ failed: false, control: true })
   } else {
@@ -474,9 +477,10 @@ shellTest('packaged app shows a desktop notice for a real state edge and restore
   test.skip(!PACKAGED, 'dev stub covers the pipeline; this is the real-Harness check')
   // The window fixture already waited for the real render; the plugin surface
   // proves the harness loaded the desktop-controls bundle. Packaged first
-  // boots can render slowly (the fixture allows 120 s), so keep the poll above
-  // the default expect timeout.
-  await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-controls]') !== null), { timeout: 60_000 }).toBe(true)
+  // boots can render slowly (the fixture allows 120 s) and still navigate,
+  // so keep the poll above the default expect timeout and survive a
+  // navigation-driven context swap.
+  await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-controls]') !== null).catch(() => false), { timeout: 60_000 }).toBe(true)
   await ensureNoticesAvailable(window)
   await instrumentDesktopNotices(electronApp)
   await window.screenshot({ path: testInfo.outputPath('01-real-app.png') })
