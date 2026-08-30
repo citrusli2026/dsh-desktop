@@ -5,7 +5,8 @@ import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { isPrivateLanIPv4, LanService, listPrivateLanIPv4, qrSvgFromCode } from '../src/main/lan.ts'
+import { isLanPairingExpired, isPrivateLanIPv4, LanService, listPrivateLanIPv4, qrSvgFromCode } from '../src/main/lan.ts'
+import { pairingPageMarkup } from '../src/main/lan-page.ts'
 
 test('private LAN address detection rejects loopback and public addresses', () => {
   assert.equal(isPrivateLanIPv4('192.168.1.20'), true)
@@ -13,6 +14,15 @@ test('private LAN address detection rejects loopback and public addresses', () =
   assert.equal(isPrivateLanIPv4('172.20.4.2'), true)
   assert.equal(isPrivateLanIPv4('127.0.0.1'), false)
   assert.equal(isPrivateLanIPv4('8.8.8.8'), false)
+})
+
+test('pairing expiry is based on an absolute timestamp', () => {
+  assert.equal(isLanPairingExpired({ expiresAt: 1_000 }, 999), false)
+  assert.equal(isLanPairingExpired({ expiresAt: 1_000 }, 1_000), true)
+  const markup = pairingPageMarkup({ baseUrl: 'http://192.168.1.2:3081/', pairingUrl: 'http://192.168.1.2:3081/pair', code: '123456', expiresInSeconds: 600, expiresAt: 1_600_000, lanAddress: '192.168.1.2', listenPort: 3081 }, '<svg></svg>', 'en')
+  assert.match(markup, /id="countdown"/)
+  assert.match(markup, /setInterval\(updateCountdown, 1000\)/)
+  assert.match(markup, /has expired/)
 })
 
 test('LAN interface selection keeps private non-internal IPv4 addresses', () => {
@@ -108,6 +118,7 @@ server.listen(port, host)
     assert.equal(pairing.listenPort > 0, true)
     assert.equal(service.isRunning, true)
     assert.equal(service.currentPairing?.code, pairing.code)
+    assert.equal(pairing.expiresAt > Date.now(), true)
     assert.ok(stateChanges > 0, 'start should have notified state changes')
 
     // Restart: stop + start, yielding a fresh pairing.

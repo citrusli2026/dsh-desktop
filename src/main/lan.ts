@@ -15,6 +15,7 @@ export interface LanPairing {
   readonly pairingUrl: string
   readonly code: string
   readonly expiresInSeconds: number
+  readonly expiresAt: number
   readonly lanAddress: string
   readonly listenPort: number
 }
@@ -40,6 +41,10 @@ export function isPrivateLanIPv4(address: string): boolean {
   return first === 10
     || (first === 172 && second !== undefined && second >= 16 && second <= 31)
     || (first === 192 && second === 168)
+}
+
+export function isLanPairingExpired(pairing: Pick<LanPairing, 'expiresAt'>, now = Date.now()): boolean {
+  return pairing.expiresAt <= now
 }
 
 function interfaceRank(name: string): number {
@@ -198,6 +203,7 @@ export class LanService {
   private targetUrl: string | undefined
   private stopping = false
   private startAbortController: AbortController | undefined
+  private pairingExpiryTimer: NodeJS.Timeout | undefined
 
   constructor(options: LanServiceOptions) {
     this.options = options
@@ -219,6 +225,7 @@ export class LanService {
   }
 
   get currentPairing(): LanPairing | undefined {
+    if (this.pairing !== undefined && isLanPairingExpired(this.pairing)) this.expirePairing()
     return this.pairing
   }
 
@@ -228,7 +235,15 @@ export class LanService {
 
   start(): Promise<LanPairing> {
     if (this.startSlot.pending) return this.startSlot.current!
-    if (this.isRunning && this.pairing !== undefined) return Promise.resolve(this.pairing)
+    const currentPairing = this.currentPairing
+    if (this.isRunning && currentPairing !== undefined) return Promise.resolve(currentPairing)
+    if (this.isRunning) {
+      const task = this.stop().then(() => {
+        this.stopping = false
+        return this.startInternal()
+      })
+      return this.trackStart(task)
+    }
     if (this.stopSlot.pending) {
       const task = this.stopSlot.current!.then(() => {
         this.stopping = false
@@ -310,6 +325,8 @@ export class LanService {
       }
       child.once('exit', () => {
         if (!this.stopping) this.options.onLog?.('mobile-shell: LAN proxy stopped unexpectedly')
+        clearTimeout(this.pairingExpiryTimer)
+        this.pairingExpiryTimer = undefined
         this.pairing = undefined
         this.targetUrl = undefined
         this.options.onStateChanged?.()
@@ -318,14 +335,19 @@ export class LanService {
 
       await waitForHealth(baseUrl, START_TIMEOUT_MS, controller.signal)
       const result = await requestPairing(baseUrl, token, controller.signal)
+      const expiresInSeconds = Math.max(1, Math.floor(result.expiresInSeconds))
       this.pairing = {
         baseUrl,
         pairingUrl: result.pairingUrl,
         code: result.code,
-        expiresInSeconds: result.expiresInSeconds,
+        expiresInSeconds,
+        expiresAt: Date.now() + expiresInSeconds * 1_000,
         lanAddress,
         listenPort,
       }
+      clearTimeout(this.pairingExpiryTimer)
+      this.pairingExpiryTimer = setTimeout(() => this.expirePairing(), expiresInSeconds * 1_000)
+      this.pairingExpiryTimer.unref()
       return this.pairing
     } catch (error) {
       await this.stop()
@@ -353,9 +375,19 @@ export class LanService {
     this.stopping = true
     this.startAbortController?.abort()
     this.targetUrl = undefined
+    clearTimeout(this.pairingExpiryTimer)
+    this.pairingExpiryTimer = undefined
     this.pairing = undefined
     // SIGTERM → SIGKILL (3s) with a Windows tree sweep; resolves immediately
     // when no proxy child is running or it already exited.
     await this.managed.stop(3_000)
+  }
+
+  private expirePairing(): void {
+    if (this.pairing === undefined) return
+    this.pairing = undefined
+    clearTimeout(this.pairingExpiryTimer)
+    this.pairingExpiryTimer = undefined
+    this.options.onStateChanged?.()
   }
 }

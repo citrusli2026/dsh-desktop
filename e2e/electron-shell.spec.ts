@@ -274,6 +274,13 @@ shellTest('native menu and title follow the Harness locale preference @smoke @cr
     .toBe('dsh-desktop — DeepSeek Harness（社区版）')
 })
 
+shellTest('desktop shell visual sanity check @visual', async ({ window }, testInfo) => {
+  await packagedOrStubHeadline(window)
+  await expect(window.locator('[data-dsh-window-drag-region]')).toHaveCount(1)
+  await expect(window.getByRole('heading').first()).toBeVisible()
+  await window.screenshot({ path: testInfo.outputPath('shell-visual.png'), animations: 'disabled' })
+})
+
 shellTest('closing hides to tray and a second-instance activation restores the window @smoke @critical', async ({ electronApp, window }) => {
   await packagedOrStubHeadline(window)
   await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isVisible())).toBe(true)

@@ -41,6 +41,23 @@ body:
         2. ...
     validations:
       required: true
+  - type: dropdown
+    id: harness_phase
+    attributes:
+      label: Harness state
+      description: What state does the desktop shell show when the issue occurs?
+      options:
+        - Ready
+        - Starting
+        - Recovery paused
+        - Safe Mode
+        - Unknown
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostic report
+      description: Paste the relevant redacted lines from Help → Export diagnostics. Remove tokens, API keys, and private data.
+      render: text
   - type: markdown
     attributes:
       value: |
