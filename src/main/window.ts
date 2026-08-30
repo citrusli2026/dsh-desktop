@@ -2,6 +2,7 @@
 import { app, BrowserWindow, clipboard, Menu, nativeTheme, screen, shell } from 'electron'
 import { join } from 'node:path'
 import { errorPageHtml, loadingPageHtml } from './pages.ts'
+import type { HarnessStartupStage } from './supervisor.ts'
 import type { ComposedRow } from './safe-mode.ts'
 import { fitWindowState, MIN_WINDOW_HEIGHT, MIN_WINDOW_WIDTH, type WindowState } from './window-state.ts'
 import { shellText, type ShellLocale } from './locale.ts'
@@ -11,7 +12,7 @@ import { MAX_RENDERER_RECOVERIES, recordRendererRecovery } from './renderer-reco
 import { buildLanMenuItems, buildSafeModeMenuItems, type LanMenuActions, type LanMenuState } from './menu-template.ts'
 
 type BuiltInPage =
-  | { kind: 'loading' }
+  | { kind: 'loading'; stage: HarnessStartupStage; retryDelayMs: number }
   | { kind: 'error'; attempts: number; logTail: string; safeMode: boolean; suspects: ComposedRow[] }
 
 export interface WindowLanApi {
@@ -276,9 +277,13 @@ export async function loadHarnessUrl(context: WindowContext, url: string): Promi
   await navigateWindow(context, url)
 }
 
-export async function loadLoadingPage(context: WindowContext): Promise<void> {
-  context.builtInPage = { kind: 'loading' }
-  await navigateWindow(context, loadingPageHtml(context.getLocale()))
+export async function loadLoadingPage(
+  context: WindowContext,
+  stage: HarnessStartupStage = 'launching',
+  retryDelayMs = 0,
+): Promise<void> {
+  context.builtInPage = { kind: 'loading', stage, retryDelayMs }
+  await navigateWindow(context, loadingPageHtml(context.getLocale(), stage, retryDelayMs))
 }
 
 export async function loadErrorPage(context: WindowContext, attempts: number, logTail: string, safeMode = false, suspects: ComposedRow[] = []): Promise<void> {
@@ -289,7 +294,7 @@ export async function loadErrorPage(context: WindowContext, attempts: number, lo
 /** Re-render shell-owned pages and title after a live language switch. */
 export async function refreshWindowLocale(context: WindowContext): Promise<void> {
   context.mainWindow?.setTitle(shellText(context.getLocale(), 'window.title'))
-  if (context.builtInPage?.kind === 'loading') await loadLoadingPage(context)
+  if (context.builtInPage?.kind === 'loading') await loadLoadingPage(context, context.builtInPage.stage, context.builtInPage.retryDelayMs)
   else if (context.builtInPage?.kind === 'error') {
     await loadErrorPage(context, context.builtInPage.attempts, context.builtInPage.logTail, context.builtInPage.safeMode, context.builtInPage.suspects)
   }

@@ -7,6 +7,7 @@
 import { shellText, type ShellLocale } from './locale.ts'
 import { asDataUrl, escapeHtml } from './shell-html.ts'
 import type { ComposedRow } from './safe-mode.ts'
+import type { HarnessStartupStage } from './supervisor.ts'
 
 const STYLE = `
   :root { color-scheme: light dark; --bg: #f9f8f8; --panel: #ffffff; --line: #e7e7e9;
@@ -29,6 +30,8 @@ const STYLE = `
   .status--error { color: var(--danger); }
   .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
              color: var(--muted); font-size: 14px; line-height: 1.5; }
+  .loading-stage { color: var(--text); font-weight: 600; }
+  .loading-detail { margin: 0; font-size: 12px; color: var(--muted); }
   .loading-line { width: 116px; height: 2px; overflow: hidden; border-radius: 2px; background: var(--line); }
   .loading-line::after { content: ""; display: block; width: 32%; height: 100%; background: var(--signal);
                          box-shadow: 0 0 12px rgba(77,107,254,.38); animation: travel 1.2s ease-in-out infinite; }
@@ -57,12 +60,24 @@ const STYLE = `
 `
 
 /** The startup placeholder page. */
-export function loadingPageHtml(locale: ShellLocale = 'en'): string {
+export function loadingPageHtml(
+  locale: ShellLocale = 'en',
+  stage: HarnessStartupStage = 'launching',
+  retryDelayMs = 0,
+): string {
   const lang = locale === 'zh' ? 'zh-CN' : 'en'
+  const titleKey = stage === 'waiting-for-ready'
+    ? 'page.waitingForReadyTitle'
+    : stage === 'retrying'
+      ? 'page.retryingTitle'
+      : 'page.launchingTitle'
+  const detail = stage === 'retrying'
+    ? `<small class="loading-detail">${escapeHtml(shellText(locale, 'page.retryingDetail', { seconds: Math.ceil(retryDelayMs / 1000) }))}</small>`
+    : ''
   return asDataUrl(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>dsh-desktop</title>
     <meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
     <style>${STYLE}</style></head><body><main class="loading" aria-live="polite">
-    <span class="loading-line" aria-hidden="true"></span><span>${escapeHtml(shellText(locale, 'page.startingTitle'))}</span>
+    <span class="loading-line" aria-hidden="true"></span><span class="loading-stage">${escapeHtml(shellText(locale, titleKey))}</span>${detail}
     </main>
     </body></html>`)
 }

@@ -506,7 +506,12 @@ window.__ModuleLoader__.load({
         if (value !== null) setStartup(value);
       };
 
-      react.useEffect(() => { void refreshStartup(); }, [bridge]);
+      react.useEffect(() => {
+        void refreshStartup();
+        if (typeof bridge?.getStartupStatus !== "function") return undefined;
+        const timer = setInterval(() => { void refreshStartup(); }, 1000);
+        return () => clearInterval(timer);
+      }, [bridge]);
 
       const update = async (patch) => {
         if (typeof bridge?.updateDesktopPreferences !== "function") return;
@@ -712,7 +717,7 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsx("h4", { "data-dsh-desktop-onboarding-title": true, children: copy.firstLaunchTitle }),
             react_jsx_runtime.jsx("p", { "data-dsh-desktop-onboarding-copy": true, children: copy.firstLaunchCopy }),
             react_jsx_runtime.jsxs("ol", { children: [
-              react_jsx_runtime.jsx("li", { "data-dsh-onboarding-done": startup?.harnessPhase === "ready" || null, "data-dsh-onboarding-pending": startup?.harnessPhase !== "ready" || null, children: startup?.statusLabel ?? (startup?.harnessPhase === "ready" ? copy.harnessReady : copy.harnessStarting) }),
+              react_jsx_runtime.jsx("li", { "data-dsh-onboarding-stage": startup?.harnessStage ?? null, "data-dsh-onboarding-done": startup?.harnessPhase === "ready" || null, "data-dsh-onboarding-pending": startup?.harnessPhase !== "ready" || null, children: startup?.statusLabel ?? (startup?.harnessPhase === "ready" ? copy.harnessReady : copy.harnessStarting) }),
               react_jsx_runtime.jsxs("li", { children: [copy.dataDirectory, react_jsx_runtime.jsx("code", { children: startup?.dshHome ?? "~/.dsh-desktop" })] }),
               react_jsx_runtime.jsx("li", { "data-dsh-onboarding-done": marketState === "installed" || null, "data-dsh-onboarding-pending": marketState !== "installed" || null, children: marketState === "installed" ? copy.marketInstalledHint : copy.manualMarket }),
             ] }),
@@ -868,8 +873,10 @@ window.__ModuleLoader__.load({
 
       react.useEffect(() => {
         if (!open || typeof bridge?.getStartupStatus !== "function") return undefined;
-        void bridge.getStartupStatus().then((value) => { if (value !== null) setStartup(value); });
-        return undefined;
+        const refresh = () => void bridge.getStartupStatus().then((value) => { if (value !== null) setStartup(value); });
+        refresh();
+        const timer = setInterval(refresh, 1000);
+        return () => clearInterval(timer);
       }, [open, bridge]);
 
       react.useEffect(() => {
@@ -983,7 +990,7 @@ window.__ModuleLoader__.load({
           }),
           open ? react_jsx_runtime.jsxs("section", { id: "dsh-desktop-controls-panel", "data-dsh-controls-panel": true, role: "dialog", "aria-label": copy.title, children: [
             react_jsx_runtime.jsx("h2", { "data-dsh-controls-heading": true, children: copy.title }),
-            startup?.statusLabel ? react_jsx_runtime.jsx("p", { "data-dsh-controls-status": true, role: "status", children: startup.statusLabel }) : null,
+            startup?.statusLabel ? react_jsx_runtime.jsx("p", { "data-dsh-controls-status": true, "data-dsh-controls-stage": startup?.harnessStage ?? null, role: "status", children: startup.statusLabel }) : null,
             typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
               lanState?.running === true ? react_jsx_runtime.jsxs(react.Fragment, { children: [
                 react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("showLanPairing"), children: copy.lanShowQr }),

@@ -114,6 +114,7 @@ export interface DiagnosticFacts {
 function stateLine(state: HarnessState | undefined): string {
   if (state?.phase === 'ready') return 'ready'
   if (state?.phase === 'crashed') return `crashed (attempts=${state.attempts})`
+  if (state?.stage !== undefined) return `starting (${state.stage})`
   return 'starting'
 }
 

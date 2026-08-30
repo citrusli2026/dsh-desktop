@@ -98,3 +98,15 @@ test('formatDiagnosticReport records versions and crash state without upload', (
   assert.match(report, /user-a \(user-plugin\)/)
   assert.match(report, /uploaded_automatically=false/)
 })
+
+test('formatDiagnosticReport includes the concrete startup stage', () => {
+  const report = formatDiagnosticReport({
+    createdAt: '2026-08-30T00:00:00.000Z',
+    appVersion: '1.0.0.shell.15', electronVersion: '43.0.0', chromiumVersion: '142', nodeVersion: '22',
+    platform: 'darwin', platformRelease: '25.0.0', arch: 'arm64',
+    harnessState: { phase: 'starting', stage: 'waiting-for-ready' }, logTail: 'booting',
+    harnessVersion: '0.1.1-rc.2', safeMode: false,
+    pluginInventory: undefined, pluginFailures: [],
+  })
+  assert.match(report, /harness_state=starting \(waiting-for-ready\)/)
+})

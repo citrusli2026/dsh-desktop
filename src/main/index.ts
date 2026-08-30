@@ -343,7 +343,7 @@ const shellApp = new ShellApp({
     } else if (state.phase === 'crashed') {
       void loadErrorPage(windowContext, state.attempts, state.logTail, safeModeActive(), lastPluginFailures)
     } else {
-      void loadLoadingPage(windowContext)
+      void loadLoadingPage(windowContext, state.stage ?? 'launching', state.retryDelayMs ?? 0)
     }
     installAppMenu(currentLocale, menuActions, shellApp.restartEnabled(), safeModeActive(), lanService.isRunning, lanService.isBusy, desktopPreferencesController?.snapshot.shortcut)
     refreshTray()
@@ -652,6 +652,10 @@ ipcMain.handle('desktop:startup-status', async (event) => {
     dshHome: desktopDshHome(),
     userData: app.getPath('userData'),
     harnessPhase: shellApp.state?.phase ?? 'starting',
+    harnessStage: shellApp.state?.phase === 'starting' ? shellApp.state.stage : undefined,
+    retryInSeconds: shellApp.state?.phase === 'starting' && shellApp.state.stage === 'retrying'
+      ? Math.ceil((shellApp.state.retryDelayMs ?? 0) / 1000)
+      : undefined,
     statusLabel: statusLabelWithMode(currentLocale, shellApp.state, shellApp.restartInFlight, safeModeActive()),
     safeMode: safeModeActive(),
     market: profile.dshMarket,

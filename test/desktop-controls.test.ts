@@ -27,6 +27,8 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   // Manual market entry: settings row + main-process install.
   assert.match(client, /getBundledPlugins/)
   assert.match(client, /getStartupStatus/)
+  assert.match(client, /data-dsh-onboarding-stage/)
+  assert.match(client, /data-dsh-controls-stage/)
   assert.match(client, /installDshMarket/)
   assert.match(client, /marketInstall/)
   assert.match(client, /marketDamaged/)

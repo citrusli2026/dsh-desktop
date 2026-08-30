@@ -46,7 +46,11 @@ test('supervisor resolves the ready URL and records output', async () => {
   ])
   try {
     assert.equal(await supervisor.start(), 'http://127.0.0.1:43123')
-    assert.deepEqual(states.map(state => state.phase), ['starting', 'ready'])
+    assert.deepEqual(states, [
+      { phase: 'starting', stage: 'launching' },
+      { phase: 'starting', stage: 'waiting-for-ready' },
+      { phase: 'ready', url: 'http://127.0.0.1:43123' },
+    ])
   } finally {
     await supervisor.stop()
   }

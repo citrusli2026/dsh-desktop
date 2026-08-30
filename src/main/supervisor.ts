@@ -48,8 +48,17 @@ export function insertPatches(args: readonly string[], patches: readonly string[
 }
 
 /** Supervisor-reported lifecycle state, consumed by the window controller. */
+export type HarnessStartupStage = 'launching' | 'waiting-for-ready' | 'retrying'
+
 export type HarnessState =
-  | { phase: 'starting' }
+  | {
+      phase: 'starting'
+      /** The concrete startup step shown on shell-owned surfaces. */
+      stage?: HarnessStartupStage
+      /** Retry metadata is present while the supervisor waits to respawn. */
+      attempts?: number
+      retryDelayMs?: number
+    }
   | { phase: 'ready'; url: string }
   | { phase: 'crashed'; attempts: number; logTail: string }
 
@@ -206,6 +215,7 @@ export class HarnessSupervisor {
       env: this.env,
       windowsHide: true,
     })
+    this.events.onState({ phase: 'starting', stage: 'waiting-for-ready' })
     for (const stream of [child.stdout, child.stderr]) {
       const lines = createInterface({ input: stream! })
       lines.on('line', (line) => {
@@ -262,13 +272,19 @@ export class HarnessSupervisor {
   }
 
   private scheduleRestart(): void {
-    const decision = decideRestart(this.windowedAttempts(), this.restartDelay)
+    const attempts = this.windowedAttempts()
+    const decision = decideRestart(attempts, this.restartDelay)
     if (decision.action === 'gaveUp') {
       this.events.onState({ phase: 'crashed', attempts: decision.attempts, logTail: this.logLines.join('\n') })
       return
     }
     this.restartDelay = decision.delay
-    this.events.onState({ phase: 'starting' })
+    this.events.onState({
+      phase: 'starting',
+      stage: 'retrying',
+      attempts,
+      retryDelayMs: decision.delay,
+    })
     this.restartTimer = setTimeout(() => {
       this.restartTimer = undefined
       void this.trySpawn().catch(error => { this.failStart(error) })
@@ -297,7 +313,7 @@ export class HarnessSupervisor {
     if (this.restartTimer !== undefined) clearTimeout(this.restartTimer)
     this.restartTimer = undefined
     this.stopping = false
-    this.events.onState({ phase: 'starting' })
+    this.events.onState({ phase: 'starting', stage: 'launching' })
     return new Promise<string>((resolve, reject) => {
       this.resolveReady = resolve
       this.rejectReady = reject
