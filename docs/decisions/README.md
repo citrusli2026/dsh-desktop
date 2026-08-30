@@ -34,3 +34,4 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0026 | Kernel overlay — the second update chain / 内核 overlay——第二条更新链 | [EN](0026-kernel-overlay-second-update-chain.md) · [中文](0026-kernel-overlay-second-update-chain.zh.md) | Accepted / 已接受 |
 | 0027 | Opt-in screen capture tool — vision via the native pipeline / opt-in 屏幕捕获工具——走原生管线的视觉能力 | [EN](0027-optin-screen-capture-tool.md) · [中文](0027-optin-screen-capture-tool.zh.md) | Accepted / 已接受 |
 | 0028 | Extension surfaces gain a restart action / 扩展面增加重启动作 | [EN](0028-extension-surface-restart.md) · [中文](0028-extension-surface-restart.zh.md) | Accepted / 已接受 |
+| 0029 | Manual installation for all community plugins / 社区插件全部改为用户手动安装 | [EN](0029-manual-community-plugin-install.md) · [中文](0029-manual-community-plugin-install.zh.md) | Accepted / 已接受 |

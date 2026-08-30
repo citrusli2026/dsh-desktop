@@ -66,7 +66,7 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Invoke one of the fixed, low-risk desktop controls from the Harness UI. */
   desktopAction: (action: 'startLanPairing' | 'stopLanPairing' | 'showAbout' | 'enterSafeMode' | 'exitSafeMode' | 'installDshMarket' | 'openRecharge' | 'kernelCheckUpdates' | 'kernelInstall' | 'kernelRestore'): Promise<boolean> =>
     ipcRenderer.invoke('desktop:action', action),
-  /** Read which curated bundles the profile already carries (settings row). */
+  /** Read whether the user has installed the market bundle (settings row). */
   getBundledPlugins: (): Promise<{ dshMarketInstalled: boolean } | null> =>
     ipcRenderer.invoke('desktop:bundled-plugins'),
   /** DeepSeek balance formatted for display; null when unavailable. */

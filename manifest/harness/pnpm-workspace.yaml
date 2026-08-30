@@ -218,5 +218,3 @@ minimumReleaseAgeExclude:
   - '@deepseek-ai/node-addon-landlock-run@0.1.1'
   - '@deepseek-ai/schemastery@3.18.1'
   - '@deepseek-ai/dsh-authorization@0.1.1-rc.2'
-  - dsh-better-sidebar@0.17.1
-  - dshmarket@1.36.0

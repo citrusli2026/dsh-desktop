@@ -1,6 +1,7 @@
 # 与高星 DSH 桌面端的差距与取舍分析
 
 > 2026-08-29。基于 [community-dsh-desktop-research.md](community-dsh-desktop-research.md)（2026-08-28 全量调研,含主来源链接）与本日新增调研（dsh-market 安装机制、vibeinging Bundle Edition 预装策略、awesome-dsh-plugin 精选目录）。星数为 2026-08-28 采样。
+> 产品策略更正（2026-08-30）：dsh-desktop 不预装社区插件；用户需手动安装 dsh-market 后再按需选择其他插件。
 
 ## 1. 同质化:骨架趋同,差异在"窗口之外"
 
@@ -8,7 +9,7 @@
 
 | 功能簇 | 谁在做 | 我们 |
 |---|---|---|
-| 插件市场/预装 | dsh-market(2.7k)、anywhere-labs(21.4k)、EAC(1.4k)、vibeinging(632) | ✅ 本轮补齐(ADR 0024) |
+| 插件市场/安装入口 | dsh-market(2.7k)、anywhere-labs(21.4k)、EAC(1.4k)、vibeinging(632) | ✅ 市场入口保留；社区插件改为全部手动安装(ADR 0029) |
 | 代码签名/公证 | dataelement(3.0k)、vibeinging、liguobao | ❌ 最大信任缺口 |
 | vision/画面捕获 | FuqiangCraft、Studio、EAC | ❌ 仅有规划 |
 | 本地模型 | Minke(572)、Studio(548) | ❌ |
@@ -42,4 +43,4 @@
 
 ## 4. 本轮已落地
 
-- **精选首启预装**(ADR 0024):新档案离线播种 dshmarket + Better Sidebar + 任务看板,老档案经扩展设置一行补装市场;详见决策记录与 [community-dsh-desktop-research.md](community-dsh-desktop-research.md) §4 的预装对标条目。
+- **社区插件安装**(ADR 0029):安装包不再预装 dshmarket、Better Sidebar 或任务看板;用户先从扩展设置手动安装 dsh-market,再按需从插件市场安装其他社区插件。ADR 0024 的首启预装仅保留为历史对比。

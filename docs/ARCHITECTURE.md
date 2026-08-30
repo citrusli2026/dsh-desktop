@@ -4,9 +4,9 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-08-30 · 当前代码基线 `0.1.1-rc.2.shell.12`
-（shell.10 之后: 扩展入口统一补齐安全模式/重启 Harness、插件市场官网说明与真实机器
-安装链修复 ADR 0028; 内核 `0.1.1-rc.2` 未变）
+最后更新: 2026-08-30 · 当前代码基线 `0.1.1-rc.2.shell.13`
+（shell.12 之后: 移除社区插件随包依赖与首启自动播种，所有社区插件改为用户手动安装；
+内核 `0.1.1-rc.2` 未变）
 
 ## 1. 产品概述
 
@@ -33,7 +33,7 @@ src/main/balance.ts         DeepSeek 余额读数(0025):凭证读取、缓存与
 src/main/lan.ts             局域网 Web 代理与配对二维码
 src/main/diagnostics.ts     日志轮转、遮罩、报告格式与导出版
 src/main/presets.ts         便携预设包(.dshpreset)导出/导入、冲突与信任检查
-src/main/profile-seed.ts    首启 curated 种子 bundle(0024):清单门控与符号链接
+src/main/profile.ts         只读用户 Harness profile 清单与已安装插件状态
 src/main/safe-mode.ts       安全模式:用户 bundle 盘点、禁用覆盖层、失败签名检测
 src/main/restart-policy.ts  就绪协议、退避与重启预算纯函数
 src/main/window-state.ts    窗口几何校验纯函数
@@ -51,7 +51,7 @@ plugins/dsh-desktop-controls/  应用内扩展入口帮助浮层与扩展设置�
 
 0. 依赖安全审计（官方 npm registry）;
 1. TypeScript typecheck;
-2. 172 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
+2. 178 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
 3. `site:check` 与 `check-api-downloads`（双语键、静态资源与下载接口契约）;
 4. 主进程/预加载构建; Harness 闭包与内置 Node bootstrap;
 5. 三条 xvfb 冒烟: 正常启动、错误页重试成功、强制重试失败后按钮恢复;

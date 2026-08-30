@@ -8,7 +8,7 @@ import { join } from 'node:path'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
-import { readProfileBundles, seedCuratedProfile } from './profile-seed.ts'
+import { readProfileBundles } from './profile.ts'
 import { BalanceService, formatBalance, readDeepSeekApiKey, type FetchLike } from './balance.ts'
 import {
   activeKernelBin,
@@ -844,19 +844,6 @@ if (!gotLock) {
     if (!SMOKE_TEST) {
       desktopPreferencesController.initialize()
       windowContext.startHidden = desktopPreferencesController.shouldStartHidden()
-    }
-
-    // First-run curated seeding (decision 0024) must land before the first
-    // harness boot: the loader reads the profile manifest once and never
-    // rewrites an existing one. Failure degrades to the stock template boot.
-    try {
-      const seed = await seedCuratedProfile({
-        dshHome: resolveDshHome(process.env, homedir()),
-        bundledNodeModules: join(harnessRoot(), 'node_modules'),
-      })
-      if (seed.seeded.length > 0) console.log(`dsh-desktop: seeded curated bundles: ${seed.seeded.join(', ')}`)
-    } catch (error) {
-      console.warn(`dsh-desktop: curated seed skipped: ${error instanceof Error ? error.message : String(error)}`)
     }
 
     // The harness (and the market installs it spawns) needs the bundled-pnpm

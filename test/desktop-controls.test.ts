@@ -24,7 +24,7 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.doesNotMatch(client, /openLogs/)
   assert.doesNotMatch(client, /exportDiagnostics/)
   assert.match(client, /showAbout/)
-  // Curated-market entry (decision 0024): settings row + main-process install.
+  // Manual market entry: settings row + main-process install.
   assert.match(client, /getBundledPlugins/)
   assert.match(client, /installDshMarket/)
   assert.match(client, /marketInstall/)
