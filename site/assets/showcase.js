@@ -89,9 +89,8 @@
       previousFocus = null
     }
 
-    function openLightbox(slide) {
+    function openLightbox(image) {
       if (!lightbox || !lightboxImage) return
-      var image = activeImage(slide)
       if (!image) return
       previousFocus = document.activeElement
       lightboxImage.src = image.currentSrc || image.src
@@ -132,10 +131,11 @@
     }
 
     slides.forEach(function (slide) {
-      var zoom = slide.querySelector('[data-showcase-zoom]')
-      if (!zoom) return
-      zoom.setAttribute('aria-label', labels.zoom)
-      zoom.addEventListener('click', function () { openLightbox(slide) })
+      var zooms = slide.querySelectorAll('[data-showcase-zoom]')
+      Array.prototype.forEach.call(zooms, function (zoom) {
+        if (!zoom.getAttribute('aria-label')) zoom.setAttribute('aria-label', labels.zoom)
+        zoom.addEventListener('click', function () { openLightbox(activeImage(zoom)) })
+      })
     })
 
     if (lightboxClose) {
