@@ -9,6 +9,22 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { MACOS_SIDEBAR_COLLAPSED_SAFE_TOP, MACOS_SIDEBAR_SAFE_TOP } from '../main/window-chrome.ts'
 import type { DesktopPreferencesResult, DesktopPreferencesSnapshot, DesktopPreferencesUpdate } from '../main/desktop-preferences.ts'
+import type { ProfilePackageStatus } from '../main/profile.ts'
+
+export interface DesktopStartupStatus {
+  appVersion: string
+  dshHome: string
+  userData: string
+  harnessPhase: 'starting' | 'ready' | 'crashed'
+  safeMode: boolean
+  market: ProfilePackageStatus
+}
+
+export interface MarketInstallResult {
+  status: 'installed' | 'download-failed' | 'install-failed' | 'restart-failed' | 'unavailable'
+  installed: boolean
+  detail?: string
+}
 
 function installWindowDragRegion(): void {
   if (document.querySelector('[data-dsh-window-drag-region]') !== null) return
@@ -64,11 +80,14 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Close the shell-owned LAN pairing modal. */
   closeLanPairing: (): Promise<boolean> => ipcRenderer.invoke('shell:close-lan-pairing'),
   /** Invoke one of the fixed, low-risk desktop controls from the Harness UI. */
-  desktopAction: (action: 'startLanPairing' | 'stopLanPairing' | 'showAbout' | 'enterSafeMode' | 'exitSafeMode' | 'installDshMarket' | 'openRecharge' | 'kernelCheckUpdates' | 'kernelInstall' | 'kernelRestore'): Promise<boolean> =>
+  desktopAction: (action: 'startLanPairing' | 'stopLanPairing' | 'showAbout' | 'enterSafeMode' | 'exitSafeMode' | 'installDshMarket' | 'openRecharge' | 'kernelCheckUpdates' | 'kernelInstall' | 'kernelRestore'): Promise<boolean | MarketInstallResult> =>
     ipcRenderer.invoke('desktop:action', action),
-  /** Read whether the user has installed the market bundle (settings row). */
-  getBundledPlugins: (): Promise<{ dshMarketInstalled: boolean } | null> =>
+  /** Read the user profile's community-market state (settings row). */
+  getBundledPlugins: (): Promise<{ dshMarket: ProfilePackageStatus } | null> =>
     ipcRenderer.invoke('desktop:bundled-plugins'),
+  /** Read the compact first-launch and shell status summary. */
+  getStartupStatus: (): Promise<DesktopStartupStatus | null> =>
+    ipcRenderer.invoke('desktop:startup-status'),
   /** DeepSeek balance formatted for display; null when unavailable. */
   getBalance: (): Promise<{ balance: string } | null> =>
     ipcRenderer.invoke('desktop:balance'),

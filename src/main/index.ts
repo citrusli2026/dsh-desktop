@@ -8,7 +8,7 @@ import { join } from 'node:path'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
-import { readProfileBundles } from './profile.ts'
+import { readProfileStatus } from './profile.ts'
 import { BalanceService, formatBalance, readDeepSeekApiKey, type FetchLike } from './balance.ts'
 import {
   activeKernelBin,
@@ -39,7 +39,7 @@ import { createTray, destroyTray, refreshTray, type TrayActions } from './tray.t
 import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } from './update-prompt.ts'
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
 import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
-import { exportDiagnosticReport } from './diagnostics.ts'
+import { exportDiagnosticReport, redactDiagnosticsLog } from './diagnostics.ts'
 import { collectPluginFailures, writeSafeModeOverlay, WEB_PROFILE, type ComposedRow } from './safe-mode.ts'
 import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage } from './presets.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
@@ -229,35 +229,69 @@ async function installChildEnv(): Promise<NodeJS.ProcessEnv> {
  * new bundle up. The package stays user-owned: visible in 设置 → 插件,
  * updatable/uninstallable by the market itself, quarantined by Safe Mode.
  */
-async function installDshMarket(): Promise<boolean> {
-  if (SMOKE_TEST) return false
+interface MarketInstallResult {
+  status: 'installed' | 'download-failed' | 'install-failed' | 'restart-failed' | 'unavailable'
+  installed: boolean
+  detail?: string
+}
+
+let marketInstallTask: Promise<MarketInstallResult> | undefined
+
+async function installDshMarket(): Promise<MarketInstallResult> {
+  if (SMOKE_TEST) return { status: 'unavailable', installed: false }
+  if (marketInstallTask !== undefined) return marketInstallTask
+  marketInstallTask = installDshMarketInternal()
+  try {
+    return await marketInstallTask
+  } finally {
+    marketInstallTask = undefined
+  }
+}
+
+async function installDshMarketInternal(): Promise<MarketInstallResult> {
   const root = harnessRoot()
-  const child = spawn(
-    nodeBin(root),
-    [dshBin(root), 'plugin', '--profile', WEB_PROFILE, 'add', DSHMARKET_PACKAGE],
-    { env: await installChildEnv(), stdio: ['ignore', 'ignore', 'pipe'] },
-  )
+  let child
+  try {
+    child = spawn(
+      nodeBin(root),
+      [dshBin(root), 'plugin', '--profile', WEB_PROFILE, 'add', DSHMARKET_PACKAGE],
+      { env: await installChildEnv(), stdio: ['ignore', 'ignore', 'pipe'] },
+    )
+  } catch (error) {
+    return { status: 'download-failed', installed: false, detail: error instanceof Error ? error.message : String(error) }
+  }
   // Keep the CLI's stderr tail: its failures are environment problems
   // (missing pnpm, registry refused) that the UI can only hint at.
   let stderrTail = ''
   child.stderr?.on('data', (chunk: Buffer) => { stderrTail = `${stderrTail}${chunk.toString()}`.slice(-2_000) })
+  let timedOut = false
+  let spawnFailed = false
   const code = await new Promise<number>((resolve) => {
-    const timer = setTimeout(() => { child.kill(); resolve(1) }, DSHMARKET_INSTALL_TIMEOUT_MS)
+    const timer = setTimeout(() => { timedOut = true; child.kill(); resolve(1) }, DSHMARKET_INSTALL_TIMEOUT_MS)
     timer.unref()
     child.on('close', (value) => { clearTimeout(timer); resolve(value ?? 1) })
-    child.on('error', () => { clearTimeout(timer); resolve(1) })
+    child.on('error', () => { spawnFailed = true; clearTimeout(timer); resolve(1) })
   })
   if (code !== 0) {
-    console.warn(`dsh-desktop: dshmarket install failed (exit ${code})${stderrTail.trim() === '' ? '' : `: ${stderrTail.trim()}`}`)
-    return false
+    const detail = redactDiagnosticsLog(stderrTail).trim().slice(-2_000)
+    const status = timedOut || spawnFailed ? 'download-failed' : 'install-failed'
+    console.warn(`dsh-desktop: dshmarket ${status} (exit ${code})${detail === '' ? '' : `: ${detail}`}`)
+    return { status, installed: false, ...(detail === '' ? {} : { detail }) }
+  }
+  const profile = await readProfileStatus(desktopDshHome())
+  if (profile.dshMarket.state !== 'installed') {
+    return { status: 'install-failed', installed: false, detail: 'market package did not appear in the user profile' }
   }
   refreshNativeSurfaces()
   // The install landed even if the restart fails (crash page offers retry);
   // reporting it as a failed install would send users hunting for a network
   // problem they do not have.
   const restarted = await shellApp.runHarnessRestart()
-  if (!restarted) console.warn('dsh-desktop: dshmarket installed; the restart failed — it loads on the next boot')
-  return true
+  if (!restarted) {
+    console.warn('dsh-desktop: dshmarket installed; the restart failed — it loads on the next boot')
+    return { status: 'restart-failed', installed: true }
+  }
+  return { status: 'installed', installed: true }
 }
 
 /** Rebuild the Safe Mode overlay from the live profile and return its path. */
@@ -299,7 +333,6 @@ const shellApp = new ShellApp({
     notifyHarnessState(state)
     if (state.phase !== 'ready') lastPublicStatus = undefined
     if (state.phase === 'ready') {
-      lastPluginFailures = []
       void loadHarnessUrl(windowContext, state.url)
     } else if (state.phase === 'crashed') {
       lastPluginFailures = collectPluginFailures(state.logTail)
@@ -588,7 +621,21 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
 
 ipcMain.handle('desktop:bundled-plugins', async (event) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
-  return { dshMarketInstalled: (await readProfileBundles(desktopDshHome())).includes(DSHMARKET_PACKAGE) }
+  const profile = await readProfileStatus(desktopDshHome())
+  return { dshMarket: profile.dshMarket }
+})
+
+ipcMain.handle('desktop:startup-status', async (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  const profile = await readProfileStatus(desktopDshHome())
+  return {
+    appVersion: app.getVersion(),
+    dshHome: desktopDshHome(),
+    userData: app.getPath('userData'),
+    harnessPhase: shellApp.state?.phase ?? 'starting',
+    safeMode: safeModeActive(),
+    market: profile.dshMarket,
+  }
 })
 
 ipcMain.handle('desktop:balance', async (event) => {

@@ -214,6 +214,36 @@ window.__ModuleLoader__.load({
         line-height: 1.4;
         margin: 10px 0 0;
       }
+      [data-dsh-desktop-onboarding] {
+        background: color-mix(in srgb, var(--dsh-controls-accent) 7%, transparent);
+        border: 1px solid color-mix(in srgb, var(--dsh-controls-accent) 18%, var(--dsh-controls-border));
+        border-radius: 12px;
+        margin: 0 0 16px;
+        padding: 12px 14px;
+      }
+      [data-dsh-desktop-onboarding] [data-dsh-desktop-onboarding-title] {
+        font-size: 13px;
+        font-weight: 700;
+        margin: 0;
+      }
+      [data-dsh-desktop-onboarding] [data-dsh-desktop-onboarding-copy] {
+        color: var(--dsh-controls-muted);
+        font-size: 12px;
+        line-height: 1.5;
+        margin: 3px 0 8px;
+      }
+      [data-dsh-desktop-onboarding] ol { list-style: none; margin: 0; padding: 0; }
+      [data-dsh-desktop-onboarding] li {
+        align-items: baseline;
+        display: flex;
+        gap: 7px;
+        font-size: 12px;
+        line-height: 1.5;
+        margin: 4px 0;
+      }
+      [data-dsh-desktop-onboarding] li::before { color: var(--dsh-controls-accent); content: "✓"; font-weight: 800; }
+      [data-dsh-desktop-onboarding] li[data-dsh-onboarding-pending]::before { content: "•"; }
+      [data-dsh-desktop-onboarding] code { font-size: 11px; overflow-wrap: anywhere; }
       /* 安全模式常驻横幅：位于视口底部，第三方插件隔离期间提醒。 */
       [data-dsh-safe-mode-banner] {
         align-items: center;
@@ -268,6 +298,12 @@ window.__ModuleLoader__.load({
         restartHarness: "重启 Harness",
         unavailable: "请右键窗口或点击系统托盘图标使用扩展入口。",
         settingsTitle: "扩展设置", settingsCopy: "连接移动设备、快捷键、开机启动和通知只保存在本机；扩展功能也可从系统托盘或右键窗口进入。",
+        firstLaunchTitle: "开始使用",
+        firstLaunchCopy: "dsh-desktop 只负责可靠地运行官方 Harness；社区插件不会随包安装，需要时请由你手动安装。",
+        harnessReady: "官方 Harness 已就绪",
+        harnessStarting: "官方 Harness 正在启动",
+        dataDirectory: "数据目录：",
+        manualMarket: "插件市场由你手动安装",
         lanSettings: "连接移动设备", lanSettingsDetail: "手机与电脑连接同一局域网，扫码即可进入 Harness Web 界面。",
         lanStart: "开始配对", lanShowQr: "显示二维码", lanStop: "停止共享",
         shortcut: "唤起快捷键", record: "重新设置", recording: "请按下快捷键…",
@@ -279,8 +315,8 @@ window.__ModuleLoader__.load({
         screenCapturePermission: "尚未授权屏幕录制：请在 系统设置 → 隐私与安全性 → 屏幕录制 中允许 dsh-desktop，然后重试。",
         safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展。",
         safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式",
-        market: "插件市场", marketDetail: "在 Harness 设置里浏览并一键安装社区插件与主题。",
-        marketInstall: "安装插件市场", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketFailed: "安装未完成，请检查网络后重试。",
+        market: "插件市场", marketDetail: "社区插件全部由你手动安装；dsh-desktop 不会预装或静默恢复。",
+        marketInstall: "安装插件市场", marketReinstall: "重新安装", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketMissing: "尚未安装", marketDamaged: "安装记录或文件不完整", marketFailed: "安装未完成，请检查网络后重试。", marketRestartFailed: "已安装，但重启 Harness 失败；请稍后在恢复页重试。",
         balance: "余额", recharge: "充值",
         kernel: "内核版本", kernelBundled: "内置", kernelOverlay: "已切换",
         kernelCheck: "检查新版", kernelInstall: "安装最新", kernelRestore: "恢复内置",
@@ -302,6 +338,12 @@ window.__ModuleLoader__.load({
         restartHarness: "Restart Harness",
         unavailable: "Right-click the window or use the system tray for extensions.",
         settingsTitle: "Extensions", settingsCopy: "Mobile pairing, shortcuts, startup, and notifications stay on this device; extensions are also reachable from the tray or a right-click.",
+        firstLaunchTitle: "Get started",
+        firstLaunchCopy: "dsh-desktop reliably runs the official Harness; community plugins are never bundled and must be installed by you when needed.",
+        harnessReady: "Official Harness is ready",
+        harnessStarting: "Official Harness is starting",
+        dataDirectory: "Data directory:",
+        manualMarket: "Install the plugin market manually",
         lanSettings: "Connect a mobile device", lanSettingsDetail: "Same LAN as the computer; scan the QR code to enter the Harness Web UI.",
         lanStart: "Start pairing", lanShowQr: "Show QR code", lanStop: "Stop sharing",
         shortcut: "Summon shortcut", record: "Change shortcut", recording: "Press a shortcut…",
@@ -313,8 +355,8 @@ window.__ModuleLoader__.load({
         screenCapturePermission: "Screen recording is not authorized; allow dsh-desktop in System Settings → Privacy → Screen Recording, then retry.",
         safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; official and built-in extensions only.",
         safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode",
-        market: "Plugin market", marketDetail: "Browse and one-click-install community plugins and themes from Harness settings.",
-        marketInstall: "Install the market", marketInstalledHint: "Installed · open Settings → Plugin Market", marketFailed: "Install did not finish; check your network and retry.",
+        market: "Plugin market", marketDetail: "Community plugins are always installed by you; dsh-desktop never bundles or silently restores them.",
+        marketInstall: "Install the market", marketReinstall: "Reinstall", marketInstalledHint: "Installed · open Settings → Plugin Market", marketMissing: "Not installed", marketDamaged: "Install record or files are incomplete", marketFailed: "Install did not finish; check your network and retry.", marketRestartFailed: "Installed, but Harness did not restart; retry from the recovery page later.",
         balance: "Balance", recharge: "Recharge",
         kernel: "Kernel version", kernelBundled: "bundled", kernelOverlay: "switched",
         kernelCheck: "Check for newer", kernelInstall: "Install latest", kernelRestore: "Restore bundled",
@@ -418,11 +460,20 @@ window.__ModuleLoader__.load({
       const [preferences, setPreferences] = react.useState(null);
       const [recording, setRecording] = react.useState(false);
       const [message, setMessage] = react.useState("");
+      const [startup, setStartup] = react.useState(null);
 
       react.useEffect(() => {
         if (typeof bridge?.getDesktopPreferences !== "function") return;
         void bridge.getDesktopPreferences().then((value) => setPreferences(value));
       }, [bridge]);
+
+      const refreshStartup = async () => {
+        if (typeof bridge?.getStartupStatus !== "function") return;
+        const value = await bridge.getStartupStatus();
+        if (value !== null) setStartup(value);
+      };
+
+      react.useEffect(() => { void refreshStartup(); }, [bridge]);
 
       const update = async (patch) => {
         if (typeof bridge?.updateDesktopPreferences !== "function") return;
@@ -442,13 +493,13 @@ window.__ModuleLoader__.load({
       const [lanState, setLanState] = react.useState(null);
       const [lanBusy, setLanBusy] = react.useState(false);
       const [safeBusy, setSafeBusy] = react.useState(false);
-      const [marketInstalled, setMarketInstalled] = react.useState(null);
+      const [marketStatus, setMarketStatus] = react.useState(null);
       const [marketBusy, setMarketBusy] = react.useState(false);
 
       react.useEffect(() => {
         if (typeof bridge?.getBundledPlugins !== "function") return;
         void bridge.getBundledPlugins().then((value) => {
-          if (value !== null) setMarketInstalled(value.dshMarketInstalled === true);
+          if (value !== null && value.dshMarket !== undefined) setMarketStatus(value.dshMarket);
         });
       }, [bridge]);
 
@@ -456,9 +507,17 @@ window.__ModuleLoader__.load({
         if (typeof bridge?.desktopAction !== "function") return;
         setMarketBusy(true);
         try {
-          const ok = await bridge.desktopAction("installDshMarket");
-          if (ok === true) setMarketInstalled(true);
-          setMessage(ok === true ? copy.marketInstalledHint : copy.marketFailed);
+          const result = await bridge.desktopAction("installDshMarket");
+          if (result !== null && typeof result === "object") {
+            if (result.installed === true) setMarketStatus({ name: "dshmarket", state: "installed" });
+            setMessage(result.status === "installed" ? copy.marketInstalledHint
+              : result.status === "restart-failed" ? copy.marketRestartFailed
+              : copy.marketFailed);
+          } else if (result === true) {
+            setMarketStatus({ name: "dshmarket", state: "installed" });
+            setMessage(copy.marketInstalledHint);
+          } else setMessage(copy.marketFailed);
+          void refreshStartup();
         } finally {
           setMarketBusy(false);
         }
@@ -593,11 +652,22 @@ window.__ModuleLoader__.load({
 
       if (typeof bridge?.getDesktopPreferences !== "function" || preferences === null) return null;
       const canLaunch = preferences.launchAtLoginAvailable === true;
+      const market = marketStatus ?? startup?.market ?? { state: "missing" };
+      const marketState = market.state ?? "missing";
       return react_jsx_runtime.jsxs("div", {
         "data-dsh-desktop-settings": true,
         children: [
           react_jsx_runtime.jsx("h3", { "data-dsh-desktop-settings-heading": true, children: copy.settingsTitle }),
           react_jsx_runtime.jsx("p", { "data-dsh-desktop-settings-copy": true, children: copy.settingsCopy }),
+          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-onboarding": true, "aria-label": copy.firstLaunchTitle, children: [
+            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-onboarding-title": true, children: copy.firstLaunchTitle }),
+            react_jsx_runtime.jsx("p", { "data-dsh-desktop-onboarding-copy": true, children: copy.firstLaunchCopy }),
+            react_jsx_runtime.jsxs("ol", { children: [
+              react_jsx_runtime.jsx("li", { "data-dsh-onboarding-done": startup?.harnessPhase === "ready" || null, "data-dsh-onboarding-pending": startup?.harnessPhase !== "ready" || null, children: startup?.harnessPhase === "ready" ? copy.harnessReady : copy.harnessStarting }),
+              react_jsx_runtime.jsxs("li", { children: [copy.dataDirectory, react_jsx_runtime.jsx("code", { children: startup?.dshHome ?? "~/.dsh-desktop" })] }),
+              react_jsx_runtime.jsx("li", { "data-dsh-onboarding-done": marketState === "installed" || null, "data-dsh-onboarding-pending": marketState !== "installed" || null, children: marketState === "installed" ? copy.marketInstalledHint : copy.manualMarket }),
+            ] }),
+          ] }),
           typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-lan-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.lanSettings, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.lanSettingsDetail })] }),
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
@@ -632,9 +702,10 @@ window.__ModuleLoader__.load({
           ] }),
           typeof bridge?.getBundledPlugins === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.market, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.marketDetail })] }),
-            marketInstalled === true
-              ? react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-detail": true, children: copy.marketInstalledHint })
-              : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => void marketAction(), children: marketBusy ? "…" : copy.marketInstall }),
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+              react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-detail": true, children: marketState === "installed" ? `${copy.marketInstalledHint}${market.version ? ` · ${market.version}` : ""}` : marketState === "damaged" ? copy.marketDamaged : copy.marketMissing }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => void marketAction(), children: marketBusy ? "…" : marketState === "installed" ? copy.marketReinstall : copy.marketInstall }),
+            ] }),
           ] }) : null,
           balanceText !== null ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.balance }),
