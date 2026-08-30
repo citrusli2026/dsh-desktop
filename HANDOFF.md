@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-08-29。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-08-30。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -8,13 +8,13 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.12`（2026-08-30 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +12） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.12`（2026-08-30，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 181 项单测、类型检查、官网门禁、构建全绿；修复 registry timeout 测试在 CI 被取消的问题；Release verify 的 Electron E2E 10 passed / 2 skipped |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.12 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.12`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`；bot 提交 `cd9cc64`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.12 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证 206；main `cd9cc64` 与 tag `6c61455` 对齐） |
-| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；核验时累计安装包下载 369（mac 103 / win 191 / linux 75） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.13`（2026-08-30 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +13） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.13`（2026-08-30，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 178 项单测、类型检查、官网门禁、构建全绿；验证社区插件未进入随包闭包；Release verify 的 Electron E2E 10 passed / 2 skipped |
+| 核心发布 | ✅ 0.1.1-rc.2.shell.13 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.13`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`；bot 提交 `a464b0d`） |
+| 国内镜像 | ✅ 0.1.1-rc.2.shell.13 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证 206；main `a464b0d` 与 tag `68b6fc7` 对齐） |
+| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；最终核验累计安装包下载 378（mac 105 / win 197 / linux 76） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -995,6 +995,24 @@ major PR、dependabot 限 minor、6 个过期 issue 清理)。
 - Release run `33263539678`（成功）；Site Data Refresh run `33264103836`（成功，提交 `cd9cc64`）。
 - tag peeled commit `6c61455`；GitCode 6 个用户资产 Range GET `6×206`。
 - 线上验证：`https://dsh-desktop.com/data/release.json` 指向 `v0.1.1-rc.2.shell.12`；`/api/downloads` 返回 200；首页双语插件市场说明已上线。
+
+## 三十三、v0.1.1-rc.2.shell.13 发布：移除社区插件随包预装（2026-08-30）
+
+本轮修正 shell.12 的产品边界错误：社区插件全部改为用户主动、手动安装，安装包只保留
+官方 Harness bundle 和壳自有控件，不再把测试阶段的插件状态带进产品默认环境。
+
+1. **根因与修复**：shell.12 的 `manifest/harness/package.json` 包含 dshmarket、Better Sidebar 和 Task Board，`profile-seed.ts` 还会在新 profile 首次启动时自动播种；现已删除这三个随包依赖、锁文件记录、首启播种逻辑及相关测试，保留扩展设置里的「安装插件市场」手动入口。
+2. **用户数据边界**：没有删除任何用户目录或已有 profile。测试阶段已经安装的插件仍属于用户，可从 Harness「设置 → 插件」自行卸载；新安装包不会再自动安装它们。
+3. **最新功能/文档说明**：官网中英文插件市场区块和 FAQ、架构说明、社区插件差距分析、ADR 0029、shell.12 更正说明及本版 release notes 均明确：先手动安装 dsh-market，再按需安装其他社区插件与主题。
+4. **发布**：tag `v0.1.1-rc.2.shell.13` → `68b6fc78fcbf767b6d0c79fd3eb4856a8490596f`；Release run `33290205286` 全绿：verify、三端 build、8 文件资产契约、attestation、packaged smoke、安装态验证和 publish 均成功。
+5. **GitCode 镜像**：6/6 用户资产（dmg/exe/deb + 3×sha256）上传并通过公开 Range 校验；tag 指向 `68b6fc7`，main 在官网同步后为 `a464b0d`。
+6. **网站数据**：Site Data Refresh run `33290596049` 成功，bot 提交 `a464b0d`；`site/data/release.json` 和正式域名 `/data/release.json` 指向 `.shell.13`，6/6 `gitcode_ok=true`；首页插件市场文案已上线。
+
+发布元数据：
+- Release run `33290205286`（成功）；Site Data Refresh run `33290596049`（成功，提交 `a464b0d`）。
+- tag peeled commit `68b6fc7`；GitCode 6 个用户资产 Range GET `6×206`。
+- 本地验证：178 项单测、`pnpm run verify` 全绿，闭包中 `dshmarket`、`dsh-better-sidebar`、`@linxin666/dsh-client-ui-task-board` 均不存在。
+- 线上验证：`https://dsh-desktop.com/data/release.json` 指向 `v0.1.1-rc.2.shell.13`；`/api/downloads` 返回 200，累计 378（mac 105 / win 197 / linux 76）；首页显示“社区插件按需安装”说明。
 
 ---
 
