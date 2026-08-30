@@ -472,7 +472,7 @@ function bindSectionSpy() {
       }
     })
   }, { rootMargin: '-72px 0px -72% 0px', threshold: 0 })
-  ;['workflow', 'download', 'features', 'market', 'faq'].forEach(function (id) {
+  ;['workflow', 'showcase', 'download', 'features', 'market', 'faq'].forEach(function (id) {
     var el = document.getElementById(id)
     if (el) spy.observe(el)
   })

@@ -40,7 +40,7 @@
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="stylesheet" href="/assets/style.css?v=36" />
+<link rel="stylesheet" href="/assets/style.css?v=37" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -97,6 +97,7 @@
   </a>
   <nav class="topbar__nav" id="topbar-menu" aria-label="页面导航">
     <a href="#workflow" data-i18n="nav.workflow">定位</a>
+    <a href="#showcase" data-i18n="nav.showcase">实拍展示</a>
     <a href="#features" data-i18n="nav.features">能力</a>
     <a href="#market" data-i18n="nav.market">插件市场</a>
     <a href="#faq" data-i18n="nav.faq">支持</a>
@@ -226,10 +227,67 @@
     </div>
   </section>
 
-  <!-- ══ 02 下载 ══ -->
+  <!-- ══ 02 实拍展示 ══ -->
+  <section class="section showcase-section" id="showcase">
+    <div class="wrap">
+      <div class="showcase-intro">
+        <div>
+          <p class="sec-marker" data-reveal>02 / <span data-i18n="showcase.marker">真实界面</span></p>
+          <h2 class="sec-title" data-reveal style="--i:1" data-i18n="showcase.title">整体特色，直接看真实界面</h2>
+          <p class="sec-lead" data-reveal style="--i:2" data-i18n="showcase.lead">从官方 Harness 工作区，到桌面壳的设置、主题与扩展入口：你看到的就是实际运行界面，不是概念图。</p>
+        </div>
+        <p class="showcase__mode" data-reveal style="--i:2"><span class="showcase__pulse" aria-hidden="true"></span><span data-i18n="showcase.auto">每 6 秒自动切换 · 悬停或聚焦暂停</span></p>
+      </div>
+
+      <div class="showcase" data-showcase role="region" aria-roledescription="carousel" aria-label="产品真实界面展示" data-reveal style="--i:3">
+        <div class="showcase__viewport" data-showcase-viewport>
+          <div class="showcase__track" data-showcase-track>
+            <article class="showcase__slide" data-showcase-slide aria-label="第 1 张，共 2 张">
+              <div class="showcase__copy">
+                <p class="showcase__eyebrow">01 / WORKSPACE</p>
+                <h3 data-i18n="showcase.s1.title">官方 Harness 工作区</h3>
+                <p data-i18n="showcase.s1.body">桌面壳负责把官方 Harness 带到窗口、托盘和快捷键里；会话、Agent、工具和模型仍然保持上游体验。</p>
+                <ul data-i18n="showcase.s1.items"><li>内置运行时，安装后直接启动</li><li>原生窗口与 Harness WebUI 同屏工作</li><li>浅色 / 深色主题跟随站点与应用设置</li></ul>
+              </div>
+              <figure class="showcase__frame">
+                <figcaption><span data-i18n="showcase.s1.caption">真实截图 · Harness 主界面</span><span class="showcase__theme-note" data-i18n="showcase.themes">浅色 / 深色</span></figcaption>
+                <img class="showcase__image showcase__image--light" src="/assets/shots/app-main-light.png?v=1" alt="dsh-desktop 运行中的 DeepSeek Harness 主界面（浅色主题）" width="2560" height="1720" loading="lazy" decoding="async" />
+                <img class="showcase__image showcase__image--dark" src="/assets/shots/app-main-dark.png?v=1" alt="dsh-desktop 运行中的 DeepSeek Harness 主界面（深色主题）" width="2560" height="1720" loading="lazy" decoding="async" />
+              </figure>
+            </article>
+            <article class="showcase__slide" data-showcase-slide aria-label="第 2 张，共 2 张">
+              <div class="showcase__copy">
+                <p class="showcase__eyebrow">02 / SHELL CONTROLS</p>
+                <h3 data-i18n="showcase.s2.title">桌面偏好与恢复入口</h3>
+                <p data-i18n="showcase.s2.body">设置页把桌面习惯和故障路径放在同一个清晰入口：语言、主题、快捷键、启动行为与本地通知都由你决定。</p>
+                <ul data-i18n="showcase.s2.items"><li>明色、深色或跟随系统</li><li>快捷键、开机启动、托盘与通知按需开启</li><li>插件市场手动安装，异常时可进安全模式</li></ul>
+              </div>
+              <figure class="showcase__frame">
+                <figcaption><span data-i18n="showcase.s2.caption">真实截图 · 桌面设置页</span><span class="showcase__theme-note" data-i18n="showcase.themes">浅色 / 深色</span></figcaption>
+                <img class="showcase__image showcase__image--light" src="/assets/shots/app-settings-light.png?v=1" alt="dsh-desktop 桌面设置页（浅色主题）" width="2560" height="1720" loading="lazy" decoding="async" />
+                <img class="showcase__image showcase__image--dark" src="/assets/shots/app-settings-dark.png?v=1" alt="dsh-desktop 桌面设置页（深色主题）" width="2560" height="1720" loading="lazy" decoding="async" />
+              </figure>
+            </article>
+          </div>
+        </div>
+        <div class="showcase__footer">
+          <div class="showcase__controls">
+            <button class="showcase__control" type="button" data-showcase-prev aria-label="上一张" title="上一张"><span aria-hidden="true">←</span></button>
+            <button class="showcase__control" type="button" data-showcase-toggle aria-pressed="false" aria-label="暂停自动轮播" title="暂停自动轮播"><span aria-hidden="true">Ⅱ</span></button>
+            <div class="showcase__dots" data-showcase-dots aria-label="选择展示页"></div>
+            <button class="showcase__control" type="button" data-showcase-next aria-label="下一张" title="下一张"><span aria-hidden="true">→</span></button>
+          </div>
+          <span class="showcase__counter" data-showcase-counter aria-live="polite">01 / 02</span>
+        </div>
+      </div>
+      <p class="showcase__note" data-reveal style="--i:4" data-i18n="showcase.note">截图来自真实应用构建；官网明暗主题会同步选择对应截图。自动播放仅用于展示，悬停、聚焦或点击暂停后由你控制。</p>
+    </div>
+  </section>
+
+  <!-- ══ 03 下载 ══ -->
   <section class="section" id="download">
     <div class="wrap">
-      <p class="sec-marker" data-reveal>02 / <span data-i18n="dl.marker">下载</span></p>
+      <p class="sec-marker" data-reveal>03 / <span data-i18n="dl.marker">下载</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="dl.title">选择你的平台</h2>
         <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">支持 macOS、Windows 和 Linux；具体以当前版本可用安装包为准。GitCode 镜像可用时与 GitHub 并列展示。</p>
 
@@ -294,10 +352,10 @@
     </div>
   </section>
 
-  <!-- ══ 03 特性 ══ -->
+  <!-- ══ 04 特性 ══ -->
   <section class="section" id="features">
     <div class="wrap">
-      <p class="sec-marker" data-reveal>03 / <span data-i18n="ft.marker">桌面能力</span></p>
+      <p class="sec-marker" data-reveal>04 / <span data-i18n="ft.marker">桌面能力</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="ft.title">你得到的是可靠入口，不是功能堆叠</h2>
 
       <div class="capability-groups">
@@ -340,7 +398,7 @@
   <!-- ══ 04 插件市场 ══ -->
   <section class="section" id="market">
     <div class="wrap">
-      <p class="sec-marker" data-reveal>04 / <span data-i18n="mk.marker">社区插件</span></p>
+      <p class="sec-marker" data-reveal>05 / <span data-i18n="mk.marker">社区插件</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="mk.title">数千个社区插件，全部由你选择</h2>
       <p class="sec-lead" data-reveal style="--i:2" data-i18n="mk.lead">dsh-desktop 只提供清晰入口和故障恢复支持；社区插件不属于安装包，也不会在首次启动时自动出现。</p>
 
@@ -365,7 +423,7 @@
   <!-- ══ 05 FAQ ══ -->
   <section class="section" id="faq">
     <div class="wrap">
-      <p class="sec-marker" data-reveal>05 / <span data-i18n="faq.marker">支持与边界</span></p>
+      <p class="sec-marker" data-reveal>06 / <span data-i18n="faq.marker">支持与边界</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="faq.title">先恢复，再反馈；每一步都有入口</h2>
       <div class="support-routes" data-reveal style="--i:2" aria-label="支持路径">
         <a class="support-route" href="/docs/install"><b>01</b><span data-i18n="support.install">首次安装</span><small data-i18n="support.installHint">从下载到第一次启动</small></a>
@@ -436,7 +494,7 @@
   <!-- ══ 06 版本号 ══ -->
   <section class="section" id="version">
     <div class="wrap">
-      <p class="sec-marker" data-reveal>06 / <span data-i18n="vr.marker">版本号</span></p>
+      <p class="sec-marker" data-reveal>07 / <span data-i18n="vr.marker">版本号</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="vr.title">版本号怎么读</h2>
       <div class="version-display" data-reveal style="--i:2">
         <code><span class="v-core" id="v-core">…</span><span class="v-sep"></span><span class="v-shell" id="v-shell"></span></code>
@@ -480,7 +538,8 @@
   </div>
 </footer>
 
-<script type="module" src="/assets/app.js?v=36"></script>
+<script src="/assets/showcase.js?v=1"></script>
+<script type="module" src="/assets/app.js?v=37"></script>
 
 <!-- 下载后提示(校验方式 + 未签名处理 + GitHub Star 邀请),由 app.js 填充 -->
 <div class="download-toast" id="download-toast" role="status" aria-live="polite" hidden></div>
