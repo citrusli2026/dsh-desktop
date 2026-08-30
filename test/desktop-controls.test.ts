@@ -35,6 +35,9 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /marketRisk/)
   assert.match(client, /data-dsh-market-risk/)
   assert.match(client, /data-dsh-desktop-onboarding/)
+  assert.match(client, /data-dsh-desktop-status-summary/)
+  assert.match(client, /data-dsh-desktop-advanced/)
+  assert.match(client, /advancedTitle/)
   // Balance + kernel overlay rows (decisions 0025/0026).
   assert.match(client, /getBalance/)
   assert.match(client, /getKernelState/)

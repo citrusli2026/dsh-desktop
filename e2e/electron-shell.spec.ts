@@ -545,7 +545,12 @@ shellTest('packaged app shows a desktop notice for a real state edge and restore
     && document.querySelector('[data-dsh-desktop-lan-row]') !== null
     && document.body.innerText.includes('Summon shortcut'))).toBe(true)
   const settings = window.locator('[data-dsh-desktop-settings]')
+  const advancedSettings = settings.locator('[data-dsh-desktop-advanced]')
+  await expect(advancedSettings).toHaveCount(1)
+  expect(await advancedSettings.getAttribute('open')).toBe(null)
   await settings.screenshot({ path: testInfo.outputPath('02-desktop-preferences.png') })
+  await advancedSettings.locator('summary').click()
+  await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-advanced]')?.hasAttribute('open') ?? false)).toBe(true)
 
   // Drive a hidden-window edge through the real page and restore via the notice.
   await reportSessionStatus(window, { sessions: [{ id: 's1', title: 'Research', running: true, jobs: [{ id: 'j1', label: 'Worker', status: 'running' }] }] })

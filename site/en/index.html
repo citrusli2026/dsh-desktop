@@ -21,7 +21,7 @@
 <link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en" />
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=38" />
+<link rel="stylesheet" href="/assets/style.css?v=39" />
 <link rel="stylesheet" href="/assets/seo.css?v=8" />
 <script>
   try {
@@ -40,11 +40,6 @@
   <p class="seo-lead">DSH Desktop is a community-maintained shell with out-of-the-box support: bundled runtime, isolated local data, familiar desktop entry points, and a recovery path when something fails.</p>
   <div class="seo-button-row"><a class="btn btn--primary" href="/en/download">Download DSH Desktop →</a><a class="btn btn--ghost" href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">View source on GitHub</a></div>
 
-  <figure class="hero__shot seo-product-preview">
-    <figcaption class="hero__shot-status"><span class="hero__shot-runtime"><span class="hero__shot-dot" aria-hidden="true"></span><span>Local runtime ready</span></span><span>127.0.0.1 · READY</span></figcaption>
-    <img class="hero__shot-img hero__shot-img--light" src="/assets/hero-app-light.png?v=24" alt="DSH Desktop running the DeepSeek Harness desktop app on macOS" width="1280" height="800" decoding="async" />
-    <img class="hero__shot-img hero__shot-img--dark" src="/assets/hero-app-dark.png?v=24" alt="DSH Desktop running the DeepSeek Harness desktop app in dark mode" width="1280" height="800" decoding="async" />
-  </figure>
   <div class="seo-proof-grid" aria-label="Product baseline"><div><b>LOCAL</b><span>Loopback-only runtime</span></div><div><b>ISOLATED</b><span>Separate data by default</span></div><div><b>RECOVERABLE</b><span>Safe Mode and local diagnostics</span></div><div><b>VERIFIABLE</b><span>Public CI and real-app tests</span></div></div>
 
   <div id="scope" class="seo-callout"><p><strong>Product boundary:</strong> the shell owns the desktop window, tray, runtime, supervision, recovery, updates, and local entry points. The official Harness WebUI still owns agents, sessions, tools, models, and plugin behavior. There is no second workbench, chat surface, or project workspace.</p></div>
@@ -52,7 +47,7 @@
   <section class="showcase-section" id="showcase">
     <div class="showcase-intro">
       <div>
-        <p class="sec-marker">02 / REAL UI</p>
+        <p class="sec-marker">01 / REAL UI</p>
         <h2 class="sec-title">See the whole shell in real screenshots.</h2>
         <p class="sec-lead">From the official Harness workspace to desktop preferences, themes, and extension entry points: these are real application captures, not concept mockups.</p>
       </div>
@@ -97,24 +92,17 @@
           <article class="showcase__slide" data-showcase-slide aria-label="Slide 3 of 3">
             <div class="showcase__copy">
               <p class="showcase__eyebrow">03 / EXTENSIONS SETTINGS</p>
-              <h3>Extensions settings for the whole desktop shell</h3>
-              <p>The new Extensions page puts local data, LAN pairing, shortcuts, startup behavior, notifications, screen capture, and recovery in one place. Community plugins remain manual by design.</p>
-              <ul><li>Pairing, shortcut, login, tray, and notification controls</li><li>Screen capture is off by default and restarts the kernel when toggled</li><li>Safe Mode, plugin market, kernel updates, and portable presets are visible</li></ul>
+              <h3>Extensions settings, focused on the desktop essentials</h3>
+              <p>The first view keeps runtime status, local data, LAN pairing, shortcuts, startup behavior, and notifications together. Less frequent recovery and resource actions live under “More shell tools”.</p>
+              <ul><li>Status, data directory, and the manual plugin boundary at a glance</li><li>Pairing, shortcut, login, tray, and notification controls up front</li><li>Screen capture, Safe Mode, kernel, and presets behind a secondary section</li></ul>
             </div>
             <figure class="showcase__frame">
-              <figcaption><span>Real capture · Settings → Extensions</span><span class="showcase__theme-note">LIGHT / DARK</span></figcaption>
-              <div class="showcase__image-stack">
-                <button class="showcase__image-button" type="button" data-showcase-zoom aria-label="View full screenshot: Extensions settings (top)">
-                  <img class="showcase__image showcase__image--light" src="/assets/shots/app-extension-settings-en-light-top.png?v=1" alt="DSH Desktop Extensions settings, top section, in light mode" width="1224" height="1492" loading="lazy" decoding="async" />
-                  <img class="showcase__image showcase__image--dark" src="/assets/shots/app-extension-settings-en-dark-top.png?v=1" alt="DSH Desktop Extensions settings, top section, in dark mode" width="1224" height="1492" loading="lazy" decoding="async" />
-                  <span class="showcase__zoom-hint" aria-hidden="true"><span>⤢</span><span>Click to view the full screenshot</span></span>
-                </button>
-                <button class="showcase__image-button" type="button" data-showcase-zoom aria-label="View full screenshot: Extensions settings (continuation)">
-                  <img class="showcase__image showcase__image--light" src="/assets/shots/app-extension-settings-en-light-bottom.png?v=1" alt="DSH Desktop Extensions settings, continuation, in light mode" width="1224" height="1492" loading="lazy" decoding="async" />
-                  <img class="showcase__image showcase__image--dark" src="/assets/shots/app-extension-settings-en-dark-bottom.png?v=1" alt="DSH Desktop Extensions settings, continuation, in dark mode" width="1224" height="1492" loading="lazy" decoding="async" />
-                  <span class="showcase__zoom-hint" aria-hidden="true"><span>⤢</span><span>Click to view the full screenshot</span></span>
-                </button>
-              </div>
+              <figcaption><span>Real capture · Settings → Extensions (core)</span><span class="showcase__theme-note">LIGHT / DARK</span></figcaption>
+              <button class="showcase__image-button" type="button" data-showcase-zoom aria-label="View full screenshot: core Extensions settings">
+                <img class="showcase__image showcase__image--light" src="/assets/shots/app-extension-settings-en-light.png?v=2" alt="DSH Desktop core Extensions settings in light mode" width="1224" height="1492" loading="lazy" decoding="async" />
+                <img class="showcase__image showcase__image--dark" src="/assets/shots/app-extension-settings-en-dark.png?v=2" alt="DSH Desktop core Extensions settings in dark mode" width="1224" height="1492" loading="lazy" decoding="async" />
+                <span class="showcase__zoom-hint" aria-hidden="true"><span>⤢</span><span>Click to view the full screenshot</span></span>
+              </button>
             </figure>
           </article>
         </div>
@@ -129,7 +117,7 @@
         <span class="showcase__counter" data-showcase-counter aria-live="polite">01 / 03</span>
       </div>
     </div>
-    <p class="showcase__note">Captured from real application builds. Chinese/English and light/dark screenshots are paired with the app state; Extensions settings are shown in a top capture and a continuation capture. Click any screenshot to open the original.</p>
+    <p class="showcase__note">Captured from real application builds. Chinese/English and light/dark screenshots are paired with the app state; the Extensions card shows the focused core view, with less frequent tools tucked behind the app’s secondary section. Click any screenshot to open the original.</p>
     <dialog class="showcase-lightbox" data-showcase-lightbox aria-labelledby="showcase-lightbox-title">
       <div class="showcase-lightbox__body">
         <div class="showcase-lightbox__head">
@@ -215,7 +203,7 @@
   <div class="seo-next-links"><a href="/en/download">Download →</a><a href="/en/docs/install">Install guide →</a><a href="/">中文首页 →</a></div>
 </div></main>
 <footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />No affiliation with DeepSeek AI</p><a class="footer__top" href="#main-content">Back to top ↑</a></div><nav class="footer__links" aria-label="Footer links"><a href="/en">Home</a><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a><a href="/">中文</a><a href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">GitHub</a></nav><p class="footer__sync"><span>Static site · deployed on Vercel<br />Release data synced by GitHub Actions</span><br /><span>Documentation hub</span></p></div></footer>
-<script src="/assets/showcase.js?v=2"></script>
+<script src="/assets/showcase.js?v=3"></script>
 <script src="/assets/site-shell.js?v=2"></script>
 </body>
 </html>

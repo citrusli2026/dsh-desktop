@@ -170,6 +170,39 @@ window.__ModuleLoader__.load({
         margin: 0;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-row]:last-child { border-bottom: 0; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-status-summary] {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 10px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-status-item] {
+        background: color-mix(in srgb, var(--dsh-controls-accent) 6%, transparent);
+        border: 1px solid color-mix(in srgb, var(--dsh-controls-accent) 16%, var(--dsh-controls-border));
+        border-radius: 9px;
+        display: block;
+        min-width: 0;
+        padding: 8px 10px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-status-item] strong {
+        color: var(--dsh-controls-muted);
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        margin-bottom: 3px;
+        text-transform: uppercase;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-status-item] > span,
+      [data-dsh-desktop-settings] [data-dsh-desktop-status-item] > code {
+        display: block;
+        font-size: 12px;
+        line-height: 1.35;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-status-item] > code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-label] {
         color: var(--dsw-alias-label-primary, #1f232b);
         display: block;
@@ -275,6 +308,42 @@ window.__ModuleLoader__.load({
         margin: 0 0 2px;
         text-transform: uppercase;
       }
+      [data-dsh-desktop-settings] [data-dsh-desktop-advanced] {
+        border-top: 1px solid var(--dsh-controls-border);
+        margin-top: 14px;
+        padding-top: 10px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-advanced] > summary {
+        align-items: center;
+        color: var(--dsh-controls-text);
+        cursor: pointer;
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+        list-style: none;
+        padding: 2px 0;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-advanced] > summary::-webkit-details-marker { display: none; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-advanced] > summary::after {
+        color: var(--dsh-controls-accent);
+        content: "+";
+        flex: 0 0 auto;
+        font-size: 18px;
+        font-weight: 400;
+        line-height: 1;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-advanced][open] > summary::after { content: "−"; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-advanced] > summary:focus-visible {
+        outline: 2px solid var(--dsh-controls-accent);
+        outline-offset: 3px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-advanced] > summary span { font-size: 13px; font-weight: 650; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-advanced] > summary small {
+        color: var(--dsh-controls-muted);
+        flex: 1;
+        font-size: 11px;
+        line-height: 1.4;
+      }
       /* 安全模式常驻横幅：位于视口底部，第三方插件隔离期间提醒。 */
       [data-dsh-safe-mode-banner] {
         align-items: center;
@@ -310,6 +379,7 @@ window.__ModuleLoader__.load({
       @media (max-width: 680px) {
         [data-dsh-desktop-controls] { top: 12px; right: 12px; }
         [data-dsh-desktop-controls] [data-dsh-controls-label] { display: none; }
+        [data-dsh-desktop-settings] [data-dsh-desktop-status-summary] { grid-template-columns: 1fr; }
       }
       @media (prefers-reduced-motion: reduce) {
         [data-dsh-desktop-controls] [data-dsh-controls-trigger] { transition: none; }
@@ -328,11 +398,12 @@ window.__ModuleLoader__.load({
         about: "关于",
         restartHarness: "重启 Harness",
         unavailable: "请右键窗口或点击系统托盘图标使用扩展入口。",
-        settingsTitle: "扩展设置", settingsCopy: "连接移动设备、快捷键、开机启动和通知只保存在本机；扩展功能也可从系统托盘或右键窗口进入。",
-        firstLaunchTitle: "开始使用",
-        firstLaunchCopy: "dsh-desktop 只负责可靠地运行官方 Harness；社区插件不会随包安装，需要时请由你手动安装。",
+        settingsTitle: "扩展设置", settingsCopy: "把本机桌面习惯放在这里；系统托盘和右键窗口也能进入扩展入口。",
+        firstLaunchTitle: "运行状态",
+        firstLaunchCopy: "官方 Harness、数据目录和插件安装边界都保持可见；社区插件不会随包安装，需要时请由你手动安装。",
         harnessReady: "官方 Harness 已就绪",
         harnessStarting: "官方 Harness 正在启动",
+        statusLabel: "状态", dataLabel: "数据", marketLabel: "插件市场", marketReady: "已安装", marketManual: "需手动安装",
         dataDirectory: "数据目录：",
         manualMarket: "插件市场由你手动安装",
         groupHabits: "桌面习惯", groupRecovery: "恢复", groupPlugins: "插件", groupOptional: "可选工具",
@@ -358,6 +429,7 @@ window.__ModuleLoader__.load({
         safeModeSuspect: "疑似插件：{id}（{name}），可在官方「设置 → 插件」中卸载。",
         presetsTitle: "Agent 预设", presetsDetail: "导出或导入 .dshpreset 便携预设包，备份或分享 Agent 预设。",
         presetsExport: "导出预设", presetsImport: "导入预设",
+        advancedTitle: "更多扩展工具", advancedDetail: "屏幕捕获、安全模式、插件市场、内核和预设",
         presetExported: "已导出 {name}。", presetImported: "已导入 {name}。",
         presetSkipped: "已跳过 {name}。", presetInvalid: "文件无效或操作失败。",
         presetEmpty: "没有可导出的用户预设。",
@@ -369,11 +441,12 @@ window.__ModuleLoader__.load({
         about: "About",
         restartHarness: "Restart Harness",
         unavailable: "Right-click the window or use the system tray for extensions.",
-        settingsTitle: "Extensions", settingsCopy: "Mobile pairing, shortcuts, startup, and notifications stay on this device; extensions are also reachable from the tray or a right-click.",
-        firstLaunchTitle: "Get started",
-        firstLaunchCopy: "dsh-desktop reliably runs the official Harness; community plugins are never bundled and must be installed by you when needed.",
+        settingsTitle: "Extensions", settingsCopy: "Keep desktop habits on this device; the tray and right-click menu remain alternate extension entry points.",
+        firstLaunchTitle: "Status at a glance",
+        firstLaunchCopy: "The official Harness state, data directory, and plugin boundary stay visible; community plugins are never bundled and must be installed by you when needed.",
         harnessReady: "Official Harness is ready",
         harnessStarting: "Official Harness is starting",
+        statusLabel: "Status", dataLabel: "Data", marketLabel: "Plugin market", marketReady: "Installed", marketManual: "Manual install",
         dataDirectory: "Data directory:",
         manualMarket: "Install the plugin market manually",
         groupHabits: "Desktop habits", groupRecovery: "Recovery", groupPlugins: "Plugins", groupOptional: "Optional tools",
@@ -399,6 +472,7 @@ window.__ModuleLoader__.load({
         safeModeSuspect: "Suspected plugin: {id} ({name}). Uninstall it from Settings → Plugins.",
         presetsTitle: "Agent presets", presetsDetail: "Export or import .dshpreset portable packages to back up or share agent presets.",
         presetsExport: "Export preset", presetsImport: "Import preset",
+        advancedTitle: "More shell tools", advancedDetail: "Screen capture, Safe Mode, plugin market, kernel, and presets",
         presetExported: "Exported {name}.", presetImported: "Imported {name}.",
         presetSkipped: "Skipped {name}.", presetInvalid: "The file is invalid or the operation failed.",
         presetEmpty: "There is no user preset to export.",
@@ -716,10 +790,19 @@ window.__ModuleLoader__.load({
           react_jsx_runtime.jsxs("section", { "data-dsh-desktop-onboarding": true, "aria-label": copy.firstLaunchTitle, children: [
             react_jsx_runtime.jsx("h4", { "data-dsh-desktop-onboarding-title": true, children: copy.firstLaunchTitle }),
             react_jsx_runtime.jsx("p", { "data-dsh-desktop-onboarding-copy": true, children: copy.firstLaunchCopy }),
-            react_jsx_runtime.jsxs("ol", { children: [
-              react_jsx_runtime.jsx("li", { "data-dsh-onboarding-stage": startup?.harnessStage ?? null, "data-dsh-onboarding-done": startup?.harnessPhase === "ready" || null, "data-dsh-onboarding-pending": startup?.harnessPhase !== "ready" || null, children: startup?.statusLabel ?? (startup?.harnessPhase === "ready" ? copy.harnessReady : copy.harnessStarting) }),
-              react_jsx_runtime.jsxs("li", { children: [copy.dataDirectory, react_jsx_runtime.jsx("code", { children: startup?.dshHome ?? "~/.dsh-desktop" })] }),
-              react_jsx_runtime.jsx("li", { "data-dsh-onboarding-done": marketState === "installed" || null, "data-dsh-onboarding-pending": marketState !== "installed" || null, children: marketState === "installed" ? copy.marketInstalledHint : copy.manualMarket }),
+            react_jsx_runtime.jsxs("div", { "data-dsh-desktop-status-summary": true, children: [
+              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-status-item": true, children: [
+                react_jsx_runtime.jsx("strong", { children: copy.statusLabel }),
+                react_jsx_runtime.jsx("span", { "data-dsh-onboarding-stage": startup?.harnessStage ?? null, "data-dsh-onboarding-done": startup?.harnessPhase === "ready" || null, "data-dsh-onboarding-pending": startup?.harnessPhase !== "ready" || null, children: startup?.statusLabel ?? (startup?.harnessPhase === "ready" ? copy.harnessReady : copy.harnessStarting) }),
+              ] }),
+              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-status-item": true, children: [
+                react_jsx_runtime.jsx("strong", { children: copy.dataLabel }),
+                react_jsx_runtime.jsx("code", { children: startup?.dshHome ?? "~/.dsh-desktop" }),
+              ] }),
+              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-status-item": true, children: [
+                react_jsx_runtime.jsx("strong", { children: copy.marketLabel }),
+                react_jsx_runtime.jsx("span", { "data-dsh-onboarding-done": marketState === "installed" || null, "data-dsh-onboarding-pending": marketState !== "installed" || null, children: marketState === "installed" ? copy.marketReady : marketState === "damaged" ? copy.marketDamaged : copy.marketManual }),
+              ] }),
             ] }),
           ] }),
           react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
@@ -752,6 +835,11 @@ window.__ModuleLoader__.load({
             ] }),
           ] }),
           ] }),
+          react_jsx_runtime.jsxs("details", { "data-dsh-desktop-advanced": true, children: [
+            react_jsx_runtime.jsxs("summary", { children: [
+              react_jsx_runtime.jsx("span", { children: copy.advancedTitle }),
+              react_jsx_runtime.jsx("small", { children: copy.advancedDetail }),
+            ] }),
           react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
             react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupOptional }),
           react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
@@ -804,6 +892,7 @@ window.__ModuleLoader__.load({
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: presetBusy, onClick: () => void presetAction("import"), children: copy.presetsImport }),
             ] }),
           ] }) : null,
+          ] }),
           ] }),
           message === "" ? null : react_jsx_runtime.jsx("p", { "data-dsh-desktop-status": true, role: "status", children: message }),
         ],

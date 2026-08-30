@@ -83,15 +83,11 @@ async function capture(locale, theme) {
     }, { actual: home, display: displayHome })
     const options = page.locator('.VOzbGW_options').first()
     await expect(options).toBeVisible()
-    await options.evaluate(element => { element.scrollTop = 0 })
+    const advanced = page.locator('[data-dsh-desktop-advanced]').first()
+    await expect(advanced).toHaveCount(1)
+    expect(await advanced.getAttribute('open')).toBe(null)
     await options.screenshot({
-      path: join(outputDir, `app-extension-settings-${suffix}-top.png`),
-      animations: 'disabled',
-    })
-    await options.evaluate(element => { element.scrollTop = element.scrollHeight - element.clientHeight })
-    await page.waitForTimeout(100)
-    await options.screenshot({
-      path: join(outputDir, `app-extension-settings-${suffix}-bottom.png`),
+      path: join(outputDir, `app-extension-settings-${suffix}.png`),
       animations: 'disabled',
     })
     console.log(`captured ${suffix}`)

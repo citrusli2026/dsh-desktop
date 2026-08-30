@@ -11,6 +11,12 @@ page ("Extension settings", next to General/Models/Plugins) can record a global
 summon shortcut, configure launch-at-login and start-hidden behavior, and enable
 or disable local desktop status notices.
 
+The first view stays focused on the desktop essentials: runtime status, the isolated
+data directory, the manual community-plugin boundary, LAN pairing, the summon
+shortcut, startup behavior, and notifications. Lower-frequency controls — screen
+capture, Safe Mode, the plugin market, kernel actions, and portable presets — live
+under the collapsed "More shell tools" section.
+
 Status notices are derived from the Harness `useSessions` public state exposed to
 the plugin. The plugin does not read screenshots or the DOM to infer activity,
 and it sends no status data over the network. If the bridge is unavailable, the
