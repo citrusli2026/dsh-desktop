@@ -2,7 +2,7 @@
 import type { MenuItemConstructorOptions } from 'electron'
 import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
-import { statusLabel } from './tray-status.ts'
+import { statusLabelWithMode } from './tray-status.ts'
 import { buildCommunityMenuItems, buildLanMenuItems, buildSafeModeMenuItems, type LanMenuActions, type LanMenuState } from './menu-template.ts'
 import { DEEPSEEK_PLATFORM_RECHARGE_URL } from './links.ts'
 import { DESKTOP_SUMMON_ACCELERATOR, desktopShortcutLabel } from './global-shortcut.ts'
@@ -60,7 +60,7 @@ export function buildTrayTemplate(
       click: actions.toggleLaunchAtLogin,
     },
     { type: 'separator' },
-    { label: statusLabel(locale, state.harness, state.restarting), enabled: false },
+    { label: statusLabelWithMode(locale, state.harness, state.restarting, state.safeMode === true), enabled: false },
     {
       label: t(state.harness?.phase === 'crashed' ? 'tray.startHarness' : 'menu.restartHarness'),
       enabled: canRestart,

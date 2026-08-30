@@ -144,10 +144,10 @@ export class ShellApp {
    * User-initiated restart: confirm first when the harness is ready (a crash
    * page retry skips the dialog and goes straight to {@link runHarnessRestart}).
    */
-  async requestRestart(): Promise<void> {
-    if (!this.restartEnabled()) return
-    if (this.currentState?.phase === 'ready' && !(await this.services.confirmRestart())) return
-    await this.runHarnessRestart()
+  async requestRestart(): Promise<boolean> {
+    if (!this.restartEnabled()) return false
+    if (this.currentState?.phase === 'ready' && !(await this.services.confirmRestart())) return false
+    return this.runHarnessRestart()
   }
 
   /**

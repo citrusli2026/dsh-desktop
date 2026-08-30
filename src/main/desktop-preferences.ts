@@ -46,6 +46,23 @@ export interface DesktopPreferencesControllerOptions {
   notificationsAvailable: boolean
 }
 
+export interface DesktopPreferenceCapabilities {
+  launchAtLoginAvailable: boolean
+  notificationsAvailable: boolean
+}
+
+/** Keep the visible preference matrix explicit instead of relying on UI guesses. */
+export function desktopPreferenceCapabilities(
+  platform: NodeJS.Platform,
+  packaged: boolean,
+  notificationsAvailable: boolean,
+): DesktopPreferenceCapabilities {
+  return {
+    launchAtLoginAvailable: packaged && (platform === 'darwin' || platform === 'win32'),
+    notificationsAvailable,
+  }
+}
+
 /**
  * Coordinates durable shell preferences with globalShortcut and login items.
  * The controller keeps shortcut changes transactional: a conflicting new key
@@ -86,12 +103,13 @@ export class DesktopPreferencesController {
   }
 
   get snapshot(): DesktopPreferencesSnapshot {
+    const capabilities = desktopPreferenceCapabilities(this.platform, this.loginItems !== undefined, this.notificationsAvailable)
     return {
       ...this.current,
       shortcutLabel: desktopShortcutLabel(this.current.shortcut, this.platform),
       shortcutRegistered: this.registeredShortcut === this.current.shortcut,
-      launchAtLoginAvailable: this.loginItems !== undefined,
-      notificationsAvailable: this.notificationsAvailable,
+      launchAtLoginAvailable: capabilities.launchAtLoginAvailable,
+      notificationsAvailable: capabilities.notificationsAvailable,
     }
   }
 

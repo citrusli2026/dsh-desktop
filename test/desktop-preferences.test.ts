@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { DesktopPreferencesController } from '../src/main/desktop-preferences.ts'
+import { desktopPreferenceCapabilities, DesktopPreferencesController } from '../src/main/desktop-preferences.ts'
 import type { DesktopPreferences, ShellPreferencesStore } from '../src/main/shell-preferences.ts'
 
 function createStore(initial: Partial<DesktopPreferences> = {}): ShellPreferencesStore {
@@ -126,4 +126,11 @@ test('does not offer login-item preferences on Linux or unpackaged builds', () =
   assert.equal(result.ok, false)
   if (!result.ok) assert.equal(result.reason, 'unavailable')
   assert.equal(controller.snapshot.launchAtLoginAvailable, false)
+})
+
+test('desktop preference capabilities expose the platform matrix', () => {
+  assert.deepEqual(desktopPreferenceCapabilities('darwin', true, true), { launchAtLoginAvailable: true, notificationsAvailable: true })
+  assert.deepEqual(desktopPreferenceCapabilities('win32', true, false), { launchAtLoginAvailable: true, notificationsAvailable: false })
+  assert.deepEqual(desktopPreferenceCapabilities('linux', true, true), { launchAtLoginAvailable: false, notificationsAvailable: true })
+  assert.deepEqual(desktopPreferenceCapabilities('darwin', false, true), { launchAtLoginAvailable: false, notificationsAvailable: true })
 })

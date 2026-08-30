@@ -136,6 +136,11 @@ window.__ModuleLoader__.load({
         margin-top: 10px;
         padding-top: 10px;
       }
+      [data-dsh-desktop-controls] [data-dsh-controls-status] {
+        color: var(--dsh-controls-muted);
+        font-size: 11px;
+        margin: 4px 0 10px;
+      }
       [data-dsh-desktop-controls] [data-dsh-controls-shortcut] {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 11px;
@@ -244,6 +249,19 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-onboarding] li::before { color: var(--dsh-controls-accent); content: "✓"; font-weight: 800; }
       [data-dsh-desktop-onboarding] li[data-dsh-onboarding-pending]::before { content: "•"; }
       [data-dsh-desktop-onboarding] code { font-size: 11px; overflow-wrap: anywhere; }
+      [data-dsh-desktop-settings-group] {
+        border-top: 1px solid var(--dsh-controls-border);
+        margin-top: 14px;
+        padding-top: 10px;
+      }
+      [data-dsh-desktop-settings-group-title] {
+        color: var(--dsh-controls-muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        margin: 0 0 2px;
+        text-transform: uppercase;
+      }
       /* 安全模式常驻横幅：位于视口底部，第三方插件隔离期间提醒。 */
       [data-dsh-safe-mode-banner] {
         align-items: center;
@@ -304,6 +322,7 @@ window.__ModuleLoader__.load({
         harnessStarting: "官方 Harness 正在启动",
         dataDirectory: "数据目录：",
         manualMarket: "插件市场由你手动安装",
+        groupHabits: "桌面习惯", groupRecovery: "恢复", groupPlugins: "插件", groupOptional: "可选工具",
         lanSettings: "连接移动设备", lanSettingsDetail: "手机与电脑连接同一局域网，扫码即可进入 Harness Web 界面。",
         lanStart: "开始配对", lanShowQr: "显示二维码", lanStop: "停止共享",
         shortcut: "唤起快捷键", record: "重新设置", recording: "请按下快捷键…",
@@ -344,6 +363,7 @@ window.__ModuleLoader__.load({
         harnessStarting: "Official Harness is starting",
         dataDirectory: "Data directory:",
         manualMarket: "Install the plugin market manually",
+        groupHabits: "Desktop habits", groupRecovery: "Recovery", groupPlugins: "Plugins", groupOptional: "Optional tools",
         lanSettings: "Connect a mobile device", lanSettingsDetail: "Same LAN as the computer; scan the QR code to enter the Harness Web UI.",
         lanStart: "Start pairing", lanShowQr: "Show QR code", lanStop: "Stop sharing",
         shortcut: "Summon shortcut", record: "Change shortcut", recording: "Press a shortcut…",
@@ -663,11 +683,13 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsx("h4", { "data-dsh-desktop-onboarding-title": true, children: copy.firstLaunchTitle }),
             react_jsx_runtime.jsx("p", { "data-dsh-desktop-onboarding-copy": true, children: copy.firstLaunchCopy }),
             react_jsx_runtime.jsxs("ol", { children: [
-              react_jsx_runtime.jsx("li", { "data-dsh-onboarding-done": startup?.harnessPhase === "ready" || null, "data-dsh-onboarding-pending": startup?.harnessPhase !== "ready" || null, children: startup?.harnessPhase === "ready" ? copy.harnessReady : copy.harnessStarting }),
+              react_jsx_runtime.jsx("li", { "data-dsh-onboarding-done": startup?.harnessPhase === "ready" || null, "data-dsh-onboarding-pending": startup?.harnessPhase !== "ready" || null, children: startup?.statusLabel ?? (startup?.harnessPhase === "ready" ? copy.harnessReady : copy.harnessStarting) }),
               react_jsx_runtime.jsxs("li", { children: [copy.dataDirectory, react_jsx_runtime.jsx("code", { children: startup?.dshHome ?? "~/.dsh-desktop" })] }),
               react_jsx_runtime.jsx("li", { "data-dsh-onboarding-done": marketState === "installed" || null, "data-dsh-onboarding-pending": marketState !== "installed" || null, children: marketState === "installed" ? copy.marketInstalledHint : copy.manualMarket }),
             ] }),
           ] }),
+          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
+            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupHabits }),
           typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-lan-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.lanSettings, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.lanSettingsDetail })] }),
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
@@ -690,16 +712,28 @@ window.__ModuleLoader__.load({
           ] }),
           react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.notifications }),
-            react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.notificationsEnabled === true, disabled: preferences.notificationsAvailable !== true, onChange: (event) => void update({ notificationsEnabled: event.target.checked }) }),
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+              react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.notificationsEnabled === true, disabled: preferences.notificationsAvailable !== true, onChange: (event) => void update({ notificationsEnabled: event.target.checked }) }),
+              preferences.notificationsAvailable !== true ? react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.unsupported }) : null,
+            ] }),
           ] }),
+          ] }),
+          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
+            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupOptional }),
           react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.screenCapture, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.screenCaptureDetail })] }),
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.screenCapture === true, onChange: (event) => void update({ screenCapture: event.target.checked }) }),
           ] }),
+          ] }),
+          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
+            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupRecovery }),
           react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.safeMode, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.safeModeDetail })] }),
             react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: safeBusy, onClick: () => void safeAction(), children: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
           ] }),
+          ] }),
+          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
+            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupPlugins }),
           typeof bridge?.getBundledPlugins === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.market, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.marketDetail })] }),
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
@@ -730,6 +764,7 @@ window.__ModuleLoader__.load({
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: presetBusy, onClick: () => void presetAction("import"), children: copy.presetsImport }),
             ] }),
           ] }) : null,
+          ] }),
           message === "" ? null : react_jsx_runtime.jsx("p", { "data-dsh-desktop-status": true, role: "status", children: message }),
         ],
       });
@@ -781,6 +816,7 @@ window.__ModuleLoader__.load({
       const [dragging, setDragging] = react.useState(false);
       const dragRef = react.useRef(null);
       const suppressClickRef = react.useRef(false);
+      const [startup, setStartup] = react.useState(null);
       const sessionState = useSessions((state) => state);
       const status = react.useMemo(() => publicStatusOf(sessionState), [sessionState]);
 
@@ -792,6 +828,12 @@ window.__ModuleLoader__.load({
       react.useEffect(() => {
         if (!open || typeof bridge?.getDesktopPreferences !== "function") return undefined;
         void bridge.getDesktopPreferences().then((value) => { if (value !== null) setPreferences(value); });
+        return undefined;
+      }, [open, bridge]);
+
+      react.useEffect(() => {
+        if (!open || typeof bridge?.getStartupStatus !== "function") return undefined;
+        void bridge.getStartupStatus().then((value) => { if (value !== null) setStartup(value); });
         return undefined;
       }, [open, bridge]);
 
@@ -906,6 +948,7 @@ window.__ModuleLoader__.load({
           }),
           open ? react_jsx_runtime.jsxs("section", { id: "dsh-desktop-controls-panel", "data-dsh-controls-panel": true, role: "dialog", "aria-label": copy.title, children: [
             react_jsx_runtime.jsx("h2", { "data-dsh-controls-heading": true, children: copy.title }),
+            startup?.statusLabel ? react_jsx_runtime.jsx("p", { "data-dsh-controls-status": true, role: "status", children: startup.statusLabel }) : null,
             typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
               lanState?.running === true ? react_jsx_runtime.jsxs(react.Fragment, { children: [
                 react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("showLanPairing"), children: copy.lanShowQr }),

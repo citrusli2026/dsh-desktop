@@ -16,6 +16,7 @@ export interface DesktopStartupStatus {
   dshHome: string
   userData: string
   harnessPhase: 'starting' | 'ready' | 'crashed'
+  statusLabel: string
   safeMode: boolean
   market: ProfilePackageStatus
 }

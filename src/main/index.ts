@@ -36,6 +36,7 @@ import {
   type WindowContext,
 } from './window.ts'
 import { createTray, destroyTray, refreshTray, type TrayActions } from './tray.ts'
+import { statusLabelWithMode } from './tray-status.ts'
 import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } from './update-prompt.ts'
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
 import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
@@ -582,7 +583,9 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
   if (action === 'startLanPairing') return startLanLink()
   if (action === 'showLanPairing') return showLanQr()
   if (action === 'stopLanPairing') {
-    stopLanLink()
+    closeLanPairingWindow()
+    await lanService.stop()
+    refreshNativeSurfaces()
     return true
   }
   if (action === 'showAbout') {
@@ -609,10 +612,7 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     return shellApp.runHarnessRestart()
   }
   if (action === 'restartHarness') {
-    // Fire-and-forget: requestRestart confirms with the user before stopping
-    // a ready harness, so the panel can close right away.
-    void shellApp.requestRestart()
-    return true
+    return shellApp.requestRestart()
   }
   if (action === 'enterSafeMode') return applySafeMode(true)
   if (action === 'exitSafeMode') return applySafeMode(false)
@@ -633,6 +633,7 @@ ipcMain.handle('desktop:startup-status', async (event) => {
     dshHome: desktopDshHome(),
     userData: app.getPath('userData'),
     harnessPhase: shellApp.state?.phase ?? 'starting',
+    statusLabel: statusLabelWithMode(currentLocale, shellApp.state, shellApp.restartInFlight, safeModeActive()),
     safeMode: safeModeActive(),
     market: profile.dshMarket,
   }
