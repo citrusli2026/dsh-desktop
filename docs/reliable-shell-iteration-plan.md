@@ -33,7 +33,21 @@
 3. **失败要可恢复**：插件或运行时出问题时，用户能进入安全模式、导出诊断并回到内置 Harness。
 4. **支持要可自助**：安装指南、FAQ、日志路径、错误提示和版本信息应覆盖最常见的首次使用问题。
 
-## 3. 硬约束
+## 3. DSH 社区优秀案例：只吸收壳层经验
+
+| 社区案例 | 已经吸收的能力 | 后续只做什么 | 明确不做什么 |
+|---|---|---|---|
+| [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | Safe Mode、诊断、`.dshpreset`、移动配对思路 | 继续完善恢复提示、预设错误处理和配对边界 | 不复制其远程隧道和完整跨设备工作台 |
+| [anywhere-labs/dsh-desktop](https://github.com/anywhere-labs/dsh-desktop) | 托盘、健康启动、恢复页、固定 Harness 运行 | 把启动阶段和最后一次失败原因展示得更清楚 | 不引入三种 UI 模式或新的 Agent 界面 |
+| [dsh-tauri-desk](https://github.com/dsh-tauri-desk/deepseek-harness-desktop) | 内核多版本/健康检查的产品方向 | 打磨已有 kernel overlay 的检查、切换、失败和恢复状态 | 不做 worktree 工作区和 Skills/MCP 控制台 |
+| [myYangyunfan/dsh_desktop](https://github.com/myYangyunfan/dsh_desktop) | 守护、自愈、托盘和运行环境处理 | 补齐进程、代理、PATH 和退出异常的可读反馈 | 不做桌宠、游戏化和多源功能堆叠 |
+| [bruc3van/dsh-desktop](https://github.com/bruc3van/dsh-desktop) | 运行时来源透明、安装前安全提示 | 在诊断/About 中明确运行时、内核、数据目录和插件来源 | 不建设独立的插件审查市场 |
+| [Minke](https://github.com/lencx/Minke) | 远程访问、浏览器接管的风险边界案例 | 仅维护现有 LAN QR 配对的安全和可恢复性 | 不做 Agent Browser、互联网远程 Agent 或本地模型平台 |
+
+结论：社区案例中与本项目最匹配的是“启动健康、恢复、运行时透明、插件生命周期”；
+其余增强型工作台能力即使成熟，也不改变本项目定位。
+
+## 4. 硬约束
 
 每个新需求先回答：“它是否直接改善可靠运行、安装体验、恢复能力或桌面使用体验？”
 如果不能明确回答，就不进入当前迭代。
@@ -59,80 +73,74 @@
 签名和公证暂不列入当前迭代和发布门禁。主要功能完成后，再根据真实下载量、活跃使用量、
 用户反馈和安装阻塞情况决定是否启动专项。
 
-## 4. 迭代顺序
+## 5. 已完成基线（不再列为待办）
 
-### Iteration A：开箱即用收口（下一轮，P0）
+以下能力已经落地，后续只做缺陷修复、边界补齐和文案优化，不重复立项：
 
-目标：新用户能稳定完成“下载安装 → 启动 Harness → 配置 → 开始使用”。
+| 能力 | 当前实现 |
+|---|---|
+| 开箱运行时 | bundled Node 22、固定 `@deepseek-ai/dsh` 闭包、无需 CLI/Node；默认独立 `~/.dsh-desktop` |
+| 基础桌面壳 | 原生窗口、托盘、菜单、单实例、关闭收托盘、窗口几何恢复、开机启动和启动后隐藏 |
+| 快速进入 | 可配置全局唤起快捷键、冲突不阻断启动、托盘/右键回退 |
+| 守护与恢复 | 进程监督、退避重启、错误页重试、Safe Mode、恢复中心、插件嫌疑提示、诊断导出 |
+| 更新与内核 | Windows 自动更新、macOS 检查更新、内核 overlay 安装/健康启动/失败回滚/恢复内置 |
+| 社区插件 | 安装包不含社区插件；手动安装 `dsh-market`；安全模式隔离用户插件 |
+| 用户资源 | `.dshpreset` 导入导出、冲突处理、信任提示；余额显示；opt-in 屏幕捕获工具 |
+| 连接与通知 | LAN QR 配对、loopback 约束、完成/失败/待确认桌面通知、点击聚焦 |
+| 发布与支持 | dmg/exe/deb、校验和、attestation、GitCode 镜像、官网自动同步 |
 
-范围：
+## 6. 具体迭代顺序
 
-- 首次启动、已有 profile、共享 `DSH_HOME` 和异常 profile 的路径逐一验证；
-- 明确展示当前运行时、数据目录、内核版本和社区插件状态；
-- 保留手动安装 `dsh-market` 的单一入口，但不自动安装任何社区插件；
-- 首次启动失败时，恢复页给出重试、诊断、日志和安全模式等可执行动作；
-- 补齐 Windows、macOS、Linux 的路径、权限、代理和中文网络提示；
-- 安装指南和 FAQ 与实际 UI 一致。
+### 6.1 下一轮：开箱即用收口（P0）
 
-验收：全新 profile 不出现社区 bundle；离线时能解释失败原因；用户可以在不使用 CLI 的情况下完成首次启动和后续插件市场安装。
+这轮只修改已有入口和状态，不新建 Agent 工作台。具体任务：
 
-### Iteration B：桌面壳完整性（P0）
+| ID | 功能点 | 修改方式 | 主要文件 | 验收 |
+|---|---|---|---|---|
+| A1 | 首次启动说明 | 在现有 `dsh-desktop-controls` 的「扩展设置」顶部增加三步状态：Harness 已就绪、数据目录、插件市场需手动安装；不增加弹窗向导 | `plugins/dsh-desktop-controls/lib/client.js`、`src/main/index.ts` | 新 profile 首次打开能看懂下一步；不会触发社区插件安装 |
+| A2 | 插件市场状态 | 将只返回布尔值的 `desktop:bundled-plugins` 改成用户插件状态：`installed / missing / damaged / version`；UI 分别显示“安装”“已安装”“需要修复”和重试 | `src/main/profile.ts`、`src/main/index.ts`、`plugins/dsh-desktop-controls/lib/client.js` | manifest 有包但目录缺失时不再误显示已安装；重试不会重复并发安装 |
+| A3 | 安装结果反馈 | `installDshMarket()` 从布尔返回改为结构化结果，区分下载失败、安装失败、重启失败、安装成功；保留 stderr 脱敏尾部供诊断，不把重启失败误报成网络失败 | `src/main/index.ts`、`src/preload/index.ts`、`test/profile.test.ts`、`test/desktop-controls.test.ts` | 四种结果有明确文案；安装成功但重启失败时可继续使用恢复页重试 |
+| A4 | 开箱路径测试 | 增加全新 profile、已有 profile、共享 `DSH_HOME`、无网络、损坏 profile 五组夹具；其中断言安装包不含社区插件 | `test/profile.test.ts`、`e2e/electron-shell.spec.ts`、`scripts/smoke-packaged.mjs` | 新用户不需要 CLI；离线失败可解释；社区插件不被隐式添加 |
 
-目标：把已有桌面功能打磨到“像一个可靠的常驻应用”。
+### 6.2 第二轮：桌面壳完整性（P0）
 
-范围：
+| ID | 功能点 | 修改方式 | 主要文件 | 验收 |
+|---|---|---|---|---|
+| B1 | 扩展设置分组 | 在现有设置页内按“桌面习惯 / 恢复 / 插件 / 可选工具”分组，保留现有动作和 IPC，不增加新产品面 | `plugins/dsh-desktop-controls/lib/client.js` | 用户能在一个页面找到快捷键、启动、通知、Safe Mode、插件市场、内核和预设 |
+| B2 | 启动状态可读 | 将 `starting / ready / crashed` 与当前内核、Safe Mode、重启中状态在入口和托盘使用同一套文案 | `src/main/shell-app.ts`、`src/main/tray-status.ts`、`src/main/tray.ts`、`plugins/dsh-desktop-controls/lib/client.js` | 同一时刻托盘、入口和错误页不出现互相矛盾的状态 |
+| B3 | 退出与重启反馈 | 对“重启 Harness”“停止 LAN”“退出应用”补忙碌、成功、失败和重复点击保护；不改变既有生命周期协议 | `src/main/process-lifecycle.ts`、`src/main/shell-app.ts`、`src/main/lan.ts`、`src/main/index.ts` | 重复点击不启动多个进程；失败后按钮可再次操作 |
+| B4 | 桌面偏好回归 | 对开机启动、启动隐藏、快捷键冲突、通知开关做 macOS/Windows/Linux 能力矩阵；Linux 继续明确不提供开机启动 | `src/main/desktop-preferences.ts`、`src/main/global-shortcut.ts`、`test/desktop-preferences.test.ts`、`test/global-shortcut.test.ts` | 每个平台只展示实际可用开关；冲突保留旧快捷键 |
 
-- 托盘、菜单、窗口关闭/隐藏、单实例和全局快捷键的边界情况；
-- 开机启动、启动后隐藏、通知开关和语言/主题同步；
-- 通知点击后正确聚焦窗口，错误页和恢复页动作可重复执行；
-- 特殊路径、多显示器、窗口尺寸恢复和第二实例行为；
-- 在不增加隐式网络行为的前提下，改善启动、重启和退出反馈。
+### 6.3 第三轮：恢复和插件生命周期收口（P1）
 
-验收：每项桌面偏好都有可见状态和可逆操作；冲突、失败、重复点击不会让应用卡死；关键路径纳入真实 Electron E2E 和打包 smoke。
+| ID | 功能点 | 修改方式 | 主要文件 | 验收 |
+|---|---|---|---|---|
+| C1 | 保留故障嫌疑 | Safe Mode 重启成功后暂不清空最近一次插件失败候选，直到用户退出 Safe Mode 或产生新的启动结果；增加显式清除时机 | `src/main/index.ts`、`src/main/safe-mode.ts`、`plugins/dsh-desktop-controls/lib/client.js` | 进入 Safe Mode 后仍能看到“疑似插件”；退出后状态归零 |
+| C2 | 插件状态一致性 | 统一“profile manifest、node_modules、package.json、Safe Mode”四种状态；损坏包只提供诊断/卸载/重试，不自动修复用户文件 | `src/main/profile.ts`、`src/main/diagnostics.ts`、`src/main/safe-mode.ts` | 安装、卸载、禁用、Safe Mode 来回切换后显示一致；不删除用户 profile |
+| C3 | 安装风险说明 | 在手动安装市场前明确网络安装、第三方代码和用户确认；安装完成后说明后续插件由 Harness 市场负责 | `plugins/dsh-desktop-controls/lib/client.js`、`site/assets/data-model.js`、`site/docs/faq/index.html` | 用户不会把市场或社区插件误解为官方内置能力 |
+| C4 | 诊断可行动 | 诊断报告加入 market 状态、内核选择、Safe Mode 原因和建议动作；保留本地、脱敏、有界、不上传 | `src/main/diagnostics.ts`、`test/diagnostics.test.ts` | 用户把报告贴到 issue 后，维护者能判断运行时/插件/profile/网络四类问题 |
 
-### Iteration C：运行时与恢复闭环（P1）
+### 6.4 第四轮：运行时和更新体验（P1）
 
-目标：内核、更新、插件故障和诊断形成可理解的恢复闭环。
+| ID | 功能点 | 修改方式 | 主要文件 | 验收 |
+|---|---|---|---|---|
+| D1 | 内核操作状态 | 为“检查新版 / 安装并切换 / 健康启动 / 自动回滚 / 恢复内置”定义统一状态，替换当前泛化的“操作未完成” | `src/main/kernel-manager.ts`、`src/main/index.ts`、`plugins/dsh-desktop-controls/lib/client.js` | 用户知道卡在网络、安装、启动还是回滚；内置内核始终可用 |
+| D2 | 更新路径说明 | 统一 Windows 自动更新、macOS 手动下载、Linux 手动升级的提示；不新增 macOS 自动更新，也不改变现有 unsigned 现实 | `src/main/update-prompt.ts`、`src/main/locale.ts`、`site/assets/data-model.js` | 三个平台的更新按钮、文案和当前版本显示一致 |
+| D3 | 更新回归门禁 | 给 overlay 切换失败、启动超时、恢复内置、更新源不可用增加模拟测试；发布继续执行真实打包 smoke | `test/kernel-manager.test.ts`、`test/update-check.test.ts`、`scripts/smoke-packaged.mjs` | 失败更新不会覆盖内置闭包；离线和重试行为可重复 |
 
-范围：
+### 6.5 持续项：LAN 与社区维护（P2）
 
-- 内置内核与 overlay 内核的当前状态、切换、失败和回滚提示；
-- Windows 更新、macOS 检查更新和 Linux 手动升级文案统一；
-- 安全模式中显示被隔离的插件、退出条件和下一步操作；
-- 诊断报告继续保持本地化、脱敏、有界，并明确报告路径；
-- 为常见启动失败建立用户可读的错误分类和 FAQ。
+| ID | 功能点 | 修改方式 | 主要文件 | 验收 |
+|---|---|---|---|---|
+| E1 | LAN 配对可理解 | 使用已有 `expiresInSeconds` 展示倒计时、过期后重新生成二维码；停止共享时清理 token 和窗口状态 | `src/main/lan.ts`、`src/main/lan-window.ts`、`src/main/index.ts`、`test/lan.test.ts` | 过期、重复扫码、停止、重启后不会复用旧二维码 |
+| E2 | 社区支持入口 | 增加 issue 模板/支持文档，要求版本、平台、Harness 状态和诊断报告；明确禁止提交 API Key、日志原文和个人数据 | `.github/ISSUE_TEMPLATE/`、`docs/`、`site/docs/faq/` | 维护者能复现常见安装/启动问题；用户知道如何安全反馈 |
+| E3 | 运行时安全更新 | 只跟进 Node/Electron/Harness 的必要安全更新；每次升级必须通过现有 verify、三平台 smoke 和安装态检查 | `manifest/`、`package.json`、`.github/workflows/` | 依赖升级不成为隐式产品扩张；升级有可回滚证据 |
 
-验收：坏插件、坏 overlay、启动失败和更新失败都能回到可用的内置 Harness；用户不需要手动删除 profile 才能恢复。
+任务依赖关系：`A1–A4 → B1–B4 → C1–C4 → D1–D3`；`E1–E3` 持续进行但不阻塞前四轮。
 
-### Iteration D：社区插件支持收口（P1）
+每轮不以“功能数量”验收，而以一个完整用户路径验收：安装、启动、使用、出错、恢复、反馈。
 
-目标：支持社区插件的完整生命周期，但不把插件生态变成壳自身的产品。
-
-范围：
-
-- 手动安装 `dsh-market` 的状态、重试和重启提示；
-- 插件安装、卸载、更新、禁用和安全模式之间的状态一致性；
-- 展示插件来源、版本、兼容性和潜在安装风险；
-- 发现安装失败时，优先提供日志、诊断和恢复动作；
-- 不新增随包社区插件白名单，不静默恢复用户已卸载的插件。
-
-验收：用户能看懂“官方 bundle、壳控件、社区插件、用户预设”的边界；插件出错不会拖垮整个应用；所有安装都由用户明确触发。
-
-### Iteration E：桌面连接与长期维护（P2）
-
-目标：在已有范围内完善 LAN 连接和跨平台维护，而不是扩张成远程 Agent 平台。
-
-范围：
-
-- LAN QR 配对的过期、重复配对、断开和重新连接体验；
-- 设备连接状态、撤销和本地安全提示；
-- 仅在有明确用户需求时评估第二条远程路线；
-- 持续跟随上游 Harness 与 Node/Electron 的安全更新；
-- 记录真实安装失败、启动失败、恢复成功和卸载反馈。
-
-验收：局域网连接默认可控、可撤销、无公开互联网暴露；新平台适配不会破坏已有壳能力。
-
-## 5. 延后评估：签名与公证
+## 7. 延后评估：签名与公证
 
 这不是当前迭代任务，也不阻塞上述功能完成。达到以下任一信号后再重新评估：
 
@@ -142,7 +150,7 @@
 
 重新评估时单独建立发布基础设施计划，不把签名工作偷偷混入功能迭代。
 
-## 6. 每轮完成标准
+## 8. 每轮完成标准
 
 - 功能有单测；涉及主进程和真实窗口的路径有 E2E 或打包 smoke；
 - 新增用户可见行为同步到中英文 README、官网 FAQ 和发布说明；
