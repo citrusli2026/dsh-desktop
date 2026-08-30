@@ -11,6 +11,7 @@ import {
   inspectPluginInventory,
   OFFICIAL_BUNDLES,
   toDisablePatch,
+  updatePluginFailureMemory,
   writeSafeModeOverlay,
   type SafeModeOverlay,
 } from '../src/main/safe-mode.ts'
@@ -198,6 +199,18 @@ test('collectPluginFailures dedupes rows across harness log lines', () => {
     { id: 'a', name: 'pkg-a' },
     { id: 'b', name: 'pkg-b' },
   ])
+})
+
+test('updatePluginFailureMemory preserves Safe Mode suspects until recovery exits', () => {
+  const previous = [{ id: 'suspect-a', name: 'plugin-a' }]
+  assert.deepEqual(updatePluginFailureMemory(previous, 'ready', '', true), previous)
+  assert.deepEqual(updatePluginFailureMemory(previous, 'crashed', 'no plugin detail', true), previous)
+  assert.deepEqual(updatePluginFailureMemory(previous, 'ready', '', false), [])
+  assert.deepEqual(updatePluginFailureMemory(previous, 'crashed', 'no plugin detail', false), [])
+  assert.deepEqual(
+    updatePluginFailureMemory(previous, 'crashed', 'failed to apply loader entry row-b (plugin-b): boom', true),
+    [{ id: 'row-b', name: 'plugin-b' }],
+  )
 })
 
 test('inspectPluginInventory reports bundles, composed rows, and damaged packages', async () => {

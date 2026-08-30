@@ -212,6 +212,19 @@ window.__ModuleLoader__.load({
         gap: 8px;
         flex-shrink: 0;
       }
+      [data-dsh-desktop-settings] [data-dsh-market-risk] {
+        align-items: flex-end;
+        display: inline-flex;
+        flex-direction: column;
+        gap: 5px;
+        max-width: 280px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-market-risk] small {
+        color: var(--dsw-alias-state-warning-primary, #9a6700);
+        font-size: 11px;
+        line-height: 1.4;
+        text-align: right;
+      }
       [data-dsh-desktop-settings] [data-dsh-desktop-checkbox] { height: 16px; width: 16px; }
       [data-dsh-desktop-settings] [data-dsh-desktop-status] {
         color: var(--dsw-alias-state-error-primary, #c33);
@@ -335,7 +348,7 @@ window.__ModuleLoader__.load({
         safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展。",
         safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式",
         market: "插件市场", marketDetail: "社区插件全部由你手动安装；dsh-desktop 不会预装或静默恢复。",
-        marketInstall: "安装插件市场", marketReinstall: "重新安装", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketMissing: "尚未安装", marketDamaged: "安装记录或文件不完整", marketFailed: "安装未完成，请检查网络后重试。", marketRestartFailed: "已安装，但重启 Harness 失败；请稍后在恢复页重试。",
+        marketInstall: "安装插件市场", marketReinstall: "重新安装", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketMissing: "尚未安装", marketDamaged: "安装记录或文件不完整", marketFailed: "安装未完成，请检查网络后重试。", marketRestartFailed: "已安装，但重启 Harness 失败；请稍后在恢复页重试。", marketRisk: "将从网络下载并运行第三方社区代码及其安装脚本，请确认来源后继续。", marketConfirm: "确认安装", marketCancel: "取消",
         balance: "余额", recharge: "充值",
         kernel: "内核版本", kernelBundled: "内置", kernelOverlay: "已切换",
         kernelCheck: "检查新版", kernelInstall: "安装最新", kernelRestore: "恢复内置",
@@ -376,7 +389,7 @@ window.__ModuleLoader__.load({
         safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; official and built-in extensions only.",
         safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode",
         market: "Plugin market", marketDetail: "Community plugins are always installed by you; dsh-desktop never bundles or silently restores them.",
-        marketInstall: "Install the market", marketReinstall: "Reinstall", marketInstalledHint: "Installed · open Settings → Plugin Market", marketMissing: "Not installed", marketDamaged: "Install record or files are incomplete", marketFailed: "Install did not finish; check your network and retry.", marketRestartFailed: "Installed, but Harness did not restart; retry from the recovery page later.",
+        marketInstall: "Install the market", marketReinstall: "Reinstall", marketInstalledHint: "Installed · open Settings → Plugin Market", marketMissing: "Not installed", marketDamaged: "Install record or files are incomplete", marketFailed: "Install did not finish; check your network and retry.", marketRestartFailed: "Installed, but Harness did not restart; retry from the recovery page later.", marketRisk: "This downloads and runs third-party community code and install scripts. Verify the source before continuing.", marketConfirm: "Confirm install", marketCancel: "Cancel",
         balance: "Balance", recharge: "Recharge",
         kernel: "Kernel version", kernelBundled: "bundled", kernelOverlay: "switched",
         kernelCheck: "Check for newer", kernelInstall: "Install latest", kernelRestore: "Restore bundled",
@@ -515,6 +528,7 @@ window.__ModuleLoader__.load({
       const [safeBusy, setSafeBusy] = react.useState(false);
       const [marketStatus, setMarketStatus] = react.useState(null);
       const [marketBusy, setMarketBusy] = react.useState(false);
+      const [marketConfirming, setMarketConfirming] = react.useState(false);
 
       react.useEffect(() => {
         if (typeof bridge?.getBundledPlugins !== "function") return;
@@ -525,6 +539,7 @@ window.__ModuleLoader__.load({
 
       const marketAction = async () => {
         if (typeof bridge?.desktopAction !== "function") return;
+        setMarketConfirming(false);
         setMarketBusy(true);
         try {
           const result = await bridge.desktopAction("installDshMarket");
@@ -542,6 +557,8 @@ window.__ModuleLoader__.load({
           setMarketBusy(false);
         }
       };
+
+      const requestMarketAction = () => setMarketConfirming(true);
 
       const [balanceText, setBalanceText] = react.useState(null);
       const [kernel, setKernel] = react.useState(null);
@@ -738,7 +755,13 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.market, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.marketDetail })] }),
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
               react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-detail": true, children: marketState === "installed" ? `${copy.marketInstalledHint}${market.version ? ` · ${market.version}` : ""}` : marketState === "damaged" ? copy.marketDamaged : copy.marketMissing }),
-              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => void marketAction(), children: marketBusy ? "…" : marketState === "installed" ? copy.marketReinstall : copy.marketInstall }),
+              marketConfirming ? react_jsx_runtime.jsxs("span", { "data-dsh-market-risk": true, children: [
+                react_jsx_runtime.jsx("small", { children: copy.marketRisk }),
+                react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+                  react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => void marketAction(), children: copy.marketConfirm }),
+                  react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => setMarketConfirming(false), children: copy.marketCancel }),
+                ] }),
+              ] }) : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: requestMarketAction, children: marketBusy ? "…" : marketState === "installed" ? copy.marketReinstall : copy.marketInstall }),
             ] }),
           ] }) : null,
           balanceText !== null ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [

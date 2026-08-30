@@ -206,6 +206,24 @@ export function collectPluginFailures(text: string): ComposedRow[] {
 }
 
 /**
+ * Keep crash suspects visible while Safe Mode is the active recovery path.
+ * A normal ready boot or an explicit Safe Mode exit is the user's signal that
+ * the previous quarantine context is no longer actionable.
+ */
+export function updatePluginFailureMemory(
+  previous: ComposedRow[],
+  phase: 'starting' | 'ready' | 'crashed',
+  logTail: string,
+  safeMode: boolean,
+): ComposedRow[] {
+  if (phase === 'ready' && !safeMode) return []
+  if (phase !== 'crashed') return previous
+  const current = collectPluginFailures(logTail)
+  if (current.length > 0) return current
+  return safeMode ? previous : []
+}
+
+/**
  * Compute and persist the Safe Mode overlay into `dir` (usually userData),
  * returning its path. Returns undefined when there is nothing to disable or
  * the write fails — Safe Mode must never block a boot over its own recovery
@@ -233,4 +251,3 @@ export async function writeSafeModeOverlay(dshHome: string, dir: string, profile
     return undefined
   }
 }
-

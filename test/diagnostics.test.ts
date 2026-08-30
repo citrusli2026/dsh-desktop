@@ -74,6 +74,10 @@ test('formatDiagnosticReport records versions and crash state without upload', (
     platform: 'darwin', platformRelease: '25.0.0', arch: 'arm64',
     harnessState: { phase: 'crashed', attempts: 6, logTail: 'ignored' }, logTail: 'hello',
     harnessVersion: '0.1.1-rc.2', safeMode: true,
+    profileStatus: {
+      manifest: 'installed', bundles: ['@deepseek-ai/dsh-base', 'user-plugin'], userBundles: ['user-plugin'],
+      dshMarket: { name: 'dshmarket', state: 'damaged' },
+    },
     pluginInventory: {
       bundles: ['@deepseek-ai/dsh-base', 'user-plugin'],
       userBundles: ['user-plugin'],
@@ -86,6 +90,9 @@ test('formatDiagnosticReport records versions and crash state without upload', (
   assert.match(report, /harness_state=crashed \(attempts=6\)/)
   assert.match(report, /harness_version=0\.1\.1-rc\.2/)
   assert.match(report, /safe_mode=true/)
+  assert.match(report, /safe_mode_reason=plugin-quarantine/)
+  assert.match(report, /profile_manifest=installed/)
+  assert.match(report, /market_state=damaged/)
   assert.match(report, /user_bundles=user-plugin/)
   assert.match(report, /composed_rows=user-a/)
   assert.match(report, /user-a \(user-plugin\)/)

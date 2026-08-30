@@ -41,7 +41,7 @@ import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } fr
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
 import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport, redactDiagnosticsLog } from './diagnostics.ts'
-import { collectPluginFailures, writeSafeModeOverlay, WEB_PROFILE, type ComposedRow } from './safe-mode.ts'
+import { updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, type ComposedRow } from './safe-mode.ts'
 import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage } from './presets.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
@@ -115,6 +115,7 @@ function safeModeActive(): boolean {
 /** Enter or exit Safe Mode: persist the flag, then restart the harness. */
 async function applySafeMode(enabled: boolean): Promise<boolean> {
   if (SMOKE_TEST || desktopPreferencesController === undefined) return false
+  if (!enabled) lastPluginFailures = []
   const result = desktopPreferencesController.update({ safeMode: enabled })
   if (!result.ok) return false
   refreshNativeSurfaces()
@@ -333,10 +334,10 @@ const shellApp = new ShellApp({
     if (rollbackVersion !== undefined) rollbackKernel(rollbackVersion)
     notifyHarnessState(state)
     if (state.phase !== 'ready') lastPublicStatus = undefined
+    lastPluginFailures = updatePluginFailureMemory(lastPluginFailures, state.phase, state.phase === 'crashed' ? state.logTail : '', safeModeActive())
     if (state.phase === 'ready') {
       void loadHarnessUrl(windowContext, state.url)
     } else if (state.phase === 'crashed') {
-      lastPluginFailures = collectPluginFailures(state.logTail)
       void loadErrorPage(windowContext, state.attempts, state.logTail, safeModeActive(), lastPluginFailures)
     } else {
       void loadLoadingPage(windowContext)

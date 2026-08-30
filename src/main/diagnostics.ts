@@ -9,6 +9,7 @@ import { shellText, type ShellLocale } from './locale.ts'
 import { collectPluginFailures, inspectPluginInventory, type ComposedRow, type PluginInventory } from './safe-mode.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { harnessRoot } from './paths.ts'
+import { readProfileStatus, type ProfileStatus } from './profile.ts'
 
 export const MAX_LOG_BYTES = 5 * 1024 * 1024
 export const KEPT_LOG_FILES = 3
@@ -105,6 +106,7 @@ export interface DiagnosticFacts {
   /** Bundled @deepseek-ai/dsh version from the harness closure. */
   harnessVersion: string
   safeMode: boolean
+  profileStatus?: ProfileStatus
   pluginInventory: PluginInventory | undefined
   pluginFailures: ComposedRow[]
 }
@@ -138,6 +140,10 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
     `harness_state=${stateLine(facts.harnessState)}`,
     `harness_version=${facts.harnessVersion}`,
     `safe_mode=${facts.safeMode ? 'true' : 'false'}`,
+    `safe_mode_reason=${facts.safeMode ? 'plugin-quarantine' : 'none'}`,
+    `profile_manifest=${facts.profileStatus?.manifest ?? 'unknown'}`,
+    `market_state=${facts.profileStatus?.dshMarket.state ?? 'unknown'}`,
+    `market_version=${facts.profileStatus?.dshMarket.version ?? 'unknown'}`,
     'generated_locally=true',
     'uploaded_automatically=false',
     '',
@@ -188,8 +194,11 @@ export async function exportDiagnosticReport(state: HarnessState | undefined, lo
       harnessVersion = 'unknown'
     }
     let pluginInventory: PluginInventory | undefined
+    let profileStatus: ProfileStatus | undefined
     try {
-      pluginInventory = await inspectPluginInventory(resolveDshHome(process.env, homedir()))
+      const dshHome = resolveDshHome(process.env, homedir())
+      profileStatus = await readProfileStatus(dshHome)
+      pluginInventory = await inspectPluginInventory(dshHome)
     } catch {
       pluginInventory = undefined
     }
@@ -207,6 +216,7 @@ export async function exportDiagnosticReport(state: HarnessState | undefined, lo
       logTail,
       harnessVersion,
       safeMode,
+      profileStatus,
       pluginInventory,
       pluginFailures: collectPluginFailures(logTail),
     })

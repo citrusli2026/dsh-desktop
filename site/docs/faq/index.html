@@ -46,6 +46,7 @@
   <details><summary>桌面版会读取命令行的配置吗？</summary><p>默认不会。桌面版使用 <code>~/.dsh-desktop</code>，命令行通常使用 <code>~/.dsh</code>。如果需要共享，可以设置 <code>DSH_HOME=~/.dsh</code>，建议先备份。</p></details>
   <details><summary>macOS 提示无法验证开发者怎么办？</summary><p>当前 macOS 构建可能未经过 Apple 公证。确认安装包来自公开 Release 后，在 Finder 中右键应用选择“打开”。不要从不明来源下载或执行来路不明的终端命令。</p></details>
   <details><summary>Windows SmartScreen 拦截怎么办？</summary><p>当前 Windows 安装包可能未购买商业代码签名证书。确认来源和校验值后，点击“更多信息 → 仍要运行”。如果不确定文件来源，请停止安装并在 GitHub 仓库提交问题。</p></details>
+  <details><summary>插件会随安装包一起安装吗？</summary><p>不会。插件市场和社区插件都不打进发布包，必须由你在设置中手动安装；安装前请确认第三方仓库来源，因为安装过程可能下载并运行社区代码及安装脚本。</p></details>
   <details><summary>Linux 支持哪些系统？</summary><p>当前提供 amd64 Debian 包，面向 Debian、Ubuntu、UOS、Deepin 和麒麟等系统。不同发行版的系统依赖可能不同，建议优先使用系统软件中心安装。</p></details>
   <details><summary>如何校验安装包没有被篡改？</summary><p>每个安装包都附带同名 <code>.sha256</code> 文件。macOS/Linux 使用 <code>shasum -a 256 -c 文件名.sha256</code>，Windows 使用 <code>CertUtil -hashfile 文件名 SHA256</code>，再与 Release 中的校验文件比较。</p></details>
   <details><summary>GitHub 下载慢怎么办？</summary><p>可以打开<a href="/download">下载页</a>中的 GitCode 镜像入口。镜像状态会随发布同步变化；如果镜像没有对应文件，请回到 GitHub Release 页面。</p></details>
