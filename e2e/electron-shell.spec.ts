@@ -548,6 +548,9 @@ shellTest('packaged app shows a desktop notice for a real state edge and restore
   const advancedSettings = settings.locator('[data-dsh-desktop-advanced]')
   await expect(advancedSettings).toHaveCount(1)
   expect(await advancedSettings.getAttribute('open')).toBe(null)
+  // Dependent and unsupported controls should not occupy the core surface:
+  // start-hidden has no effect until launch-at-login is enabled.
+  await expect(settings.getByText('Start hidden in the tray', { exact: true })).toHaveCount(0)
   await settings.screenshot({ path: testInfo.outputPath('02-desktop-preferences.png') })
   await advancedSettings.locator('summary').click()
   await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-advanced]')?.hasAttribute('open') ?? false)).toBe(true)

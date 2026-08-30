@@ -54,6 +54,9 @@ async function capture(locale, theme) {
     await dismissOnboarding(page)
     await page.waitForTimeout(500)
     await expect(page.locator('[data-dsh-desktop-controls]')).toBeVisible({ timeout: 60_000 })
+    // A fresh Harness profile can reveal its one-time modal after the shell
+    // controls mount. Clear it again before clicking through the real UI.
+    await dismissOnboarding(page)
 
     const suffix = `${locale}-${theme}`
     await page.screenshot({ path: join(outputDir, `app-main-${suffix}.png`), animations: 'disabled' })

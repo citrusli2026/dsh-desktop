@@ -13,9 +13,12 @@ or disable local desktop status notices.
 
 The first view stays focused on the desktop essentials: runtime status, the isolated
 data directory, the manual community-plugin boundary, LAN pairing, the summon
-shortcut, startup behavior, and notifications. Lower-frequency controls — screen
-capture, Safe Mode, the plugin market, kernel actions, and portable presets — live
-under the collapsed "More shell tools" section.
+shortcut, startup behavior, and notifications. Lower-frequency controls — Safe Mode,
+screen capture, the plugin market, kernel actions, and portable presets — live under
+the collapsed "More shell tools" section. Platform-dependent controls are rendered
+only when usable: launch-at-login is available in packaged macOS/Windows builds,
+start-hidden appears only after launch-at-login is enabled, and unavailable desktop
+notifications are omitted instead of shown as disabled controls.
 
 Status notices are derived from the Harness `useSessions` public state exposed to
 the plugin. The plugin does not read screenshots or the DOM to infer activity,

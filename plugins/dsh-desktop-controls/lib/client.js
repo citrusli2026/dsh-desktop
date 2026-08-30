@@ -172,25 +172,33 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-row]:last-child { border-bottom: 0; }
       [data-dsh-desktop-settings] [data-dsh-desktop-status-summary] {
         display: grid;
-        gap: 8px;
+        gap: 0;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        margin-top: 10px;
+        margin-top: 0;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-status-item] {
-        background: color-mix(in srgb, var(--dsh-controls-accent) 6%, transparent);
-        border: 1px solid color-mix(in srgb, var(--dsh-controls-accent) 16%, var(--dsh-controls-border));
-        border-radius: 9px;
-        display: block;
+        align-items: baseline;
+        background: transparent;
+        border: 0;
+        border-left: 1px solid color-mix(in srgb, var(--dsh-controls-accent) 20%, var(--dsh-controls-border));
+        border-radius: 0;
+        display: flex;
+        gap: 6px;
         min-width: 0;
-        padding: 8px 10px;
+        padding: 1px 10px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-status-item]:first-child {
+        border-left: 0;
+        padding-left: 0;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-status-item] strong {
         color: var(--dsh-controls-muted);
-        display: block;
+        display: inline;
+        flex: 0 0 auto;
         font-size: 10px;
         font-weight: 700;
         letter-spacing: .06em;
-        margin-bottom: 3px;
+        margin: 0;
         text-transform: uppercase;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-status-item] > span,
@@ -199,6 +207,7 @@ window.__ModuleLoader__.load({
         font-size: 12px;
         line-height: 1.35;
         overflow: hidden;
+        min-width: 0;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
@@ -266,35 +275,14 @@ window.__ModuleLoader__.load({
         margin: 10px 0 0;
       }
       [data-dsh-desktop-onboarding] {
+        align-items: center;
         background: color-mix(in srgb, var(--dsh-controls-accent) 7%, transparent);
         border: 1px solid color-mix(in srgb, var(--dsh-controls-accent) 18%, var(--dsh-controls-border));
-        border-radius: 12px;
-        margin: 0 0 16px;
-        padding: 12px 14px;
+        border-radius: 10px;
+        display: grid;
+        margin: 0 0 12px;
+        padding: 7px 10px;
       }
-      [data-dsh-desktop-onboarding] [data-dsh-desktop-onboarding-title] {
-        font-size: 13px;
-        font-weight: 700;
-        margin: 0;
-      }
-      [data-dsh-desktop-onboarding] [data-dsh-desktop-onboarding-copy] {
-        color: var(--dsh-controls-muted);
-        font-size: 12px;
-        line-height: 1.5;
-        margin: 3px 0 8px;
-      }
-      [data-dsh-desktop-onboarding] ol { list-style: none; margin: 0; padding: 0; }
-      [data-dsh-desktop-onboarding] li {
-        align-items: baseline;
-        display: flex;
-        gap: 7px;
-        font-size: 12px;
-        line-height: 1.5;
-        margin: 4px 0;
-      }
-      [data-dsh-desktop-onboarding] li::before { color: var(--dsh-controls-accent); content: "✓"; font-weight: 800; }
-      [data-dsh-desktop-onboarding] li[data-dsh-onboarding-pending]::before { content: "•"; }
-      [data-dsh-desktop-onboarding] code { font-size: 11px; overflow-wrap: anywhere; }
       [data-dsh-desktop-settings-group] {
         border-top: 1px solid var(--dsh-controls-border);
         margin-top: 14px;
@@ -380,6 +368,16 @@ window.__ModuleLoader__.load({
         [data-dsh-desktop-controls] { top: 12px; right: 12px; }
         [data-dsh-desktop-controls] [data-dsh-controls-label] { display: none; }
         [data-dsh-desktop-settings] [data-dsh-desktop-status-summary] { grid-template-columns: 1fr; }
+        [data-dsh-desktop-settings] [data-dsh-desktop-status-item],
+        [data-dsh-desktop-settings] [data-dsh-desktop-status-item]:first-child {
+          border-left: 0;
+          border-top: 1px solid color-mix(in srgb, var(--dsh-controls-accent) 20%, var(--dsh-controls-border));
+          padding: 7px 0 1px;
+        }
+        [data-dsh-desktop-settings] [data-dsh-desktop-status-item]:first-child {
+          border-top: 0;
+          padding-top: 1px;
+        }
       }
       @media (prefers-reduced-motion: reduce) {
         [data-dsh-desktop-controls] [data-dsh-controls-trigger] { transition: none; }
@@ -399,8 +397,6 @@ window.__ModuleLoader__.load({
         restartHarness: "重启 Harness",
         unavailable: "请右键窗口或点击系统托盘图标使用扩展入口。",
         settingsTitle: "扩展设置", settingsCopy: "把本机桌面习惯放在这里；系统托盘和右键窗口也能进入扩展入口。",
-        firstLaunchTitle: "运行状态",
-        firstLaunchCopy: "官方 Harness、数据目录和插件安装边界都保持可见；社区插件不会随包安装，需要时请由你手动安装。",
         harnessReady: "官方 Harness 已就绪",
         harnessStarting: "官方 Harness 正在启动",
         statusLabel: "状态", dataLabel: "数据", marketLabel: "插件市场", marketReady: "已安装", marketManual: "需手动安装",
@@ -429,7 +425,7 @@ window.__ModuleLoader__.load({
         safeModeSuspect: "疑似插件：{id}（{name}），可在官方「设置 → 插件」中卸载。",
         presetsTitle: "Agent 预设", presetsDetail: "导出或导入 .dshpreset 便携预设包，备份或分享 Agent 预设。",
         presetsExport: "导出预设", presetsImport: "导入预设",
-        advancedTitle: "更多扩展工具", advancedDetail: "屏幕捕获、安全模式、插件市场、内核和预设",
+        advancedTitle: "更多扩展工具", advancedDetail: "安全模式、屏幕捕获、插件市场、内核和预设",
         presetExported: "已导出 {name}。", presetImported: "已导入 {name}。",
         presetSkipped: "已跳过 {name}。", presetInvalid: "文件无效或操作失败。",
         presetEmpty: "没有可导出的用户预设。",
@@ -442,8 +438,6 @@ window.__ModuleLoader__.load({
         restartHarness: "Restart Harness",
         unavailable: "Right-click the window or use the system tray for extensions.",
         settingsTitle: "Extensions", settingsCopy: "Keep desktop habits on this device; the tray and right-click menu remain alternate extension entry points.",
-        firstLaunchTitle: "Status at a glance",
-        firstLaunchCopy: "The official Harness state, data directory, and plugin boundary stay visible; community plugins are never bundled and must be installed by you when needed.",
         harnessReady: "Official Harness is ready",
         harnessStarting: "Official Harness is starting",
         statusLabel: "Status", dataLabel: "Data", marketLabel: "Plugin market", marketReady: "Installed", marketManual: "Manual install",
@@ -472,7 +466,7 @@ window.__ModuleLoader__.load({
         safeModeSuspect: "Suspected plugin: {id} ({name}). Uninstall it from Settings → Plugins.",
         presetsTitle: "Agent presets", presetsDetail: "Export or import .dshpreset portable packages to back up or share agent presets.",
         presetsExport: "Export preset", presetsImport: "Import preset",
-        advancedTitle: "More shell tools", advancedDetail: "Screen capture, Safe Mode, plugin market, kernel, and presets",
+        advancedTitle: "More shell tools", advancedDetail: "Safe Mode, screen capture, plugin market, kernel, and presets",
         presetExported: "Exported {name}.", presetImported: "Imported {name}.",
         presetSkipped: "Skipped {name}.", presetInvalid: "The file is invalid or the operation failed.",
         presetEmpty: "There is no user preset to export.",
@@ -782,18 +776,18 @@ window.__ModuleLoader__.load({
       const canLaunch = preferences.launchAtLoginAvailable === true;
       const market = marketStatus ?? startup?.market ?? { state: "missing" };
       const marketState = market.state ?? "missing";
+      const currentStatus = startup?.statusLabel ?? (startup?.harnessPhase === "ready" ? copy.harnessReady : copy.harnessStarting);
+      const compactStatus = currentStatus.replace(/^[^:：]+[:：]\s*/, "");
       return react_jsx_runtime.jsxs("div", {
         "data-dsh-desktop-settings": true,
         children: [
           react_jsx_runtime.jsx("h3", { "data-dsh-desktop-settings-heading": true, children: copy.settingsTitle }),
           react_jsx_runtime.jsx("p", { "data-dsh-desktop-settings-copy": true, children: copy.settingsCopy }),
-          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-onboarding": true, "aria-label": copy.firstLaunchTitle, children: [
-            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-onboarding-title": true, children: copy.firstLaunchTitle }),
-            react_jsx_runtime.jsx("p", { "data-dsh-desktop-onboarding-copy": true, children: copy.firstLaunchCopy }),
+          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-onboarding": true, "aria-label": copy.statusLabel, children: [
             react_jsx_runtime.jsxs("div", { "data-dsh-desktop-status-summary": true, children: [
               react_jsx_runtime.jsxs("span", { "data-dsh-desktop-status-item": true, children: [
                 react_jsx_runtime.jsx("strong", { children: copy.statusLabel }),
-                react_jsx_runtime.jsx("span", { "data-dsh-onboarding-stage": startup?.harnessStage ?? null, "data-dsh-onboarding-done": startup?.harnessPhase === "ready" || null, "data-dsh-onboarding-pending": startup?.harnessPhase !== "ready" || null, children: startup?.statusLabel ?? (startup?.harnessPhase === "ready" ? copy.harnessReady : copy.harnessStarting) }),
+                react_jsx_runtime.jsx("span", { "data-dsh-onboarding-stage": startup?.harnessStage ?? null, "data-dsh-onboarding-done": startup?.harnessPhase === "ready" || null, "data-dsh-onboarding-pending": startup?.harnessPhase !== "ready" || null, children: compactStatus }),
               ] }),
               react_jsx_runtime.jsxs("span", { "data-dsh-desktop-status-item": true, children: [
                 react_jsx_runtime.jsx("strong", { children: copy.dataLabel }),
@@ -819,21 +813,18 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-shortcut": true, children: recording ? copy.recording : preferences.shortcutLabel }),
             react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-record": true, disabled: recording, onClick: () => { setMessage(""); setRecording(true); }, children: recording ? "…" : copy.record }),
           ] }),
-          react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
-            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.launchAtLogin, !canLaunch ? react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.unsupported }) : null] }),
-            react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.launchAtLogin === true, disabled: !canLaunch, onChange: (event) => void update({ launchAtLogin: event.target.checked }) }),
-          ] }),
-          react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
-            react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.launchHidden }),
-            react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.launchHidden === true, disabled: !canLaunch || preferences.launchAtLogin !== true, onChange: (event) => void update({ launchHidden: event.target.checked }) }),
-          ] }),
-          react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
+          preferences.notificationsAvailable === true ? react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.notifications }),
-            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
-              react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.notificationsEnabled === true, disabled: preferences.notificationsAvailable !== true, onChange: (event) => void update({ notificationsEnabled: event.target.checked }) }),
-              preferences.notificationsAvailable !== true ? react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.unsupported }) : null,
-            ] }),
-          ] }),
+            react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.notificationsEnabled === true, onChange: (event) => void update({ notificationsEnabled: event.target.checked }) }),
+          ] }) : null,
+          canLaunch ? react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
+            react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.launchAtLogin }),
+            react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.launchAtLogin === true, onChange: (event) => void update({ launchAtLogin: event.target.checked }) }),
+          ] }) : null,
+          canLaunch && preferences.launchAtLogin === true ? react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
+            react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.launchHidden }),
+            react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.launchHidden === true, onChange: (event) => void update({ launchHidden: event.target.checked }) }),
+          ] }) : null,
           ] }),
           react_jsx_runtime.jsxs("details", { "data-dsh-desktop-advanced": true, children: [
             react_jsx_runtime.jsxs("summary", { children: [
@@ -841,17 +832,17 @@ window.__ModuleLoader__.load({
               react_jsx_runtime.jsx("small", { children: copy.advancedDetail }),
             ] }),
           react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
-            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupOptional }),
-          react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
-            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.screenCapture, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.screenCaptureDetail })] }),
-            react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.screenCapture === true, onChange: (event) => void update({ screenCapture: event.target.checked }) }),
-          ] }),
-          ] }),
-          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
             react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupRecovery }),
           react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.safeMode, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.safeModeDetail })] }),
             react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: safeBusy, onClick: () => void safeAction(), children: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
+          ] }),
+          ] }),
+          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
+            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupOptional }),
+          react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.screenCapture, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.screenCaptureDetail })] }),
+            react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.screenCapture === true, onChange: (event) => void update({ screenCapture: event.target.checked }) }),
           ] }),
           ] }),
           react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
