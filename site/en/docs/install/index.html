@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>DeepSeek Harness desktop app installation guide | DSH Desktop</title>
-<meta name="description" content="Install DSH Desktop on Windows, macOS, or Linux, complete the first-launch setup, configure a DeepSeek API key, and understand desktop data isolation." />
+<meta name="description" content="Install DSH Desktop on Windows, macOS, or Linux, configure a DeepSeek API key, manually install community plugins, and recover from startup failures." />
 <meta property="og:site_name" content="DSH Desktop" />
 <meta property="og:title" content="DeepSeek Harness desktop app installation guide" />
 <meta property="og:description" content="Install DSH Desktop and configure your first DeepSeek Harness desktop session." />
@@ -21,7 +21,7 @@
 <link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/docs/install" />
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/docs/install" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=35" />
+<link rel="stylesheet" href="/assets/style.css?v=36" />
 <link rel="stylesheet" href="/assets/seo.css?v=8" />
 <script>
   try {
@@ -41,10 +41,11 @@
   <h2>Three steps to start</h2><ol><li><strong>Download:</strong> choose a Windows, macOS, or Linux installer from the <a href="/en/download">download page</a>.</li><li><strong>Install:</strong> run the installer and launch dsh-desktop. The shell starts its local Harness instance automatically.</li><li><strong>Configure:</strong> choose a model provider, paste an API key, and start your first session.</li></ol>
   <h2>First launch by platform</h2><h3>Windows</h3><p>Run the NSIS installer. If Windows SmartScreen shows a warning, verify the source and checksum first, then choose <b>More info → Run anyway</b> if you trust the build.</p><h3>macOS Apple Silicon</h3><p>Open the DMG and drag the app to Applications. If Gatekeeper cannot verify it, right-click the app in Finder and choose <b>Open</b>.</p><h3>Linux amd64</h3><p>Open the Debian package or use your system software center. Launch dsh-desktop from the application menu after installation.</p>
   <h2>Configure a DeepSeek API key</h2><p>Open the <a href="https://platform.deepseek.com" target="_blank" rel="noopener">DeepSeek Open Platform</a>, create an API key, then paste it into the model/provider settings inside dsh-desktop. API usage is metered, so check your account balance and pricing first.</p>
+  <h2>Product scope and community plugins</h2><p>dsh-desktop is a dependable Electron shell with out-of-the-box support: it owns the desktop window, tray, bundled runtime, process supervision, and recovery entry points. Harness remains responsible for agents, sessions, tools, models, and plugin behavior. It does not add a second Agent workbench, chat surface, or project workspace.</p><p>The installer and first launch contain no community plugins and never install them silently. When needed, manually install <code>dsh-market</code> from Harness Settings → Extensions → Plugin market, then choose plugins from Harness Settings → Plugin Market. Plugins may download community code or run build scripts, so verify the source and approve each install deliberately.</p>
   <h2>Does the desktop share CLI data?</h2><p>Not by default. Desktop data lives in <code>~/.dsh-desktop</code>, while the CLI commonly uses <code>~/.dsh</code>. To intentionally share the home, set <code>DSH_HOME=~/.dsh</code> before launch; back up your data first.</p>
   <h2>How do I bring the window back quickly?</h2><p>After hiding dsh-desktop to the tray, press your summon shortcut from any app to show and focus it. It defaults to <code>Ctrl/Cmd + Shift + Space</code>; if another app owns the combination, use the system tray or the window context menu.</p>
   <h2>Set desktop preferences</h2><p>Open Settings → Extensions to record a custom summon shortcut, opt into launch at login, choose whether to start hidden in the tray, and control local desktop notices. Launch at login is available on Windows/macOS and off by default; notices appear only while the window is unfocused and never read or upload screen content.</p>
-  <h2>When startup fails</h2><p>Confirm that the installer is complete, the data directory is writable, and security software is not blocking local loopback processes. Export a diagnostic report from the Help menu and include the version, platform, and relevant log details when opening an issue. See the <a href="/en/docs/faq">FAQ</a> for first-launch prompts.</p>
+  <h2>When startup fails</h2><p>Confirm that the installer is complete, the data directory is writable, and security software is not blocking local loopback processes. The error page offers Retry, Start in Safe Mode, Open logs, and Export diagnostics. Safe Mode isolates user plugins without deleting or moving your files. Include the version, platform, and redacted diagnostic report when opening an issue. See the <a href="/en/docs/faq">FAQ</a> for first-launch prompts.</p>
   <div class="seo-next-links"><a href="/en/download">Download DSH Desktop →</a><a href="/en/docs/faq">Read the FAQ →</a><a href="/docs/install">阅读中文指南 →</a></div>
 </div></main>
 <footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />No affiliation with DeepSeek AI</p><a class="footer__top" href="#main-content">Back to top ↑</a></div><nav class="footer__links" aria-label="Footer links"><a href="/en">Home</a><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a><a href="/docs/install">中文</a><a href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">GitHub</a></nav><p class="footer__sync"><span>Static site · deployed on Vercel<br />Release data synced by GitHub Actions</span><br /><span>Install and help</span></p></div></footer>

@@ -671,6 +671,39 @@ a { color: inherit; }
 .feature-card::before { content: ""; position: absolute; top: 0; left: 28px; width: 42px; height: 2px; background: var(--signal); }
 .feature-card h3 { max-width: 22ch; margin-bottom: 14px; font-size: 18px; }
 .feature-card p { color: var(--muted); font-size: 14px; line-height: 1.75; }
+.capability-groups { display: grid; gap: 34px; }
+.capability-group { display: grid; gap: 14px; }
+.capability-group__head { display: grid; grid-template-columns: 46px 1fr; gap: 16px; align-items: start; max-width: 700px; }
+.capability-group__index { color: var(--signal-deep); font: 700 12px/1.5 var(--mono); letter-spacing: 0.1em; }
+.capability-group__head h3 { margin-bottom: 4px; font-size: 20px; }
+.capability-group__head p { color: var(--muted); font-size: 14px; }
+
+/* ══ 当前版本重点与支持路径 ══ */
+.latest-card {
+  display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 28px; align-items: start;
+  margin-top: 28px; padding: 26px;
+  border: 1px solid var(--border-strong); border-radius: var(--r-panel);
+  background: linear-gradient(135deg, var(--signal-dim), var(--panel));
+  box-shadow: var(--shadow-card);
+}
+.latest-card__copy .sec-marker { margin-bottom: 10px; }
+.latest-card h2, .latest-card h3 { margin: 0 0 10px; padding: 0; border: 0; color: var(--text-bluish); font-size: 20px; }
+.latest-card__copy > p:last-child { color: var(--muted); font-size: 14px; }
+.latest-card ul { display: grid; gap: 10px; padding-left: 20px; color: var(--muted); font-size: 14px; }
+.latest-card li::marker { color: var(--signal); }
+.latest-card li b { color: var(--text); }
+.support-routes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 24px; }
+.support-route {
+  display: grid; grid-template-columns: auto 1fr; column-gap: 11px; align-items: center;
+  min-height: 72px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: var(--r-panel);
+  background: var(--panel); box-shadow: var(--shadow-card); text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+.support-route:hover { border-color: var(--border-strong); background: var(--hover-glass); transform: translateY(-1px); }
+.support-route b { grid-row: span 2; color: var(--signal); font: 700 11px/1 var(--mono); }
+.support-route span { color: var(--text); font-size: 13px; font-weight: 700; }
+.support-route small { color: var(--muted); font-size: 11.5px; }
 
 /* ══ 版本号 ══ */
 .version-display { padding: 8px 0 30px; overflow-x: auto; }
@@ -790,6 +823,8 @@ a { color: inherit; }
   .extension-card { grid-template-columns: 1fr; }
   .extension-card__details { padding-left: 0; border-left: 0; border-top: 1px solid var(--border); padding-top: 22px; }
   .access-card { grid-template-columns: 1fr; }
+  .latest-card { grid-template-columns: 1fr; gap: 18px; }
+  .support-routes { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
@@ -812,6 +847,8 @@ a { color: inherit; }
   .workflow-grid article, .boundary-grid article { padding: 22px; }
   .extension-card { padding: 22px; }
   .access-card { padding: 22px; }
+  .latest-card { padding: 22px; }
+  .capability-group__head { grid-template-columns: 32px 1fr; gap: 10px; }
   .feature-grid { grid-template-columns: 1fr; }
   .feature-card { min-height: 0; padding: 26px 22px; }
   .feature-card:nth-child(even) { border-left: 0; }

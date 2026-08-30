@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>DeepSeek Harness 桌面版安装指南｜DSH Desktop</title>
-<meta name="description" content="DSH Desktop 安装教程：Windows、macOS、Linux 如何安装 DeepSeek Harness 桌面版，如何配置 API Key，以及如何处理首次启动提示。" />
+<meta name="description" content="DSH Desktop 安装教程：Windows、macOS、Linux 如何安装 DeepSeek Harness 桌面版，配置 API Key，手动安装社区插件，并处理启动失败。" />
 <meta property="og:site_name" content="DSH Desktop" />
 <meta property="og:title" content="DeepSeek Harness 桌面版安装指南" />
 <meta property="og:description" content="Windows、macOS、Linux 安装 DSH Desktop，并完成首次 API Key 配置。" />
@@ -21,7 +21,7 @@
 <link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/docs/install" />
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/docs/install" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=35" />
+<link rel="stylesheet" href="/assets/style.css?v=36" />
 <link rel="stylesheet" href="/assets/seo.css?v=8" />
 <script>
   try {
@@ -51,6 +51,9 @@
 
   <h2>配置 DeepSeek API Key</h2>
   <p>登录 <a href="https://platform.deepseek.com" target="_blank" rel="noopener">DeepSeek 开放平台</a>，进入 API Keys 创建密钥。回到 dsh-desktop，在模型或服务商设置中粘贴密钥。API 按用量计费，使用前请确认账户余额和平台价格。</p>
+  <h2>产品边界与社区插件</h2>
+  <p>dsh-desktop 是可靠的 Electron 壳，加上开箱即用支持：它负责桌面窗口、托盘、内置运行时、进程守护和恢复入口；Harness 继续负责 Agent、会话、工具、模型和插件行为。它不另做一套 Agent 工作台、聊天界面或项目空间。</p>
+  <p>安装包和首次启动都不包含社区插件，也不会静默安装。需要时先在 Harness「设置 → 扩展设置 → 插件市场」手动安装 <code>dsh-market</code>，再从 Harness「设置 → 插件市场」选择你需要的插件。插件可能下载并运行社区代码或构建脚本，请在安装前确认来源并主动授权。</p>
   <h2>如何快速唤回窗口？</h2>
   <p>窗口收进系统托盘后，在任意应用中按自己的唤起快捷键，dsh-desktop 会显示并获得焦点；默认组合键为 <code>Ctrl/Cmd + Shift + Space</code>。若组合键已被其他软件占用，仍可从系统托盘或窗口右键菜单打开。</p>
 
@@ -61,7 +64,7 @@
   <p>默认不共享。桌面版使用独立的 <code>~/.dsh-desktop</code> 数据目录，不会覆盖命令行使用的 <code>~/.dsh</code>。如果你确实要共享配置，可以在启动前设置 <code>DSH_HOME=~/.dsh</code>，但建议先备份数据。</p>
 
   <h2>启动失败怎么办？</h2>
-  <p>先确认安装包完整、磁盘可写，并检查系统是否拦截了本地进程或 loopback 连接。应用的帮助菜单可以导出诊断报告；提交问题时请同时提供版本号、平台和相关日志。更多首次启动问题见<a href="/docs/faq">常见问题</a>。</p>
+  <p>先确认安装包完整、磁盘可写，并检查系统是否拦截了本地进程或 loopback 连接。错误页提供「再次启动」「以安全模式启动」「打开日志目录」「导出诊断报告」四个入口；安全模式会隔离用户插件，不删除或移动你的文件。提交问题时请同时提供版本号、平台和脱敏后的诊断报告。更多首次启动问题见<a href="/docs/faq">常见问题</a>。</p>
   <div class="seo-next-links"><a href="/download">下载 DSH Desktop →</a><a href="/docs/faq">查看常见问题 →</a><a href="/en/docs/install">Read in English →</a></div>
 </div></main>
 <footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />与 DeepSeek AI 无隶属、授权或合作关系</p><a class="footer__top" href="#main-content">回到顶部 ↑</a></div><nav class="footer__links" aria-label="页脚链接"><a href="/">首页</a><a href="/download">下载</a><a href="/docs/install">安装指南</a><a href="/docs/faq">常见问题</a><a href="/en/docs/install">English</a><a href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">GitHub</a></nav><p class="footer__sync"><span>纯静态站点 · 部署于 Vercel<br />版本数据由 GitHub Actions 自动同步</span><br /><span>安装与帮助</span></p></div></footer>

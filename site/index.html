@@ -4,17 +4,17 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>DSH Desktop｜DeepSeek Harness 社区桌面版</title>
-<meta name="description" content="DSH Desktop 是 DeepSeek Harness 的社区桌面版。无需安装 Node.js，支持 Windows、macOS 和 Linux，下载后即可运行可靠的本地桌面应用。" />
+<meta name="description" content="DSH Desktop 是 DeepSeek Harness 的社区桌面版：可靠的 Electron 壳加上开箱即用支持。无需 Node.js，插件全部手动安装，支持 Windows、macOS 和 Linux。" />
 <meta name="google-site-verification" content="0NO32QsuJviivUirAXGOcVgj2knN_m5NCus7GpE-ZXg" />
 <meta property="og:site_name" content="DSH Desktop" />
 <meta property="og:title" content="DSH Desktop｜DeepSeek Harness 桌面端" />
-<meta property="og:description" content="DeepSeek Harness 的社区桌面版：无需 Node.js，支持 Windows、macOS 和 Linux，下载后即可运行。" />
+<meta property="og:description" content="可靠的 Electron 壳加上开箱即用支持：无需 Node.js，插件全部手动安装，支持 Windows、macOS 和 Linux。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://dsh-desktop.com/" />
 <meta property="og:image" content="https://dsh-desktop.com/assets/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="DSH Desktop｜DeepSeek Harness 桌面端" />
-<meta name="twitter:description" content="DeepSeek Harness 的社区桌面版：无需 Node.js，支持 Windows、macOS 和 Linux，下载后即可运行。" />
+<meta name="twitter:description" content="可靠的 Electron 壳加上开箱即用支持：无需 Node.js，插件全部手动安装，支持 Windows、macOS 和 Linux。" />
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9f8f8" />
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c0f16" />
 <meta name="color-scheme" content="light dark" />
@@ -40,7 +40,7 @@
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="stylesheet" href="/assets/style.css?v=35" />
+<link rel="stylesheet" href="/assets/style.css?v=36" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -96,9 +96,10 @@
     <span class="community-tag" data-i18n="brand.community">社区版</span>
   </a>
   <nav class="topbar__nav" id="topbar-menu" aria-label="页面导航">
-    <a href="#workflow" data-i18n="nav.workflow">工作方式</a>
-    <a href="#features" data-i18n="nav.features">功能特性</a>
+    <a href="#workflow" data-i18n="nav.workflow">定位</a>
+    <a href="#features" data-i18n="nav.features">能力</a>
     <a href="#market" data-i18n="nav.market">插件市场</a>
+    <a href="#faq" data-i18n="nav.faq">支持</a>
     <a class="nav-download" href="/download" data-i18n="nav.cta">立即下载</a>
     <a href="/docs/install" data-i18n="nav.install">安装指南</a>
     <a class="nav-gh" href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">GitHub</a>
@@ -127,10 +128,10 @@
     <div class="wrap hero__inner">
       <div class="hero__copy" data-reveal>
         <h1 class="headline" data-i18n="hero.h1">DeepSeek Harness<br />桌面版，可靠的 <em>本地桌面应用</em>。</h1>
-        <p class="subhead" data-i18n="hero.sub">官方 WebUI 的桌面封装，打开即用。零配置启动、独立数据空间、崩溃自愈——只增强桌面体验，不改写 Harness 行为。</p>
+        <p class="subhead" data-i18n="hero.sub">社区维护的可靠 Electron 壳，加上开箱即用支持。自带运行时、隔离数据、桌面入口和恢复路径；只增强桌面体验，不改写 Harness 行为。</p>
         <div class="cta-row">
           <a class="btn btn--primary btn--glow" id="cta-primary" href="#download" data-i18n="hero.cta">下载桌面版</a>
-          <a class="btn btn--ghost" id="cta-secondary" href="#workflow" data-i18n="hero.secondary">看看桌面壳做了什么 →</a>
+          <a class="btn btn--ghost" id="cta-secondary" href="#workflow" data-i18n="hero.secondary">先看定位与边界 →</a>
         </div>
         <p class="hero__social" id="hero-social" hidden></p>
         <p class="hero__meta" id="hero-meta">… · macOS / Windows · <span data-i18n="hero.meta">无需 Node.js</span></p>
@@ -151,7 +152,7 @@
     <div class="wrap trust-strip__grid">
       <div><b>LOCAL</b><span data-i18n="trust.local">Loopback 本地运行</span></div>
       <div><b>ISOLATED</b><span data-i18n="trust.isolated">默认独立数据目录</span></div>
-      <div><b>GUARDED</b><span data-i18n="trust.guarded">沙箱与权限默认拒绝</span></div>
+      <div><b>GUARDED</b><span data-i18n="trust.guarded">沙箱与权限默认收敛</span></div>
       <div><b>VERIFIABLE</b><span data-i18n="trust.verifiable">公开 CI 与发布制品</span></div>
     </div>
   </section>
@@ -159,22 +160,22 @@
   <!-- ══ 01 工作方式 ══ -->
   <section class="section" id="workflow">
     <div class="wrap">
-      <p class="sec-marker" data-reveal>01 / <span data-i18n="wf.marker">工作方式</span></p>
-      <h2 class="sec-title sec-title--wide" data-reveal style="--i:1" data-i18n="wf.title">一个桌面入口，三层可靠性</h2>
-      <p class="sec-lead" data-reveal style="--i:2" data-i18n="wf.lead">像成熟桌面工具一样开箱即用，同时保留上游 Harness 的原始能力与可审计边界。</p>
+      <p class="sec-marker" data-reveal>01 / <span data-i18n="wf.marker">产品定位</span></p>
+      <h2 class="sec-title sec-title--wide" data-reveal style="--i:1" data-i18n="wf.title">只把 Harness 带到桌面，不另做一套产品</h2>
+      <p class="sec-lead" data-reveal style="--i:2" data-i18n="wf.lead">dsh-desktop 解决安装、启动、恢复和日常桌面入口的问题；Agent、会话、工具和模型仍由官方 Harness WebUI 负责。</p>
       <div class="workflow-grid" data-reveal style="--i:3">
-        <article><span>01</span><h3 data-i18n="wf.s1.title">下载即运行</h3><p data-i18n="wf.s1.body">自带锁定版本的 Node.js 与完整依赖，不要求全局环境。</p></article>
-        <article><span>02</span><h3 data-i18n="wf.s2.title">本地隔离启动</h3><p data-i18n="wf.s2.body">Harness 只监听 loopback，默认使用 ~/.dsh-desktop，不碰 CLI 数据。</p></article>
-        <article><span>03</span><h3 data-i18n="wf.s3.title">桌面壳持续守护</h3><p data-i18n="wf.s3.body">托盘状态、崩溃重启、更新检查、日志轮换与诊断导出形成恢复闭环。</p></article>
+        <article><span>01</span><h3 data-i18n="wf.s1.title">开箱即用</h3><p data-i18n="wf.s1.body">自带锁定版本的 Node.js 与依赖闭包，下载安装包后即可启动，不要求全局环境。</p></article>
+        <article><span>02</span><h3 data-i18n="wf.s2.title">本地且隔离</h3><p data-i18n="wf.s2.body">Harness 只监听 loopback，默认使用 ~/.dsh-desktop，不碰命令行的 ~/.dsh。</p></article>
+        <article><span>03</span><h3 data-i18n="wf.s3.title">出错可恢复</h3><p data-i18n="wf.s3.body">托盘状态、重启、Safe Mode、内核回滚和本地诊断，让问题有下一步。</p></article>
       </div>
       <div class="boundary-grid" data-reveal style="--i:4">
         <article>
-          <p class="boundary-grid__eyebrow" data-i18n="wf.adds.label">桌面壳新增</p>
-          <ul data-i18n="wf.adds"><li>跟随 Harness 的中英菜单与主题</li><li>原生窗口、托盘与单实例</li><li>运行时封装、进程守护与诊断</li><li>Electron 沙箱与导航边界</li></ul>
+          <p class="boundary-grid__eyebrow" data-i18n="wf.adds.label">桌面壳负责</p>
+          <ul data-i18n="wf.adds"><li>原生窗口、托盘、单实例与全局唤起快捷键</li><li>运行时封装、进程守护、状态通知与启动偏好</li><li>Safe Mode、日志、诊断和更新恢复路径</li><li>Electron 沙箱与导航、权限边界</li></ul>
         </article>
         <article>
-          <p class="boundary-grid__eyebrow" data-i18n="wf.keeps.label">Harness 保持原样</p>
-          <ul data-i18n="wf.keeps"><li>Agent 与工具调用行为</li><li>上游版本和依赖闭包</li><li>模型、账户与插件配置</li><li>CLI 仍可独立并行使用</li></ul>
+          <p class="boundary-grid__eyebrow" data-i18n="wf.keeps.label">Harness 继续负责</p>
+          <ul data-i18n="wf.keeps"><li>Agent、会话、工具调用和模型行为</li><li>官方 WebUI 的交互与上游依赖闭包</li><li>账户、API Key 和社区插件配置</li><li>不新增工作台、独立聊天或项目工作区</li></ul>
         </article>
       </div>
       <article class="extension-card" data-reveal style="--i:5">
@@ -197,6 +198,17 @@
         <div class="extension-card__details">
           <ol data-i18n="notify.steps"><li>窗口未聚焦或隐藏在托盘时弹出系统通知</li><li>点击通知，直接显示并聚焦 dsh-desktop 窗口</li><li>在设置 → 扩展设置中随时关闭；配置只保存在本机</li></ol>
           <p data-i18n="notify.note">不读取屏幕、不做视觉识别、不上传数据；首次状态只建立基线，启动时不制造无用提醒。</p>
+        </div>
+      </article>
+      <article class="extension-card extension-card--recovery" data-reveal style="--i:7" aria-labelledby="safe-mode-title">
+        <div>
+          <p class="extension-card__eyebrow" data-i18n="safe.marker">故障自愈</p>
+          <h3 id="safe-mode-title" data-i18n="safe.title">插件装坏了？安全模式帮你隔离，再精准定位</h3>
+          <p class="extension-card__body" data-i18n="safe.body">第三方插件启动失败时，安全模式只运行官方与内置扩展，并指出疑似插件。</p>
+        </div>
+        <div class="extension-card__details">
+          <ol data-i18n="safe.steps"><li>在错误页或扩展设置中进入安全模式</li><li>第三方插件被隔离，Harness 恢复启动</li><li>按提示处理插件，完成后显式退出安全模式</li></ol>
+          <p data-i18n="safe.note">全程非破坏：不删除、不移动插件文件，也不上传诊断数据。</p>
         </div>
       </article>
       <article class="access-card" data-reveal style="--i:7" aria-labelledby="windows-access-title">
@@ -267,52 +279,60 @@
           <article class="quickstart__step">
             <span class="quickstart__num">3</span>
             <h4 data-i18n="qs.s3.t">粘贴 Key，开始对话</h4>
-            <p data-i18n="qs.s3.b">打开 dsh-desktop，在设置中粘贴 Key，即可开始使用。</p>
+            <p data-i18n="qs.s3.b">打开 dsh-desktop，在设置中粘贴 Key，即可开始使用。社区插件以后仍按需手动安装。</p>
           </article>
         </div>
       </div>
+      <article class="latest-card" data-reveal style="--i:5" aria-labelledby="latest-title">
+        <div class="latest-card__copy">
+          <p class="sec-marker" data-i18n="latest.marker">当前版本重点</p>
+          <h3 id="latest-title" data-i18n="latest.title">把可靠性做成用户看得懂的路径</h3>
+          <p data-i18n="latest.lead">最新发布线继续围绕桌面壳收口，不增加第二套 Agent 产品。</p>
+        </div>
+        <ul data-i18n="latest.items"><li><b>状态更清楚：</b>桌面入口、托盘和设置使用同一套状态。</li><li><b>恢复更直接：</b>启动失败可以重试、进入安全模式、查看日志或导出诊断。</li><li><b>插件更克制：</b>社区插件始终由用户手动选择。</li><li><b>更新更安全：</b>内核切换失败时恢复内置版本。</li></ul>
+      </article>
     </div>
   </section>
 
   <!-- ══ 03 特性 ══ -->
   <section class="section" id="features">
     <div class="wrap">
-      <p class="sec-marker" data-reveal>03 / <span data-i18n="ft.marker">功能特性</span></p>
-      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="ft.title">为什么用它</h2>
+      <p class="sec-marker" data-reveal>03 / <span data-i18n="ft.marker">桌面能力</span></p>
+      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="ft.title">你得到的是可靠入口，不是功能堆叠</h2>
 
-      <div class="feature-grid" data-reveal style="--i:2">
-          <article class="feature-card" data-i18n="ft.p1">
-            <h3>无需安装 Node.js</h3>
-            <p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包，版本逐平台锁定。下载安装包 → 双击 → 使用，没有任何环境配置。</p>
-          </article>
-          <article class="feature-card" data-i18n="ft.p2">
-            <h3>独立数据目录，环境隔离</h3>
-            <p>桌面版默认使用 <code>~/.dsh-desktop</code>：设置、会话、API Key、插件都是独立的一份，安装卸载都不影响你的命令行工作流。需要共享时，设 <code>DSH_HOME=~/.dsh</code> 即可。</p>
-          </article>
-          <article class="feature-card" data-i18n="ft.p3">
-            <h3>原生菜单与 Harness 保持同一种语言</h3>
-            <p>首次启动按系统语言选择中文或英文；之后读取同一份 <code>locale.preference</code>，无需重启即可同步应用菜单、托盘、About、恢复页和对话框。主题也跟随 Harness 设置。</p>
-          </article>
-          <article class="feature-card" data-i18n="ft.p4">
-            <h3>持续守护与可靠更新</h3>
-            <p>崩溃后按预算退避重启，窗口关闭后可驻留托盘，也可从帮助菜单安全重启 Harness。Windows 保留应用内自动更新；未签名的 macOS 检查新版本并打开精确发布页。</p>
-          </article>
-          <article class="feature-card" data-i18n="ft.p5">
-            <h3>渲染层能力默认收敛</h3>
-            <p>保持 Electron 沙箱与上下文隔离、关闭 Node 集成并限制页面导航；媒体、定位、Web 通知、屏幕采集和文件系统等额外权限默认拒绝。桌面状态通知是独立的本地壳功能，不读取屏幕。</p>
-          </article>
-          <article class="feature-card" data-i18n="ft.p6">
-            <h3>问题发生时，带走一份可检查的报告</h3>
-            <p>帮助菜单、托盘和启动失败页都能导出本地诊断报告。报告包含版本、系统状态和有上限的日志尾部，自动遮罩常见密钥与主目录，且绝不自动上传。</p>
-          </article>
-          <article class="feature-card" data-i18n="ft.p7">
-            <h3>不用找窗口，快捷键直接唤回</h3>
-            <p>窗口收进托盘后，在任意应用中按自己的唤起快捷键即可显示并聚焦 dsh-desktop，默认是 <code>Ctrl/Cmd + Shift + Space</code>。快捷键冲突时，托盘和右键入口仍然可用。</p>
-          </article>
-          <article class="feature-card" data-i18n="ft.p8">
-            <h3>桌面习惯由你决定</h3>
-            <p>在 Harness 设置 → 扩展设置中录入自己的唤起快捷键，选择是否开机启动、启动后隐藏，以及是否接收任务状态通知。配置只保存在本机；通知只在窗口未聚焦时提示。</p>
-          </article>
+      <div class="capability-groups">
+          <section class="capability-group" aria-labelledby="capability-ready-title">
+            <div class="capability-group__head" data-reveal style="--i:2">
+              <span class="capability-group__index">01</span>
+              <div><h3 id="capability-ready-title" data-i18n="ft.group1.title">开箱即用</h3><p data-i18n="ft.group1.body">把最容易卡住的运行环境和数据边界处理好，下载后直接进入 Harness。</p></div>
+            </div>
+            <div class="feature-grid" data-reveal style="--i:3">
+              <article class="feature-card" data-i18n="ft.p1"><h3>无需安装 Node.js</h3><p>壳内置 Node.js 22 LTS 运行时与 <code>@deepseek-ai/dsh</code> 完整依赖闭包，版本逐平台锁定。下载安装包 → 双击 → 使用，没有任何环境配置。</p></article>
+              <article class="feature-card" data-i18n="ft.p2"><h3>独立数据目录，环境隔离</h3><p>桌面版默认使用 <code>~/.dsh-desktop</code>：设置、会话、API Key、插件都是独立的一份，安装卸载都不影响你的命令行工作流。需要共享时，设 <code>DSH_HOME=~/.dsh</code> 即可。</p></article>
+              <article class="feature-card" data-i18n="ft.p3"><h3>原生菜单与 Harness 保持同一种语言</h3><p>首次启动按系统语言选择中文或英文；之后读取同一份 <code>locale.preference</code>，无需重启即可同步应用菜单、托盘、About、恢复页和对话框。主题也跟随 Harness 设置。</p></article>
+            </div>
+          </section>
+          <section class="capability-group" aria-labelledby="capability-daily-title">
+            <div class="capability-group__head" data-reveal style="--i:4">
+              <span class="capability-group__index">02</span>
+              <div><h3 id="capability-daily-title" data-i18n="ft.group2.title">日常桌面体验</h3><p data-i18n="ft.group2.body">窗口、托盘、快捷键和通知服务于同一个目标：随时找到并继续你的 Harness。</p></div>
+            </div>
+            <div class="feature-grid" data-reveal style="--i:5">
+              <article class="feature-card" data-i18n="ft.p4"><h3>持续守护与可靠更新</h3><p>崩溃后按预算退避重启，窗口关闭后可驻留托盘，也可从帮助菜单安全重启 Harness。Windows 保留应用内自动更新；未签名的 macOS 检查新版本并打开精确发布页。</p></article>
+              <article class="feature-card" data-i18n="ft.p7"><h3>不用找窗口，快捷键直接唤回</h3><p>窗口收进托盘后，在任意应用中按自己的唤起快捷键即可显示并聚焦 dsh-desktop，默认是 <code>Ctrl/Cmd + Shift + Space</code>。快捷键冲突时，托盘和右键入口仍然可用。</p></article>
+              <article class="feature-card" data-i18n="ft.p8"><h3>桌面习惯由你决定</h3><p>在 Harness 设置 → 扩展设置中录入自己的唤起快捷键，选择是否开机启动、启动后隐藏，以及是否接收任务状态通知。配置只保存在本机；通知只在窗口未聚焦时提示。</p></article>
+            </div>
+          </section>
+          <section class="capability-group" aria-labelledby="capability-recovery-title">
+            <div class="capability-group__head" data-reveal style="--i:6">
+              <span class="capability-group__index">03</span>
+              <div><h3 id="capability-recovery-title" data-i18n="ft.group3.title">恢复与边界</h3><p data-i18n="ft.group3.body">故障时给出可执行的下一步，同时把权限、数据和上游职责说清楚。</p></div>
+            </div>
+            <div class="feature-grid" data-reveal style="--i:7">
+              <article class="feature-card" data-i18n="ft.p5"><h3>渲染层能力默认收敛</h3><p>保持 Electron 沙箱与上下文隔离、关闭 Node 集成并限制页面导航；媒体、定位、Web 通知、屏幕采集和文件系统等额外权限默认拒绝。桌面状态通知是独立的本地壳功能，不读取屏幕。</p></article>
+              <article class="feature-card" data-i18n="ft.p6"><h3>问题发生时，带走一份可检查的报告</h3><p>帮助菜单、托盘和启动失败页都能导出本地诊断报告。报告包含版本、系统状态和有上限的日志尾部，自动遮罩常见密钥与主目录，且绝不自动上传。</p></article>
+            </div>
+          </section>
       </div>
     </div>
   </section>
@@ -320,9 +340,9 @@
   <!-- ══ 04 插件市场 ══ -->
   <section class="section" id="market">
     <div class="wrap">
-      <p class="sec-marker" data-reveal>04 / <span data-i18n="mk.marker">插件市场</span></p>
-      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="mk.title">数千个社区插件，按需安装</h2>
-      <p class="sec-lead" data-reveal style="--i:2" data-i18n="mk.lead">通过社区插件市场 dsh-market，在 Harness 设置里浏览并安装社区插件与主题，全程无需命令行。</p>
+      <p class="sec-marker" data-reveal>04 / <span data-i18n="mk.marker">社区插件</span></p>
+      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="mk.title">数千个社区插件，全部由你选择</h2>
+      <p class="sec-lead" data-reveal style="--i:2" data-i18n="mk.lead">dsh-desktop 只提供清晰入口和故障恢复支持；社区插件不属于安装包，也不会在首次启动时自动出现。</p>
 
       <div class="feature-grid" data-reveal style="--i:3">
           <article class="feature-card" data-i18n="mk.c1">
@@ -338,15 +358,20 @@
             <p>需要编译的插件会先征求你的授权再执行构建脚本；万一插件把 Harness 搞挂，安全模式一键隔离第三方插件，扩展菜单里的「重启 Harness」随手刷新生效。</p>
           </article>
       </div>
-      <p class="note" data-reveal style="--i:4" data-i18n="mk.note">所有安装都需要用户主动操作：在「设置 → 扩展设置 → 插件市场」点「安装插件市场」，再从插件市场选择其他插件。</p>
+      <p class="note" data-reveal style="--i:4" data-i18n="mk.note">安装边界：先在「设置 → 扩展设置 → 插件市场」手动安装 dsh-market，再到 Harness「设置 → 插件市场」手动选择其他插件。</p>
     </div>
   </section>
 
   <!-- ══ 05 FAQ ══ -->
   <section class="section" id="faq">
     <div class="wrap">
-      <p class="sec-marker" data-reveal>05 / <span data-i18n="faq.marker">常见问题</span></p>
-      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="faq.title">常见问题</h2>
+      <p class="sec-marker" data-reveal>05 / <span data-i18n="faq.marker">支持与边界</span></p>
+      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="faq.title">先恢复，再反馈；每一步都有入口</h2>
+      <div class="support-routes" data-reveal style="--i:2" aria-label="支持路径">
+        <a class="support-route" href="/docs/install"><b>01</b><span data-i18n="support.install">首次安装</span><small data-i18n="support.installHint">从下载到第一次启动</small></a>
+        <a class="support-route" href="#faq"><b>02</b><span data-i18n="support.recover">问题恢复</span><small data-i18n="support.recoverHint">先看错误类型和下一步</small></a>
+        <a class="support-route" href="https://github.com/citrusli2026/dsh-desktop/issues" target="_blank" rel="noopener"><b>03</b><span data-i18n="support.report">提交反馈</span><small data-i18n="support.reportHint">附版本、平台和脱敏诊断</small></a>
+      </div>
       <div class="faq" data-reveal style="--i:2">
         <details>
           <summary data-i18n="faq.q1">macOS 提示“无法打开，因为无法验证开发者”？</summary>
@@ -400,6 +425,10 @@
           <summary data-i18n="faq.q13">桌面通知会读取屏幕或上传数据吗？</summary>
           <p class="faq-answer" data-i18n="faq.a13">不会。通知只使用 Harness 已公开的会话运行态和后台任务状态，不读取截图、也不会上传数据。它只在窗口未聚焦时提示完成、失败或需要确认，可在「设置 → 扩展设置」关闭。另外有一个<b>默认关闭</b>的「屏幕捕获」：开启后 Agent 才能用 screen_capture 工具截取屏幕，且截图总是作为附件进入会话、发给你选择的视觉模型；不开启就完全没有这个能力。</p>
         </details>
+        <details>
+          <summary data-i18n="faq.q14">启动失败或插件装坏了怎么办？</summary>
+          <p class="faq-answer" data-i18n="faq.a14">错误页提供「再次启动」「以安全模式启动」「打开日志目录」「导出诊断报告」。安全模式只保留官方与内置扩展，并隔离用户插件，不删除或移动插件文件；处理完成后请显式退出安全模式，再按需重试。</p>
+        </details>
       </div>
     </div>
   </section>
@@ -435,10 +464,10 @@
       <a class="footer__top" href="#top" data-i18n="footer.top">回到顶部</a>
     </div>
     <nav class="footer__links" aria-label="页脚链接">
-      <a href="#workflow" data-i18n="nav.workflow">工作方式</a>
+      <a href="#workflow" data-i18n="nav.workflow">定位</a>
       <a href="#download" data-i18n="nav.cta">立即下载</a>
-      <a href="#features" data-i18n="nav.features">功能特性</a>
-      <a href="#faq" data-i18n="nav.faq">常见问题</a>
+      <a href="#features" data-i18n="nav.features">能力</a>
+      <a href="#faq" data-i18n="nav.faq">支持</a>
       <a href="#version" data-i18n="nav.version">版本号</a>
       <a href="https://www.deepseek.com/" target="_blank" rel="noopener" data-i18n="footer.official">DeepSeek官网</a>
       <a href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">GitHub</a>
@@ -451,7 +480,7 @@
   </div>
 </footer>
 
-<script type="module" src="/assets/app.js?v=35"></script>
+<script type="module" src="/assets/app.js?v=36"></script>
 
 <!-- 下载后提示(校验方式 + 未签名处理 + GitHub Star 邀请),由 app.js 填充 -->
 <div class="download-toast" id="download-toast" role="status" aria-live="polite" hidden></div>

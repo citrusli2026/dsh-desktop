@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>DSH Desktop FAQ | DeepSeek Harness desktop app</title>
-<meta name="description" content="DSH Desktop FAQ: official status, Node.js requirements, data isolation, Windows and macOS first launch, Linux support, API keys, and checksum verification." />
+<meta name="description" content="DSH Desktop FAQ: product scope, Node.js requirements, data isolation, manual community plugins, Safe Mode recovery, first launch, and checksum verification." />
 <meta property="og:site_name" content="DSH Desktop" />
 <meta property="og:title" content="DSH Desktop FAQ | DeepSeek Harness desktop app" />
 <meta property="og:description" content="Answers about installing, configuring, verifying, and using the DSH Desktop community build." />
@@ -21,7 +21,7 @@
 <link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/docs/faq" />
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/docs/faq" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=35" />
+<link rel="stylesheet" href="/assets/style.css?v=36" />
 <link rel="stylesheet" href="/assets/seo.css?v=8" />
 <script>
   try {
@@ -42,6 +42,7 @@
   <details><summary>Does the desktop share CLI configuration?</summary><p>Not by default. The desktop uses <code>~/.dsh-desktop</code>, while the CLI commonly uses <code>~/.dsh</code>. Set <code>DSH_HOME=~/.dsh</code> only when you intentionally want to share data.</p></details>
   <details><summary>What if macOS says the developer cannot be verified?</summary><p>Current macOS builds may not be notarized. Verify the installer source and checksum, then right-click the app in Finder and choose <b>Open</b>. Do not run commands from an untrusted download page.</p></details>
   <details><summary>What if Windows SmartScreen blocks the installer?</summary><p>Preview builds may not have a commercial code-signing certificate. Verify the source and checksum first; if you trust the build, choose <b>More info → Run anyway</b>.</p></details>
+  <details><summary>What if startup fails or a plugin breaks the app?</summary><p>The error page offers Retry, Start in Safe Mode, Open logs, and Export diagnostics. Safe Mode keeps official and bundled extensions, isolates user plugins, and does not delete or move plugin files. Exit Safe Mode explicitly after handling the suspected plugin, then retry as needed.</p></details>
   <details><summary>Which Linux systems are supported?</summary><p>The current amd64 Debian package targets Debian, Ubuntu, UOS, Deepin, and Kylin-style desktop systems. Dependencies can vary by distribution.</p></details>
   <details><summary>How do I verify an installer?</summary><p>Use the matching <code>.sha256</code> file with <code>shasum -a 256 -c filename.sha256</code> on macOS/Linux or <code>CertUtil -hashfile filename SHA256</code> on Windows.</p></details>
   <details><summary>What if GitHub is slow?</summary><p>Use the GitCode mirror listed on the <a href="/en/download">download page</a>. Mirror availability follows release synchronization; fall back to GitHub if a file is missing.</p></details>
