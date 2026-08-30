@@ -9,6 +9,17 @@ DeepSeek Harness(`@deepseek-ai/dsh`,简称 **dsh**)的非官方 Electron 桌面�
 提供原生窗口、托盘、菜单、单实例、进程监督、更新与本地诊断;不改变 Agent 行为。
 功能上等价于 `npx @deepseek-ai/dsh web`,但零配置(自带 Node 与依赖闭包)。
 
+## 产品定位与边界
+
+`dsh-desktop` 是**可靠的 Electron 壳,加上开箱即用的支持**。这是社区维护的个人项目:
+重点是把官方 Harness WebUI 稳定地带到桌面,降低安装、启动、更新、恢复和日常使用的门槛。
+
+- 桌面壳负责窗口、托盘、单实例、运行时封装、进程守护、更新提示、诊断、安全恢复与必要的桌面入口。
+- Harness 继续负责 Agent、会话、工具、模型和插件的核心行为;壳不另做一套 Agent 工作台或聊天产品。
+- 社区插件全部由用户手动安装;不预装、不静默播种,只提供清晰的安装入口和恢复支持。
+- 当前先完成和打磨已有功能以及开箱即用体验;签名、公证等发布信任增强暂不作为当前迭代目标,待实际使用量和反馈足够后再评估。
+- 不以功能数量追赶其他桌面项目;新增能力必须直接服务于可靠运行、易安装、易恢复或桌面使用体验。
+
 ## 术语
 
 | 词 | 含义 |
@@ -34,7 +45,7 @@ DeepSeek Harness(`@deepseek-ai/dsh`,简称 **dsh**)的非官方 Electron 桌面�
 ## 快问快答
 
 - 本地一跑:`pnpm install && pnpm run bootstrap && pnpm run dev`
-- 一键门禁:`pnpm run verify`(typecheck+134 单测+覆盖率+site check+build);
+- 一键门禁:`pnpm run verify`(typecheck+178 单测+覆盖率+site check+build);
   `pnpm run verify:full` 再加 dev E2E + dist:dir + 打包 smoke 全家桶
 - 发布流程:看 `.agents/skills/release-dsh-desktop/SKILL.md`(runbook)与 `HANDOFF.md`(历史)
 - 为什么这样设计:看 `docs/decisions/`(ADR 索引),别改历史 ADR,新结论写新 ADR

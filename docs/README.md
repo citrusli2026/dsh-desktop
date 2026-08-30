@@ -11,6 +11,7 @@
 | `README.md` / `README.zh.md` | 面向用户：产品、下载、开发（官网为第一入口） | 功能、下载方式或开发流程变化时 |
 | `HANDOFF.md` | **运维核心**：当前状态、发布流程、速查、版本记录 | 每次发布、镜像或官网调整后 |
 | `docs/ARCHITECTURE.md` | 产品架构、源码职责、验证契约 | 架构或门禁变化时 |
+| `docs/reliable-shell-iteration-plan.md` | 可靠 Electron 壳与开箱即用的后续迭代边界和顺序 | 产品范围或迭代推进时 |
 | `docs/decisions/README.md` | ADR 索引 | 新增决策记录时 |
 | `docs/test-hardening-plan.md` | 测试完善迭代规划（v0.1.1-rc.2.shell.2，P0/P1/P2 工作项） | 测试门禁变化或迭代推进时 |
 | `docs/seo-follow-up.md` | 官网 SEO 后续路线、Search Console 验证和 30/60/90 天增长任务 | SEO 数据、收录状态或内容计划变化时 |

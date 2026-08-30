@@ -8,6 +8,7 @@
 | 项 | 状态 |
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
+| 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
 | 最新代码基线 | ✅ `0.1.1-rc.2.shell.13`（2026-08-30 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +13） |
 | 已发布 | ✅ `0.1.1-rc.2.shell.13`（2026-08-30，三端 dmg/exe/deb；AppImage 已整体移除） |
 | 本地门禁 | ✅ 178 项单测、类型检查、官网门禁、构建全绿；验证社区插件未进入随包闭包；Release verify 的 Electron E2E 10 passed / 2 skipped |

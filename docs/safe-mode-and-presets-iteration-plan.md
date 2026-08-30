@@ -3,6 +3,11 @@
 > 规划日期:2026-08-28。决策依据见 ADR 0021(中英);本文是**可执行任务清单**,
 > 含 spike 侦察项、任务列表与状态跟踪。完成后按 `.agents/skills/release-dsh-desktop`
 > runbook 走 shell.9 发布。
+>
+> 状态说明（2026-08-30）：本文记录 shell.9 的历史专项，不是当前路线图；其中的
+> Safe Mode、恢复中心和预设工作已完成。当前产品定位与后续顺序见
+> [`docs/reliable-shell-iteration-plan.md`](reliable-shell-iteration-plan.md)：
+> 可靠 Electron 壳 + 开箱即用支持，不做 Agent 工作台；签名、公证暂缓。
 > 版本范围(用户确认):五块全收——① Safe Mode;② 恢复中心化+诊断增强;
 > ③ `.dshpreset` 便携预设包;④ 诊断包内只读查看(可降级砍除);⑤ 发布杂项。
 
