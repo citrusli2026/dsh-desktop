@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.14`（2026-08-30 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +14） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.14`（2026-08-30，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 183 项单测、类型检查、runtime/site 门禁、构建全绿；验证社区插件未进入随包闭包；开发态 E2E 12 passed / 1 design skip，视觉 sanity 已人工检查 |
-| 核心发布 | ✅ shell.14 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke、Safe Mode 故障隔离和安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.14`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`；bot 提交 `90fad47`） |
-| 国内镜像 | ✅ shell.14 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证 206；main `90fad47` 与 tag `870c196` 对齐） |
-| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；最终核验累计安装包下载 387（mac 107 / win 203 / linux 77） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.15`（2026-08-30 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +15） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.15`（2026-08-30，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 184 项单测、类型检查、runtime/site 门禁、构建全绿；开发态 E2E 12 passed / 1 design skip，官网中英文/明暗/移动端及轮播视觉已人工检查 |
+| 核心发布 | ✅ shell.15 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.15`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`；bot 提交 `eba368a`） |
+| 国内镜像 | ✅ shell.15 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证 206） |
+| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；最终核验累计安装包下载 422（mac 118 / win 214 / linux 90） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1031,6 +1031,18 @@ Agent 工作台；社区插件全部手动安装；签名与公证继续留到�
 4. **GitHub 发布**：tag `v0.1.1-rc.2.shell.14` 的 peeled commit 为 `870c196141aa9215602adebb1fdaf5bf145f39e8`；Release run `33296367914` 成功，verify/build/publish 全绿，三端安装包、校验和、Windows updater 元数据及 provenance 均通过。Release：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.1-rc.2.shell.14>。
 5. **GitCode 镜像**：Release id `45382`，绑定同一 peeled commit；dmg/exe/deb 与 3×sha256 共 6 个用户资产已上传，6/6 匿名 Range GET 返回 `206`。GitCode `main` 为 `90fad47`，tag 仍精确指向 `870c196`。
 6. **官网同步**：自动 refresh run `33296828814` 在镜像完成前结束并留下不完整探测提示；镜像补齐后手动 refresh run `33298349861` 成功，bot 提交 `90fad47`。线上 `/data/release.json` 已指向 shell.14，6/6 `gitcode_ok=true`；首页已显示“社区插件 / 插件市场 / 手动安装”说明；`/api/downloads` 返回 200，核验时累计 387（mac 107 / win 203 / linux 77）。
+
+## 三十五、v0.1.1-rc.2.shell.15 发布：启动生命周期反馈与官网展示闭环（2026-08-30）
+
+本轮继续保持“可靠的 Electron 壳 + 开箱即用支持”定位，不引入 Agent 工作台；社区插件仍全部手动安装，签名与公证仍留待功能稳定并确认使用量后评估。
+
+1. **功能提交**：`96e09d6` 将 Harness 启动过程拆成 `launching → waiting-for-ready → retrying → ready`，自动重试展示次数与倒计时；状态同步到托盘、设置页、浮层、内置 loading/recovery 页面和诊断报告，用户能分辨“正在启动”“等待就绪”“即将重试”与“已恢复”。
+2. **官网提交**：`cef4e99` 增加真实应用截图展示区，提供中英文、明暗截图对照、自动轮播、暂停/前后切换与移动端适配；最新功能说明同步描述启动、等待、重试、运行和恢复暂停状态，并继续明确插件市场按需手动安装。
+3. **发布准备**：`408a8b6` 将壳版本升为 `0.1.1-rc.2.shell.15`，补齐中英文 release notes；功能、网站和版本准备分别可追溯到独立提交。tag peeled commit 为 `408a8b636900cb93040f34b40ae7e5d163181603`。
+4. **发布前验证**：`pnpm run verify` 全绿（184 项单测；覆盖率 92.34% 行 / 83.61% 分支 / 87.40% 函数）；开发态 Electron E2E 12 passed / 1 design skip；网站 `site:check`、API 检查、构建、官网中英文/明暗/移动端/轮播视觉检查均通过。
+5. **GitHub 发布**：Release run `33308338087` 成功，verify/build/publish 全绿；三平台安装包、3×sha256、Windows updater 元数据及 provenance 均通过，真实 Harness 渲染、Safe Mode、启动失败/重试恢复和安装态冒烟均通过。Release：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.1-rc.2.shell.15>。
+6. **GitCode 镜像**：本机 `mirror-gitcode.mjs` 上传 dmg/exe/deb 与 3×sha256，全部官方 SHA-256 校验通过；6/6 稳定 URL 匿名 Range GET 验证成功（206）。
+7. **官网同步**：首个自动 refresh run `33308771595` 在镜像完成前提交了临时 `gitcode_ok=false` 数据；镜像补齐后手动 refresh run `33310742253` 成功，最终 bot 提交 `eba368a`。线上 `https://dsh-desktop.com/data/release.json` 已指向 shell.15 且 6/6 `gitcode_ok=true`；`/api/downloads` 返回 200，核验时累计 422（mac 118 / win 214 / linux 90）。
 
 ---
 
