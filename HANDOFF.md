@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.13`（2026-08-30 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +13） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.13`（2026-08-30，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 178 项单测、类型检查、官网门禁、构建全绿；验证社区插件未进入随包闭包；Release verify 的 Electron E2E 10 passed / 2 skipped |
-| 核心发布 | ✅ 0.1.1-rc.2.shell.13 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke 与安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.13`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`；bot 提交 `a464b0d`） |
-| 国内镜像 | ✅ 0.1.1-rc.2.shell.13 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证 206；main `a464b0d` 与 tag `68b6fc7` 对齐） |
-| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；最终核验累计安装包下载 378（mac 105 / win 197 / linux 76） |
+| 最新代码基线 | ✅ `0.1.1-rc.2.shell.14`（2026-08-30 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +14） |
+| 已发布 | ✅ `0.1.1-rc.2.shell.14`（2026-08-30，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 183 项单测、类型检查、runtime/site 门禁、构建全绿；验证社区插件未进入随包闭包；开发态 E2E 12 passed / 1 design skip，视觉 sanity 已人工检查 |
+| 核心发布 | ✅ shell.14 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke、Safe Mode 故障隔离和安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.14`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`；bot 提交 `90fad47`） |
+| 国内镜像 | ✅ shell.14 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证 206；main `90fad47` 与 tag `870c196` 对齐） |
+| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；最终核验累计安装包下载 387（mac 107 / win 203 / linux 77） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1014,6 +1014,23 @@ major PR、dependabot 限 minor、6 个过期 issue 清理)。
 - tag peeled commit `68b6fc7`；GitCode 6 个用户资产 Range GET `6×206`。
 - 本地验证：178 项单测、`pnpm run verify` 全绿，闭包中 `dshmarket`、`dsh-better-sidebar`、`@linxin666/dsh-client-ui-task-board` 均不存在。
 - 线上验证：`https://dsh-desktop.com/data/release.json` 指向 `v0.1.1-rc.2.shell.13`；`/api/downloads` 返回 200，累计 378（mac 105 / win 197 / linux 76）；首页显示“社区插件按需安装”说明。
+
+## 三十四、v0.1.1-rc.2.shell.14 发布：可靠 Electron 壳 A–E 收口（2026-08-30）
+
+本轮按最新定位完成 A–E：产品继续是“可靠的 Electron 壳 + 开箱即用支持”，不扩展为
+Agent 工作台；社区插件全部手动安装；签名与公证继续留到功能稳定、确认使用量后再评估。
+
+1. **A–E 功能落地**（每项均有独立提交）：
+   - A `f4fac53`：首次启动/设置页明确官方 Harness、数据目录和插件市场状态；市场与第三方插件改为显式手动安装并带风险确认。
+   - B `dfdd9c3`：托盘、设置、浮层共享 Harness 状态和 Safe Mode 文案；设置能力矩阵明确哪些平台支持通知等桌面能力。
+   - C `7f37f01`：Safe Mode 保留崩溃时的插件嫌疑，退出隔离时清理；诊断报告加入 profile、market、Safe Mode 原因；修正文档中的插件随包误导。
+   - D `1efd6f7`：内核检查、安装、切换、健康回滚、恢复内置均返回可区分结果；Linux 明确走手动更新。
+   - E `405eb0d`：LAN 配对二维码增加秒级倒计时和过期失效；加入运行时边界门禁、Issue 诊断字段和 packaged visual sanity 入口。
+2. **发布准备**：`870c196` 将版本升为 `0.1.1-rc.2.shell.14`，补齐中英文 release notes；A–E 功能提交已全部推送至 GitHub/GitCode `main`。
+3. **发布前验证**：`pnpm run verify` 通过（183 tests；覆盖率 92.38% 行 / 82.51% 分支 / 87.40% 函数）；`dist:dir`、普通 packaged smoke、真实 Harness UI smoke、Safe Mode 故障隔离 smoke、macOS packaged E2E 3 项均通过；开发态 Electron E2E 12 passed / 1 design skip；visual sanity 截图已人工检查。
+4. **GitHub 发布**：tag `v0.1.1-rc.2.shell.14` 的 peeled commit 为 `870c196141aa9215602adebb1fdaf5bf145f39e8`；Release run `33296367914` 成功，verify/build/publish 全绿，三端安装包、校验和、Windows updater 元数据及 provenance 均通过。Release：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.1-rc.2.shell.14>。
+5. **GitCode 镜像**：Release id `45382`，绑定同一 peeled commit；dmg/exe/deb 与 3×sha256 共 6 个用户资产已上传，6/6 匿名 Range GET 返回 `206`。GitCode `main` 为 `90fad47`，tag 仍精确指向 `870c196`。
+6. **官网同步**：自动 refresh run `33296828814` 在镜像完成前结束并留下不完整探测提示；镜像补齐后手动 refresh run `33298349861` 成功，bot 提交 `90fad47`。线上 `/data/release.json` 已指向 shell.14，6/6 `gitcode_ok=true`；首页已显示“社区插件 / 插件市场 / 手动安装”说明；`/api/downloads` 返回 200，核验时累计 387（mac 107 / win 203 / linux 77）。
 
 ---
 
