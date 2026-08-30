@@ -39,6 +39,8 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /kernelInstall/)
   // A successful check with no newer kernel must still answer the user.
   assert.match(client, /kernelUpToDate/)
+  assert.match(client, /kernelRolledBack/)
+  assert.match(client, /kernelCheckFailed/)
   assert.match(client, /dshDesktop/)
 
   // Host half: opt-in screen capture model tool (decision 0027, route C).

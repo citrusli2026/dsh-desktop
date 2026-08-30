@@ -19,6 +19,8 @@ import {
   kernelState,
   kernelsDir,
   markKernelFailed,
+  readActiveOverlay,
+  type KernelOperationResult,
   type KernelLaunchGuard,
   writeActiveOverlay,
 } from './kernel-manager.ts'
@@ -128,6 +130,7 @@ const DSHMARKET_INSTALL_TIMEOUT_MS = 300_000
 /** Cached tray text for the DeepSeek balance; refreshed opportunistically. */
 let lastBalanceText: string | undefined
 let latestKernelVersion: string | undefined
+let lastKernelOperation: KernelOperationResult | undefined
 // Chromium's fetch follows the system proxy; Node's does not. Every
 // main-process network call goes through it so real machines behind a
 // system-level proxy keep working (GUI launches carry no proxy env vars).
@@ -180,19 +183,19 @@ function rollbackKernel(version: string): void {
 
 /** Switch to an installed overlay kernel and health-check the boot; any
  *  failure rolls back to the bundled kernel and marks the overlay bad. */
-async function switchKernel(version: string): Promise<boolean> {
+async function switchKernel(version: string): Promise<KernelOperationResult> {
   writeActiveOverlay(kernelDir(), version)
   const restarted = await shellApp.runHarnessRestart()
   if (!restarted) {
     rollbackKernel(version)
-    return false
+    return { status: 'switch-failed', version, reason: 'restart-failed' }
   }
   const ready = await waitForHarnessReady()
   if (!ready) {
     rollbackKernel(version)
-    return false
+    return { status: 'rolled-back', version, reason: 'health-check-failed' }
   }
-  return true
+  return { status: 'ready', version }
 }
 
 /**
@@ -600,17 +603,32 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
   }
   if (action === 'kernelCheckUpdates') {
     latestKernelVersion = await fetchLatestKernelVersion(mainFetch)
-    return latestKernelVersion !== undefined
+    lastKernelOperation = latestKernelVersion === undefined
+      ? { status: 'check-failed', reason: 'registry-unavailable' }
+      : { status: 'checked', latestVersion: latestKernelVersion }
+    return lastKernelOperation
   }
   if (action === 'kernelInstall') {
-    if (SMOKE_TEST || latestKernelVersion === undefined) return false
+    if (SMOKE_TEST || latestKernelVersion === undefined) {
+      lastKernelOperation = { status: 'unavailable', reason: 'check-required' }
+      return lastKernelOperation
+    }
     const installed = await installKernel({ dir: kernelDir(), version: latestKernelVersion, nodeBin: nodeBin(), pnpmBin: pnpmBinPath(), env: await installChildEnv() })
-    if (!installed.ok) return false
-    return switchKernel(latestKernelVersion)
+    if (!installed.ok) {
+      lastKernelOperation = { status: 'install-failed', version: latestKernelVersion, reason: installed.reason }
+      return lastKernelOperation
+    }
+    lastKernelOperation = await switchKernel(latestKernelVersion)
+    return lastKernelOperation
   }
   if (action === 'kernelRestore') {
+    const previous = readActiveOverlay(kernelDir())?.version
     writeActiveOverlay(kernelDir(), undefined)
-    return shellApp.runHarnessRestart()
+    const restarted = await shellApp.runHarnessRestart()
+    lastKernelOperation = restarted
+      ? { status: 'restored', ...(previous === undefined ? {} : { version: previous }) }
+      : { status: 'restore-failed', ...(previous === undefined ? {} : { version: previous }), reason: 'restart-failed' }
+    return lastKernelOperation
   }
   if (action === 'restartHarness') {
     return shellApp.requestRestart()
@@ -648,7 +666,7 @@ ipcMain.handle('desktop:balance', async (event) => {
 
 ipcMain.handle('desktop:kernel:state', (event) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
-  return { ...kernelState(harnessRoot(), kernelDir()), latestVersion: latestKernelVersion }
+  return { ...kernelState(harnessRoot(), kernelDir()), latestVersion: latestKernelVersion, lastOperation: lastKernelOperation }
 })
 
 ipcMain.handle('desktop:lan:state', (event) => {

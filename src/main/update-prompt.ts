@@ -21,7 +21,7 @@ function githubAuthHeaders(): Record<string, string> {
   return headers
 }
 
-export async function checkMacUpdate(manual: boolean, locale: ShellLocale): Promise<void> {
+export async function checkMacUpdate(manual: boolean, locale: ShellLocale, detailKey: 'update.macDetail' | 'update.linuxDetail' = 'update.macDetail'): Promise<void> {
   try {
     // Bound the request: a black-holed connection must surface as the
     // failure dialog (manual checks), not a silently pending menu action.
@@ -34,7 +34,7 @@ export async function checkMacUpdate(manual: boolean, locale: ShellLocale): Prom
         type: 'info',
         title: shellText(locale, 'update.title'),
         message: shellText(locale, 'update.available', { version: latest.version }),
-        detail: shellText(locale, 'update.macDetail', { current: app.getVersion() }),
+        detail: shellText(locale, detailKey, { current: app.getVersion() }),
         buttons: [shellText(locale, 'update.download'), shellText(locale, 'update.later')],
         defaultId: 0,
         cancelId: 1,
@@ -73,6 +73,8 @@ export async function checkForUpdatesInteractively(locale: ShellLocale): Promise
     })
   } else if (process.platform === 'darwin') {
     await checkMacUpdate(true, locale)
+  } else if (process.platform === 'linux') {
+    await checkMacUpdate(true, locale, 'update.linuxDetail')
   } else {
     try {
       const result = await autoUpdater.checkForUpdatesAndNotify()

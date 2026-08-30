@@ -353,7 +353,7 @@ window.__ModuleLoader__.load({
         kernel: "内核版本", kernelBundled: "内置", kernelOverlay: "已切换",
         kernelCheck: "检查新版", kernelInstall: "安装最新", kernelRestore: "恢复内置",
         kernelUpToDate: "已是最新版本。",
-        kernelInstalling: "正在安装并切换，可能需要几分钟…", kernelFailed: "操作未完成，请重试。",
+        kernelAvailable: "发现内核新版 {version}，可点击安装。", kernelInstalling: "正在安装并切换，可能需要几分钟…", kernelReady: "内核 {version} 已安装并运行。", kernelCheckFailed: "无法检查内核更新，请检查网络后重试。", kernelInstallFailed: "内核安装失败，尚未切换；请检查网络后重试。", kernelSwitchFailed: "内核已安装，但 Harness 重启失败。", kernelRolledBack: "新版内核健康检查失败，已恢复内置内核。", kernelRestored: "已恢复内置内核。", kernelRestoreFailed: "恢复内置内核后重启失败。", kernelUnavailable: "当前构建暂不可用内核更新。", kernelFailed: "操作未完成，请重试。",
         safeModeBanner: "安全模式：第三方插件已隔离",
         safeModeSuspect: "疑似插件：{id}（{name}），可在官方「设置 → 插件」中卸载。",
         presetsTitle: "Agent 预设", presetsDetail: "导出或导入 .dshpreset 便携预设包，备份或分享 Agent 预设。",
@@ -394,7 +394,7 @@ window.__ModuleLoader__.load({
         kernel: "Kernel version", kernelBundled: "bundled", kernelOverlay: "switched",
         kernelCheck: "Check for newer", kernelInstall: "Install latest", kernelRestore: "Restore bundled",
         kernelUpToDate: "You're on the latest version.",
-        kernelInstalling: "Installing and switching — this can take a few minutes…", kernelFailed: "The operation did not finish; please retry.",
+        kernelAvailable: "Kernel {version} is available; install it when ready.", kernelInstalling: "Installing and switching — this can take a few minutes…", kernelReady: "Kernel {version} is installed and running.", kernelCheckFailed: "Couldn't check for kernel updates. Check your network and retry.", kernelInstallFailed: "Kernel install failed before switching. Check your network and retry.", kernelSwitchFailed: "The kernel installed, but Harness could not restart.", kernelRolledBack: "The new kernel failed its health check; the bundled kernel was restored.", kernelRestored: "The bundled kernel is restored.", kernelRestoreFailed: "Harness could not restart after restoring the bundled kernel.", kernelUnavailable: "Kernel updates are not available in this build.", kernelFailed: "The operation did not finish; please retry.",
         safeModeBanner: "Safe Mode: third-party plugins are quarantined",
         safeModeSuspect: "Suspected plugin: {id} ({name}). Uninstall it from Settings → Plugins.",
         presetsTitle: "Agent presets", presetsDetail: "Export or import .dshpreset portable packages to back up or share agent presets.",
@@ -580,18 +580,30 @@ window.__ModuleLoader__.load({
         setKernelBusy(kind);
         try {
           if (kind === "check") {
-            const ok = await bridge.desktopAction("kernelCheckUpdates") === true;
+            const result = await bridge.desktopAction("kernelCheckUpdates");
             const state = await kernelRefresh();
             // A successful check must always say something: the registry
             // matching the running kernel is a result, not a silence.
-            if (!ok || state?.latestVersion === undefined) setMessage(copy.kernelFailed);
-            else if (state.latestVersion === (state.overlayVersion ?? state.bundledVersion)) setMessage(copy.kernelUpToDate);
+            if (typeof result !== "object" || result.status === "check-failed" || result.latestVersion === undefined) setMessage(copy.kernelCheckFailed);
+            else if (result.latestVersion === (state?.overlayVersion ?? state?.bundledVersion)) setMessage(copy.kernelUpToDate);
+            else setMessage(copy.kernelAvailable.replace("{version}", result.latestVersion));
           } else if (kind === "install") {
             setMessage(copy.kernelInstalling);
-            if (await bridge.desktopAction("kernelInstall") !== true) setMessage(copy.kernelFailed);
+            const result = await bridge.desktopAction("kernelInstall");
+            if (typeof result !== "object") setMessage(copy.kernelFailed);
+            else if (result.status === "ready") setMessage(copy.kernelReady.replace("{version}", result.version ?? ""));
+            else if (result.status === "rolled-back") setMessage(copy.kernelRolledBack);
+            else if (result.status === "switch-failed") setMessage(copy.kernelSwitchFailed);
+            else if (result.status === "install-failed") setMessage(copy.kernelInstallFailed);
+            else if (result.status === "unavailable") setMessage(copy.kernelUnavailable);
+            else setMessage(copy.kernelFailed);
             kernelRefresh();
           } else if (kind === "restore") {
-            if (await bridge.desktopAction("kernelRestore") !== true) setMessage(copy.kernelFailed);
+            const result = await bridge.desktopAction("kernelRestore");
+            if (typeof result !== "object") setMessage(copy.kernelFailed);
+            else if (result.status === "restored") setMessage(copy.kernelRestored);
+            else if (result.status === "restore-failed") setMessage(copy.kernelRestoreFailed);
+            else setMessage(copy.kernelFailed);
             kernelRefresh();
           }
         } finally {

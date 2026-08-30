@@ -34,6 +34,24 @@ export interface KernelState {
   installedVersions: string[]
 }
 
+export type KernelOperationStatus =
+  | 'checked'
+  | 'check-failed'
+  | 'ready'
+  | 'install-failed'
+  | 'switch-failed'
+  | 'rolled-back'
+  | 'restored'
+  | 'restore-failed'
+  | 'unavailable'
+
+export interface KernelOperationResult {
+  status: KernelOperationStatus
+  version?: string
+  latestVersion?: string
+  reason?: string
+}
+
 /** The kernels overlay root under the shell userData directory. */
 export function kernelsDir(userData: string): string {
   return join(userData, 'kernels')

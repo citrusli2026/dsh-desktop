@@ -10,6 +10,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { MACOS_SIDEBAR_COLLAPSED_SAFE_TOP, MACOS_SIDEBAR_SAFE_TOP } from '../main/window-chrome.ts'
 import type { DesktopPreferencesResult, DesktopPreferencesSnapshot, DesktopPreferencesUpdate } from '../main/desktop-preferences.ts'
 import type { ProfilePackageStatus } from '../main/profile.ts'
+import type { KernelOperationResult } from '../main/kernel-manager.ts'
 
 export interface DesktopStartupStatus {
   appVersion: string
@@ -81,7 +82,7 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Close the shell-owned LAN pairing modal. */
   closeLanPairing: (): Promise<boolean> => ipcRenderer.invoke('shell:close-lan-pairing'),
   /** Invoke one of the fixed, low-risk desktop controls from the Harness UI. */
-  desktopAction: (action: 'startLanPairing' | 'stopLanPairing' | 'showAbout' | 'enterSafeMode' | 'exitSafeMode' | 'installDshMarket' | 'openRecharge' | 'kernelCheckUpdates' | 'kernelInstall' | 'kernelRestore'): Promise<boolean | MarketInstallResult> =>
+  desktopAction: (action: 'startLanPairing' | 'stopLanPairing' | 'showAbout' | 'enterSafeMode' | 'exitSafeMode' | 'installDshMarket' | 'openRecharge' | 'kernelCheckUpdates' | 'kernelInstall' | 'kernelRestore'): Promise<boolean | MarketInstallResult | KernelOperationResult> =>
     ipcRenderer.invoke('desktop:action', action),
   /** Read the user profile's community-market state (settings row). */
   getBundledPlugins: (): Promise<{ dshMarket: ProfilePackageStatus } | null> =>
@@ -93,7 +94,7 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   getBalance: (): Promise<{ balance: string } | null> =>
     ipcRenderer.invoke('desktop:balance'),
   /** Kernel overlay state (decision 0026). */
-  getKernelState: (): Promise<{ bundledVersion?: string; overlayVersion?: string; failedVersions: string[]; installedVersions: string[]; latestVersion?: string } | null> =>
+  getKernelState: (): Promise<{ bundledVersion?: string; overlayVersion?: string; failedVersions: string[]; installedVersions: string[]; latestVersion?: string; lastOperation?: KernelOperationResult } | null> =>
     ipcRenderer.invoke('desktop:kernel:state'),
   /** Read the LAN pairing state for the extension settings surface. */
   getLanState: (): Promise<{ running: boolean; busy: boolean } | null> =>

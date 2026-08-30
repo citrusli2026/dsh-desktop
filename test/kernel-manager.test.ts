@@ -216,3 +216,17 @@ test('fetchLatestKernelVersion reads dist-tags.latest', async () => {
   const registryFetch = (async () => Response.json({ 'dist-tags': { latest: '0.2.0' } })) as unknown as typeof fetch
   assert.equal(await fetchLatestKernelVersion(registryFetch), '0.2.0')
 })
+
+test('installKernel surfaces invalid versions and child failures', async () => {
+  const dir = kernelsDir(await mkdtemp(join(tmpdir(), 'dsh-kernel-failure-')))
+  try {
+    assert.deepEqual(await installKernel({ dir, version: 'bad/version', nodeBin: 'node', pnpmBin: 'pnpm' }), { ok: false, reason: 'invalid-version' })
+    const fakeSpawn = (() => ({
+      on: (event: string, callback: () => void) => { if (event === 'error') callback() },
+      kill: () => {},
+    })) as unknown as typeof spawn
+    assert.deepEqual(await installKernel({ dir, version: '0.2.0', nodeBin: 'node', pnpmBin: 'pnpm', spawnImpl: fakeSpawn }), { ok: false, reason: 'spawn-failed' })
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
