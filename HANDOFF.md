@@ -15,7 +15,7 @@
 | 核心发布 | ✅ `v0.1.2-alpha.2.shell.0` Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-alpha.2.shell.0`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
 | 国内镜像 | ✅ `v0.1.2-alpha.2.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证） |
-| 实时下载统计 | ✅ `/api/downloads` 门禁验证 200；官网数据刷新后的线上累计数以正式域名为准 |
+| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；累计安装包下载 433（mac 119 / win 222 / linux 92） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1055,7 +1055,7 @@ Agent 工作台；社区插件全部手动安装；签名与公证继续留到�
 5. **发布前验证**：`pnpm run verify` 全绿（184 项单测；覆盖率 92.34% 行 / 83.43% 分支 / 87.40% 函数）；正常 `pnpm install --frozen-lockfile`、bootstrap peer 审计、`dist:dir`、普通 packaged smoke、真实 Harness UI、Safe Mode 故障注入和 packaged E2E 均通过；包内未发现 market/community 插件。
 6. **GitHub 发布**：Release run `33351146085` 的 verify、macOS、Linux、Windows、publish 全部成功；8 个资产齐全（dmg/exe/deb、3×sha256、Windows blockmap、`latest.yml`），provenance 与三平台安装验证通过。Release：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-alpha.2.shell.0>。
 7. **GitCode 镜像**：`mirror-gitcode.mjs` 上传 dmg/exe/deb 与 3×sha256；6/6 资产在线验证通过，官网数据中的 `gitcode_ok` 已刷新为 true。镜像：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-alpha.2.shell.0>。
-8. **官网同步**：`site/data/release.json` 已生成并通过 `site:check` 与 `/api/downloads` 门禁，正式域名部署后需再次确认版本、6 个用户资产和 GitCode 下载地址均指向本版。
+8. **官网同步**：`site/data/release.json` 已生成并通过 `site:check` 与 `/api/downloads` 门禁；正式域名线上已确认版本、6 个用户资产和 GitCode 下载地址均指向本版，累计安装包下载 433（mac 119 / win 222 / linux 92）。
 
 ---
 
