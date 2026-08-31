@@ -40,7 +40,7 @@
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="stylesheet" href="/assets/style.css?v=41" />
+<link rel="stylesheet" href="/assets/style.css?v=42" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -136,6 +136,23 @@
         </div>
         <p class="hero__social" id="hero-social" hidden></p>
         <p class="hero__meta" id="hero-meta">… · macOS / Windows · <span data-i18n="hero.meta">无需 Node.js</span></p>
+        <div class="hero__highlights" data-reveal style="--i:2" aria-label="产品亮点">
+          <div class="hero__highlight hero__highlight--plugin">
+            <span class="hero__highlight-label" data-i18n="hero.highlightPlugin.label">插件市场</span>
+            <strong class="hero__highlight-value" data-i18n="hero.highlightPlugin.value">数千插件，按需安装</strong>
+            <span class="hero__highlight-note" data-i18n="hero.highlightPlugin.note">不进安装包，先装市场再由你选择。</span>
+          </div>
+          <div class="hero__highlight hero__highlight--balance">
+            <span class="hero__highlight-label" data-i18n="hero.highlightBalance.label">账户余额</span>
+            <strong class="hero__highlight-value" data-i18n="hero.highlightBalance.value">托盘里直接查看</strong>
+            <span class="hero__highlight-note" data-i18n="hero.highlightBalance.note">有可用 API Key 时，在托盘与扩展设置中显示。</span>
+          </div>
+          <div class="hero__highlight hero__highlight--core">
+            <span class="hero__highlight-label">CORE VERSION</span>
+            <strong class="hero__highlight-value hero__highlight-value--code" data-core-version>…</strong>
+            <span class="hero__highlight-note" data-i18n="hero.highlightCore.note">内置内核，更新失败可回到稳定版本。</span>
+          </div>
+        </div>
       </div>
       <figure class="hero__shot" data-reveal style="--i:1" aria-labelledby="hero-shot-title">
         <figcaption class="hero__shot-head">
@@ -192,10 +209,32 @@
     </div>
   </section>
 
-  <!-- ══ 03 下载 ══ -->
+  <!-- ══ 03 插件市场 ══ -->
+  <section class="section" id="market">
+    <div class="wrap">
+      <p class="sec-marker" data-reveal>03 / <span data-i18n="mk.marker">社区插件</span></p>
+      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="mk.title">数千个社区插件，全部由你选择</h2>
+      <p class="sec-lead" data-reveal style="--i:2" data-i18n="mk.lead">dsh-desktop 只提供清晰入口和故障恢复支持；社区插件不属于安装包，也不会在首次启动时自动出现。</p>
+
+      <article class="access-card" data-reveal style="--i:3">
+        <div class="access-card__copy">
+          <p class="access-card__eyebrow">PLUGIN MARKET</p>
+          <h3>全部按需安装</h3>
+          <p>安装包不内置社区插件；先手动安装 dsh-market，再由你选择其他插件和主题。</p>
+        </div>
+        <div class="access-card__routes" aria-label="插件市场入口">
+          <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">01</span><div><b data-i18n="mk.route1.title">浏览与一键安装</b><span data-i18n="mk.route1.body">在 Harness「设置 → 插件市场」按分类浏览、安装和更新。</span></div></div>
+          <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">02</span><div><b data-i18n="mk.route2.title">装坏了也不怕</b><span data-i18n="mk.route2.body">出现问题时，用安全模式隔离第三方插件。</span></div></div>
+        </div>
+      </article>
+      <p class="note" data-reveal style="--i:4" data-i18n="mk.note">安装边界：先在「设置 → 扩展设置 → 插件市场」手动安装 dsh-market，再到 Harness「设置 → 插件市场」手动选择其他插件。</p>
+    </div>
+  </section>
+
+  <!-- ══ 04 下载 ══ -->
   <section class="section" id="download">
     <div class="wrap">
-      <p class="sec-marker" data-reveal>03 / <span data-i18n="dl.marker">下载</span></p>
+      <p class="sec-marker" data-reveal>04 / <span data-i18n="dl.marker">下载</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="dl.title">选择你的平台</h2>
         <p class="sec-lead" data-reveal style="--i:2" data-i18n="dl.lead">支持 macOS、Windows 和 Linux；具体以当前版本可用安装包为准。GitCode 镜像可用时与 GitHub 并列展示。</p>
 
@@ -237,10 +276,10 @@
     </div>
   </section>
 
-  <!-- ══ 04 桌面能力 ══ -->
+  <!-- ══ 05 桌面能力 ══ -->
   <section class="section" id="features">
     <div class="wrap">
-      <p class="sec-marker" data-reveal>04 / <span data-i18n="ft.marker">桌面能力</span></p>
+      <p class="sec-marker" data-reveal>05 / <span data-i18n="ft.marker">桌面能力</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="ft.title">你得到的是可靠入口，不是功能堆叠</h2>
 
       <div class="capability-groups">
@@ -284,29 +323,7 @@
     </div>
   </section>
 
-  <!-- ══ 05 插件市场 ══ -->
-  <section class="section" id="market">
-    <div class="wrap">
-      <p class="sec-marker" data-reveal>05 / <span data-i18n="mk.marker">社区插件</span></p>
-      <h2 class="sec-title" data-reveal style="--i:1" data-i18n="mk.title">数千个社区插件，全部由你选择</h2>
-      <p class="sec-lead" data-reveal style="--i:2" data-i18n="mk.lead">dsh-desktop 只提供清晰入口和故障恢复支持；社区插件不属于安装包，也不会在首次启动时自动出现。</p>
-
-      <article class="access-card" data-reveal style="--i:3">
-        <div class="access-card__copy">
-          <p class="access-card__eyebrow">PLUGIN MARKET</p>
-          <h3>全部按需安装</h3>
-          <p>安装包不内置社区插件；先手动安装 dsh-market，再由你选择其他插件和主题。</p>
-        </div>
-        <div class="access-card__routes" aria-label="插件市场入口">
-          <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">01</span><div><b data-i18n="mk.route1.title">浏览与一键安装</b><span data-i18n="mk.route1.body">在 Harness「设置 → 插件市场」按分类浏览、安装和更新。</span></div></div>
-          <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">02</span><div><b data-i18n="mk.route2.title">装坏了也不怕</b><span data-i18n="mk.route2.body">出现问题时，用安全模式隔离第三方插件。</span></div></div>
-        </div>
-      </article>
-      <p class="note" data-reveal style="--i:4" data-i18n="mk.note">安装边界：先在「设置 → 扩展设置 → 插件市场」手动安装 dsh-market，再到 Harness「设置 → 插件市场」手动选择其他插件。</p>
-    </div>
-  </section>
-
-  <!-- ══ 05 FAQ ══ -->
+  <!-- ══ 06 FAQ ══ -->
   <section class="section" id="faq">
     <div class="wrap">
       <p class="sec-marker" data-reveal>06 / <span data-i18n="faq.marker">支持与边界</span></p>
@@ -353,7 +370,7 @@
     </div>
   </section>
 
-  <!-- ══ 06 版本号 ══ -->
+  <!-- ══ 07 版本号 ══ -->
   <section class="section" id="version">
     <div class="wrap">
       <p class="sec-marker" data-reveal>07 / <span data-i18n="vr.marker">版本信息</span></p>
@@ -400,7 +417,7 @@
   </div>
 </footer>
 
-<script type="module" src="/assets/app.js?v=41"></script>
+<script type="module" src="/assets/app.js?v=42"></script>
 
 <!-- 下载后提示(校验方式 + 未签名处理 + GitHub Star 邀请),由 app.js 填充 -->
 <div class="download-toast" id="download-toast" role="status" aria-live="polite" hidden></div>

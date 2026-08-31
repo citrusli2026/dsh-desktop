@@ -80,10 +80,25 @@
     })
   }
 
+  function bindCoreVersion() {
+    var targets = document.querySelectorAll('[data-core-version]')
+    if (!targets.length || !window.fetch) return
+    fetch('/data/release.json')
+      .then(function (response) { return response.ok ? response.json() : null })
+      .then(function (payload) {
+        var tag = payload && payload.release && payload.release.tag
+        var match = typeof tag === 'string' ? /^v?(.+)\.shell\.\d+$/.exec(tag) : null
+        if (!match) return
+        Array.prototype.forEach.call(targets, function (target) { target.textContent = match[1] })
+      })
+      .catch(function () {})
+  }
+
   var errorPath = document.getElementById('error-path')
   if (errorPath) errorPath.textContent = window.location.pathname
   applyTheme()
   bindTheme()
   bindMenu()
   markCurrentPage()
+  bindCoreVersion()
 })()
