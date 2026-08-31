@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-08-30。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-08-31。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.1-rc.2.shell.15`（2026-08-30 已发布；内核 `0.1.1-rc.2` 未变，壳修订 +15） |
-| 已发布 | ✅ `0.1.1-rc.2.shell.15`（2026-08-30，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 最新代码基线 | ✅ `0.1.2-alpha.2.shell.0`（2026-08-31 已发布；内核升级至 `0.1.2-alpha.2`，壳修订归零） |
+| 已发布 | ✅ `0.1.2-alpha.2.shell.0`（2026-08-31，三端 dmg/exe/deb；AppImage 已整体移除） |
 | 本地门禁 | ✅ 184 项单测、类型检查、runtime/site 门禁、构建全绿；开发态 E2E 12 passed / 1 design skip，官网中英文/明暗/移动端及轮播视觉已人工检查 |
-| 核心发布 | ✅ shell.15 Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.1-rc.2.shell.15`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`；bot 提交 `eba368a`） |
-| 国内镜像 | ✅ shell.15 GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证 206） |
-| 实时下载统计 | ✅ `/api/downloads` 线上验证 200；最终核验累计安装包下载 422（mac 118 / win 214 / linux 90） |
+| 核心发布 | ✅ `v0.1.2-alpha.2.shell.0` Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-alpha.2.shell.0`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.2-alpha.2.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证） |
+| 实时下载统计 | ✅ `/api/downloads` 门禁验证 200；官网数据刷新后的线上累计数以正式域名为准 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1044,6 +1044,19 @@ Agent 工作台；社区插件全部手动安装；签名与公证继续留到�
 6. **GitCode 镜像**：本机 `mirror-gitcode.mjs` 上传 dmg/exe/deb 与 3×sha256，全部官方 SHA-256 校验通过；6/6 稳定 URL 匿名 Range GET 验证成功（206）。
 7. **官网同步**：首个自动 refresh run `33308771595` 在镜像完成前提交了临时 `gitcode_ok=false` 数据；镜像补齐后手动 refresh run `33310742253` 成功，最终 bot 提交 `eba368a`。线上 `https://dsh-desktop.com/data/release.json` 已指向 shell.15 且 6/6 `gitcode_ok=true`；`/api/downloads` 返回 200，核验时累计 422（mac 118 / win 214 / linux 90）。
 
+## 三十六、v0.1.2-alpha.2.shell.0 发布：内核升级与官网/设置收敛（2026-08-31）
+
+本轮继续保持“可靠的 Electron 壳 + 开箱即用支持”定位，不引入 Agent 工作台；社区插件全部手动安装且不进入安装包；签名与公证继续留到功能稳定、确认使用量后再评估。
+
+1. **内核与运行时**：升级并锁定 `@deepseek-ai/dsh` `0.1.2-alpha.2`，补齐新内核要求的 peer 依赖并修正 release-age 排除清单；新版 readiness URL 的 trust token 会被完整保留，壳仍只使用 loopback origin 做安全校验。
+2. **扩展设置收敛**：移除长期占位的运行状态区，把 Safe Mode 提升到首屏恢复区；截图、插件市场、内核和预设等低频工具收进“更多壳工具”；当前平台不可用的选项不再展示，保证一页能看完最重要的能力。
+3. **官网与截图**：三张真实应用截图统一为 `2560×1720`，中文/英文与明/暗主题一一对应；首页压缩重复说明，中文导航统一四字；保留扩展设置、安全模式和社区插件手动安装等关键说明，并维持自动轮播。
+4. **版本提交**：`c27ba81` 将版本升为 `0.1.2-alpha.2.shell.0`，更新中英文 README、架构说明和 release notes；`node scripts/version.mjs show/check` 与 release notes 检查通过。
+5. **发布前验证**：`pnpm run verify` 全绿（184 项单测；覆盖率 92.34% 行 / 83.43% 分支 / 87.40% 函数）；正常 `pnpm install --frozen-lockfile`、bootstrap peer 审计、`dist:dir`、普通 packaged smoke、真实 Harness UI、Safe Mode 故障注入和 packaged E2E 均通过；包内未发现 market/community 插件。
+6. **GitHub 发布**：Release run `33351146085` 的 verify、macOS、Linux、Windows、publish 全部成功；8 个资产齐全（dmg/exe/deb、3×sha256、Windows blockmap、`latest.yml`），provenance 与三平台安装验证通过。Release：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-alpha.2.shell.0>。
+7. **GitCode 镜像**：`mirror-gitcode.mjs` 上传 dmg/exe/deb 与 3×sha256；6/6 资产在线验证通过，官网数据中的 `gitcode_ok` 已刷新为 true。镜像：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-alpha.2.shell.0>。
+8. **官网同步**：`site/data/release.json` 已生成并通过 `site:check` 与 `/api/downloads` 门禁，正式域名部署后需再次确认版本、6 个用户资产和 GitCode 下载地址均指向本版。
+
 ---
 
-_更新于 2026-08-30_
+_更新于 2026-08-31_
