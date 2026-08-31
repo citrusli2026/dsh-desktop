@@ -40,7 +40,7 @@
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="stylesheet" href="/assets/style.css?v=40" />
+<link rel="stylesheet" href="/assets/style.css?v=41" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -182,18 +182,13 @@
           <p class="boundary-grid__eyebrow" data-i18n="wf.keeps.label">Harness 继续负责</p>
           <ul data-i18n="wf.keeps"><li>Agent、会话、工具与模型</li><li>官方 WebUI 与插件行为</li><li>账户配置；不新增工作台</li></ul>
         </article>
-      </div>
-      <article class="extension-card" data-reveal style="--i:5">
-        <div>
-          <p class="extension-card__eyebrow" data-i18n="ext.marker">扩展功能</p>
+        <article>
+          <p class="boundary-grid__eyebrow" data-i18n="ext.marker">扩展功能</p>
           <h3 data-i18n="ext.title">扫码，把 Harness 带到手机或平板</h3>
-          <p class="extension-card__body" data-i18n="ext.body">从扩展入口启动局域网 Web 代理，手机与电脑同网后扫码即可进入 Harness。</p>
-        </div>
-        <div class="extension-card__details">
-          <ol data-i18n="ext.steps"><li>扩展 → 连接手机 / 平板</li><li>同一局域网扫码，确认配对码</li></ol>
-          <p data-i18n="ext.note">不需要单独的 Android / iOS 应用。</p>
-        </div>
-      </article>
+          <p class="boundary-grid__body" data-i18n="ext.body">从扩展入口启动局域网 Web 代理，手机与电脑同网后扫码即可进入 Harness。</p>
+          <p class="boundary-grid__note" data-i18n="ext.note">不需要单独的 Android / iOS 应用。</p>
+        </article>
+      </div>
     </div>
   </section>
 
@@ -242,7 +237,7 @@
     </div>
   </section>
 
-  <!-- ══ 04 特性 ══ -->
+  <!-- ══ 04 桌面能力 ══ -->
   <section class="section" id="features">
     <div class="wrap">
       <p class="sec-marker" data-reveal>04 / <span data-i18n="ft.marker">桌面能力</span></p>
@@ -255,8 +250,10 @@
               <div><h3 id="capability-ready-title" data-i18n="ft.group1.title">开箱即用</h3><p data-i18n="ft.group1.body">把最容易卡住的运行环境和数据边界处理好，下载后直接进入 Harness。</p></div>
             </div>
             <div class="feature-grid" data-reveal style="--i:3">
-              <article class="feature-card" data-i18n="ft.p1"><h3>无需安装 Node.js</h3><p>内置 Node.js 与锁定依赖，下载安装包即可启动。</p></article>
-              <article class="feature-card" data-i18n="ft.p2"><h3>独立数据目录，环境隔离</h3><p>默认使用 <code>~/.dsh-desktop</code>，不影响命令行；需要共享时再设置 <code>DSH_HOME</code>。</p></article>
+              <article class="feature-card feature-summary">
+                <div class="feature-summary__item" data-i18n="ft.p1"><h3>无需安装 Node.js</h3><p>内置 Node.js 与锁定依赖，下载安装包即可启动。</p></div>
+                <div class="feature-summary__item" data-i18n="ft.p2"><h3>独立数据目录，环境隔离</h3><p>默认使用 <code>~/.dsh-desktop</code>，不影响命令行；需要共享时再设置 <code>DSH_HOME</code>。</p></div>
+              </article>
             </div>
           </section>
           <section class="capability-group" aria-labelledby="capability-daily-title">
@@ -265,8 +262,10 @@
               <div><h3 id="capability-daily-title" data-i18n="ft.group2.title">日常桌面体验</h3><p data-i18n="ft.group2.body">窗口、托盘、快捷键和通知服务于同一个目标：随时找到并继续你的 Harness。</p></div>
             </div>
             <div class="feature-grid" data-reveal style="--i:5">
-              <article class="feature-card" data-i18n="ft.p4"><h3>持续守护与可靠更新</h3><p>崩溃按预算重启，保留托盘入口；更新失败会回到可用内核。</p></article>
-              <article class="feature-card" data-i18n="ft.p7"><h3>不用找窗口，快捷键直接唤回</h3><p>默认 <code>Ctrl/Cmd + Shift + Space</code>，冲突时仍可用托盘和右键。</p></article>
+              <article class="feature-card feature-summary">
+                <div class="feature-summary__item" data-i18n="ft.p4"><h3>持续守护与可靠更新</h3><p>崩溃按预算重启，保留托盘入口；更新失败会回到可用内核。</p></div>
+                <div class="feature-summary__item" data-i18n="ft.p7"><h3>不用找窗口，快捷键直接唤回</h3><p>默认 <code>Ctrl/Cmd + Shift + Space</code>，冲突时仍可用托盘和右键。</p></div>
+              </article>
             </div>
           </section>
           <section class="capability-group" aria-labelledby="capability-recovery-title">
@@ -275,35 +274,34 @@
               <div><h3 id="capability-recovery-title" data-i18n="ft.group3.title">恢复与边界</h3><p data-i18n="ft.group3.body">故障时给出可执行的下一步，同时把权限、数据和上游职责说清楚。</p></div>
             </div>
             <div class="feature-grid" data-reveal style="--i:7">
-              <article class="feature-card" data-i18n="ft.p5"><h3>渲染层能力默认收敛</h3><p>沙箱、上下文隔离和权限拒绝默认开启，桌面通知不读取屏幕。</p></article>
-              <article class="feature-card" data-i18n="ft.p6"><h3>问题发生时，可检查并恢复</h3><p>日志和诊断报告在本地生成，自动遮罩常见密钥，不会自动上传。</p></article>
+              <article class="feature-card feature-summary">
+                <div class="feature-summary__item" data-i18n="ft.p5"><h3>渲染层能力默认收敛</h3><p>沙箱、上下文隔离和权限拒绝默认开启，桌面通知不读取屏幕。</p></div>
+                <div class="feature-summary__item" data-i18n="ft.p6"><h3>问题发生时，可检查并恢复</h3><p>日志和诊断报告在本地生成，自动遮罩常见密钥，不会自动上传。</p></div>
+              </article>
             </div>
           </section>
       </div>
     </div>
   </section>
 
-  <!-- ══ 04 插件市场 ══ -->
+  <!-- ══ 05 插件市场 ══ -->
   <section class="section" id="market">
     <div class="wrap">
       <p class="sec-marker" data-reveal>05 / <span data-i18n="mk.marker">社区插件</span></p>
       <h2 class="sec-title" data-reveal style="--i:1" data-i18n="mk.title">数千个社区插件，全部由你选择</h2>
       <p class="sec-lead" data-reveal style="--i:2" data-i18n="mk.lead">dsh-desktop 只提供清晰入口和故障恢复支持；社区插件不属于安装包，也不会在首次启动时自动出现。</p>
 
-      <div class="feature-grid" data-reveal style="--i:3">
-          <article class="feature-card" data-i18n="mk.c1">
-            <h3>全部按需安装</h3>
-            <p>安装包不内置社区插件；先手动安装 dsh-market，再由你选择其他插件和主题。</p>
-          </article>
-          <article class="feature-card" data-i18n="mk.c2">
-            <h3>浏览与一键安装</h3>
-            <p>在 Harness「设置 → 插件市场」按分类浏览、安装和更新，来源可查。</p>
-          </article>
-          <article class="feature-card" data-i18n="mk.c3">
-            <h3>装坏了也不怕</h3>
-            <p>构建脚本先征求授权；出现问题时，用安全模式隔离第三方插件。</p>
-          </article>
-      </div>
+      <article class="access-card" data-reveal style="--i:3">
+        <div class="access-card__copy">
+          <p class="access-card__eyebrow">PLUGIN MARKET</p>
+          <h3>全部按需安装</h3>
+          <p>安装包不内置社区插件；先手动安装 dsh-market，再由你选择其他插件和主题。</p>
+        </div>
+        <div class="access-card__routes" aria-label="插件市场入口">
+          <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">01</span><div><b data-i18n="mk.route1.title">浏览与一键安装</b><span data-i18n="mk.route1.body">在 Harness「设置 → 插件市场」按分类浏览、安装和更新。</span></div></div>
+          <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">02</span><div><b data-i18n="mk.route2.title">装坏了也不怕</b><span data-i18n="mk.route2.body">出现问题时，用安全模式隔离第三方插件。</span></div></div>
+        </div>
+      </article>
       <p class="note" data-reveal style="--i:4" data-i18n="mk.note">安装边界：先在「设置 → 扩展设置 → 插件市场」手动安装 dsh-market，再到 Harness「设置 → 插件市场」手动选择其他插件。</p>
     </div>
   </section>
@@ -402,7 +400,7 @@
   </div>
 </footer>
 
-<script type="module" src="/assets/app.js?v=40"></script>
+<script type="module" src="/assets/app.js?v=41"></script>
 
 <!-- 下载后提示(校验方式 + 未签名处理 + GitHub Star 邀请),由 app.js 填充 -->
 <div class="download-toast" id="download-toast" role="status" aria-live="polite" hidden></div>
