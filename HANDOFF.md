@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-08-31。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-09-01。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.2-alpha.2.shell.0`（2026-08-31 已发布；内核升级至 `0.1.2-alpha.2`，壳修订归零） |
-| 已发布 | ✅ `0.1.2-alpha.2.shell.0`（2026-08-31，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 184 项单测、类型检查、runtime/site 门禁、构建全绿；开发态 E2E 12 passed / 1 design skip，官网中英文/明暗/移动端及轮播视觉已人工检查 |
-| 核心发布 | ✅ `v0.1.2-alpha.2.shell.0` Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-alpha.2.shell.0`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.2-alpha.2.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证） |
-| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；累计安装包下载 433（mac 119 / win 222 / linux 92） |
+| 最新代码基线 | ✅ `0.1.2-alpha.3.shell.0`（2026-09-01 已发布；内核升级至 `0.1.2-alpha.3`，壳修订归零） |
+| 已发布 | ✅ `0.1.2-alpha.3.shell.0`（2026-09-01，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 184 项单测、类型检查、runtime/site 门禁、构建全绿；Release verify E2E 11 passed / 2 条件 skip，扩展浮层与设置页中英文/明暗真实应用截图已人工检查 |
+| 核心发布 | ✅ `v0.1.2-alpha.3.shell.0` Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-alpha.3.shell.0`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.2-alpha.3.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `c2e9ea7`） |
+| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；累计安装包下载 461（mac 125 / win 243 / linux 93） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1059,4 +1059,22 @@ Agent 工作台；社区插件全部手动安装；签名与公证继续留到�
 
 ---
 
-_更新于 2026-08-31_
+## 三十七、v0.1.2-alpha.3.shell.0 发布：扩展面板重排与内核升级（2026-09-01）
+
+本轮审查并重做桌面扩展浮层与设置页的信息层级、内容对齐和窄卡片适配；发版前实时检查发现上游已发布 `@deepseek-ai/dsh` `0.1.2-alpha.3`，因此同步升级内核并把壳修订归零。
+
+1. **扩展面板**：浮层按「连接 → 恢复 → 信息」组织，把局域网配对设为首要操作；安全模式、重启与关于补充用途说明，状态压缩为不抢主操作的胶囊。扩展设置改为桌面习惯、账户与插件、恢复、高级工具四组，修复 LAN 行缺失统一布局属性、快捷键/插件市场/安全模式在中英文窄卡片中的断字与按钮越界，并为窄窗口提供单栏回退。
+2. **内核升级**：`node scripts/version.mjs bump dsh latest` 升级至 `0.1.2-alpha.3.shell.0`；同步 manifest 中全部 dsh pin、锁文件与 release-age 白名单（新增 `@deepseek-ai/dsh-session-turn-outline@0.1.2-alpha.3`），frozen install、bootstrap 和非可选 peer 审计通过。
+3. **验证与截图**：`pnpm run verify` 全绿（184 项测试；覆盖率 92.34% 行 / 83.43% 分支 / 87.40% 函数）；基于 alpha.3 闭包重新 `dist:dir`，真实 Electron 中英文 × 明暗四组启动与截图流程通过，官网只更新扩展浮层和设置页 8 张直接相关截图。
+4. **GitHub 发布**：tag `v0.1.2-alpha.3.shell.0` → `c2e9ea7`（peeled 已核对）；Release run `33416833113` 的 verify、macOS、Linux、Windows、publish 全部成功。8 个资产齐全（dmg/exe/deb、3×sha256、Windows blockmap、`latest.yml`），三平台真实 Harness、Safe Mode、故障注入、安装态 smoke 与 provenance 均通过。
+5. **GitCode 镜像**：常规 SOCKS 单连接先完成 deb，随后在 dmg 处停滞；保留已下载文件，改用 8 路 Range 分段拉取 dmg/exe，按 Release 字节数拼接并通过官方 SHA-256。显式本地文件模式直传 3 个安装包 + 3 个校验文件约 12 秒，全部 attempt 1/3 成功；完整镜像处理约 45 分钟，Range GET 6/6 present。GitCode 创建 release 时 tag 曾误指旧 main `625a4a6`，已在不删除 release 的前提下强制校正至 `c2e9ea7`，6 个资产复核仍在线。
+6. **网站数据**：自动 Site Data Refresh run `33417823171` 成功、提交 `f7221d0`，但早于镜像完成而写入 6×`gitcode_ok=false`；镜像确认后通过 Node 环境代理重跑 `gen-site-data`，生成时 stats 415（mac 117 / win 209 / linux 89），修正提交 `7b541b4`。正式域名 `/data/release.json` 已指向本 tag 且 6/6 `gitcode_ok=true`；`/api/downloads` 返回 200，线上实时累计 461（mac 125 / win 243 / linux 93）。
+
+发布元数据：
+- Release run `33416833113`（成功）；Site Data Refresh run `33417823171`（自动，成功）；
+- GitHub / GitCode tag 均精确指向 `c2e9ea7`；GitHub 8 个资产、GitCode 6 个用户资产均已核对；
+- Release：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-alpha.3.shell.0>；官网：<https://dsh-desktop.com>。
+
+---
+
+_更新于 2026-09-01_
