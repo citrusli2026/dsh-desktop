@@ -19,6 +19,7 @@ test('parseReadyUrl extracts the loopback URL from the contract line', () => {
   assert.equal(parseReadyUrl('dsh web: http://127.0.0.1:55886'), 'http://127.0.0.1:55886')
   // Trailing output on the same line is tolerated.
   assert.equal(parseReadyUrl('dsh web: http://127.0.0.1:3080 (ctrl-click)'), 'http://127.0.0.1:3080')
+  assert.equal(parseReadyUrl('dsh web: http://127.0.0.1:3080/?token=smoke-token'), 'http://127.0.0.1:3080/?token=smoke-token')
 })
 
 test('parseReadyUrl rejects non-contract lines and non-loopback URLs', () => {

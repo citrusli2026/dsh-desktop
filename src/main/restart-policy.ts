@@ -7,7 +7,7 @@
  */
 
 /** Upstream readiness contract: one stdout line naming the loopback URL. */
-const READY_LINE = /^dsh web: (http:\/\/127\.0\.0\.1:\d+)/
+const READY_LINE = /^dsh web: (http:\/\/127\.0\.0\.1:\d+(?:[/?][^\s)]*)?)/
 
 /** Crash budget: at most this many unexpected exits inside the window. */
 export const MAX_RESTARTS_IN_WINDOW = 5
@@ -16,7 +16,9 @@ export const RESTART_BASE_DELAY_MS = 2_000
 export const RESTART_MAX_DELAY_MS = 30_000
 
 /**
- * Extract the ready URL from one harness output line.
+ * Extract the ready URL from one harness output line. Preserve the query
+ * string because current Harness releases use it for the browser trust token;
+ * the shell separately derives and stores only the origin for IPC checks.
  * @returns the loopback URL, or undefined when the line is not the contract line.
  */
 export function parseReadyUrl(line: string): string | undefined {

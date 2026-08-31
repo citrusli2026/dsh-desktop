@@ -16,33 +16,32 @@ if (!NEW) {
   process.exit(1)
 }
 
-const manifest = JSON.parse(readFileSync('manifest/harness/package.json', 'utf8'))
-const OLD = manifest.dependencies['@deepseek-ai/dsh']
-if (!OLD) {
-  console.error('sync-release-age-excludes: no @deepseek-ai/dsh pin in manifest/harness/package.json')
-  process.exit(1)
-}
-if (OLD === NEW) {
-  console.log(`sync-release-age-excludes: excludes already at ${NEW}`)
-  process.exit(0)
-}
-
 const file = 'manifest/harness/pnpm-workspace.yaml'
 const src = readFileSync(file, 'utf8')
-const replaced = src.split(`@${OLD}'`).join(`@${NEW}'`)
+const dshPin = /^  - '(@deepseek-ai\/dsh(?:-[^@']+)?)@[^']+'$/
+const replacedLines = src.split('\n').map((line) => {
+  const match = dshPin.exec(line)
+  return match === null ? line : `  - '${match[1]}@${NEW}'`
+})
+const replaced = replacedLines.join('\n')
 
-// 保序去重(仅处理列表行),pnpm 自动追加的重复条目在此收敛
-const seen = new Set()
+// 保留同一包最后出现的 pin。pnpm 自动追加新版条目时，旧版 pin
+// 会留在列表前面；按包名收敛，避免冻结安装仍被旧的排除项干扰。
+const lastIndex = new Map()
+const packagePin = /^  - '(@deepseek-ai\/[^@']+)@[^']+'$/
+const replacedList = replaced.split('\n')
+replacedList.forEach((line, index) => {
+  const match = packagePin.exec(line)
+  if (match !== null) lastIndex.set(match[1], index)
+})
 const out = []
-for (const line of replaced.split('\n')) {
-  if (line.startsWith("  - '")) {
-    if (seen.has(line)) continue
-    seen.add(line)
-  }
+for (const [index, line] of replacedList.entries()) {
+  const match = packagePin.exec(line)
+  if (match !== null && lastIndex.get(match[1]) !== index) continue
   out.push(line)
 }
 writeFileSync(file, out.join('\n'))
 
-const before = (src.match(new RegExp(`@${OLD}'`, 'g')) || []).length
-const after = (replaced.match(new RegExp(`@${NEW}'`, 'g')) || []).length
-console.log(`sync-release-age-excludes: @${OLD} -> @${NEW} (${before} -> ${after} pinned entries)`)
+const before = src.split('\n').filter(line => dshPin.test(line)).length
+const after = replaced.split('\n').filter(line => line.endsWith(`@${NEW}'`) && dshPin.test(line)).length
+console.log(`sync-release-age-excludes: dsh pins -> @${NEW} (${before} -> ${after} pinned entries)`)
