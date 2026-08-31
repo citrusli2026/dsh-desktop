@@ -11,9 +11,11 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-controls] {
         --dsh-controls-accent: #4d6bfe;
         --dsh-controls-panel: var(--dsw-alias-bg-layer-2, #ffffff);
+        --dsh-controls-panel-muted: var(--dsw-alias-bg-layer-1, #f7f8fa);
         --dsh-controls-text: var(--dsw-alias-label-primary, #1f232b);
         --dsh-controls-muted: var(--dsw-alias-label-secondary, #6d7380);
         --dsh-controls-border: var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
+        --dsh-controls-accent-soft: color-mix(in srgb, var(--dsh-controls-accent) 9%, transparent);
         color: var(--dsh-controls-text);
         font-family: inherit;
         pointer-events: none;
@@ -80,16 +82,35 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-controls] [data-dsh-controls-panel] {
         background: var(--dsh-controls-panel);
         border: 1px solid var(--dsh-controls-border);
-        border-radius: 16px;
-        box-shadow: 0 14px 36px rgba(31, 35, 43, .18);
+        border-radius: 18px;
+        box-shadow: 0 18px 48px rgba(31, 35, 43, .2);
         margin-top: 8px;
-        padding: 14px;
+        overflow: hidden;
         pointer-events: auto;
-        width: min(286px, calc(100vw - 32px));
+        width: min(340px, calc(100vw - 32px));
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-panel-head] {
+        padding: 17px 18px 14px;
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-eyebrow] {
+        color: var(--dsh-controls-accent);
+        display: block;
+        font-size: 9px;
+        font-weight: 750;
+        letter-spacing: .14em;
+        line-height: 1;
+        margin-bottom: 7px;
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-title-row] {
+        align-items: center;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-heading] {
-        font-size: 14px;
-        font-weight: 700;
+        font-size: 16px;
+        font-weight: 720;
+        letter-spacing: -.01em;
         margin: 0;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-copy],
@@ -99,47 +120,124 @@ window.__ModuleLoader__.load({
         line-height: 1.5;
         margin: 4px 0 12px;
       }
+      [data-dsh-desktop-controls] [data-dsh-controls-panel-copy] {
+        color: var(--dsh-controls-muted);
+        font-size: 11.5px;
+        line-height: 1.45;
+        margin: 5px 0 0;
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-status] {
+        align-items: center;
+        background: var(--dsh-controls-panel-muted);
+        border: 1px solid var(--dsh-controls-border);
+        border-radius: 999px;
+        color: var(--dsh-controls-muted);
+        display: inline-flex;
+        flex: 0 0 auto;
+        font-size: 10px;
+        gap: 6px;
+        line-height: 1;
+        margin: 0;
+        max-width: 132px;
+        overflow: hidden;
+        padding: 6px 8px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-status]::before {
+        background: var(--dsh-controls-accent);
+        border-radius: 999px;
+        content: "";
+        flex: 0 0 auto;
+        height: 6px;
+        width: 6px;
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-group] {
+        border-top: 1px solid var(--dsh-controls-border);
+        padding: 10px;
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-group-label] {
+        color: var(--dsh-controls-muted);
+        font-size: 9px;
+        font-weight: 750;
+        letter-spacing: .12em;
+        margin: 0;
+        padding: 2px 8px 7px;
+        text-transform: uppercase;
+      }
       [data-dsh-desktop-controls] [data-dsh-controls-actions] { display: grid; gap: 4px; }
       [data-dsh-desktop-controls] [data-dsh-controls-action] {
         align-items: center;
         background: transparent;
         border: 1px solid transparent;
-        border-radius: 10px;
+        border-radius: 11px;
         color: var(--dsh-controls-text);
         cursor: pointer;
-        display: flex;
-        font-size: 13px;
-        line-height: 1;
-        min-height: 34px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        min-height: 52px;
         overflow: hidden;
-        padding: 0 10px;
+        padding: 7px 9px;
         text-align: left;
-        white-space: nowrap;
-        text-overflow: ellipsis;
+        width: 100%;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-action]:hover {
-        background: color-mix(in srgb, var(--dsh-controls-accent) 9%, transparent);
+        background: var(--dsh-controls-accent-soft);
         border-color: color-mix(in srgb, var(--dsh-controls-accent) 18%, transparent);
       }
-      [data-dsh-desktop-controls] [data-dsh-controls-action][disabled] { cursor: wait; opacity: .6; }
-      [data-dsh-desktop-controls] [data-dsh-controls-separator] {
-        background: var(--dsh-controls-border);
-        border: 0;
-        height: 1px;
-        margin: 6px 0;
+      [data-dsh-desktop-controls] [data-dsh-controls-action][data-dsh-controls-action-primary] {
+        background: var(--dsh-controls-accent-soft);
+        border-color: color-mix(in srgb, var(--dsh-controls-accent) 18%, transparent);
       }
+      [data-dsh-desktop-controls] [data-dsh-controls-action-mark] {
+        align-items: center;
+        background: var(--dsh-controls-panel-muted);
+        border: 1px solid var(--dsh-controls-border);
+        border-radius: 9px;
+        color: var(--dsh-controls-muted);
+        display: inline-flex;
+        font-size: 9px;
+        font-weight: 750;
+        height: 30px;
+        justify-content: center;
+        letter-spacing: .04em;
+        width: 34px;
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-action][data-dsh-controls-action-primary] [data-dsh-controls-action-mark] {
+        background: var(--dsh-controls-accent);
+        border-color: var(--dsh-controls-accent);
+        color: #fff;
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-action-body] { min-width: 0; }
+      [data-dsh-desktop-controls] [data-dsh-controls-action-title] {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 650;
+        line-height: 1.3;
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-action-detail] {
+        color: var(--dsh-controls-muted);
+        display: -webkit-box;
+        font-size: 10.5px;
+        line-height: 1.35;
+        margin-top: 2px;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-action-arrow] {
+        color: var(--dsh-controls-muted);
+        font-size: 16px;
+        line-height: 1;
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-action][disabled] { cursor: wait; opacity: .6; }
       [data-dsh-desktop-controls] [data-dsh-controls-hint] {
-        border-top: 1px solid var(--dsh-controls-border);
         color: var(--dsh-controls-muted);
         font-size: 11px;
         line-height: 1.5;
-        margin-top: 10px;
-        padding-top: 10px;
-      }
-      [data-dsh-desktop-controls] [data-dsh-controls-status] {
-        color: var(--dsh-controls-muted);
-        font-size: 11px;
-        margin: 4px 0 10px;
+        margin: 0;
+        padding: 14px 18px 16px;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-shortcut] {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -147,34 +245,52 @@ window.__ModuleLoader__.load({
       }
       /* 设置页「扩展设置」分区：与 Harness 设置页同款排版（标题→说明→条目行）。 */
       [data-dsh-desktop-settings-section] {
+        --dsh-controls-accent: #4d6bfe;
+        --dsh-controls-panel: var(--dsw-alias-bg-layer-2, #ffffff);
+        --dsh-controls-panel-muted: var(--dsw-alias-bg-layer-1, #f7f8fa);
+        --dsh-controls-text: var(--dsw-alias-label-primary, #1f232b);
+        --dsh-controls-muted: var(--dsw-alias-label-secondary, #6d7380);
+        --dsh-controls-border: var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
         color: var(--dsw-alias-label-primary, #1f232b);
         font-size: 13px;
         line-height: 1.6;
       }
-      [data-dsh-desktop-settings] { padding: 0; }
-      [data-dsh-desktop-settings] [data-dsh-desktop-settings-heading] {
-        font-size: 16px;
-        font-weight: 650;
-        line-height: 1.4;
-        margin: 0 0 6px;
+      [data-dsh-desktop-settings] {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: minmax(0, 1.35fr) minmax(260px, .9fr);
+        padding: 0;
       }
-      [data-dsh-desktop-settings] [data-dsh-desktop-settings-copy] { margin: 0 0 10px; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-settings-heading] {
+        font-size: 19px;
+        font-weight: 700;
+        grid-column: 1 / -1;
+        line-height: 1.4;
+        margin: 0;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-settings-copy] {
+        grid-column: 1 / -1;
+        margin: -8px 0 2px;
+        max-width: 640px;
+      }
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-row] {
         align-items: center;
         border-bottom: 1px solid var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
         display: flex;
         gap: 12px;
         justify-content: space-between;
-        min-height: 36px;
-        padding: 5px 0;
+        min-height: 52px;
+        padding: 9px 0;
         margin: 0;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-row]:last-child { border-bottom: 0; }
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-label] {
         color: var(--dsw-alias-label-primary, #1f232b);
         display: block;
+        flex: 1 1 auto;
         font-size: 13px;
         line-height: 1.4;
+        min-width: 0;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-detail] {
         color: var(--dsw-alias-label-secondary, #6d7380);
@@ -211,6 +327,8 @@ window.__ModuleLoader__.load({
         display: inline-flex;
         gap: 8px;
         flex-shrink: 0;
+        flex-wrap: wrap;
+        justify-content: flex-end;
       }
       [data-dsh-desktop-settings] [data-dsh-market-risk] {
         align-items: flex-end;
@@ -229,26 +347,61 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-settings] [data-dsh-desktop-status] {
         color: var(--dsw-alias-state-error-primary, #c33);
         font-size: 12px;
+        grid-column: 1 / -1;
         line-height: 1.4;
         margin: 10px 0 0;
       }
       [data-dsh-desktop-settings-group] {
-        border-top: 1px solid var(--dsh-controls-border);
-        margin-top: 10px;
-        padding-top: 7px;
+        align-self: start;
+        background: var(--dsh-controls-panel);
+        border: 1px solid var(--dsh-controls-border);
+        border-radius: 14px;
+        margin: 0;
+        padding: 15px 17px 5px;
+      }
+      [data-dsh-desktop-settings-group][data-dsh-desktop-group="habits"] {
+        grid-column: 1;
+        grid-row: 3 / span 2;
+      }
+      [data-dsh-desktop-settings-group][data-dsh-desktop-group="services"] { grid-column: 2; grid-row: 3; }
+      [data-dsh-desktop-settings-group][data-dsh-desktop-group="recovery"] { grid-column: 2; grid-row: 4; }
+      [data-dsh-desktop-settings-group][data-dsh-desktop-group="services"] [data-dsh-desktop-setting-row] {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      [data-dsh-desktop-settings-group][data-dsh-desktop-group="services"] [data-dsh-desktop-lan-actions] {
+        justify-content: space-between;
+        width: 100%;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-shortcut-row],
+      [data-dsh-desktop-settings-group][data-dsh-desktop-group="recovery"] [data-dsh-desktop-setting-row] {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-shortcut-row] [data-dsh-desktop-lan-actions] {
+        justify-content: space-between;
+        width: 100%;
+      }
+      [data-dsh-desktop-settings-group][data-dsh-desktop-group="recovery"] [data-dsh-desktop-lan-target] {
+        align-self: flex-end;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-lan-row] {
+        align-items: flex-start;
       }
       [data-dsh-desktop-settings-group-title] {
-        color: var(--dsh-controls-muted);
-        font-size: 11px;
+        color: var(--dsh-controls-text);
+        font-size: 12px;
         font-weight: 700;
-        letter-spacing: .06em;
-        margin: 0 0 1px;
-        text-transform: uppercase;
+        letter-spacing: .02em;
+        margin: 0 0 4px;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-advanced] {
-        border-top: 1px solid var(--dsh-controls-border);
-        margin-top: 10px;
-        padding-top: 7px;
+        background: var(--dsh-controls-panel-muted);
+        border: 1px solid var(--dsh-controls-border);
+        border-radius: 14px;
+        grid-column: 1 / -1;
+        margin: 0;
+        padding: 13px 17px;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-advanced] > summary {
         align-items: center;
@@ -280,6 +433,13 @@ window.__ModuleLoader__.load({
         flex: 1;
         font-size: 11px;
         line-height: 1.4;
+      }
+      [data-dsh-desktop-settings] [data-dsh-desktop-advanced] [data-dsh-desktop-settings-group] {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        margin-top: 10px;
+        padding: 10px 0 0;
       }
       /* 安全模式常驻横幅：位于视口底部，第三方插件隔离期间提醒。 */
       [data-dsh-safe-mode-banner] {
@@ -317,6 +477,14 @@ window.__ModuleLoader__.load({
         [data-dsh-desktop-controls] { top: 12px; right: 12px; }
         [data-dsh-desktop-controls] [data-dsh-controls-label] { display: none; }
       }
+      @media (max-width: 900px) {
+        [data-dsh-desktop-settings] { grid-template-columns: 1fr; }
+        [data-dsh-desktop-settings-group][data-dsh-desktop-group],
+        [data-dsh-desktop-settings] [data-dsh-desktop-advanced] {
+          grid-column: 1;
+          grid-row: auto;
+        }
+      }
       @media (prefers-reduced-motion: reduce) {
         [data-dsh-desktop-controls] [data-dsh-controls-trigger] { transition: none; }
       }
@@ -330,14 +498,17 @@ window.__ModuleLoader__.load({
 
     const COPY = {
       zh: {
-        trigger: "扩展入口", title: "扩展入口",
+        trigger: "扩展入口", title: "桌面扩展", panelEyebrow: "DSH DESKTOP", panelCopy: "连接移动设备，或在异常时恢复 Harness。", ready: "已就绪",
+        panelConnect: "连接", panelRecovery: "恢复", panelInfo: "信息",
         about: "关于",
+        aboutDetail: "版本、运行时与项目来源",
         restartHarness: "重启 Harness",
+        restartDetail: "保留设置并重新启动内核",
         unavailable: "请右键窗口或点击系统托盘图标使用扩展入口。",
-        settingsTitle: "扩展设置", settingsCopy: "常用桌面入口与可靠性恢复；托盘和右键菜单也能打开扩展。",
-        groupHabits: "桌面习惯", groupRecovery: "恢复", groupPlugins: "插件", groupOptional: "可选工具",
+        settingsTitle: "扩展设置", settingsCopy: "连接设备、调整桌面习惯；需要时可从这里恢复或维护 Harness。",
+        groupHabits: "桌面习惯", groupServices: "账户与插件", groupRecovery: "恢复", groupPlugins: "插件", groupOptional: "维护与迁移",
         lanSettings: "连接移动设备", lanSettingsDetail: "手机与电脑连接同一局域网，扫码即可进入 Harness Web 界面。",
-        lanStart: "开始配对", lanShowQr: "显示二维码", lanStop: "停止共享",
+        lanStart: "开始配对", lanShowQr: "显示二维码", lanStop: "停止共享", lanPanelDetail: "同一局域网 · 扫码进入 Harness", lanActiveDetail: "局域网入口已开启", lanStopDetail: "关闭当前局域网入口",
         shortcut: "唤起快捷键", record: "重新设置", recording: "请按下快捷键…",
         shortcutHelp: "至少包含一个修饰键，例如 Ctrl + Alt + K。",
         launchAtLogin: "开机启动",
@@ -346,7 +517,7 @@ window.__ModuleLoader__.load({
         screenCapture: "屏幕捕获", screenCaptureDetail: "开启后 Agent 可截屏并作为会话附件（需要视觉模型）；切换后自动重启内核。",
         screenCapturePermission: "尚未授权屏幕录制：请在 系统设置 → 隐私与安全性 → 屏幕录制 中允许 dsh-desktop，然后重试。",
         safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展。",
-        safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式",
+        safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式", safeModeExitDetail: "恢复第三方插件并重新启动",
         market: "插件市场", marketDetail: "社区插件全部由你手动安装；dsh-desktop 不会预装或静默恢复。",
         marketInstall: "安装插件市场", marketReinstall: "重新安装", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketMissing: "尚未安装", marketDamaged: "安装记录或文件不完整", marketFailed: "安装未完成，请检查网络后重试。", marketRestartFailed: "已安装，但重启 Harness 失败；请稍后在恢复页重试。", marketRisk: "将从网络下载并运行第三方社区代码及其安装脚本，请确认来源后继续。", marketConfirm: "确认安装", marketCancel: "取消",
         balance: "余额", recharge: "充值",
@@ -358,7 +529,7 @@ window.__ModuleLoader__.load({
         safeModeSuspect: "疑似插件：{id}（{name}），可在官方「设置 → 插件」中卸载。",
         presetsTitle: "Agent 预设", presetsDetail: "导出或导入 .dshpreset 便携预设包，备份或分享 Agent 预设。",
         presetsExport: "导出预设", presetsImport: "导入预设",
-        advancedTitle: "更多扩展工具", advancedDetail: "屏幕捕获、插件市场、内核和预设",
+        advancedTitle: "高级工具", advancedDetail: "屏幕捕获、内核维护和 Agent 预设",
         presetExported: "已导出 {name}。", presetImported: "已导入 {name}。",
         presetSkipped: "已跳过 {name}。", presetInvalid: "文件无效或操作失败。",
         presetEmpty: "没有可导出的用户预设。",
@@ -366,15 +537,18 @@ window.__ModuleLoader__.load({
         invalid: "快捷键格式不正确。", conflict: "快捷键已被其它应用占用，请换一个。",
       },
       en: {
-        trigger: "Extensions", title: "Extensions",
+        trigger: "Extensions", title: "Desktop tools", panelEyebrow: "DSH DESKTOP", panelCopy: "Connect another device or recover Harness when needed.", ready: "Ready",
+        panelConnect: "Connect", panelRecovery: "Recovery", panelInfo: "Information",
         about: "About",
+        aboutDetail: "Version, runtime, and project source",
         restartHarness: "Restart Harness",
+        restartDetail: "Keep settings and restart the kernel",
         unavailable: "Right-click the window or use the system tray for extensions.",
-        settingsTitle: "Extensions", settingsCopy: "Daily desktop entry points and recovery; the tray and context menu remain available.",
-        groupHabits: "Desktop habits", groupRecovery: "Recovery", groupPlugins: "Plugins", groupOptional: "Optional tools",
+        settingsTitle: "Extensions", settingsCopy: "Connect devices and tune desktop habits; recover or maintain Harness when needed.",
+        groupHabits: "Desktop habits", groupServices: "Account & plugins", groupRecovery: "Recovery", groupPlugins: "Plugins", groupOptional: "Maintenance & migration",
         lanSettings: "Connect a mobile device", lanSettingsDetail: "Same LAN as the computer; scan the QR code to enter the Harness Web UI.",
-        lanStart: "Start pairing", lanShowQr: "Show QR code", lanStop: "Stop sharing",
-        shortcut: "Summon shortcut", record: "Change shortcut", recording: "Press a shortcut…",
+        lanStart: "Start pairing", lanShowQr: "Show QR code", lanStop: "Stop sharing", lanPanelDetail: "Same LAN · scan to enter Harness", lanActiveDetail: "LAN access is active", lanStopDetail: "Close the current LAN entry point",
+        shortcut: "Summon shortcut", record: "Change", recording: "Press a shortcut…",
         shortcutHelp: "Include at least one modifier, such as Ctrl + Alt + K.",
         launchAtLogin: "Launch at login",
         launchHidden: "Start hidden in the tray",
@@ -382,7 +556,7 @@ window.__ModuleLoader__.load({
         screenCapture: "Screen capture", screenCaptureDetail: "Lets the agent capture the screen as conversation attachments (vision model required); the kernel restarts on toggle.",
         screenCapturePermission: "Screen recording is not authorized; allow dsh-desktop in System Settings → Privacy → Screen Recording, then retry.",
         safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; official and built-in extensions only.",
-        safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode",
+        safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode", safeModeExitDetail: "Restore third-party plugins and restart",
         market: "Plugin market", marketDetail: "Community plugins are always installed by you; dsh-desktop never bundles or silently restores them.",
         marketInstall: "Install the market", marketReinstall: "Reinstall", marketInstalledHint: "Installed · open Settings → Plugin Market", marketMissing: "Not installed", marketDamaged: "Install record or files are incomplete", marketFailed: "Install did not finish; check your network and retry.", marketRestartFailed: "Installed, but Harness did not restart; retry from the recovery page later.", marketRisk: "This downloads and runs third-party community code and install scripts. Verify the source before continuing.", marketConfirm: "Confirm install", marketCancel: "Cancel",
         balance: "Balance", recharge: "Recharge",
@@ -394,7 +568,7 @@ window.__ModuleLoader__.load({
         safeModeSuspect: "Suspected plugin: {id} ({name}). Uninstall it from Settings → Plugins.",
         presetsTitle: "Agent presets", presetsDetail: "Export or import .dshpreset portable packages to back up or share agent presets.",
         presetsExport: "Export preset", presetsImport: "Import preset",
-        advancedTitle: "More shell tools", advancedDetail: "Screen capture, plugin market, kernel, and presets",
+        advancedTitle: "Advanced tools", advancedDetail: "Screen capture, kernel maintenance, and agent presets",
         presetExported: "Exported {name}.", presetImported: "Imported {name}.",
         presetSkipped: "Skipped {name}.", presetInvalid: "The file is invalid or the operation failed.",
         presetEmpty: "There is no user preset to export.",
@@ -709,19 +883,21 @@ window.__ModuleLoader__.load({
         children: [
           react_jsx_runtime.jsx("h3", { "data-dsh-desktop-settings-heading": true, children: copy.settingsTitle }),
           react_jsx_runtime.jsx("p", { "data-dsh-desktop-settings-copy": true, children: copy.settingsCopy }),
-          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
+          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, "data-dsh-desktop-group": "habits", children: [
             react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupHabits }),
-          typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-lan-row": true, children: [
+          typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-lan-row": true, "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.lanSettings, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.lanSettingsDetail })] }),
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: lanBusy, onClick: () => void lanAction("startLanPairing"), children: lanState?.running === true ? copy.lanShowQr : copy.lanStart }),
               lanState?.running === true ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-stop": true, "data-dsh-desktop-lan-target": true, disabled: lanBusy, onClick: () => void lanAction("stopLanPairing"), children: copy.lanStop }) : null,
             ] }),
           ] }) : null,
-          react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
+          react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, "data-dsh-desktop-shortcut-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.shortcut, recording ? react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.shortcutHelp }) : null] }),
-            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-shortcut": true, children: recording ? copy.recording : preferences.shortcutLabel }),
-            react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-record": true, disabled: recording, onClick: () => { setMessage(""); setRecording(true); }, children: recording ? "…" : copy.record }),
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-shortcut": true, children: recording ? copy.recording : preferences.shortcutLabel }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-record": true, disabled: recording, onClick: () => { setMessage(""); setRecording(true); }, children: recording ? "…" : copy.record }),
+            ] }),
           ] }),
           preferences.notificationsAvailable === true ? react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.notifications }),
@@ -736,12 +912,35 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.launchHidden === true, onChange: (event) => void update({ launchHidden: event.target.checked }) }),
           ] }) : null,
           ] }),
-          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
-            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupRecovery }),
-          react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
-            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.safeMode, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.safeModeDetail })] }),
-            react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: safeBusy, onClick: () => void safeAction(), children: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
+          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, "data-dsh-desktop-group": "services", children: [
+            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupServices }),
+            typeof bridge?.getBundledPlugins === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
+              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.market, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.marketDetail })] }),
+              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+                react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-detail": true, children: marketState === "installed" ? `${copy.marketInstalledHint}${market.version ? ` · ${market.version}` : ""}` : marketState === "damaged" ? copy.marketDamaged : copy.marketMissing }),
+                marketConfirming ? react_jsx_runtime.jsxs("span", { "data-dsh-market-risk": true, children: [
+                  react_jsx_runtime.jsx("small", { children: copy.marketRisk }),
+                  react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+                    react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => void marketAction(), children: copy.marketConfirm }),
+                    react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => setMarketConfirming(false), children: copy.marketCancel }),
+                  ] }),
+                ] }) : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: requestMarketAction, children: marketBusy ? "…" : marketState === "installed" ? copy.marketReinstall : copy.marketInstall }),
+              ] }),
+            ] }) : null,
+            balanceText !== null ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
+              react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.balance }),
+              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+                react_jsx_runtime.jsx("span", { "data-dsh-desktop-shortcut": true, children: balanceText }),
+                react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, onClick: () => void bridge.desktopAction("openRecharge"), children: copy.recharge }),
+              ] }),
+            ] }) : null,
           ] }),
+          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, "data-dsh-desktop-group": "recovery", children: [
+            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupRecovery }),
+            react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
+              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.safeMode, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.safeModeDetail })] }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: safeBusy, onClick: () => void safeAction(), children: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
+            ] }),
           ] }),
           react_jsx_runtime.jsxs("details", { "data-dsh-desktop-advanced": true, children: [
             react_jsx_runtime.jsxs("summary", { children: [
@@ -754,29 +953,6 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.screenCapture, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.screenCaptureDetail })] }),
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.screenCapture === true, onChange: (event) => void update({ screenCapture: event.target.checked }) }),
           ] }),
-          ] }),
-          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
-            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupPlugins }),
-          typeof bridge?.getBundledPlugins === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
-            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.market, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.marketDetail })] }),
-            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
-              react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-detail": true, children: marketState === "installed" ? `${copy.marketInstalledHint}${market.version ? ` · ${market.version}` : ""}` : marketState === "damaged" ? copy.marketDamaged : copy.marketMissing }),
-              marketConfirming ? react_jsx_runtime.jsxs("span", { "data-dsh-market-risk": true, children: [
-                react_jsx_runtime.jsx("small", { children: copy.marketRisk }),
-                react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
-                  react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => void marketAction(), children: copy.marketConfirm }),
-                  react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => setMarketConfirming(false), children: copy.marketCancel }),
-                ] }),
-              ] }) : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: requestMarketAction, children: marketBusy ? "…" : marketState === "installed" ? copy.marketReinstall : copy.marketInstall }),
-            ] }),
-          ] }) : null,
-          balanceText !== null ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
-            react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.balance }),
-            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
-              react_jsx_runtime.jsx("span", { "data-dsh-desktop-shortcut": true, children: balanceText }),
-              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, onClick: () => void bridge.desktopAction("openRecharge"), children: copy.recharge }),
-            ] }),
-          ] }) : null,
           kernel !== null ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.kernel, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: `${kernel.overlayVersion ?? kernel.bundledVersion ?? "?"}（${kernel.overlayVersion ? copy.kernelOverlay : copy.kernelBundled}）` })] }),
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
@@ -830,6 +1006,24 @@ window.__ModuleLoader__.load({
             setBusy(true);
             void bridge?.desktopAction?.("exitSafeMode").finally(() => setBusy(false));
           }, children: copy.safeModeExit }),
+        ],
+      });
+    }
+
+    function PanelAction({ mark, label, detail, primary = false, disabled = false, onClick }) {
+      return react_jsx_runtime.jsxs("button", {
+        type: "button",
+        "data-dsh-controls-action": true,
+        "data-dsh-controls-action-primary": primary || null,
+        disabled: disabled,
+        onClick: onClick,
+        children: [
+          react_jsx_runtime.jsx("span", { "data-dsh-controls-action-mark": true, "aria-hidden": "true", children: mark }),
+          react_jsx_runtime.jsxs("span", { "data-dsh-controls-action-body": true, children: [
+            react_jsx_runtime.jsx("strong", { "data-dsh-controls-action-title": true, children: label }),
+            react_jsx_runtime.jsx("small", { "data-dsh-controls-action-detail": true, children: detail }),
+          ] }),
+          react_jsx_runtime.jsx("span", { "data-dsh-controls-action-arrow": true, "aria-hidden": "true", children: "›" }),
         ],
       });
     }
@@ -979,17 +1173,35 @@ window.__ModuleLoader__.load({
             ],
           }),
           open ? react_jsx_runtime.jsxs("section", { id: "dsh-desktop-controls-panel", "data-dsh-controls-panel": true, role: "dialog", "aria-label": copy.title, children: [
-            react_jsx_runtime.jsx("h2", { "data-dsh-controls-heading": true, children: copy.title }),
-            startup?.statusLabel ? react_jsx_runtime.jsx("p", { "data-dsh-controls-status": true, "data-dsh-controls-stage": startup?.harnessStage ?? null, role: "status", children: startup.statusLabel }) : null,
-            typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
-              lanState?.running === true ? react_jsx_runtime.jsxs(react.Fragment, { children: [
-                react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("showLanPairing"), children: copy.lanShowQr }),
-                react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("stopLanPairing"), children: copy.lanStop }),
-              ] }) : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("startLanPairing"), children: copy.lanStart }),
-              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke(preferences?.safeMode === true ? "exitSafeMode" : "enterSafeMode"), children: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
-              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("restartHarness"), children: copy.restartHarness }),
-              react_jsx_runtime.jsx("hr", { "data-dsh-controls-separator": true, "aria-hidden": "true" }),
-              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-controls-action": true, disabled: busy !== "", onClick: () => void invoke("showAbout"), children: copy.about }),
+            react_jsx_runtime.jsxs("header", { "data-dsh-controls-panel-head": true, children: [
+              react_jsx_runtime.jsx("span", { "data-dsh-controls-eyebrow": true, children: copy.panelEyebrow }),
+              react_jsx_runtime.jsxs("div", { "data-dsh-controls-title-row": true, children: [
+                react_jsx_runtime.jsx("h2", { "data-dsh-controls-heading": true, children: copy.title }),
+                react_jsx_runtime.jsx("p", { "data-dsh-controls-status": true, "data-dsh-controls-stage": startup?.harnessStage ?? null, role: "status", title: startup?.statusLabel ?? copy.ready, children: startup?.statusLabel ?? copy.ready }),
+              ] }),
+              react_jsx_runtime.jsx("p", { "data-dsh-controls-panel-copy": true, children: copy.panelCopy }),
+            ] }),
+            typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs(react.Fragment, { children: [
+              react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "connect", children: [
+                react_jsx_runtime.jsx("h3", { "data-dsh-controls-group-label": true, children: copy.panelConnect }),
+                react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
+                  lanState?.running === true ? react_jsx_runtime.jsxs(react.Fragment, { children: [
+                    react_jsx_runtime.jsx(PanelAction, { mark: "QR", label: copy.lanShowQr, detail: copy.lanActiveDetail, primary: true, disabled: busy !== "", onClick: () => void invoke("showLanPairing") }),
+                    react_jsx_runtime.jsx(PanelAction, { mark: "OFF", label: copy.lanStop, detail: copy.lanStopDetail, disabled: busy !== "", onClick: () => void invoke("stopLanPairing") }),
+                  ] }) : react_jsx_runtime.jsx(PanelAction, { mark: "LAN", label: copy.lanStart, detail: copy.lanPanelDetail, primary: true, disabled: busy !== "", onClick: () => void invoke("startLanPairing") }),
+                ] }),
+              ] }),
+              react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "recovery", children: [
+                react_jsx_runtime.jsx("h3", { "data-dsh-controls-group-label": true, children: copy.panelRecovery }),
+                react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
+                  react_jsx_runtime.jsx(PanelAction, { mark: "SAFE", label: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart, detail: preferences?.safeMode === true ? copy.safeModeExitDetail : copy.safeModeDetail, disabled: busy !== "", onClick: () => void invoke(preferences?.safeMode === true ? "exitSafeMode" : "enterSafeMode") }),
+                  react_jsx_runtime.jsx(PanelAction, { mark: "↻", label: copy.restartHarness, detail: copy.restartDetail, disabled: busy !== "", onClick: () => void invoke("restartHarness") }),
+                ] }),
+              ] }),
+              react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "info", children: [
+                react_jsx_runtime.jsx("h3", { "data-dsh-controls-group-label": true, children: copy.panelInfo }),
+                react_jsx_runtime.jsx("div", { "data-dsh-controls-actions": true, children: react_jsx_runtime.jsx(PanelAction, { mark: "i", label: copy.about, detail: copy.aboutDetail, disabled: busy !== "", onClick: () => void invoke("showAbout") }) }),
+              ] }),
             ] }) : react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: copy.unavailable }),
           ] }) : null,
         ],

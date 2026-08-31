@@ -34,6 +34,15 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /marketRisk/)
   assert.match(client, /data-dsh-market-risk/)
   assert.match(client, /groupRecovery/)
+  // The overlay and settings page expose an explicit visual hierarchy.
+  assert.match(client, /data-dsh-controls-panel-head/)
+  assert.match(client, /data-dsh-controls-action-detail/)
+  assert.match(client, /panelConnect/)
+  assert.match(client, /panelRecovery/)
+  assert.match(client, /panelInfo/)
+  assert.match(client, /groupServices/)
+  assert.match(client, /data-dsh-desktop-group/)
+  assert.match(client, /data-dsh-desktop-lan-row": true, "data-dsh-desktop-setting-row/)
   assert.match(client, /data-dsh-desktop-advanced/)
   assert.match(client, /advancedTitle/)
   // Balance + kernel overlay rows (decisions 0025/0026).
