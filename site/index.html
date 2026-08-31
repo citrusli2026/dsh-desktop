@@ -40,7 +40,7 @@
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="stylesheet" href="/assets/style.css?v=39" />
+<link rel="stylesheet" href="/assets/style.css?v=40" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -124,7 +124,7 @@
   <span id="top" aria-hidden="true"></span>
 
   <!-- ══ HERO ══ -->
-  <section class="hero">
+  <section class="hero" id="showcase">
     <div class="hero__grid" aria-hidden="true"></div>
     <div class="wrap hero__inner">
       <div class="hero__copy" data-reveal>
@@ -137,96 +137,19 @@
         <p class="hero__social" id="hero-social" hidden></p>
         <p class="hero__meta" id="hero-meta">… · macOS / Windows · <span data-i18n="hero.meta">无需 Node.js</span></p>
       </div>
-
-    </div>
-  </section>
-
-  <!-- ══ 01 实拍展示 ══ -->
-  <section class="section showcase-section" id="showcase">
-    <div class="wrap">
-      <div class="showcase-intro">
-        <div>
-          <p class="sec-marker" data-reveal>01 / <span data-i18n="showcase.marker">真实界面</span></p>
-          <h2 class="sec-title" data-reveal style="--i:1" data-i18n="showcase.title">整体特色，直接看真实界面</h2>
-          <p class="sec-lead" data-reveal style="--i:2" data-i18n="showcase.lead">这里放的都是实际运行界面，不是概念图。</p>
-        </div>
-        <p class="showcase__mode" data-reveal style="--i:2"><span class="showcase__pulse" aria-hidden="true"></span><span data-i18n="showcase.auto">每 6 秒切换 · 悬停暂停</span></p>
-      </div>
-
-      <div class="showcase" data-showcase role="region" aria-roledescription="carousel" aria-label="产品真实界面展示" data-reveal style="--i:3">
-        <div class="showcase__viewport" data-showcase-viewport>
-          <div class="showcase__track" data-showcase-track>
-            <article class="showcase__slide" data-showcase-slide aria-label="第 1 张，共 3 张">
-              <div class="showcase__copy">
-                <p class="showcase__eyebrow">01 / WORKSPACE</p>
-                <h3 data-i18n="showcase.s1.title">官方 Harness 工作区</h3>
-                <p data-i18n="showcase.s1.body">桌面壳负责把官方 Harness 带到窗口、托盘和快捷键里；会话、Agent、工具和模型仍然保持上游体验。</p>
-                <ul data-i18n="showcase.s1.items"><li>内置运行时，安装后直接启动</li><li>原生窗口与 Harness WebUI 同屏工作</li><li>浅色 / 深色主题跟随站点与应用设置</li></ul>
-              </div>
-              <figure class="showcase__frame">
-                <figcaption><span data-i18n="showcase.s1.caption">真实截图 · Harness 主界面</span><span class="showcase__theme-note" data-i18n="showcase.themes">浅色 / 深色</span></figcaption>
-                <button class="showcase__image-button" type="button" data-showcase-zoom aria-label="查看完整截图：Harness 主界面">
-                  <img class="showcase__image showcase__image--light" src="/assets/shots/app-main-zh-light.png?v=1" alt="dsh-desktop 运行中的 DeepSeek Harness 主界面（浅色主题）" width="2560" height="1720" loading="lazy" decoding="async" />
-                  <img class="showcase__image showcase__image--dark" src="/assets/shots/app-main-zh-dark.png?v=1" alt="dsh-desktop 运行中的 DeepSeek Harness 主界面（深色主题）" width="2560" height="1720" loading="lazy" decoding="async" />
-                  <span class="showcase__zoom-hint" aria-hidden="true"><span>⤢</span><span data-i18n="showcase.zoom">点击查看完整截图</span></span>
-                </button>
-              </figure>
-            </article>
-            <article class="showcase__slide" data-showcase-slide aria-label="第 2 张，共 3 张">
-              <div class="showcase__copy">
-                <p class="showcase__eyebrow">02 / SHELL CONTROLS</p>
-                <h3 data-i18n="showcase.s2.title">扩展面板与始终可达的恢复入口</h3>
-                <p data-i18n="showcase.s2.body">窗口菜单隐藏时，右上角的扩展入口仍然清晰可见：配对设备、进入安全模式、重启 Harness 和查看关于信息，都留在同一个桌面壳入口。</p>
-                <ul data-i18n="showcase.s2.items"><li>扩展面板显示当前 Harness 运行状态</li><li>配对、Safe Mode、重启与 About 集中可达</li><li>窗口右键与系统托盘继续提供备用入口</li></ul>
-              </div>
-              <figure class="showcase__frame">
-                <figcaption><span data-i18n="showcase.s2.caption">真实截图 · 扩展控制面板</span><span class="showcase__theme-note" data-i18n="showcase.themes">浅色 / 深色</span></figcaption>
-                <button class="showcase__image-button" type="button" data-showcase-zoom aria-label="查看完整截图：扩展控制面板">
-                  <img class="showcase__image showcase__image--light" src="/assets/shots/app-controls-zh-light.png?v=1" alt="dsh-desktop 运行中的扩展控制面板（浅色主题）" width="2560" height="1720" loading="lazy" decoding="async" />
-                  <img class="showcase__image showcase__image--dark" src="/assets/shots/app-controls-zh-dark.png?v=1" alt="dsh-desktop 运行中的扩展控制面板（深色主题）" width="2560" height="1720" loading="lazy" decoding="async" />
-                  <span class="showcase__zoom-hint" aria-hidden="true"><span>⤢</span><span data-i18n="showcase.zoom">点击查看完整截图</span></span>
-                </button>
-              </figure>
-            </article>
-            <article class="showcase__slide" data-showcase-slide aria-label="第 3 张，共 3 张">
-              <div class="showcase__copy">
-                <p class="showcase__eyebrow">03 / EXTENSIONS SETTINGS</p>
-                <h3 data-i18n="showcase.s3.title">扩展设置，把关键桌面入口放在首屏</h3>
-                <p data-i18n="showcase.s3.body">设置页只放常用入口和可靠性恢复；平台不可用的选项不显示，低频工具收进“更多扩展工具”。</p>
-                <ul data-i18n="showcase.s3.items"><li>配对、快捷键和通知直接可用</li><li>Safe Mode 作为可靠性入口直接可用</li><li>屏幕捕获、插件市场、内核和预设进入二级区域</li></ul>
-              </div>
-              <figure class="showcase__frame">
-                <figcaption><span data-i18n="showcase.s3.caption">真实截图 · 设置 → 扩展设置（核心）</span><span class="showcase__theme-note" data-i18n="showcase.themes">浅色 / 深色</span></figcaption>
-                <button class="showcase__image-button" type="button" data-showcase-zoom aria-label="查看完整截图：扩展设置核心页">
-                  <img class="showcase__image showcase__image--light" src="/assets/shots/app-extension-settings-zh-light.png?v=4" alt="dsh-desktop 扩展设置核心页（浅色主题）" width="2560" height="1720" loading="lazy" decoding="async" />
-                  <img class="showcase__image showcase__image--dark" src="/assets/shots/app-extension-settings-zh-dark.png?v=4" alt="dsh-desktop 扩展设置核心页（深色主题）" width="2560" height="1720" loading="lazy" decoding="async" />
-                  <span class="showcase__zoom-hint" aria-hidden="true"><span>⤢</span><span data-i18n="showcase.zoom">点击查看完整截图</span></span>
-                </button>
-              </figure>
-            </article>
+      <figure class="hero__shot" data-reveal style="--i:1" aria-labelledby="hero-shot-title">
+        <figcaption class="hero__shot-head">
+          <div>
+            <span class="hero__shot-kicker">真实应用截图</span>
+            <strong class="hero__shot-title" id="hero-shot-title">扩展入口，始终可达</strong>
           </div>
+          <span class="hero__shot-theme">浅色 / 深色</span>
+        </figcaption>
+        <div class="hero__shot-frame">
+          <img class="hero__shot-img hero__shot-img--light" src="/assets/shots/app-controls-zh-light.png?v=2" alt="dsh-desktop 扩展控制面板（浅色主题）" width="2560" height="1720" loading="eager" fetchpriority="high" decoding="async" />
+          <img class="hero__shot-img hero__shot-img--dark" src="/assets/shots/app-controls-zh-dark.png?v=2" alt="dsh-desktop 扩展控制面板（深色主题）" width="2560" height="1720" loading="eager" fetchpriority="high" decoding="async" />
         </div>
-        <div class="showcase__footer">
-          <div class="showcase__controls">
-            <button class="showcase__control" type="button" data-showcase-prev aria-label="上一张" title="上一张"><span aria-hidden="true">←</span></button>
-            <button class="showcase__control" type="button" data-showcase-toggle aria-pressed="false" aria-label="暂停自动轮播" title="暂停自动轮播"><span aria-hidden="true">Ⅱ</span></button>
-            <div class="showcase__dots" data-showcase-dots aria-label="选择展示页"></div>
-            <button class="showcase__control" type="button" data-showcase-next aria-label="下一张" title="下一张"><span aria-hidden="true">→</span></button>
-          </div>
-          <span class="showcase__counter" data-showcase-counter aria-live="polite">01 / 03</span>
-        </div>
-      </div>
-      <p class="showcase__note" data-reveal style="--i:4" data-i18n="showcase.note">真实应用构建 · 中英文与明暗主题配对 · 点击查看原图。</p>
-      <dialog class="showcase-lightbox" data-showcase-lightbox aria-labelledby="showcase-lightbox-title">
-        <div class="showcase-lightbox__body">
-          <div class="showcase-lightbox__head">
-            <div><p class="showcase__eyebrow">REAL CAPTURE</p><h3 id="showcase-lightbox-title" data-i18n="showcase.lightboxTitle">完整截图</h3></div>
-            <button class="showcase__control showcase-lightbox__close" type="button" data-showcase-lightbox-close data-i18n="showcase.lightboxClose" aria-label="关闭完整截图" title="关闭完整截图">×</button>
-          </div>
-          <div class="showcase-lightbox__viewport"><img class="showcase-lightbox__image" data-showcase-lightbox-image alt="" /><a class="showcase-lightbox__original" data-showcase-lightbox-link href="#" target="_blank" rel="noopener" data-i18n="showcase.lightboxOpenOriginal">在新标签页打开原图 ↗</a></div>
-          <p class="showcase-lightbox__hint" data-i18n="showcase.lightboxHint">截图保持完整比例；需要像素级细节时，可打开原图。</p>
-        </div>
-      </dialog>
+      </figure>
     </div>
   </section>
 
@@ -479,7 +402,6 @@
   </div>
 </footer>
 
-<script src="/assets/showcase.js?v=3"></script>
 <script type="module" src="/assets/app.js?v=40"></script>
 
 <!-- 下载后提示(校验方式 + 未签名处理 + GitHub Star 邀请),由 app.js 填充 -->

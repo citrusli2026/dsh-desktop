@@ -21,8 +21,8 @@
 <link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en" />
 <link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en" />
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/assets/style.css?v=39" />
-<link rel="stylesheet" href="/assets/seo.css?v=8" />
+<link rel="stylesheet" href="/assets/style.css?v=40" />
+<link rel="stylesheet" href="/assets/seo.css?v=9" />
 <script>
   try {
     var savedTheme = localStorage.getItem('dsh-site-theme')
@@ -40,95 +40,23 @@
   <p class="seo-lead">DSH Desktop is a community-maintained shell with out-of-the-box support: bundled runtime, isolated local data, familiar desktop entry points, and a recovery path when something fails.</p>
   <div class="seo-button-row"><a class="btn btn--primary" href="/en/download">Download DSH Desktop →</a><a class="btn btn--ghost" href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">View source on GitHub</a></div>
 
+  <figure class="hero__shot seo-hero__shot" id="showcase" aria-labelledby="hero-shot-title">
+    <figcaption class="hero__shot-head">
+      <div>
+        <span class="hero__shot-kicker">REAL APP CAPTURE</span>
+        <strong class="hero__shot-title" id="hero-shot-title">Extensions, always within reach</strong>
+      </div>
+      <span class="hero__shot-theme">LIGHT / DARK</span>
+    </figcaption>
+    <div class="hero__shot-frame">
+      <img class="hero__shot-img hero__shot-img--light" src="/assets/shots/app-controls-en-light.png?v=2" alt="DSH Desktop extensions control panel in light mode" width="2560" height="1720" loading="eager" fetchpriority="high" decoding="async" />
+      <img class="hero__shot-img hero__shot-img--dark" src="/assets/shots/app-controls-en-dark.png?v=2" alt="DSH Desktop extensions control panel in dark mode" width="2560" height="1720" loading="eager" fetchpriority="high" decoding="async" />
+    </div>
+  </figure>
+
   <div class="seo-proof-grid" aria-label="Product baseline"><div><b>LOCAL</b><span>Loopback-only runtime</span></div><div><b>ISOLATED</b><span>Separate data by default</span></div><div><b>RECOVERABLE</b><span>Safe Mode and local diagnostics</span></div><div><b>VERIFIABLE</b><span>Public CI and real-app tests</span></div></div>
 
   <div id="scope" class="seo-callout"><p><strong>Product boundary:</strong> the shell owns the desktop window, tray, runtime, supervision, recovery, updates, and local entry points. The official Harness WebUI still owns agents, sessions, tools, models, and plugin behavior. There is no second workbench, chat surface, or project workspace.</p></div>
-
-  <section class="showcase-section" id="showcase">
-    <div class="showcase-intro">
-      <div>
-        <p class="sec-marker">01 / REAL UI</p>
-        <h2 class="sec-title">See the whole shell in real screenshots.</h2>
-        <p class="sec-lead">From the official Harness workspace to desktop preferences, themes, and extension entry points: these are real application captures, not concept mockups.</p>
-      </div>
-      <p class="showcase__mode"><span class="showcase__pulse" aria-hidden="true"></span><span>Auto-advances every 6 seconds · pauses on hover or focus</span></p>
-    </div>
-
-    <div class="showcase" data-showcase role="region" aria-roledescription="carousel" aria-label="Product screenshots">
-      <div class="showcase__viewport" data-showcase-viewport>
-        <div class="showcase__track" data-showcase-track>
-          <article class="showcase__slide" data-showcase-slide aria-label="Slide 1 of 3">
-            <div class="showcase__copy">
-              <p class="showcase__eyebrow">01 / WORKSPACE</p>
-              <h3>Official Harness workspace</h3>
-              <p>The shell brings the official Harness into a native window, tray, and shortcut flow while sessions, agents, tools, and models stay upstream.</p>
-              <ul><li>Bundled runtime, ready after install</li><li>Native window around the Harness WebUI</li><li>Light and dark screenshots follow the selected site theme</li></ul>
-            </div>
-            <figure class="showcase__frame">
-              <figcaption><span>Real capture · Harness workspace</span><span class="showcase__theme-note">LIGHT / DARK</span></figcaption>
-              <button class="showcase__image-button" type="button" data-showcase-zoom aria-label="View full screenshot: Harness workspace">
-                <img class="showcase__image showcase__image--light" src="/assets/shots/app-main-en-light.png?v=1" alt="DSH Desktop running the DeepSeek Harness workspace in light mode" width="2560" height="1720" loading="lazy" decoding="async" />
-                <img class="showcase__image showcase__image--dark" src="/assets/shots/app-main-en-dark.png?v=1" alt="DSH Desktop running the DeepSeek Harness workspace in dark mode" width="2560" height="1720" loading="lazy" decoding="async" />
-                <span class="showcase__zoom-hint" aria-hidden="true"><span>⤢</span><span>Click to view the full screenshot</span></span>
-              </button>
-            </figure>
-          </article>
-          <article class="showcase__slide" data-showcase-slide aria-label="Slide 2 of 3">
-            <div class="showcase__copy">
-              <p class="showcase__eyebrow">02 / SHELL CONTROLS</p>
-              <h3>Extensions panel with recovery always in reach</h3>
-              <p>When the window menu is hidden, the extensions entry stays visible: pair a device, start Safe Mode, restart Harness, or open About from one dependable shell control.</p>
-              <ul><li>Current Harness runtime status stays visible</li><li>Pairing, Safe Mode, restart, and About in one panel</li><li>Window context menu and system tray remain fallback routes</li></ul>
-            </div>
-            <figure class="showcase__frame">
-              <figcaption><span>Real capture · extensions control panel</span><span class="showcase__theme-note">LIGHT / DARK</span></figcaption>
-              <button class="showcase__image-button" type="button" data-showcase-zoom aria-label="View full screenshot: extensions control panel">
-                <img class="showcase__image showcase__image--light" src="/assets/shots/app-controls-en-light.png?v=1" alt="DSH Desktop extensions control panel in light mode" width="2560" height="1720" loading="lazy" decoding="async" />
-                <img class="showcase__image showcase__image--dark" src="/assets/shots/app-controls-en-dark.png?v=1" alt="DSH Desktop extensions control panel in dark mode" width="2560" height="1720" loading="lazy" decoding="async" />
-                <span class="showcase__zoom-hint" aria-hidden="true"><span>⤢</span><span>Click to view the full screenshot</span></span>
-              </button>
-            </figure>
-          </article>
-          <article class="showcase__slide" data-showcase-slide aria-label="Slide 3 of 3">
-            <div class="showcase__copy">
-              <p class="showcase__eyebrow">03 / EXTENSIONS SETTINGS</p>
-              <h3>Extensions settings, focused on the desktop essentials</h3>
-              <p>The first view keeps useful entry points and recovery close; unavailable options are omitted and lower-frequency tools stay under “More shell tools”.</p>
-                <ul><li>Pairing, shortcut, and notifications are ready to use</li><li>Safe Mode is a first-class recovery action</li><li>Screen capture, plugin market, kernel, and presets stay secondary</li></ul>
-            </div>
-            <figure class="showcase__frame">
-              <figcaption><span>Real capture · Settings → Extensions (core)</span><span class="showcase__theme-note">LIGHT / DARK</span></figcaption>
-              <button class="showcase__image-button" type="button" data-showcase-zoom aria-label="View full screenshot: core Extensions settings">
-                <img class="showcase__image showcase__image--light" src="/assets/shots/app-extension-settings-en-light.png?v=4" alt="DSH Desktop core Extensions settings in light mode" width="2560" height="1720" loading="lazy" decoding="async" />
-                <img class="showcase__image showcase__image--dark" src="/assets/shots/app-extension-settings-en-dark.png?v=4" alt="DSH Desktop core Extensions settings in dark mode" width="2560" height="1720" loading="lazy" decoding="async" />
-                <span class="showcase__zoom-hint" aria-hidden="true"><span>⤢</span><span>Click to view the full screenshot</span></span>
-              </button>
-            </figure>
-          </article>
-        </div>
-      </div>
-      <div class="showcase__footer">
-        <div class="showcase__controls">
-          <button class="showcase__control" type="button" data-showcase-prev aria-label="Previous screenshot" title="Previous screenshot"><span aria-hidden="true">←</span></button>
-          <button class="showcase__control" type="button" data-showcase-toggle aria-pressed="false" aria-label="Pause auto-advance" title="Pause auto-advance"><span aria-hidden="true">Ⅱ</span></button>
-          <div class="showcase__dots" data-showcase-dots aria-label="Choose screenshot"></div>
-          <button class="showcase__control" type="button" data-showcase-next aria-label="Next screenshot" title="Next screenshot"><span aria-hidden="true">→</span></button>
-        </div>
-        <span class="showcase__counter" data-showcase-counter aria-live="polite">01 / 03</span>
-      </div>
-    </div>
-    <p class="showcase__note">Real builds · Chinese/English · light/dark pairs · click to view the original.</p>
-    <dialog class="showcase-lightbox" data-showcase-lightbox aria-labelledby="showcase-lightbox-title">
-      <div class="showcase-lightbox__body">
-        <div class="showcase-lightbox__head">
-          <div><p class="showcase__eyebrow">REAL CAPTURE</p><h3 id="showcase-lightbox-title">Full screenshot</h3></div>
-          <button class="showcase__control showcase-lightbox__close" type="button" data-showcase-lightbox-close aria-label="Close full screenshot" title="Close full screenshot">×</button>
-        </div>
-        <div class="showcase-lightbox__viewport"><img class="showcase-lightbox__image" data-showcase-lightbox-image alt="" /><a class="showcase-lightbox__original" data-showcase-lightbox-link href="#" target="_blank" rel="noopener">Open original in a new tab ↗</a></div>
-        <p class="showcase-lightbox__hint">The screenshot keeps its full aspect ratio; open the original when you need native-pixel detail.</p>
-      </div>
-    </dialog>
-  </section>
 
   <section id="plugins" class="access-card" aria-labelledby="plugin-market-title">
     <div class="access-card__copy">
@@ -154,7 +82,6 @@
   <div class="seo-next-links"><a href="/en/download">Download →</a><a href="/en/docs/install">Install guide →</a><a href="/">中文首页 →</a></div>
 </div></main>
 <footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />No affiliation with DeepSeek AI</p><a class="footer__top" href="#main-content">Back to top ↑</a></div><nav class="footer__links" aria-label="Footer links"><a href="/en">Home</a><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a><a href="/">中文</a><a href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">GitHub</a></nav><p class="footer__sync"><span>Static site · deployed on Vercel<br />Release data synced by GitHub Actions</span><br /><span>Documentation hub</span></p></div></footer>
-<script src="/assets/showcase.js?v=3"></script>
 <script src="/assets/site-shell.js?v=2"></script>
 </body>
 </html>

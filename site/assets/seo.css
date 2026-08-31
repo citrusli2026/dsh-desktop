@@ -152,11 +152,7 @@
 .download-source-panel__legal { color: var(--faint) !important; font-size: 13px !important; }
 .download-panel { margin: 28px 0; }
 .seo-article .quickstart__title { margin: 4px 0 18px; padding: 0; border: 0; color: var(--text-bluish); font: 700 24px/1.2 var(--display); }
-
-.seo-article .showcase-intro .showcase__mode { margin: 4px 0 0; font: 11px/1.4 var(--mono); }
-.seo-article .showcase__copy h3 { margin: 0 0 12px; font-size: 22px; }
-.seo-article .showcase__copy li { color: var(--muted); font-size: 13px; }
-.seo-article .showcase__note { margin: 12px 2px 0; color: var(--faint); font-size: 12px; line-height: 1.6; }
+.seo-hero__shot { width: 100%; margin: 34px 0 38px; }
 
 .seo-table-wrap { overflow-x: auto; margin: 22px 0; }
 .seo-table { width: 100%; min-width: 580px; border-collapse: collapse; }
