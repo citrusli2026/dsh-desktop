@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-31T03:06:37.094Z",
+  "generated_at": "2026-08-31T08:40:01.420Z",
   "repo": {
     "full_name": "citrusli2026/dsh-desktop",
     "html_url": "https://github.com/citrusli2026/dsh-desktop",
@@ -7,9 +7,9 @@
     "license": "MIT"
   },
   "stats": {
-    "installer_downloads": 393,
+    "installer_downloads": 397,
     "mac_downloads": 111,
-    "win_downloads": 194,
+    "win_downloads": 198,
     "linux_downloads": 88,
     "releases": 31
   },
@@ -33,7 +33,7 @@
       {
         "name": "dsh-desktop-0.1.2-alpha.2.shell.0-amd64.deb.sha256",
         "size": 110,
-        "downloads": 5,
+        "downloads": 8,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-alpha.2.shell.0/dsh-desktop-0.1.2-alpha.2.shell.0-amd64.deb.sha256",
         "kind": "checksum",
         "sha256": "9f19e5f9acb2748bd7e85d0dae978caa0f375c19fa85abf5f7b3ac1838933105",
@@ -53,7 +53,7 @@
       {
         "name": "dsh-desktop-0.1.2-alpha.2.shell.0-arm64-mac.dmg.sha256",
         "size": 114,
-        "downloads": 5,
+        "downloads": 8,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-alpha.2.shell.0/dsh-desktop-0.1.2-alpha.2.shell.0-arm64-mac.dmg.sha256",
         "kind": "checksum",
         "sha256": "2b0d63afba4a7030e348d013f7783a7a6a9e849eb152f74610d2d52002a13514",
@@ -63,7 +63,7 @@
       {
         "name": "dsh-desktop-setup-0.1.2-alpha.2.shell.0.exe",
         "size": 164641168,
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-alpha.2.shell.0/dsh-desktop-setup-0.1.2-alpha.2.shell.0.exe",
         "kind": "installer",
         "sha256": null,
@@ -73,7 +73,7 @@
       {
         "name": "dsh-desktop-setup-0.1.2-alpha.2.shell.0.exe.sha256",
         "size": 110,
-        "downloads": 4,
+        "downloads": 8,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-alpha.2.shell.0/dsh-desktop-setup-0.1.2-alpha.2.shell.0.exe.sha256",
         "kind": "checksum",
         "sha256": "a14a6a1827beeeb1c730cf0387c96ecd7aed0de7690106a5ccdcdeef0466cc76",
