@@ -1,8 +1,9 @@
 /** Capture the website's product screenshots from the current packaged app. */
 import { _electron as electron, expect } from '@playwright/test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import sharp from 'sharp'
 import { locatePackagedExecutable } from './packaged-locator.mjs'
 
 const outputDir = resolve(process.argv[2] ?? 'site/assets/shots')
@@ -89,10 +90,22 @@ async function capture(locale, theme) {
     const advanced = page.locator('[data-dsh-desktop-advanced]').first()
     await expect(advanced).toHaveCount(1)
     expect(await advanced.getAttribute('open')).toBe(null)
+    await expect(page.locator('[data-dsh-desktop-settings]').getByText(locale === 'en' ? 'Status' : '状态', { exact: true })).toHaveCount(0)
+    await expect(page.locator('[data-dsh-desktop-settings]').getByText(locale === 'en' ? 'Start in Safe Mode' : '以安全模式启动', { exact: true })).toHaveCount(1)
+    const settingsCapture = join(captureRoot, `app-extension-settings-${suffix}.png`)
     await options.screenshot({
-      path: join(outputDir, `app-extension-settings-${suffix}.png`),
+      path: settingsCapture,
       animations: 'disabled',
     })
+    // The host settings surface is taller than the two 16:9-ish app captures.
+    // Keep the real controls, but crop the quiet lower area so every carousel
+    // frame has the same 2560x1720 aspect ratio.
+    const normalizedSettings = await sharp(settingsCapture)
+      .resize(2560, 1720, { fit: 'cover', position: 'top' })
+      .png()
+      .toBuffer()
+    await writeFile(join(outputDir, `app-extension-settings-${suffix}.png`), normalizedSettings)
+    await unlink(settingsCapture)
     console.log(`captured ${suffix}`)
   } finally {
     await app.close().catch(() => {})

@@ -93,14 +93,14 @@
             <div class="showcase__copy">
               <p class="showcase__eyebrow">03 / EXTENSIONS SETTINGS</p>
               <h3>Extensions settings, focused on the desktop essentials</h3>
-              <p>The first view follows daily-use priority: status and data first, pairing, shortcuts, and notifications close at hand. Unsupported startup controls are omitted instead of shown as inert options; less frequent tools live under “More shell tools”.</p>
-                <ul><li>Status, data directory, and the manual plugin boundary at a glance</li><li>Pairing, shortcut, and notification controls up front; startup controls appear only in supported packaged macOS / Windows builds</li><li>Safe Mode, screen capture, plugin market, kernel, and presets behind a secondary section</li></ul>
+              <p>The first view keeps useful entry points and recovery close; unavailable options are omitted and lower-frequency tools stay under “More shell tools”.</p>
+                <ul><li>Pairing, shortcut, and notifications are ready to use</li><li>Safe Mode is a first-class recovery action</li><li>Screen capture, plugin market, kernel, and presets stay secondary</li></ul>
             </div>
             <figure class="showcase__frame">
               <figcaption><span>Real capture · Settings → Extensions (core)</span><span class="showcase__theme-note">LIGHT / DARK</span></figcaption>
               <button class="showcase__image-button" type="button" data-showcase-zoom aria-label="View full screenshot: core Extensions settings">
-                <img class="showcase__image showcase__image--light" src="/assets/shots/app-extension-settings-en-light.png?v=2" alt="DSH Desktop core Extensions settings in light mode" width="1224" height="1492" loading="lazy" decoding="async" />
-                <img class="showcase__image showcase__image--dark" src="/assets/shots/app-extension-settings-en-dark.png?v=2" alt="DSH Desktop core Extensions settings in dark mode" width="1224" height="1492" loading="lazy" decoding="async" />
+                <img class="showcase__image showcase__image--light" src="/assets/shots/app-extension-settings-en-light.png?v=4" alt="DSH Desktop core Extensions settings in light mode" width="2560" height="1720" loading="lazy" decoding="async" />
+                <img class="showcase__image showcase__image--dark" src="/assets/shots/app-extension-settings-en-dark.png?v=4" alt="DSH Desktop core Extensions settings in dark mode" width="2560" height="1720" loading="lazy" decoding="async" />
                 <span class="showcase__zoom-hint" aria-hidden="true"><span>⤢</span><span>Click to view the full screenshot</span></span>
               </button>
             </figure>
@@ -117,7 +117,7 @@
         <span class="showcase__counter" data-showcase-counter aria-live="polite">01 / 03</span>
       </div>
     </div>
-    <p class="showcase__note">Captured from real application builds. Chinese/English and light/dark screenshots are paired with the app state; the Extensions card shows the focused core view, with less frequent tools tucked behind the app’s secondary section. Click any screenshot to open the original.</p>
+    <p class="showcase__note">Real builds · Chinese/English · light/dark pairs · click to view the original.</p>
     <dialog class="showcase-lightbox" data-showcase-lightbox aria-labelledby="showcase-lightbox-title">
       <div class="showcase-lightbox__body">
         <div class="showcase-lightbox__head">
@@ -130,60 +130,11 @@
     </dialog>
   </section>
 
-  <section class="access-card" aria-labelledby="windows-access-title">
-    <div class="access-card__copy">
-      <p class="access-card__eyebrow">WINDOWS ACCESS</p>
-      <h2 id="windows-access-title">The menu can hide. Your controls don't.</h2>
-      <p>When Windows hides the title-bar menu, the <code>⋮</code> extension entry stays visible for pairing devices, full screen, logs, and diagnostics, with About last. Right-click anywhere in the window or use the system tray for the complete extension fallback.</p>
-    </div>
-    <div class="access-card__routes" aria-label="Windows extension entry">
-      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">⋮</span><div><b>Extension entry</b><span>Pair a device · Fullscreen · Logs · Diagnostics</span></div></div>
-      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">Right-click</span><div><b>Window context menu</b><span>Available from any page</span></div></div>
-      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">Tray</span><div><b>System tray</b><span>Still available while the window recovers</span></div></div>
-    </div>
-  </section>
-
-  <section class="access-card" aria-labelledby="shortcut-title">
-    <div class="access-card__copy">
-      <p class="access-card__eyebrow">DESKTOP SHORTCUT</p>
-      <h2 id="shortcut-title">Return without hunting for the window.</h2>
-      <p>Hide dsh-desktop to the tray, then press your summon shortcut from any app to show and focus the desktop app. It defaults to <code>Ctrl/Cmd + Shift + Space</code>; if another app owns it, the tray and context menu remain available.</p>
-    </div>
-    <div class="access-card__routes" aria-label="Desktop summon shortcut">
-      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">⌘/Ctrl</span><div><b>One global shortcut</b><span>Show and focus the desktop app</span></div></div>
-      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">Tray</span><div><b>Safe fallback</b><span>A conflict never blocks Harness startup</span></div></div>
-    </div>
-  </section>
-
-  <section class="access-card" aria-labelledby="desktop-preferences-title">
-    <div class="access-card__copy">
-      <p class="access-card__eyebrow">DESKTOP PREFERENCES</p>
-      <h2 id="desktop-preferences-title">Make the shell fit your day.</h2>
-      <p>Open Settings → Extensions to record a summon shortcut, opt into launch at login, start hidden in the tray, and control local status notices. Preferences stay on this device.</p>
-    </div>
-    <div class="access-card__routes" aria-label="Desktop preferences">
-      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">⌘/Ctrl</span><div><b>Custom shortcut</b><span>Record a combination and see conflicts clearly</span></div></div>
-      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">ON/OFF</span><div><b>Startup and notices</b><span>Optional, local, and easy to turn off</span></div></div>
-    </div>
-  </section>
-
-  <section class="access-card" aria-labelledby="desktop-notifications-title">
-    <div class="access-card__copy">
-      <p class="access-card__eyebrow">DESKTOP NOTIFICATIONS</p>
-      <h2 id="desktop-notifications-title">Finished, failed, or waiting on you — you will know.</h2>
-      <p>While the window is unfocused or tucked into the tray, system notices report sessions completing, failing, stopping, or waiting for your confirmation. They use only the public Harness session and job state; click a notice to summon the desktop app back.</p>
-    </div>
-    <div class="access-card__routes" aria-label="Desktop status notices">
-      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">CLICK</span><div><b>Notices while unfocused</b><span>Click one to show and focus dsh-desktop</span></div></div>
-      <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">OFF</span><div><b>Local and optional</b><span>Disable in Settings → Extensions; no screen reads, no uploads</span></div></div>
-    </div>
-  </section>
-
   <section id="plugins" class="access-card" aria-labelledby="plugin-market-title">
     <div class="access-card__copy">
       <p class="access-card__eyebrow">PLUGIN MARKET</p>
       <h2 id="plugin-market-title">Thousands of community plugins. You choose every one.</h2>
-      <p>Community plugins are not part of the installer and never appear silently on first launch. Manually install dsh-market from Settings → Extensions → Plugin market, then use Harness Settings → Plugin Market to install the plugins you choose. Plugins that need build scripts ask for your approval first, and Safe Mode quarantines third-party plugins if anything misbehaves.</p>
+      <p>Community plugins are not part of the installer. Manually install dsh-market first, then choose plugins and themes from Harness Settings → Plugin Market; Safe Mode quarantines third-party plugins if needed.</p>
     </div>
     <div class="access-card__routes" aria-label="Plugin market">
       <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">⚙</span><div><b>Settings → Plugin Market</b><span>Browse, install, and update in one click</span></div></div>
@@ -192,9 +143,9 @@
   </section>
 
   <h2 id="capabilities">What the desktop shell adds</h2>
-  <ul><li>Bundled runtime and one-click startup for Windows, macOS, and Linux releases.</li><li>Native window, tray behavior, lifecycle supervision, and recovery diagnostics.</li><li>Custom global shortcut, optional launch-at-login, and local status notices from Settings → Extensions.</li><li>The community plugin market (dsh-market) with thousands of plugins and themes; install dsh-market manually first, then choose plugins from Harness settings.</li><li>Isolated desktop data at <code>~/.dsh-desktop</code>, separate from the CLI by default.</li><li>Sandboxed renderer boundaries while the upstream Harness Web UI remains the source of agent behavior.</li></ul>
+  <ul><li>Bundled runtime and one-click startup across Windows, macOS, and Linux.</li><li>Native window, tray entry, supervision, and recovery diagnostics.</li><li>Optional shortcut, launch-at-login, and local notices in Settings → Extensions.</li><li>A manual-first community plugin market with thousands of choices.</li><li>Isolated <code>~/.dsh-desktop</code> data and a constrained renderer; Harness remains the source of agent behavior.</li></ul>
 
-  <section class="latest-card" aria-labelledby="latest-title"><div class="latest-card__copy"><p class="sec-marker">CURRENT RELEASE FOCUS</p><h2 id="latest-title">Reliability you can see and act on.</h2><p>The current release line closes the desktop shell loop without adding a second Agent product.</p></div><ul><li><b>Clearer state:</b> desktop entry, tray, and settings share the same Harness, Safe Mode, and update status.</li><li><b>Direct recovery:</b> retry startup, enter Safe Mode, open logs, or export a local diagnostic report.</li><li><b>Explicit plugins:</b> the installer contains no community plugins; dsh-market and every plugin are user-installed.</li><li><b>Safer updates:</b> kernel switches use a health boot check and return to the bundled version when needed.</li></ul></section>
+  <section class="latest-card" aria-labelledby="latest-title"><div class="latest-card__copy"><p class="sec-marker">CURRENT RELEASE FOCUS</p><h2 id="latest-title">Reliability you can see and act on.</h2><p>The release line closes the desktop shell loop without adding a second Agent product.</p></div><ul><li><b>Clear state:</b> desktop entry, tray, and settings agree.</li><li><b>Direct recovery:</b> retry, Safe Mode, logs, and diagnostics stay close.</li><li><b>Explicit plugins:</b> the installer contains no community plugins; every choice is manual.</li></ul></section>
 
   <h2 id="support">Start with the right guide</h2>
   <div class="seo-download-grid"><article class="seo-card"><h3>Download</h3><p>Choose a current installer and a mirror for your platform.</p><div class="seo-card__links"><a class="btn btn--primary btn--sm" href="/en/download">Open download page</a></div></article><article class="seo-card"><h3>Install</h3><p>Follow first-launch steps and configure your model provider.</p><div class="seo-card__links"><a class="btn btn--ghost btn--sm" href="/en/docs/install">Read install guide</a></div></article><article class="seo-card"><h3>FAQ</h3><p>Find answers about signing, data isolation, API keys, and checksums.</p><div class="seo-card__links"><a class="btn btn--ghost btn--sm" href="/en/docs/faq">Read FAQ</a></div></article></div>

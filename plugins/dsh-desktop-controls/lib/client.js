@@ -158,72 +158,30 @@ window.__ModuleLoader__.load({
         line-height: 1.4;
         margin: 0 0 6px;
       }
-      [data-dsh-desktop-settings] [data-dsh-desktop-settings-copy] { margin: 0 0 14px; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-settings-copy] { margin: 0 0 10px; }
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-row] {
         align-items: center;
         border-bottom: 1px solid var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
         display: flex;
         gap: 12px;
         justify-content: space-between;
-        min-height: 44px;
-        padding: 8px 0;
+        min-height: 36px;
+        padding: 5px 0;
         margin: 0;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-row]:last-child { border-bottom: 0; }
-      [data-dsh-desktop-settings] [data-dsh-desktop-status-summary] {
-        display: grid;
-        gap: 0;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        margin-top: 0;
-      }
-      [data-dsh-desktop-settings] [data-dsh-desktop-status-item] {
-        align-items: baseline;
-        background: transparent;
-        border: 0;
-        border-left: 1px solid color-mix(in srgb, var(--dsh-controls-accent) 20%, var(--dsh-controls-border));
-        border-radius: 0;
-        display: flex;
-        gap: 6px;
-        min-width: 0;
-        padding: 1px 10px;
-      }
-      [data-dsh-desktop-settings] [data-dsh-desktop-status-item]:first-child {
-        border-left: 0;
-        padding-left: 0;
-      }
-      [data-dsh-desktop-settings] [data-dsh-desktop-status-item] strong {
-        color: var(--dsh-controls-muted);
-        display: inline;
-        flex: 0 0 auto;
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: .06em;
-        margin: 0;
-        text-transform: uppercase;
-      }
-      [data-dsh-desktop-settings] [data-dsh-desktop-status-item] > span,
-      [data-dsh-desktop-settings] [data-dsh-desktop-status-item] > code {
-        display: block;
-        font-size: 12px;
-        line-height: 1.35;
-        overflow: hidden;
-        min-width: 0;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      [data-dsh-desktop-settings] [data-dsh-desktop-status-item] > code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-label] {
         color: var(--dsw-alias-label-primary, #1f232b);
         display: block;
-        font-size: 13.5px;
+        font-size: 13px;
         line-height: 1.4;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-setting-detail] {
         color: var(--dsw-alias-label-secondary, #6d7380);
         display: block;
-        font-size: 12px;
-        line-height: 1.5;
-        margin-top: 2px;
+        font-size: 11px;
+        line-height: 1.35;
+        margin-top: 1px;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-shortcut] {
         background: var(--dsw-alias-fill-l2, rgba(31, 35, 43, .08));
@@ -241,7 +199,7 @@ window.__ModuleLoader__.load({
         color: var(--dsw-alias-label-primary, #1f232b);
         cursor: pointer;
         font-size: 12.5px;
-        padding: 6px 11px;
+        padding: 5px 10px;
         white-space: nowrap;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-record]:hover,
@@ -274,32 +232,23 @@ window.__ModuleLoader__.load({
         line-height: 1.4;
         margin: 10px 0 0;
       }
-      [data-dsh-desktop-onboarding] {
-        align-items: center;
-        background: color-mix(in srgb, var(--dsh-controls-accent) 7%, transparent);
-        border: 1px solid color-mix(in srgb, var(--dsh-controls-accent) 18%, var(--dsh-controls-border));
-        border-radius: 10px;
-        display: grid;
-        margin: 0 0 12px;
-        padding: 7px 10px;
-      }
       [data-dsh-desktop-settings-group] {
         border-top: 1px solid var(--dsh-controls-border);
-        margin-top: 14px;
-        padding-top: 10px;
+        margin-top: 10px;
+        padding-top: 7px;
       }
       [data-dsh-desktop-settings-group-title] {
         color: var(--dsh-controls-muted);
         font-size: 11px;
         font-weight: 700;
         letter-spacing: .06em;
-        margin: 0 0 2px;
+        margin: 0 0 1px;
         text-transform: uppercase;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-advanced] {
         border-top: 1px solid var(--dsh-controls-border);
-        margin-top: 14px;
-        padding-top: 10px;
+        margin-top: 10px;
+        padding-top: 7px;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-advanced] > summary {
         align-items: center;
@@ -367,17 +316,6 @@ window.__ModuleLoader__.load({
       @media (max-width: 680px) {
         [data-dsh-desktop-controls] { top: 12px; right: 12px; }
         [data-dsh-desktop-controls] [data-dsh-controls-label] { display: none; }
-        [data-dsh-desktop-settings] [data-dsh-desktop-status-summary] { grid-template-columns: 1fr; }
-        [data-dsh-desktop-settings] [data-dsh-desktop-status-item],
-        [data-dsh-desktop-settings] [data-dsh-desktop-status-item]:first-child {
-          border-left: 0;
-          border-top: 1px solid color-mix(in srgb, var(--dsh-controls-accent) 20%, var(--dsh-controls-border));
-          padding: 7px 0 1px;
-        }
-        [data-dsh-desktop-settings] [data-dsh-desktop-status-item]:first-child {
-          border-top: 0;
-          padding-top: 1px;
-        }
       }
       @media (prefers-reduced-motion: reduce) {
         [data-dsh-desktop-controls] [data-dsh-controls-trigger] { transition: none; }
@@ -396,12 +334,7 @@ window.__ModuleLoader__.load({
         about: "关于",
         restartHarness: "重启 Harness",
         unavailable: "请右键窗口或点击系统托盘图标使用扩展入口。",
-        settingsTitle: "扩展设置", settingsCopy: "把本机桌面习惯放在这里；系统托盘和右键窗口也能进入扩展入口。",
-        harnessReady: "官方 Harness 已就绪",
-        harnessStarting: "官方 Harness 正在启动",
-        statusLabel: "状态", dataLabel: "数据", marketLabel: "插件市场", marketReady: "已安装", marketManual: "需手动安装",
-        dataDirectory: "数据目录：",
-        manualMarket: "插件市场由你手动安装",
+        settingsTitle: "扩展设置", settingsCopy: "常用桌面入口与可靠性恢复；托盘和右键菜单也能打开扩展。",
         groupHabits: "桌面习惯", groupRecovery: "恢复", groupPlugins: "插件", groupOptional: "可选工具",
         lanSettings: "连接移动设备", lanSettingsDetail: "手机与电脑连接同一局域网，扫码即可进入 Harness Web 界面。",
         lanStart: "开始配对", lanShowQr: "显示二维码", lanStop: "停止共享",
@@ -425,7 +358,7 @@ window.__ModuleLoader__.load({
         safeModeSuspect: "疑似插件：{id}（{name}），可在官方「设置 → 插件」中卸载。",
         presetsTitle: "Agent 预设", presetsDetail: "导出或导入 .dshpreset 便携预设包，备份或分享 Agent 预设。",
         presetsExport: "导出预设", presetsImport: "导入预设",
-        advancedTitle: "更多扩展工具", advancedDetail: "安全模式、屏幕捕获、插件市场、内核和预设",
+        advancedTitle: "更多扩展工具", advancedDetail: "屏幕捕获、插件市场、内核和预设",
         presetExported: "已导出 {name}。", presetImported: "已导入 {name}。",
         presetSkipped: "已跳过 {name}。", presetInvalid: "文件无效或操作失败。",
         presetEmpty: "没有可导出的用户预设。",
@@ -437,12 +370,7 @@ window.__ModuleLoader__.load({
         about: "About",
         restartHarness: "Restart Harness",
         unavailable: "Right-click the window or use the system tray for extensions.",
-        settingsTitle: "Extensions", settingsCopy: "Keep desktop habits on this device; the tray and right-click menu remain alternate extension entry points.",
-        harnessReady: "Official Harness is ready",
-        harnessStarting: "Official Harness is starting",
-        statusLabel: "Status", dataLabel: "Data", marketLabel: "Plugin market", marketReady: "Installed", marketManual: "Manual install",
-        dataDirectory: "Data directory:",
-        manualMarket: "Install the plugin market manually",
+        settingsTitle: "Extensions", settingsCopy: "Daily desktop entry points and recovery; the tray and context menu remain available.",
         groupHabits: "Desktop habits", groupRecovery: "Recovery", groupPlugins: "Plugins", groupOptional: "Optional tools",
         lanSettings: "Connect a mobile device", lanSettingsDetail: "Same LAN as the computer; scan the QR code to enter the Harness Web UI.",
         lanStart: "Start pairing", lanShowQr: "Show QR code", lanStop: "Stop sharing",
@@ -466,7 +394,7 @@ window.__ModuleLoader__.load({
         safeModeSuspect: "Suspected plugin: {id} ({name}). Uninstall it from Settings → Plugins.",
         presetsTitle: "Agent presets", presetsDetail: "Export or import .dshpreset portable packages to back up or share agent presets.",
         presetsExport: "Export preset", presetsImport: "Import preset",
-        advancedTitle: "More shell tools", advancedDetail: "Safe Mode, screen capture, plugin market, kernel, and presets",
+        advancedTitle: "More shell tools", advancedDetail: "Screen capture, plugin market, kernel, and presets",
         presetExported: "Exported {name}.", presetImported: "Imported {name}.",
         presetSkipped: "Skipped {name}.", presetInvalid: "The file is invalid or the operation failed.",
         presetEmpty: "There is no user preset to export.",
@@ -776,29 +704,11 @@ window.__ModuleLoader__.load({
       const canLaunch = preferences.launchAtLoginAvailable === true;
       const market = marketStatus ?? startup?.market ?? { state: "missing" };
       const marketState = market.state ?? "missing";
-      const currentStatus = startup?.statusLabel ?? (startup?.harnessPhase === "ready" ? copy.harnessReady : copy.harnessStarting);
-      const compactStatus = currentStatus.replace(/^[^:：]+[:：]\s*/, "");
       return react_jsx_runtime.jsxs("div", {
         "data-dsh-desktop-settings": true,
         children: [
           react_jsx_runtime.jsx("h3", { "data-dsh-desktop-settings-heading": true, children: copy.settingsTitle }),
           react_jsx_runtime.jsx("p", { "data-dsh-desktop-settings-copy": true, children: copy.settingsCopy }),
-          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-onboarding": true, "aria-label": copy.statusLabel, children: [
-            react_jsx_runtime.jsxs("div", { "data-dsh-desktop-status-summary": true, children: [
-              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-status-item": true, children: [
-                react_jsx_runtime.jsx("strong", { children: copy.statusLabel }),
-                react_jsx_runtime.jsx("span", { "data-dsh-onboarding-stage": startup?.harnessStage ?? null, "data-dsh-onboarding-done": startup?.harnessPhase === "ready" || null, "data-dsh-onboarding-pending": startup?.harnessPhase !== "ready" || null, children: compactStatus }),
-              ] }),
-              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-status-item": true, children: [
-                react_jsx_runtime.jsx("strong", { children: copy.dataLabel }),
-                react_jsx_runtime.jsx("code", { children: startup?.dshHome ?? "~/.dsh-desktop" }),
-              ] }),
-              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-status-item": true, children: [
-                react_jsx_runtime.jsx("strong", { children: copy.marketLabel }),
-                react_jsx_runtime.jsx("span", { "data-dsh-onboarding-done": marketState === "installed" || null, "data-dsh-onboarding-pending": marketState !== "installed" || null, children: marketState === "installed" ? copy.marketReady : marketState === "damaged" ? copy.marketDamaged : copy.marketManual }),
-              ] }),
-            ] }),
-          ] }),
           react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
             react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupHabits }),
           typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-lan-row": true, children: [
@@ -826,11 +736,6 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.launchHidden === true, onChange: (event) => void update({ launchHidden: event.target.checked }) }),
           ] }) : null,
           ] }),
-          react_jsx_runtime.jsxs("details", { "data-dsh-desktop-advanced": true, children: [
-            react_jsx_runtime.jsxs("summary", { children: [
-              react_jsx_runtime.jsx("span", { children: copy.advancedTitle }),
-              react_jsx_runtime.jsx("small", { children: copy.advancedDetail }),
-            ] }),
           react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
             react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupRecovery }),
           react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [
@@ -838,6 +743,11 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: safeBusy, onClick: () => void safeAction(), children: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart }),
           ] }),
           ] }),
+          react_jsx_runtime.jsxs("details", { "data-dsh-desktop-advanced": true, children: [
+            react_jsx_runtime.jsxs("summary", { children: [
+              react_jsx_runtime.jsx("span", { children: copy.advancedTitle }),
+              react_jsx_runtime.jsx("small", { children: copy.advancedDetail }),
+            ] }),
           react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, children: [
             react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupOptional }),
           react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
