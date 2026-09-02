@@ -19,7 +19,7 @@
     "@deepseek-ai/dsh-client-ui-primitives": "^0.1.2-alpha.3",
     "@deepseek-ai/dsh-client-ui-slots": "^0.1.2-alpha.3",
     "react-dom": "18.3.1",
-    "pnpm": "11.8.0",
+    "pnpm": "11.11.0",
     "react": "18.3.1",
     "@deepseek-ai/cordis-plugin-group": "^1.0.1",
     "@deepseek-ai/dsh-anonymous-user-id": "^0.1.2-alpha.3",
