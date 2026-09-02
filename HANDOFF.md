@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-09-01。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-09-02。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.2-alpha.3.shell.0`（2026-09-01 已发布；内核升级至 `0.1.2-alpha.3`，壳修订归零） |
-| 已发布 | ✅ `0.1.2-alpha.3.shell.0`（2026-09-01，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 184 项单测、类型检查、runtime/site 门禁、构建全绿；Release verify E2E 11 passed / 2 条件 skip，扩展浮层与设置页中英文/明暗真实应用截图已人工检查 |
-| 核心发布 | ✅ `v0.1.2-alpha.3.shell.0` Release 严格 8 文件门禁、attestation 核验、三平台 packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-alpha.3.shell.0`（Linux 只 deb：dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.2-alpha.3.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `c2e9ea7`） |
-| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；累计安装包下载 461（mac 125 / win 243 / linux 93） |
+| 最新代码基线 | ✅ `0.1.2-alpha.4.shell.3`（2026-09-02 已发布；内核 `0.1.2-alpha.4`，壳修订 3） |
+| 已发布 | ✅ `0.1.2-alpha.4.shell.3`（2026-09-02，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 本地门禁 | ✅ 193 项单测、类型检查、runtime/site 门禁、构建全绿；dev/packaged/real Harness/Safe Mode/offline + real market/cross-version upgrade E2E 通过 |
+| 核心发布 | ✅ `v0.1.2-alpha.4.shell.3` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-alpha.4.shell.3`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.2-alpha.4.shell.3` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `08dd85d`） |
+| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；本次数据生成时累计安装包下载 461（mac 132 / win 228 / linux 101） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -52,24 +52,25 @@
 ```text
 main push → CI + Vercel
 tag push  → Release verify
-             → macOS / Windows 并行打包并启动自身 Harness
-             → 2 安装包 + 2 哈希 + 2 Windows updater 小文件门禁
+             → macOS / Windows / Linux 并行打包并启动自身 Harness
+             → 3 安装包 + 3 哈希 + 2 Windows updater 小文件门禁
              → GitHub Release
                 ├─ Site Data Refresh → main/release.json → Vercel
                 ├─ Release Mirrors → R2（可失败、不中断主发布）
-                └─ GitCode 镜像 = 维护者授权：复用已登录浏览器会话
-                   上传 dmg / exe / hashes，再手动触发一次 Site Data Refresh
+                └─ GitCode 镜像 = 维护者授权：优先本机 mirror-gitcode.mjs
+                   上传 dmg / exe / deb / hashes；backfill 与登录浏览器为备用
 ```
 
 GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名 URL 过期
 502）；拉取式流水线方案评估后放弃，决策与过程见 docs/decisions/0008 第二
 修订。当前主方案为 **`scripts/mirror-gitcode.mjs`（本机直连，2026-08-22
-落地）**：一条命令完成 探测→下载(经 GH_PROXY_PREFIX)→上传(v5 API)→校验，
+落地）**：一条命令完成 探测→下载（GH_SOCKS5 / GH_PROXY_PREFIX）→上传(v5 API)→校验，
 本机到 GitCode 实测 2.2 MB/s（runner 跨境 160 KB/s 的 13 倍）；幂等可重跑、
-`--check-only` 免 token 探测。上传链路待 `GITCODE_TOKEN` 本机配置后实测
-（探测链路已验 6/6 present）。fallback 依次为 gitcode-backfill workflow 与
+`--check-only` 免 token 探测。Release CDN 下载过慢时可从同一 Release run 的
+Actions artifact 取得原始产物，核对公开 SHA-256 后用显式本地文件模式上传。
+fallback 依次为 gitcode-backfill workflow 与
 `.agents/skills/gitcode-release-publisher/` 浏览器会话（复用已登录 GitCode
-浏览器会话完成附件预留、签名存储上传和 Release 创建）；只上传两个面向用户的
+浏览器会话完成附件预留、签名存储上传和 Release 创建）；只上传三个面向用户的
 安装包与校验文件。blockmap / latest*.yml 不镜像，auto-updater 始终直连 GitHub。
 官网数据生成器逐资产用 range GET 探测 GitCode；中文页面在镜像 URL 真实
 可下载时并列展示镜像与 GitHub 两个下载源，否则只展示 GitHub。不要把带
@@ -85,8 +86,8 @@ GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名
 | 校验汇总制品 | `node scripts/check-release-assets.mjs <目录> <v-tag>` |
 | 写发布说明 | `node scripts/write-release-notes.mjs v<tag>` → 填完随 bump 提交；CI 缺文件/留占位符即失败 |
 | 手动刷新官网数据 | Actions → Site Data Refresh → Run workflow |
-| 补齐 GitCode 镜像 | 使用 `$gitcode-release-publisher` 上传 dmg/exe 与 `.sha256` → 再触发一次 Site Data Refresh |
-| 回补历史版本 | 同上（需维护者已登录 GitCode）；GitHub 侧 GitCode Mirror Backfill 仅小文件实际可用 |
+| 补齐 GitCode 镜像 | 优先用 `mirror-gitcode.mjs` 上传 dmg/exe/deb 与 `.sha256`；backfill / `$gitcode-release-publisher` 为备用 |
+| 回补历史版本 | 同上（需 GitCode token 或维护者已登录会话）；镜像后重新生成站点数据 |
 | 下次壳发版 | `node scripts/version.mjs bump shell` → CI 绿 → 推 tag |
 | 线上部署 | push `main`；Vercel 项目 root=`site/` 自动部署 |
 | **推送代码到两个远端** | `git push origin main && git push gitcode main`（保持 GitHub/GitCode 同步，避免分叉冲突） |
@@ -96,13 +97,13 @@ GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名
 
 0. **发布说明**：`docs/release-notes/v<tag>.md` 已随 bump 提交且无 `<...>` 占位符
    （脚本脚手架 + `check` 子命令；CI publish 缺文件即失败）。
-1. **GitHub Release**：`gh release view v<tag>` 确认严格 6 文件（DMG + DMG.sha256 +
-   EXE + EXE.sha256 + EXE.blockmap + latest.yml），`isDraft=false`。
+1. **GitHub Release**：`gh release view v<tag>` 确认严格 8 文件（DMG/EXE/DEB +
+   3×sha256 + EXE.blockmap + latest.yml），`isDraft=false`。
 2. **Site Data Refresh**：Release 完成会自动触发；确认 run 成功且 `site/data/release.json`
    指向新 tag。若未触发，Actions → Site Data Refresh → Run workflow 手动跑。
-3. **GitCode 镜像**（国内下载源）：用 `$gitcode-release-publisher` 上传 DMG、EXE
-   与两份 `.sha256`（不镜像 blockmap/latest.yml），再用 range GET 校验四个稳定 URL
-   返回 206，然后再次触发 Site Data Refresh 让官网把 `gitcode_ok` 标为 `true`。
+3. **GitCode 镜像**（国内下载源）：优先用 `mirror-gitcode.mjs` 上传 DMG、EXE、DEB
+   与三份 `.sha256`（不镜像 blockmap/latest.yml），再用 range GET 校验六个稳定 URL；
+   backfill 或 `$gitcode-release-publisher` 只作备用。镜像后重新生成网站数据。
    **此项最易遗漏**：shell.13/14 均因未及时补齐导致国内镜像滞后。
 4. **官网验证**：访问 <https://dsh-desktop.com>，确认下载区显示新版本双源按钮。
 5. **HANDOFF 回填**：把 CI/Release/Refresh run id、tag peeled commit、镜像状态
@@ -110,15 +111,15 @@ GitCode 自动推送已在 shell.8/9 连续失败（跨境 ~150 KB/s，预签名
 
 ## 六、已知事项
 
-- GitCode 资产镜像为维护者授权渠道：发版后用 `$gitcode-release-publisher` 复用
-  已登录浏览器会话上传 dmg/exe 与哈希，再触发 Site Data Refresh 让官网识别
+- GitCode 资产镜像为维护者授权渠道：发版后优先用
+  `mirror-gitcode.mjs` 上传 dmg/exe/deb 与哈希；只在 API 上传受阻时用
+  `$gitcode-release-publisher` 复用已登录浏览器会话；镜像后重新生成站点数据
   （根因与方案评估见 0008 第二修订：跨境
   推送 ~150 KB/s 且预签名 URL 过期 502；拉取式流水线复杂度不成比例，放弃）。
   自部署 gh-proxy（`GH_PROXY_PREFIX` 思路）仅作备选；公共代理实例实测
   不可靠（mirror.ghproxy.com / ghfast.top 已失联），不进入任何链路。
-- GitCode `main` 已同步 shell.11 主线；镜像流程曾把 shell.9 tag 建在旧提交
-  `c94e70b`，已精确修正为发布提交 `23c4c23`。shell.11 tag 已核对为发布提交
-  `cca1a827`；后续仍要在发版后核对 tag peeled
+- GitCode 与 GitHub 的 shell.3 tag 已核对为同一发布提交 `08dd85d`；
+  后续仍要在发版后核对 tag peeled
   commit，不能只检查"同名 tag 已存在"。
 - macOS 仍未签名/公证；首次运行需右键打开，应用只检查更新并引导下载。
 - `*.vercel.app` 在国内可能受 DNS 影响；正式域名使用 `dsh-desktop.com`。
@@ -1077,4 +1078,43 @@ Agent 工作台；社区插件全部手动安装；签名与公证继续留到�
 
 ---
 
-_更新于 2026-09-01_
+## 三十八、v0.1.2-alpha.4.shell.3 发布：插件安装与跨版本升级可靠性闭环（2026-09-02）
+
+本轮不增加新的插件平台，集中改善现有 dsh-market 手动安装与桌面安装包升级的
+可观察性、失败可诊断性与三平台回归覆盖；发版前同步将内核升级到
+`@deepseek-ai/dsh` `0.1.2-alpha.4`。
+
+1. **插件安装反馈**：扩展设置明确显示准备、下载、验证与重启阶段，完成后以
+   profile 中的实际版本为准；网络、代理、超时、数据目录、安装脚本和随包工具错误
+   分类呈现，dsh/pnpm 输出限长、脱敏并纳入诊断报告，失败后仍可直接重试。
+2. **回归闭环**：新增无网络/无缓存的离线失败 E2E，以及中文、暗色、`960×640`、
+   中文与空格路径下的真实 dshmarket 安装、重启、版本与布局验证；E2E 日志改用
+   各系统原生临时目录。本地 `pnpm run verify` 全绿（193 项单测），dev/packaged/
+   real Harness/Safe Mode/offline market/real market 门禁均通过。
+3. **跨版本升级**：Release 三平台会下载并校验上一公开版本；macOS/Linux 原位覆盖，
+   Windows 先静默移除旧程序二进制再同路径安装新版，三者都逐项证明同一 Profile
+   的 7 个用户文件保持不变，Safe Mode 仍能隔离坏插件并启动。随包与 CI pnpm 升至
+   `11.11.0`，修复 GHSA-vx52-2968-3vc6。
+4. **候选版本收敛**：`.shell.0` 暴露干净 CI 中专用 market fixture 在 skip 前读取 `dist`；
+   `.shell.1` 暴露 electron-builder assisted NSIS 静默覆盖会挂起；`.shell.2` 的 Windows
+   升级闭环已通过，最终在离线 market 门禁暴露硬编码 `/tmp` 路径。三个失败 tag 保留
+   作为审计记录，修复全部收口于 `.shell.3`。
+5. **GitHub 发布**：tag `v0.1.2-alpha.4.shell.3` → `08dd85d`（peeled 已核对）；
+   Release run `33621547701` 的 verify、macOS、Windows、Linux 和 publish 全绿。8 个资产
+   齐全（dmg/exe/deb、3×sha256、blockmap、`latest.yml`），三平台安装、升级、用户数据
+   保留、真实 Harness、Safe Mode、故障注入、离线 market 与 provenance 均通过。
+6. **GitCode 镜像**：backfill run `33624118087` 先落下 3 个 sha256，大文件上传过慢后
+   主动取消；本机改从同一 Release run 的 Actions artifacts 并行获取三个安装包，
+   逐个与公开 SHA-256 和 GitHub 资产摘要核对，再用 `mirror-gitcode.mjs` 本机直传，
+   三个安装包均 attempt 1/3 成功，最终 6/6 稳定 URL 在线验证通过；GitCode tag
+   同样指向 `08dd85d`。
+7. **网站数据**：自动 Site Data Refresh run `33622807312` 成功，bot 提交 `3bfb550`，
+   但早于大文件镜像完成。镜像 6/6 后本地重新运行 `gen-site-data`，站点数据指向本 tag，
+   6 个用户资产全部 `gitcode_ok=true`，生成时统计为 461（mac 132 / win 228 / linux 101），
+   `site:check` 通过。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-alpha.4.shell.3>；官网：<https://dsh-desktop.com>。
+
+---
+
+_更新于 2026-09-02_
