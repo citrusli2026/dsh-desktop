@@ -13,8 +13,10 @@
  */
 import { spawn } from 'node:child_process'
 import { createWriteStream } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
-const LOG = '/tmp/dsh-e2e-guarded.log'
+const LOG = join(tmpdir(), 'dsh-e2e-guarded.log')
 const logStream = createWriteStream(LOG)
 const command = ['pnpm', 'exec', 'playwright', 'test', ...process.argv.slice(2)].join(' ')
 const child = spawn(command, { stdio: ['inherit', 'pipe', 'pipe'], shell: true })
