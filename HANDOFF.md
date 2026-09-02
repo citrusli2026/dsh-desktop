@@ -15,7 +15,7 @@
 | 核心发布 | ✅ `v0.1.2-alpha.4.shell.3` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-alpha.4.shell.3`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
 | 国内镜像 | ✅ `v0.1.2-alpha.4.shell.3` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `08dd85d`） |
-| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；本次数据生成时累计安装包下载 461（mac 132 / win 228 / linux 101） |
+| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；线上实时累计 514（GitHub 461 + GitCode 53；mac 142 / win 266 / linux 106） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1111,7 +1111,8 @@ Agent 工作台；社区插件全部手动安装；签名与公证继续留到�
 7. **网站数据**：自动 Site Data Refresh run `33622807312` 成功，bot 提交 `3bfb550`，
    但早于大文件镜像完成。镜像 6/6 后本地重新运行 `gen-site-data`，站点数据指向本 tag，
    6 个用户资产全部 `gitcode_ok=true`，生成时统计为 461（mac 132 / win 228 / linux 101），
-   `site:check` 通过。
+   `site:check` 通过。正式域名 `/data/release.json` 已核对 tag 与 6/6；`/api/downloads`
+   返回 200，线上实时累计 514（GitHub 461 + GitCode 53；mac 142 / win 266 / linux 106）。
 
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-alpha.4.shell.3>；官网：<https://dsh-desktop.com>。
 
