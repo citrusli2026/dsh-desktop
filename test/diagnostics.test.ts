@@ -85,6 +85,10 @@ test('formatDiagnosticReport records versions and crash state without upload', (
       damagedBundles: [],
     },
     pluginFailures: [{ id: 'user-a', name: 'user-plugin' }],
+    marketInstall: {
+      status: 'download-failed', installed: false, stage: 'install', reason: 'proxy',
+      detail: 'proxy refused Authorization: Bearer hidden-token',
+    },
   })
   assert.match(report, /app_version=1\.0\.0\.shell\.1/)
   assert.match(report, /harness_state=crashed \(attempts=6\)/)
@@ -97,6 +101,9 @@ test('formatDiagnosticReport records versions and crash state without upload', (
   assert.match(report, /composed_rows=user-a/)
   assert.match(report, /user-a \(user-plugin\)/)
   assert.match(report, /uploaded_automatically=false/)
+  assert.match(report, /market_install_status=download-failed/)
+  assert.match(report, /market_install_reason=proxy/)
+  assert.doesNotMatch(report, /hidden-token/)
 })
 
 test('formatDiagnosticReport includes the concrete startup stage', () => {

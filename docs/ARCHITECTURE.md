@@ -4,9 +4,9 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-09-01 · 当前代码基线 `0.1.2-alpha.3.shell.0`（未发布）
-（扩展浮层按连接、恢复与信息重排，扩展设置按桌面习惯、账户与插件、恢复及高级工具分组；
-内核 `0.1.2-alpha.3`）
+最后更新: 2026-09-02 · 当前代码基线 `0.1.2-alpha.4.shell.0`（待发布）
+（插件市场安装具备阶段反馈、失败归因与真实版本确认；发布门禁增加离线安装和跨版本升级；
+内核 `0.1.2-alpha.4`）
 
 ## 1. 产品概述
 
@@ -46,6 +46,7 @@ src/main/lan.ts             局域网 Web 代理与配对二维码
 src/main/diagnostics.ts     日志轮转、遮罩、报告格式与导出版
 src/main/presets.ts         便携预设包(.dshpreset)导出/导入、冲突与信任检查
 src/main/profile.ts         只读用户 Harness profile 清单与已安装插件状态
+src/main/market-install.ts  手动市场安装阶段、失败归因、安装后验证与重启结果
 src/main/safe-mode.ts       安全模式:用户 bundle 盘点、禁用覆盖层、失败签名检测
 src/main/restart-policy.ts  就绪协议、退避与重启预算纯函数
 src/main/window-state.ts    窗口几何校验纯函数
@@ -63,7 +64,7 @@ plugins/dsh-desktop-controls/  应用内扩展入口帮助浮层与扩展设置�
 
 0. 依赖安全审计（官方 npm registry）;
 1. TypeScript typecheck;
-2. 184 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
+2. 193 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
 3. `site:check` 与 `check-api-downloads`（双语键、静态资源与下载接口契约）;
 4. 主进程/预加载构建; Harness 闭包与内置 Node bootstrap;
 5. 三条 xvfb 冒烟: 正常启动、错误页重试成功、强制重试失败后按钮恢复;
@@ -87,12 +88,19 @@ tag Release（release.yml: verify → build 三平台并行 → publish）在 CI
   4. 打包 E2E（`DSH_E2E_PACKAGED=1`，fixture 直接启动 unpacked 二进制、
      真实 Harness 渲染、跳过 stub-only 断言，只跑 `@smoke @critical`
      2 用例）;
-  5. 安装态冒烟（S2）：ubuntu 经 `apt-get install -y ./dist/<deb>`
+  5. 上一公开版本安装包先通过 `.sha256` 校验，再在同一份含中文/空格路径的
+     `DSH_HOME` 与 Electron userData 上执行“旧版本安装与启动 → 写入用户设置和
+     Safe Mode 插件夹具 → 新版本覆盖安装与启动”；macOS dmg、Windows NSIS、
+     Linux deb 都必须逐文件证明用户状态未变化;
+  6. 手动插件市场离线 E2E：用独立 profile、registry 和 pnpm store 运行真实
+     dsh/pnpm 安装链，断言失败原因可读、技术详情脱敏、按钮可重试且 profile
+     不出现伪安装记录;
+  7. 安装态冒烟（S2）：ubuntu 经 `apt-get install -y ./dist/<deb>`
      （真实 SUID chrome-sandbox、解析依赖）→ smoke → `dpkg -i` 重装 →
      smoke; windows NSIS `/S` 安装 → smoke → 卸载（同版本覆盖不做
      —— 见 test-hardening-plan A-3 已知边界）; macOS 无安装器，以
      dist 内 .app 直接冒烟;
-  6. 8 文件契约：三安装包（dmg/exe/deb）+ 三 `.sha256` + `latest.yml` +
+  8. 8 文件契约：三安装包（dmg/exe/deb）+ 三 `.sha256` + `latest.yml` +
      `.exe.blockmap`; 校验和实算匹配、updater 元数据引用本次 exe，
      多一个少一个都拒绝;
 - publish（仅 tag 触发）: tag→commit 解引用门禁（拒绝对齐失败）→

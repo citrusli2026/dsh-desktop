@@ -11,6 +11,7 @@ import { MACOS_SIDEBAR_COLLAPSED_SAFE_TOP, MACOS_SIDEBAR_SAFE_TOP } from '../mai
 import type { DesktopPreferencesResult, DesktopPreferencesSnapshot, DesktopPreferencesUpdate } from '../main/desktop-preferences.ts'
 import type { ProfilePackageStatus } from '../main/profile.ts'
 import type { KernelOperationResult } from '../main/kernel-manager.ts'
+import type { MarketInstallProgress, MarketInstallResult } from '../main/market-install.ts'
 
 export interface DesktopStartupStatus {
   appVersion: string
@@ -22,12 +23,6 @@ export interface DesktopStartupStatus {
   statusLabel: string
   safeMode: boolean
   market: ProfilePackageStatus
-}
-
-export interface MarketInstallResult {
-  status: 'installed' | 'download-failed' | 'install-failed' | 'restart-failed' | 'unavailable'
-  installed: boolean
-  detail?: string
 }
 
 function installWindowDragRegion(): void {
@@ -86,8 +81,14 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Invoke one of the fixed, low-risk desktop controls from the Harness UI. */
   desktopAction: (action: 'startLanPairing' | 'stopLanPairing' | 'showAbout' | 'enterSafeMode' | 'exitSafeMode' | 'installDshMarket' | 'openRecharge' | 'kernelCheckUpdates' | 'kernelInstall' | 'kernelRestore'): Promise<boolean | MarketInstallResult | KernelOperationResult> =>
     ipcRenderer.invoke('desktop:action', action),
+  /** Observe the four non-sensitive phases of a manual market install. */
+  onMarketInstallProgress: (callback: (progress: MarketInstallProgress) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, progress: MarketInstallProgress): void => callback(progress)
+    ipcRenderer.on('desktop:market-install-progress', listener)
+    return () => ipcRenderer.removeListener('desktop:market-install-progress', listener)
+  },
   /** Read the user profile's community-market state (settings row). */
-  getBundledPlugins: (): Promise<{ dshMarket: ProfilePackageStatus } | null> =>
+  getBundledPlugins: (): Promise<{ dshMarket: ProfilePackageStatus; lastInstall?: MarketInstallResult } | null> =>
     ipcRenderer.invoke('desktop:bundled-plugins'),
   /** Read the compact first-launch and shell status summary. */
   getStartupStatus: (): Promise<DesktopStartupStatus | null> =>

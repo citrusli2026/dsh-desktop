@@ -5,7 +5,7 @@
   "description": "Pure dependency manifest defining the bundled @deepseek-ai/dsh closure for dsh-desktop; materialized by scripts/deploy-harness.mjs",
   "license": "MIT",
   "dependencies": {
-    "@deepseek-ai/dsh": "0.1.2-alpha.3",
+    "@deepseek-ai/dsh": "0.1.2-alpha.4",
     "@deepseek-ai/dsh-attachment": "^0.1.2-alpha.3",
     "@deepseek-ai/dsh-hook-protocol": "^0.1.2-alpha.3",
     "@deepseek-ai/dsh-jobs": "^0.1.2-alpha.3",

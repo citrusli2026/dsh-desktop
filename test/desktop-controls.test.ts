@@ -26,6 +26,7 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /showAbout/)
   // Manual market entry: settings row + main-process install.
   assert.match(client, /getBundledPlugins/)
+  assert.match(client, /lastInstall/)
   assert.match(client, /getStartupStatus/)
   assert.match(client, /data-dsh-controls-stage/)
   assert.match(client, /installDshMarket/)
@@ -33,6 +34,13 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /marketDamaged/)
   assert.match(client, /marketRisk/)
   assert.match(client, /data-dsh-market-risk/)
+  assert.match(client, /onMarketInstallProgress/)
+  assert.match(client, /marketPreparing/)
+  assert.match(client, /marketProxyFailed/)
+  assert.match(client, /data-dsh-market-operation/)
+  assert.match(client, /data-dsh-market-technical/)
+  assert.match(client, /navigator\.clipboard\.writeText/)
+  assert.doesNotMatch(client, /marketBusy \? "…"/)
   assert.match(client, /groupRecovery/)
   // The overlay and settings page expose an explicit visual hierarchy.
   assert.match(client, /data-dsh-controls-panel-head/)

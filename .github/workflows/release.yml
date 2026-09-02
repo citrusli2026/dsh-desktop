@@ -103,6 +103,20 @@ jobs:
           # --publish never keeps electron-builder from creating the release
           # itself; the publish job below owns release creation.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download and verify previous release installer
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/download-previous-release.mjs test-results/previous-release
+      - name: Cross-version upgrade preserves user state (macOS)
+        if: github.ref_type == 'tag' && matrix.os == 'macos-14'
+        run: node scripts/smoke-upgrade.mjs macos dist test-results/previous-release
+      - name: Cross-version upgrade preserves user state (Windows)
+        if: github.ref_type == 'tag' && matrix.os == 'windows-2022'
+        run: node scripts/smoke-upgrade.mjs nsis dist test-results/previous-release
+      - name: Cross-version upgrade preserves user state (Linux, real sandbox)
+        if: github.ref_type == 'tag' && matrix.os == 'ubuntu-24.04'
+        run: xvfb-run -a node scripts/smoke-upgrade.mjs dpkg dist test-results/previous-release
       # latest.yml / blockmap are Windows electron-updater metadata; the Linux
       # build would generate a colliding same-named manifest otherwise.
       - name: Drop Linux updater metadata
@@ -167,6 +181,12 @@ jobs:
         env:
           DSH_E2E_PACKAGED: "1"
         run: xvfb-run -a node scripts/run-e2e-guarded.mjs --grep @smoke
+      - name: Manual plugin install — offline failure stays explainable and retryable
+        if: matrix.os != 'ubuntu-24.04'
+        run: pnpm run test:e2e:market:offline
+      - name: Manual plugin install — offline failure stays explainable and retryable (headless)
+        if: matrix.os == 'ubuntu-24.04'
+        run: xvfb-run -a pnpm run test:e2e:market:offline
       - name: Install deb and smoke the installed app with real sandbox (S2)
         if: matrix.os == 'ubuntu-24.04'
         # apt-get (not dpkg -i) so the deb's Depends are resolved: the bare

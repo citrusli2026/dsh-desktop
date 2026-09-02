@@ -343,6 +343,44 @@ window.__ModuleLoader__.load({
         line-height: 1.4;
         text-align: right;
       }
+      [data-dsh-desktop-settings] [data-dsh-market-operation] {
+        align-items: flex-end;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        max-width: 100%;
+      }
+      [data-dsh-desktop-settings] [data-dsh-market-operation] > small {
+        color: var(--dsw-alias-label-secondary, #667085);
+        line-height: 1.4;
+        text-align: right;
+      }
+      [data-dsh-desktop-settings] [data-dsh-market-operation][data-state="failure"] > small {
+        color: var(--dsw-alias-state-error-primary, #c33);
+      }
+      [data-dsh-desktop-settings] [data-dsh-market-technical] {
+        max-width: 320px;
+        text-align: right;
+      }
+      [data-dsh-desktop-settings] [data-dsh-market-technical] summary {
+        color: var(--dsw-alias-label-secondary, #667085);
+        cursor: pointer;
+        font-size: 11px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-market-technical] code {
+        background: var(--dsw-alias-bg-subtle, rgba(31, 35, 43, .045));
+        border-radius: 7px;
+        display: block;
+        font-size: 10.5px;
+        line-height: 1.45;
+        margin: 5px 0;
+        max-height: 92px;
+        overflow: auto;
+        overflow-wrap: anywhere;
+        padding: 7px;
+        text-align: left;
+        white-space: pre-wrap;
+      }
       [data-dsh-desktop-settings] [data-dsh-desktop-checkbox] { height: 16px; width: 16px; }
       [data-dsh-desktop-settings] [data-dsh-desktop-status] {
         color: var(--dsw-alias-state-error-primary, #c33);
@@ -519,7 +557,10 @@ window.__ModuleLoader__.load({
         safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展。",
         safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式", safeModeExitDetail: "恢复第三方插件并重新启动",
         market: "插件市场", marketDetail: "社区插件全部由你手动安装；dsh-desktop 不会预装或静默恢复。",
-        marketInstall: "安装插件市场", marketReinstall: "重新安装", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketMissing: "尚未安装", marketDamaged: "安装记录或文件不完整", marketFailed: "安装未完成，请检查网络后重试。", marketRestartFailed: "已安装，但重启 Harness 失败；请稍后在恢复页重试。", marketRisk: "将从网络下载并运行第三方社区代码及其安装脚本，请确认来源后继续。", marketConfirm: "确认安装", marketCancel: "取消",
+        marketInstall: "安装插件市场", marketReinstall: "重新安装", marketWorking: "处理中", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketMissing: "尚未安装", marketDamaged: "安装记录或文件不完整", marketFailed: "安装未完成，请重试。", marketRestartFailed: "已安装，但重启 Harness 失败；请从恢复区重试。", marketRisk: "将从网络下载并运行第三方社区代码及其安装脚本，请确认来源后继续。", marketConfirm: "确认安装", marketCancel: "取消",
+        marketPreparing: "正在准备随包 Node、pnpm 与系统代理…", marketInstalling: "正在下载并安装，可能需要几分钟…", marketVerifying: "正在验证 profile 与实际安装版本…", marketRestarting: "安装完成，正在重启 Harness…", marketSuccess: "插件市场 {version} 已安装并运行。",
+        marketNetworkFailed: "无法连接插件源，请检查网络或 registry 后重试。", marketProxyFailed: "系统代理无法连接插件源，请检查代理设置后重试。", marketTimeoutFailed: "安装等待超时，已停止本次操作；可以直接重试。", marketProfileFailed: "数据目录不可写或 profile 状态不完整，请修复后重试。", marketScriptFailed: "社区包的安装脚本失败；未把它标记为已安装。", marketSpawnFailed: "随包安装工具无法启动，请导出诊断报告。", marketUnknownFailed: "安装命令未完成；请查看技术详情后重试。",
+        marketTechnical: "查看脱敏技术详情", marketCopy: "复制技术详情", marketCopied: "已复制",
         balance: "余额", recharge: "充值",
         kernel: "内核版本", kernelBundled: "内置", kernelOverlay: "已切换",
         kernelCheck: "检查新版", kernelInstall: "安装最新", kernelRestore: "恢复内置",
@@ -558,7 +599,10 @@ window.__ModuleLoader__.load({
         safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; official and built-in extensions only.",
         safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode", safeModeExitDetail: "Restore third-party plugins and restart",
         market: "Plugin market", marketDetail: "Community plugins are always installed by you; dsh-desktop never bundles or silently restores them.",
-        marketInstall: "Install the market", marketReinstall: "Reinstall", marketInstalledHint: "Installed · open Settings → Plugin Market", marketMissing: "Not installed", marketDamaged: "Install record or files are incomplete", marketFailed: "Install did not finish; check your network and retry.", marketRestartFailed: "Installed, but Harness did not restart; retry from the recovery page later.", marketRisk: "This downloads and runs third-party community code and install scripts. Verify the source before continuing.", marketConfirm: "Confirm install", marketCancel: "Cancel",
+        marketInstall: "Install the market", marketReinstall: "Reinstall", marketWorking: "Working", marketInstalledHint: "Installed · open Settings → Plugin Market", marketMissing: "Not installed", marketDamaged: "Install record or files are incomplete", marketFailed: "Install did not finish; retry when ready.", marketRestartFailed: "Installed, but Harness did not restart; retry from Recovery.", marketRisk: "This downloads and runs third-party community code and install scripts. Verify the source before continuing.", marketConfirm: "Confirm install", marketCancel: "Cancel",
+        marketPreparing: "Preparing the bundled Node, pnpm, and system proxy…", marketInstalling: "Downloading and installing — this can take a few minutes…", marketVerifying: "Verifying the profile and installed version…", marketRestarting: "Installed; restarting Harness…", marketSuccess: "Plugin market {version} is installed and running.",
+        marketNetworkFailed: "The plugin registry is unreachable. Check the network or registry and retry.", marketProxyFailed: "The system proxy could not reach the plugin registry. Check the proxy and retry.", marketTimeoutFailed: "The install timed out and was stopped; it is safe to retry.", marketProfileFailed: "The data directory is not writable or the profile is incomplete. Repair it and retry.", marketScriptFailed: "The community package install script failed; it was not marked installed.", marketSpawnFailed: "The bundled install tools could not start. Export a diagnostic report.", marketUnknownFailed: "The install command did not finish. Review the technical detail and retry.",
+        marketTechnical: "Show sanitized technical detail", marketCopy: "Copy technical detail", marketCopied: "Copied",
         balance: "Balance", recharge: "Recharge",
         kernel: "Kernel version", kernelBundled: "bundled", kernelOverlay: "switched",
         kernelCheck: "Check for newer", kernelInstall: "Install latest", kernelRestore: "Restore bundled",
@@ -704,36 +748,59 @@ window.__ModuleLoader__.load({
       const [marketStatus, setMarketStatus] = react.useState(null);
       const [marketBusy, setMarketBusy] = react.useState(false);
       const [marketConfirming, setMarketConfirming] = react.useState(false);
+      const [marketProgress, setMarketProgress] = react.useState("");
+      const [marketResult, setMarketResult] = react.useState(null);
+      const [marketCopied, setMarketCopied] = react.useState(false);
 
       react.useEffect(() => {
         if (typeof bridge?.getBundledPlugins !== "function") return;
         void bridge.getBundledPlugins().then((value) => {
-          if (value !== null && value.dshMarket !== undefined) setMarketStatus(value.dshMarket);
+          if (value !== null && value.dshMarket !== undefined) {
+            setMarketStatus(value.dshMarket);
+            if (value.lastInstall !== undefined) setMarketResult(value.lastInstall);
+          }
         });
+      }, [bridge]);
+
+      react.useEffect(() => {
+        if (typeof bridge?.onMarketInstallProgress !== "function") return undefined;
+        return bridge.onMarketInstallProgress((progress) => setMarketProgress(progress));
       }, [bridge]);
 
       const marketAction = async () => {
         if (typeof bridge?.desktopAction !== "function") return;
         setMarketConfirming(false);
         setMarketBusy(true);
+        setMarketProgress("preparing");
+        setMarketResult(null);
+        setMarketCopied(false);
         try {
           const result = await bridge.desktopAction("installDshMarket");
           if (result !== null && typeof result === "object") {
-            if (result.installed === true) setMarketStatus({ name: "dshmarket", state: "installed" });
-            setMessage(result.status === "installed" ? copy.marketInstalledHint
-              : result.status === "restart-failed" ? copy.marketRestartFailed
-              : copy.marketFailed);
+            if (result.installed === true) setMarketStatus({ name: "dshmarket", state: "installed", ...(result.version ? { version: result.version } : {}) });
+            setMarketResult(result);
           } else if (result === true) {
             setMarketStatus({ name: "dshmarket", state: "installed" });
-            setMessage(copy.marketInstalledHint);
-          } else setMessage(copy.marketFailed);
+            setMarketResult({ status: "installed", installed: true });
+          } else setMarketResult({ status: "unavailable", installed: false, reason: "unknown" });
           void refreshStartup();
         } finally {
+          setMarketProgress("");
           setMarketBusy(false);
         }
       };
 
       const requestMarketAction = () => setMarketConfirming(true);
+
+      const copyMarketDetail = async () => {
+        if (typeof marketResult?.detail !== "string" || marketResult.detail === "") return;
+        try {
+          await navigator.clipboard.writeText(marketResult.detail);
+          setMarketCopied(true);
+        } catch {
+          setMarketCopied(false);
+        }
+      };
 
       const [balanceText, setBalanceText] = react.useState(null);
       const [kernel, setKernel] = react.useState(null);
@@ -878,6 +945,25 @@ window.__ModuleLoader__.load({
       const canLaunch = preferences.launchAtLoginAvailable === true;
       const market = marketStatus ?? startup?.market ?? { state: "missing" };
       const marketState = market.state ?? "missing";
+      const marketProgressText = marketProgress === "preparing" ? copy.marketPreparing
+        : marketProgress === "installing" ? copy.marketInstalling
+        : marketProgress === "verifying" ? copy.marketVerifying
+        : marketProgress === "restarting" ? copy.marketRestarting
+        : "";
+      const marketInstalledVersion = marketResult?.version ?? market.version;
+      const marketResultText = marketResult?.status === "installed" ? (marketInstalledVersion ? copy.marketSuccess.replace("{version}", marketInstalledVersion) : copy.marketInstalledHint)
+        : marketResult?.status === "restart-failed" ? copy.marketRestartFailed
+        : marketResult?.reason === "network" ? copy.marketNetworkFailed
+        : marketResult?.reason === "proxy" ? copy.marketProxyFailed
+        : marketResult?.reason === "timeout" ? copy.marketTimeoutFailed
+        : marketResult?.reason === "profile" ? copy.marketProfileFailed
+        : marketResult?.reason === "install-script" ? copy.marketScriptFailed
+        : marketResult?.reason === "spawn" ? copy.marketSpawnFailed
+        : marketResult === null ? ""
+        : copy.marketUnknownFailed;
+      const marketResultState = marketResult === null ? "idle"
+        : marketResult.installed === true ? "success"
+        : "failure";
       return react_jsx_runtime.jsxs("div", {
         "data-dsh-desktop-settings": true,
         children: [
@@ -924,7 +1010,15 @@ window.__ModuleLoader__.load({
                     react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => void marketAction(), children: copy.marketConfirm }),
                     react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: () => setMarketConfirming(false), children: copy.marketCancel }),
                   ] }),
-                ] }) : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: requestMarketAction, children: marketBusy ? "…" : marketState === "installed" ? copy.marketReinstall : copy.marketInstall }),
+                ] }) : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: marketBusy, onClick: requestMarketAction, children: marketBusy ? copy.marketWorking : marketState === "installed" ? copy.marketReinstall : copy.marketInstall }),
+              ] }),
+              marketProgressText === "" && marketResultText === "" ? null : react_jsx_runtime.jsxs("span", { "data-dsh-market-operation": true, "data-state": marketBusy ? "progress" : marketResultState, role: "status", children: [
+                react_jsx_runtime.jsx("small", { "data-dsh-market-progress": marketProgress || undefined, children: marketBusy ? marketProgressText : marketResultText }),
+                !marketBusy && typeof marketResult?.detail === "string" && marketResult.detail !== "" ? react_jsx_runtime.jsxs("details", { "data-dsh-market-technical": true, children: [
+                  react_jsx_runtime.jsx("summary", { children: copy.marketTechnical }),
+                  react_jsx_runtime.jsx("code", { children: marketResult.detail }),
+                  react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, onClick: () => void copyMarketDetail(), children: marketCopied ? copy.marketCopied : copy.marketCopy }),
+                ] }) : null,
               ] }),
             ] }) : null,
             balanceText !== null ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [

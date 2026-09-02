@@ -174,4 +174,4 @@ P1-3（独立）
 | A-3 覆盖安装 | ✅(deb)/⚠️(NSIS) | `smoke-installed.mjs --reinstall`：deb `dpkg -i` 重装后再 smoke（实测通过，覆盖同版本 overwrite 逻辑）；NSIS 同版本 `/S` 覆盖安装在 CI runner 上确定性挂死（shell.2 A8/A9 两次：150s/300s 超时、零输出，首次安装仅需 4s），故 Windows 保留 安装→smoke→卸载 全流程，覆盖安装交由 deb 代表，NSIS 覆盖画入已知边界 |
 | A-4 特殊路径 | ✅ | 中文+空格路径（DSH_HOME 与 userData）启动、读英文档可切换中文；只读 DSH_HOME 以默认值启动 |
 | 回归 | ✅ | dev E2E 9/9、packaged E2E @smoke 2/2、107 单测、typecheck 全绿；mac 本地全套通过 |
-| 已知边界 | 记录 | 跨版本升级安装、真实对话闭环（API key）、OS 版本矩阵声明对齐 — 保持文档记录，不做 |
+| 已知边界 | 记录 | 真实对话闭环（API key）、OS 版本矩阵声明对齐 — 保持文档记录，不做；跨版本升级已由 alpha.4.shell.0 的三平台发布门禁覆盖 |

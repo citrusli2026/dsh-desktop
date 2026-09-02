@@ -10,6 +10,7 @@ import { collectPluginFailures, inspectPluginInventory, type ComposedRow, type P
 import { resolveDshHome } from './dsh-home.ts'
 import { harnessRoot } from './paths.ts'
 import { readProfileStatus, type ProfileStatus } from './profile.ts'
+import type { MarketInstallResult } from './market-install.ts'
 
 export const MAX_LOG_BYTES = 5 * 1024 * 1024
 export const KEPT_LOG_FILES = 3
@@ -109,6 +110,8 @@ export interface DiagnosticFacts {
   profileStatus?: ProfileStatus
   pluginInventory: PluginInventory | undefined
   pluginFailures: ComposedRow[]
+  /** Last manual market operation in this app session, already sanitized. */
+  marketInstall?: MarketInstallResult
 }
 
 function stateLine(state: HarnessState | undefined): string {
@@ -145,6 +148,11 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
     `profile_manifest=${facts.profileStatus?.manifest ?? 'unknown'}`,
     `market_state=${facts.profileStatus?.dshMarket.state ?? 'unknown'}`,
     `market_version=${facts.profileStatus?.dshMarket.version ?? 'unknown'}`,
+    `market_install_status=${facts.marketInstall?.status ?? 'not-run'}`,
+    `market_install_stage=${facts.marketInstall?.stage ?? 'none'}`,
+    `market_install_reason=${facts.marketInstall?.reason ?? 'none'}`,
+    `market_install_version=${facts.marketInstall?.version ?? 'unknown'}`,
+    `market_install_detail=${facts.marketInstall?.detail === undefined ? 'none' : JSON.stringify(redactDiagnosticsLog(facts.marketInstall.detail))}`,
     'generated_locally=true',
     'uploaded_automatically=false',
     '',
@@ -164,7 +172,12 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
 }
 
 /** Ask for a destination, write a local-only report, then offer to reveal it. */
-export async function exportDiagnosticReport(state: HarnessState | undefined, locale: ShellLocale = 'en', safeMode = false): Promise<boolean> {
+export async function exportDiagnosticReport(
+  state: HarnessState | undefined,
+  locale: ShellLocale = 'en',
+  safeMode = false,
+  marketInstall?: MarketInstallResult,
+): Promise<boolean> {
   const api = electron as unknown as typeof import('electron')
   const warning = await api.dialog.showMessageBox({
     type: 'info',
@@ -220,6 +233,7 @@ export async function exportDiagnosticReport(state: HarnessState | undefined, lo
       profileStatus,
       pluginInventory,
       pluginFailures: collectPluginFailures(logTail),
+      marketInstall,
     })
     writeFileSync(result.filePath, report, { mode: 0o600 })
   } catch (error) {

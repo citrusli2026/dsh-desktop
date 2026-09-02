@@ -164,6 +164,20 @@
 
 本轮不改变下载、更新、签名、公证或插件安装实现；签名和公证仍按产品定位延后到真实使用量与反馈足够后再评估。
 
+### 6.7 alpha.4.shell.0：插件安装与升级可靠性闭环（本轮）
+
+本轮不增加新的插件管理平台，集中把现有「手动安装 dsh-market」和安装包升级路径做成可观察、可诊断、可回归的闭环；发版前发现上游 `@deepseek-ai/dsh` `0.1.2-alpha.4`，因此同步升级内核并将壳修订归零。
+
+| ID | 功能点 | 修改方式 | 主要文件 | 验收 |
+|---|---|---|---|---|
+| M1 | 安装阶段反馈 | 将手动安装拆成准备、下载、验证、重启四阶段；按钮忙碌态不丢失，安装成功显示 profile 中的实际版本 | `src/main/market-install.ts`、`src/main/index.ts`、`src/preload/index.ts`、`plugins/dsh-desktop-controls/lib/client.js` | 中英文界面不以省略号代替状态；Harness 重载后仍能恢复本次结果 |
+| M2 | 失败可行动 | 归类网络、代理、超时、profile、安装脚本和随包工具故障；合并 dsh/pnpm stdout/stderr，技术详情先脱敏再展示/复制并进入诊断报告 | `src/main/market-install.ts`、`src/main/diagnostics.ts`、`plugins/dsh-desktop-controls/lib/client.js` | 失败不会误显示已安装；用户能直接重试；`DSH_HOME`、令牌和用户路径不泄露 |
+| M3 | 真实插件 E2E | 离线用例隔离 registry、store 和包名，验证失败恢复；真实用例在中文、暗色、960×640 和中文空格路径中实际安装 dshmarket 并核对版本 | `e2e/market-install.spec.ts`、`scripts/e2e-market.mjs` | 离线和真实安装各自通过；设置卡片无横向溢出；社区插件仍不进入发布闭包 |
+| M4 | 跨版本升级门禁 | 从当前站点数据定位上一公开版本，下载对应平台安装包并校验 SHA-256；三平台覆盖安装后逐文件核对 Harness 配置、壳偏好、用户标记和插件夹具 | `scripts/download-previous-release.mjs`、`scripts/smoke-upgrade.mjs`、`.github/workflows/release.yml` | dmg、NSIS、deb 都证明升级前后 7 个用户文件未变化，Safe Mode 仍能隔离坏插件并启动 |
+| M5 | 内核同步 | 锁定 alpha.4 闭包，同步 release-age 排除清单并执行 frozen bootstrap 和 peer 审计 | `package.json`、`manifest/harness/` | `version.mjs show/check` 一致；内置 CLI 报告 `0.1.2-alpha.4`；完整本地与发布门禁通过 |
+
+明确边界：真实市场安装只在本地发布前执行，避免 CI 依赖社区 registry；CI 保留确定性离线链路。真实 API Key 对话、代码签名和公证仍不在本轮范围内。
+
 ## 7. 延后评估：签名与公证
 
 这不是当前迭代任务，也不阻塞上述功能完成。达到以下任一信号后再重新评估：
