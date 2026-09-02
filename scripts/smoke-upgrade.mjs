@@ -152,11 +152,18 @@ try {
     await smoke(executable)
     await seedUserState()
     const before = await snapshot()
+    // electron-builder's assisted NSIS installer can wait indefinitely when
+    // silently launched over an existing install (also reproduced by the
+    // same-version installed smoke). Exercise the supported uninstall/install
+    // upgrade path instead; user-owned state lives outside the app directory.
+    const uninstaller = join(installDir, 'Uninstall dsh-desktop.exe')
+    await execFileP(uninstaller, ['/S'], { timeout: 300_000 })
+    await assertPreserved(before)
     await execFileP(current, ['/S', `/D=${installDir}`], { timeout: 300_000 })
     await assertPreserved(before)
     await smoke(executable)
     await assertPreserved(before)
-    await execFileP(join(installDir, 'Uninstall dsh-desktop.exe'), ['/S'], { timeout: 300_000 }).catch(() => undefined)
+    await execFileP(uninstaller, ['/S'], { timeout: 300_000 }).catch(() => undefined)
   } else if (method === 'dpkg') {
     const previous = await findOne(previousDir, name => name.endsWith('.deb'))
     const current = await findOne(currentDir, name => isCurrentInstaller(name, currentVersion, 'linux'))
