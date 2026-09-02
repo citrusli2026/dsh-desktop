@@ -77,6 +77,8 @@ const marketTest = test.extend<MarketFixture>({
   },
 })
 
+marketTest.skip(MODE === undefined, 'run through a dedicated market E2E script')
+
 async function dismissOnboarding(window: Page): Promise<void> {
   let quietChecks = 0
   while (quietChecks < 4) {
