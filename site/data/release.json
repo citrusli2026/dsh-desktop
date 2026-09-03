@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-02T17:54:50.834Z",
+  "generated_at": "2026-09-03T07:11:23.158Z",
   "repo": {
     "full_name": "citrusli2026/dsh-desktop",
     "html_url": "https://github.com/citrusli2026/dsh-desktop",
@@ -7,10 +7,10 @@
     "license": "MIT"
   },
   "stats": {
-    "installer_downloads": 486,
+    "installer_downloads": 501,
     "mac_downloads": 135,
-    "win_downloads": 250,
-    "linux_downloads": 101,
+    "win_downloads": 264,
+    "linux_downloads": 102,
     "releases": 33
   },
   "release": {
@@ -33,7 +33,7 @@
       {
         "name": "dsh-desktop-0.1.2-alpha.4.shell.3-amd64.deb.sha256",
         "size": 110,
-        "downloads": 9,
+        "downloads": 13,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-alpha.4.shell.3/dsh-desktop-0.1.2-alpha.4.shell.3-amd64.deb.sha256",
         "kind": "checksum",
         "sha256": "509ca98c3bfa0600af12705c4283e893ff949fc96da17521c82c891f5acd112c",
@@ -53,7 +53,7 @@
       {
         "name": "dsh-desktop-0.1.2-alpha.4.shell.3-arm64-mac.dmg.sha256",
         "size": 114,
-        "downloads": 9,
+        "downloads": 13,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-alpha.4.shell.3/dsh-desktop-0.1.2-alpha.4.shell.3-arm64-mac.dmg.sha256",
         "kind": "checksum",
         "sha256": "9b759d3600874c4c31df3eaa35ca3386a04ef7ffac88643a160b2863c4014b1d",
@@ -63,7 +63,7 @@
       {
         "name": "dsh-desktop-setup-0.1.2-alpha.4.shell.3.exe",
         "size": 164590777,
-        "downloads": 18,
+        "downloads": 30,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-alpha.4.shell.3/dsh-desktop-setup-0.1.2-alpha.4.shell.3.exe",
         "kind": "installer",
         "sha256": null,
@@ -73,7 +73,7 @@
       {
         "name": "dsh-desktop-setup-0.1.2-alpha.4.shell.3.exe.sha256",
         "size": 110,
-        "downloads": 13,
+        "downloads": 19,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-alpha.4.shell.3/dsh-desktop-setup-0.1.2-alpha.4.shell.3.exe.sha256",
         "kind": "checksum",
         "sha256": "8e24ad219bb79c4b904a7c7fc58c2113c4fa4cdad592b0aeac1f05367c565403",
