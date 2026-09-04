@@ -71,12 +71,12 @@ async function capture(locale, theme) {
     await expect(page.locator('[data-dsh-controls-panel]')).toHaveCount(0)
 
     const settingsLabel = locale === 'en' ? 'Settings' : '设置'
-    const extensionsLabel = locale === 'en' ? 'Extensions' : '扩展设置'
+    const desktopSettingsLabel = locale === 'en' ? 'Desktop settings' : '桌面设置'
     const settingsButton = page.getByText(settingsLabel, { exact: true }).first()
     await settingsButton.click({ force: true, timeout: 10_000 })
     const dialog = page.locator('[role="dialog"]')
     await expect(dialog).toBeVisible()
-    await dialog.getByText(extensionsLabel, { exact: true }).first().click()
+    await dialog.getByText(desktopSettingsLabel, { exact: true }).first().click()
     await expect(page.locator('[data-dsh-desktop-settings]')).toBeVisible()
     await expect(page.locator('[data-dsh-desktop-lan-row]')).toBeVisible()
     await page.locator('[data-dsh-desktop-settings]').evaluate((root, paths) => {
@@ -92,6 +92,8 @@ async function capture(locale, theme) {
     expect(await advanced.getAttribute('open')).toBe(null)
     await expect(page.locator('[data-dsh-desktop-settings]').getByText(locale === 'en' ? 'Status' : '状态', { exact: true })).toHaveCount(0)
     await expect(page.locator('[data-dsh-desktop-settings]').getByText(locale === 'en' ? 'Start in Safe Mode' : '以安全模式启动', { exact: true })).toHaveCount(1)
+    await page.locator('[data-dsh-desktop-settings]').getByRole('button', { name: locale === 'en' ? 'Run check' : '开始体检' }).click()
+    await expect(page.locator('[data-dsh-health-result]')).toHaveCount(4, { timeout: 15_000 })
     const settingsCapture = join(captureRoot, `app-extension-settings-${suffix}.png`)
     await options.screenshot({
       path: settingsCapture,

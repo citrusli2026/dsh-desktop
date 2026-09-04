@@ -109,7 +109,7 @@ async function openExtensionSettings(window: Page): Promise<ReturnType<Page['loc
     await settingsButton.click()
   }
   await expect(settingsDialog).toBeVisible({ timeout: 15_000 })
-  const extensionNav = settingsDialog.getByRole('button', { name: /^(Extensions|扩展设置)$/ }).first()
+  const extensionNav = settingsDialog.getByRole('button', { name: /^(Desktop settings|桌面设置)$/ }).first()
   await expect(extensionNav).toBeVisible({ timeout: 15_000 })
   await extensionNav.click()
   await expect(settings).toBeVisible({ timeout: 15_000 })

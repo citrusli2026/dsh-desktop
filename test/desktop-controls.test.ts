@@ -96,6 +96,34 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /exportPreset/)
   assert.match(client, /importPreset/)
   assert.match(client, /presetsTitle/)
+  // P1 first-success path stays lightweight, dismissible, and explicitly
+  // keeps the community market outside the critical path.
+  assert.match(client, /data-dsh-first-success-guide/)
+  assert.match(client, /firstRunGuideDismissed/)
+  assert.match(client, /firstTaskCompleted/)
+  assert.match(client, /guideRuntime/)
+  assert.match(client, /guideWorkspace/)
+  assert.match(client, /guideModel/)
+  assert.match(client, /guideTask/)
+  assert.match(client, /guideMarketOptional/)
+  assert.match(client, /typeof item\.blank === "boolean"/)
+  assert.match(client, /typeof session\?\.cwd === "string"/)
+  assert.doesNotMatch(client, /updateDesktopPreferences\(\{ firstTaskCompleted:/)
+  // Health checks are user-triggered and network checks require an explicit
+  // checkbox; the copy states the local, sanitized, no-auto-repair contract.
+  assert.match(client, /runHealthCheck/)
+  assert.match(client, /includeNetwork: healthNetwork/)
+  assert.match(client, /data-dsh-health-network/)
+  assert.match(client, /data-dsh-health-result/)
+  assert.match(client, /nothing is uploaded or repaired automatically/)
+
+  const preload = await readFile(resolve('src/preload/index.ts'), 'utf8')
+  const main = await readFile(resolve('src/main/index.ts'), 'utf8')
+  assert.match(preload, /desktop:health-check/)
+  assert.match(main, /runDesktopHealthCheck/)
+  assert.match(main, /conversationSucceeded/)
+  assert.match(main, /firstRunGuideDismissed/)
+  assert.doesNotMatch(main, /typeof candidate\.firstTaskCompleted/)
 })
 
 test('desktop controls mount returns undefined until all package files exist', async () => {

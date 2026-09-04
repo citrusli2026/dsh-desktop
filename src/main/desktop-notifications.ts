@@ -14,6 +14,7 @@ export interface PublicSessionStatusSnapshot {
   id: string
   title: string
   running: boolean
+  blank?: boolean
   pendingInteraction?: 'approval' | 'plan-review' | 'question'
   jobs: readonly PublicJobStatusSnapshot[]
 }
@@ -74,11 +75,22 @@ export function normalizePublicStatusSnapshot(value: unknown): PublicStatusSnaps
       id,
       title: text(source.title, id),
       running: source.running === true,
+      ...typeof source.blank === 'boolean' ? { blank: source.blank } : {},
       ...pending === undefined ? {} : { pendingInteraction: pending },
       jobs,
     })
   }
   return { sessions }
+}
+
+/** Existing non-blank history suppresses upgrade onboarding; new users wait for a true completion edge. */
+export function conversationSucceeded(previous: PublicStatusSnapshot | undefined, next: PublicStatusSnapshot): boolean {
+  if (previous === undefined) return next.sessions.some(session => session.blank === false && !session.running && session.pendingInteraction === undefined)
+  const oldSessions = byId(previous.sessions)
+  return next.sessions.some(session => {
+    const old = oldSessions.get(session.id)
+    return old?.running === true && !session.running && session.pendingInteraction === undefined
+  })
 }
 
 function byId<T extends { id: string }>(items: readonly T[]): Map<string, T> {

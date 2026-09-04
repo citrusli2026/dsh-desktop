@@ -4,9 +4,9 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-09-04 · 当前代码基线 `0.1.2-rc.1.shell.0`（待发布）
-（插件市场安装具备阶段反馈、失败归因与真实版本确认；发布门禁覆盖离线安装和跨版本升级；
-内核 `0.1.2-rc.1`，watcher 会准备 mobile-shell Web artifact，随包 pnpm `11.11.0`）
+最后更新: 2026-09-04 · 当前代码基线 `0.1.2-rc.1.shell.1`（待发布）
+（主界面提供一次性首次成功引导；桌面设置提供本地优先、只读且脱敏的运行体检；
+发布门禁覆盖真实 Harness、插件市场、安全模式和跨版本升级；内核 `0.1.2-rc.1`）
 
 ## 1. 产品概述
 
@@ -39,8 +39,9 @@ src/main/supervisor.ts      Harness 子进程生命周期与退避重启
 src/main/kernel-manager.ts  内核 overlay(0026):选择/安装/健康守卫与失败回滚
 src/main/desktop-controls.ts  shell-owned Web 插件挂载与降级
 src/main/global-shortcut.ts  桌面全局快捷键注册、校验与平台文案
-src/main/desktop-preferences.ts  快捷键、开机启动、启动后隐藏、通知偏好与原生副作用
-src/main/desktop-notifications.ts  公开会话/任务状态归一化与通知边沿纯函数
+src/main/desktop-preferences.ts  快捷键、启动/通知与首次成功引导状态及原生副作用
+src/main/desktop-notifications.ts  公开会话/任务状态归一化、通知与首次成功边沿纯函数
+src/main/health-check.ts        本地运行时/目录/loopback/profile 检查与 opt-in 连通性探测
 src/main/balance.ts         DeepSeek 余额读数(0025):凭证读取、缓存与托盘行
 src/main/lan.ts             局域网 Web 代理与配对二维码
 src/main/diagnostics.ts     日志轮转、遮罩、报告格式与导出版
@@ -55,7 +56,7 @@ src/main/menu.ts            应用菜单、About、诊断入口
 src/main/pages.ts           有 CSP 的加载页与错误恢复页
 src/main/shell-preferences.ts  壳偏好（close-to-tray 与桌面偏好）
 src/preload/index.ts        沙箱桥接：错误恢复与已验证 Harness 来源的窄通道
-plugins/dsh-desktop-controls/  应用内扩展入口帮助浮层与扩展设置插件（shell.overlay/settings.section）
+plugins/dsh-desktop-controls/  应用内桌面工具、首次成功引导与桌面设置插件（shell.overlay/settings.section）
 ```
 
 ## 3. 验证契约

@@ -26,7 +26,7 @@ DeepSeek Harness(`@deepseek-ai/dsh`,简称 **dsh**)的非官方 Electron 桌面�
 |---|---|
 | **harness** | 被壳托管的 DeepSeek Harness 运行时;闭包 = 内置 Node 22(`resources/harness/node`)+ `@deepseek-ai/dsh` 及依赖(`resources/harness/node_modules`),由 `pnpm run bootstrap`(deploy-harness + fetch-node)物化 |
 | **shell / 壳修订** | 壳自身的修订;版本为复合式 `<dsh 版本>.shell.<壳修订>`,如 `0.1.1-rc.2.shell.2`(决策 0009) |
-| **DSH_HOME / settings.yaml** | 壳与 harness 的私有数据根(默认 `~/.dsh-desktop`,决策 0012);`settings.yaml` 是 Harness 偏好(locale/theme),变更经 fs.watch + 2 秒轮询兜底生效;桌面快捷键、开机启动与通知开关保存在应用 userData 下的 `shell-preferences.json`;`DSH_HOME=~/.dsh` 可回退为与 CLI 共享 |
+| **DSH_HOME / settings.yaml** | 壳与 harness 的私有数据根(默认 `~/.dsh-desktop`,决策 0012);`settings.yaml` 是 Harness 偏好(locale/theme),变更经 fs.watch + 2 秒轮询兜底生效;桌面快捷键、开机启动、通知与首次成功引导状态保存在应用 userData 下的 `shell-preferences.json`;`DSH_HOME=~/.dsh` 可回退为与 CLI 共享 |
 | **composite version** | `version.mjs`(show/check/bump shell/bump dsh/set)统一管理版本字段;tag `v<版本>` |
 | **smoke 协议** | `src/main/smoke-protocol.ts` 集中定义旗标/退出码/注入 env:`--smoke-test`、`--smoke-ui`、`DSH_DESKTOP_TEST_FAIL_HARNESS`、`DSH_DESKTOP_TEST_RETRY_FAIL`、`DSH_DESKTOP_DEV_WEB_URL`;`quitGracefully` 在 will-quit 强制 `app.exit(code)`(Windows 上 app.quit 会丢退出码) |
 | **S1 / S2 / S2.5 / A组** | 发布门禁层级,规划与边界见 `docs/test-hardening-plan.md`:S1=打包 E2E+故障注入;S2=安装态冒烟(deb/NSIS,含重装),macOS 无安装器故无 S2;S2.5=真实 Harness 首屏渲染(`--smoke-ui`);A组=设置面板/更新检查/诊断导出/几何恢复/真第二实例/特殊路径 |
@@ -39,6 +39,8 @@ DeepSeek Harness(`@deepseek-ai/dsh`,简称 **dsh**)的非官方 Electron 桌面�
 | **桌面状态通知** | 主进程只接收插件从 Harness `useSessions` 暴露的会话/后台任务状态边沿，在窗口未聚焦时用 Electron 原生通知提示完成、失败或待确认;不读屏、不做视觉识别、不上传（决策 0019） |
 | **站点数据** | `site/data/release.json` 由 `scripts/gen-site-data.mjs` 生成,`site-refresh` bot 在 Release 后自动同步;`dsh-desktop.com` 是 GitHub Pages/Vercel 部署(发布入口见 README) |
 | **安全模式 (safe mode)** | 壳拥有的启动形态:仅官方 bundles + 壳控件,禁用 profile 中全部用户插件条目;禁用靠 `--patch` overlay `{id, disabled: true}`(与官方 telemetry 开关同构),绝不改动用户插件文件;双触发(启动失败/手动),标志持久于 shell-preferences.json,退出需显式动作(决策 0021) |
+| **首次成功引导** | 主界面「桌面工具」旁的一次性非模态卡片：运行时 → 工作区 → 模型 → 第一条任务；可关闭，检测到既有非空会话或新的运行→完成边沿后自动结束；插件市场不在必经路径（决策 0031） |
+| **运行体检** | 「桌面设置」中的用户触发、只读检查；默认只查本地运行时、两类数据目录/磁盘、Harness loopback、Profile/插件/版本，代理/registry/更新源必须显式勾选；结果脱敏、不上传、不自动修复（决策 0031） |
 | **恢复中心** | 错误恢复页四动作:重试 / 以安全模式启动(已在安全模式时为退出)/ 导出诊断 / 打开日志文件夹 |
 | **.dshpreset** | 便携 Agent 预设包(JSON,`dsh-preset/v1`):导出某用户预设(`$DSH_HOME/.agent-presets/<id>/agent.cordis.yml + preset.yml`),导入带冲突检测(跳过/替换/克隆)与信任警告;写回用户预设根即被官方预设选择器挂载(决策 0021) |
 

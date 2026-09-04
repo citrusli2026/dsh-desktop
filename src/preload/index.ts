@@ -12,6 +12,7 @@ import type { DesktopPreferencesResult, DesktopPreferencesSnapshot, DesktopPrefe
 import type { ProfilePackageStatus } from '../main/profile.ts'
 import type { KernelOperationResult } from '../main/kernel-manager.ts'
 import type { MarketInstallProgress, MarketInstallResult } from '../main/market-install.ts'
+import type { DesktopHealthReport } from '../main/health-check.ts'
 
 export interface DesktopStartupStatus {
   appVersion: string
@@ -111,6 +112,9 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Report only the Harness public session/job state used for desktop notices. */
   reportSessionStatus: (snapshot: unknown): Promise<boolean> =>
     ipcRenderer.invoke('desktop:session-status', snapshot),
+  /** Run read-only local checks, plus optional network probes when opted in. */
+  runHealthCheck: (options?: { includeNetwork?: boolean }): Promise<DesktopHealthReport | null> =>
+    ipcRenderer.invoke('desktop:health-check', options ?? {}),
   /** List user-writable agent presets for the settings surface. */
   listPresets: (): Promise<Array<{ id: string; name: string }> | null> =>
     ipcRenderer.invoke('desktop:presets:list'),

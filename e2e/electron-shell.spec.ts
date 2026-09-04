@@ -372,6 +372,23 @@ shellTest('portable preset import lands a user preset under the user preset root
   expect(written.trim()).toContain('custom-prompt')
 })
 
+shellTest('health check is local by default and adds advisory connectivity checks only after opt-in @smoke', async ({ window, dshHome, userData }) => {
+  await packagedOrStubHeadline(window)
+  const run = (includeNetwork: boolean) => window.evaluate(value => (window as unknown as {
+    dshDesktop?: { runHealthCheck(options: { includeNetwork: boolean }): Promise<{ networkIncluded: boolean; results: Array<{ id: string; status: string }> } | null> }
+  }).dshDesktop?.runHealthCheck({ includeNetwork: value }), includeNetwork)
+  const local = await run(false)
+  expect(local?.networkIncluded).toBe(false)
+  expect(local?.results.map(result => result.id)).toEqual(['runtime', 'storage', 'harness', 'profile'])
+  expect(JSON.stringify(local)).not.toContain(dshHome)
+  expect(JSON.stringify(local)).not.toContain(userData)
+
+  const connected = await run(true)
+  expect(connected?.networkIncluded).toBe(true)
+  expect(connected?.results.map(result => result.id)).toEqual(['runtime', 'storage', 'harness', 'profile', 'proxy', 'registry', 'updates'])
+  expect(connected?.results.filter(result => ['proxy', 'registry', 'updates'].includes(result.id)).every(result => ['ok', 'warning'].includes(result.status))).toBe(true)
+})
+
 // Desktop status notices (shell.6/7): renderer → preload bridge → `desktop:session-status`
 // → native Notification. The bridge runs unchanged in dev-stub and packaged modes, so the
 // state-edge pipeline can be driven from either page. Record shown notices and their click
@@ -379,7 +396,7 @@ shellTest('portable preset import lands a user preset under the user preset root
 interface NoticeSnapshot { title: string; body: string; clicks: number }
 interface NoticeBridge {
   dshDesktop?: {
-    getDesktopPreferences(): Promise<{ notificationsAvailable?: boolean; notificationsEnabled?: boolean } | null>
+    getDesktopPreferences(): Promise<{ notificationsAvailable?: boolean; notificationsEnabled?: boolean; firstTaskCompleted?: boolean; firstRunGuideDismissed?: boolean } | null>
     reportSessionStatus(status: unknown): Promise<boolean>
     updateDesktopPreferences(patch: { notificationsEnabled: boolean }): Promise<unknown>
   }
@@ -471,6 +488,8 @@ shellTest('desktop status notices fire on real state edges and clicking one rest
   ])
   await clickNotice(electronApp, 1)
   await expect.poll(() => mainWindowVisible(electronApp)).toBe(true)
+  await expect.poll(() => window.evaluate(() => (window as unknown as NoticeBridge).dshDesktop?.getDesktopPreferences()))
+    .toMatchObject({ firstTaskCompleted: true })
 
   // The preference switch silences later edges; a hidden-window failure stays quiet.
   await window.evaluate(() => (window as unknown as NoticeBridge).dshDesktop?.updateDesktopPreferences({ notificationsEnabled: false }))
@@ -504,6 +523,15 @@ shellTest('packaged app shows a desktop notice for a real state edge and restore
   }
   await dismissOnboarding()
 
+  const firstRunGuide = window.locator('[data-dsh-first-success-guide]')
+  await expect(firstRunGuide).toBeVisible()
+  await expect(firstRunGuide.locator('[data-dsh-guide-step]')).toHaveCount(4)
+  await expect(firstRunGuide).toContainText('The plugin market is optional')
+  await firstRunGuide.getByRole('button', { name: 'Dismiss first-run guide' }).click()
+  await expect(firstRunGuide).toHaveCount(0)
+  await expect.poll(() => window.evaluate(() => (window as unknown as NoticeBridge).dshDesktop?.getDesktopPreferences()))
+    .toMatchObject({ firstRunGuideDismissed: true, firstTaskCompleted: false })
+
   // The overlay entry is draggable: pointer-drag moves it, must not open the
   // panel, and a clean click afterwards still does.
   const trigger = window.locator('[data-dsh-controls-trigger]')
@@ -530,17 +558,17 @@ shellTest('packaged app shows a desktop notice for a real state edge and restore
   await expect(window.locator('[data-dsh-controls-panel]')).toHaveCount(0)
   await trigger.click()
   await expect(window.locator('[data-dsh-controls-panel]')).toBeVisible()
-  await window.screenshot({ path: testInfo.outputPath('04-extension-menu.png') })
+  await window.screenshot({ path: testInfo.outputPath('04-desktop-tools-menu.png') })
   await window.keyboard.press('Escape')
   await expect(window.locator('[data-dsh-controls-panel]')).toHaveCount(0)
 
-  // The desktop extensions live in their own Settings section now (like
+  // The desktop tools live in their own Settings section now (like
   // General/Models/Plugins), not embedded in General. Scope to the dialog:
-  // the page also has the overlay trigger called 'Extensions'.
+  // the page also has the overlay trigger called 'Desktop tools'.
   await window.getByText('Settings', { exact: true }).first().click()
-  const extensionNav = window.locator('[role="dialog"]').getByText('Extensions').first()
-  await extensionNav.waitFor({ timeout: 15_000 })
-  await extensionNav.click()
+  const desktopSettingsNav = window.locator('[role="dialog"]').getByText('Desktop settings').first()
+  await desktopSettingsNav.waitFor({ timeout: 15_000 })
+  await desktopSettingsNav.click()
   await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-settings]') !== null
     && document.querySelector('[data-dsh-desktop-lan-row]') !== null
     && document.body.innerText.includes('Summon shortcut'))).toBe(true)
@@ -555,6 +583,11 @@ shellTest('packaged app shows a desktop notice for a real state edge and restore
   await expect(settings.getByText('Start in Safe Mode', { exact: true })).toHaveCount(1)
   await expect(advancedSettings.getByText('Start in Safe Mode', { exact: true })).toHaveCount(0)
   await expect(settings.getByText('Start hidden in the tray', { exact: true })).toHaveCount(0)
+  const healthNetwork = settings.getByRole('checkbox', { name: /Also check proxy/ })
+  await expect(healthNetwork).not.toBeChecked()
+  await settings.getByRole('button', { name: 'Run check' }).click()
+  await expect(settings.locator('[data-dsh-health-result]')).toHaveCount(4, { timeout: 15_000 })
+  await expect(settings).toContainText('Results stay local and sanitized')
   await settings.screenshot({ path: testInfo.outputPath('02-desktop-preferences.png') })
   await advancedSettings.locator('summary').click()
   await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-advanced]')?.hasAttribute('open') ?? false)).toBe(true)

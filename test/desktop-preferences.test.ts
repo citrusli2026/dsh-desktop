@@ -11,6 +11,8 @@ function createStore(initial: Partial<DesktopPreferences> = {}): ShellPreference
     notificationsEnabled: true,
     safeMode: false,
     screenCapture: false,
+    firstRunGuideDismissed: false,
+    firstTaskCompleted: false,
     ...initial,
   }
   return {

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { focusWindowOnNotificationClick, normalizePublicStatusSnapshot, notificationsForPublicStatus } from '../src/main/desktop-notifications.ts'
+import { conversationSucceeded, focusWindowOnNotificationClick, normalizePublicStatusSnapshot, notificationsForPublicStatus } from '../src/main/desktop-notifications.ts'
 
 test('notification click summons the shell window on every click', () => {
   let listener: (() => void) | undefined
@@ -15,7 +15,7 @@ test('notification click summons the shell window on every click', () => {
 test('normalizes public session and job state and drops malformed entries', () => {
   const snapshot = normalizePublicStatusSnapshot({
     sessions: [
-      { id: 's1', title: '  A   task ', running: true, pendingInteraction: 'question', jobs: [
+      { id: 's1', title: '  A   task ', running: true, blank: false, pendingInteraction: 'question', jobs: [
         { id: 'j1', label: 'worker', status: 'running' },
         { id: 'j2', label: 'bad', status: 'unknown' },
       ] },
@@ -25,12 +25,24 @@ test('normalizes public session and job state and drops malformed entries', () =
   })
   assert.deepEqual(snapshot, {
     sessions: [{
-      id: 's1', title: 'A task', running: true, pendingInteraction: 'question',
+      id: 's1', title: 'A task', running: true, blank: false, pendingInteraction: 'question',
       jobs: [{ id: 'j1', label: 'worker', status: 'running' }],
     }],
   })
   assert.equal(normalizePublicStatusSnapshot({}), undefined)
   assert.equal(normalizePublicStatusSnapshot({ sessions: 'not an array' }), undefined)
+})
+
+test('first-success detection migrates existing conversations and waits for a real completion edge', () => {
+  const blank = normalizePublicStatusSnapshot({ sessions: [{ id: 's1', title: 'New task', blank: true, running: false, jobs: [] }] })!
+  const running = normalizePublicStatusSnapshot({ sessions: [{ id: 's1', title: 'First task', blank: false, running: true, jobs: [] }] })!
+  const waiting = normalizePublicStatusSnapshot({ sessions: [{ id: 's1', title: 'First task', blank: false, running: false, pendingInteraction: 'question', jobs: [] }] })!
+  const completed = normalizePublicStatusSnapshot({ sessions: [{ id: 's1', title: 'First task', blank: false, running: false, jobs: [] }] })!
+  assert.equal(conversationSucceeded(undefined, blank), false)
+  assert.equal(conversationSucceeded(undefined, completed), true, 'existing non-blank history suppresses upgrade onboarding')
+  assert.equal(conversationSucceeded(blank, running), false)
+  assert.equal(conversationSucceeded(running, waiting), false)
+  assert.equal(conversationSucceeded(running, completed), true)
 })
 
 test('reports only public state transitions after the initial baseline', () => {

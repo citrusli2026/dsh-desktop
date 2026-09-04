@@ -64,6 +64,8 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       notificationsEnabled: true,
       safeMode: false,
       screenCapture: false,
+      firstRunGuideDismissed: false,
+      firstTaskCompleted: false,
     })
     store.updateDesktopPreferences({ shortcut: 'Ctrl+Alt+K', launchAtLogin: true, launchHidden: true, notificationsEnabled: false })
     assert.deepEqual(store.getDesktopPreferences(), {
@@ -73,9 +75,27 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       notificationsEnabled: false,
       safeMode: false,
       screenCapture: false,
+      firstRunGuideDismissed: false,
+      firstTaskCompleted: false,
     })
     const raw = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>
     assert.equal(raw.closeToTrayExplained, undefined)
+  } finally {
+    await rm(join(path, '..'), { recursive: true, force: true })
+  }
+})
+
+test('first-success guide dismissal and completion persist independently', async () => {
+  const path = await tempPath()
+  try {
+    const store = createShellPreferences(path)
+    store.updateDesktopPreferences({ firstRunGuideDismissed: true })
+    assert.equal(store.getDesktopPreferences().firstRunGuideDismissed, true)
+    assert.equal(store.getDesktopPreferences().firstTaskCompleted, false)
+    store.updateDesktopPreferences({ firstTaskCompleted: true })
+    const reloaded = createShellPreferences(path).getDesktopPreferences()
+    assert.equal(reloaded.firstRunGuideDismissed, true)
+    assert.equal(reloaded.firstTaskCompleted, true)
   } finally {
     await rm(join(path, '..'), { recursive: true, force: true })
   }

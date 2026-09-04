@@ -56,6 +56,7 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-controls] [data-dsh-controls-trigger][data-dsh-controls-dragging] { cursor: grabbing; }
       [data-dsh-desktop-controls] [data-dsh-controls-trigger]:focus-visible,
       [data-dsh-desktop-controls] [data-dsh-controls-action]:focus-visible,
+      [data-dsh-desktop-controls] [data-dsh-guide-close]:focus-visible,
       [data-dsh-desktop-settings] button:focus-visible,
       [data-dsh-desktop-settings] input:focus-visible {
         outline: 2px solid var(--dsh-controls-accent);
@@ -243,7 +244,77 @@ window.__ModuleLoader__.load({
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 11px;
       }
-      /* 设置页「扩展设置」分区：与 Harness 设置页同款排版（标题→说明→条目行）。 */
+      [data-dsh-desktop-controls] [data-dsh-first-success-guide] {
+        background: var(--dsh-controls-panel);
+        border: 1px solid color-mix(in srgb, var(--dsh-controls-accent) 24%, var(--dsh-controls-border));
+        border-radius: 16px;
+        box-shadow: 0 14px 38px rgba(31, 35, 43, .17);
+        margin-top: 8px;
+        padding: 15px 16px 14px;
+        pointer-events: auto;
+        width: min(310px, calc(100vw - 32px));
+      }
+      [data-dsh-desktop-controls] [data-dsh-guide-head] {
+        align-items: flex-start;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+      }
+      [data-dsh-desktop-controls] [data-dsh-guide-title] { font-size: 15px; line-height: 1.35; margin: 0; }
+      [data-dsh-desktop-controls] [data-dsh-guide-close] {
+        background: transparent;
+        border: 0;
+        border-radius: 7px;
+        color: var(--dsh-controls-muted);
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+        padding: 2px 5px;
+      }
+      [data-dsh-desktop-controls] [data-dsh-guide-intro],
+      [data-dsh-desktop-controls] [data-dsh-guide-foot] {
+        color: var(--dsh-controls-muted);
+        font-size: 11px;
+        line-height: 1.5;
+        margin: 5px 0 0;
+      }
+      [data-dsh-desktop-controls] [data-dsh-guide-steps] {
+        display: grid;
+        gap: 7px;
+        list-style: none;
+        margin: 12px 0 10px;
+        padding: 0;
+      }
+      [data-dsh-desktop-controls] [data-dsh-guide-step] {
+        align-items: center;
+        color: var(--dsh-controls-muted);
+        display: grid;
+        font-size: 12px;
+        gap: 9px;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
+      }
+      [data-dsh-desktop-controls] [data-dsh-guide-step]::before {
+        align-items: center;
+        background: var(--dsh-controls-panel-muted);
+        border: 1px solid var(--dsh-controls-border);
+        border-radius: 999px;
+        content: attr(data-step);
+        display: inline-flex;
+        font-size: 10px;
+        font-weight: 700;
+        height: 20px;
+        justify-content: center;
+        width: 20px;
+      }
+      [data-dsh-desktop-controls] [data-dsh-guide-step][data-done] { color: var(--dsh-controls-text); }
+      [data-dsh-desktop-controls] [data-dsh-guide-step][data-done]::before {
+        background: var(--dsh-controls-accent-soft);
+        border-color: color-mix(in srgb, var(--dsh-controls-accent) 30%, transparent);
+        color: var(--dsh-controls-accent);
+        content: "✓";
+      }
+      [data-dsh-desktop-controls] [data-dsh-guide-state] { font-size: 10px; white-space: nowrap; }
+      /* 设置页「桌面设置」分区：与 Harness 设置页同款排版（标题→说明→条目行）。 */
       [data-dsh-desktop-settings-section] {
         --dsh-controls-accent: #4d6bfe;
         --dsh-controls-panel: var(--dsw-alias-bg-layer-2, #ffffff);
@@ -399,10 +470,10 @@ window.__ModuleLoader__.load({
       }
       [data-dsh-desktop-settings-group][data-dsh-desktop-group="habits"] {
         grid-column: 1;
-        grid-row: 3 / span 2;
+        grid-row: 4 / span 2;
       }
-      [data-dsh-desktop-settings-group][data-dsh-desktop-group="services"] { grid-column: 2; grid-row: 3; }
-      [data-dsh-desktop-settings-group][data-dsh-desktop-group="recovery"] { grid-column: 2; grid-row: 4; }
+      [data-dsh-desktop-settings-group][data-dsh-desktop-group="services"] { grid-column: 2; grid-row: 4; }
+      [data-dsh-desktop-settings-group][data-dsh-desktop-group="recovery"] { grid-column: 2; grid-row: 5; }
       [data-dsh-desktop-settings-group][data-dsh-desktop-group="services"] [data-dsh-desktop-setting-row] {
         align-items: stretch;
         flex-direction: column;
@@ -433,6 +504,66 @@ window.__ModuleLoader__.load({
         letter-spacing: .02em;
         margin: 0 0 4px;
       }
+      [data-dsh-desktop-settings] [data-dsh-desktop-health] {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        padding-bottom: 13px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-health-head] {
+        align-items: flex-start;
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+      }
+      [data-dsh-desktop-settings] [data-dsh-health-copy] {
+        color: var(--dsh-controls-muted);
+        display: block;
+        font-size: 11px;
+        line-height: 1.45;
+        margin-top: 2px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-health-network] {
+        align-items: center;
+        color: var(--dsh-controls-muted);
+        cursor: pointer;
+        display: flex;
+        font-size: 11px;
+        gap: 7px;
+        margin-top: 10px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-health-results] {
+        display: grid;
+        gap: 7px;
+        list-style: none;
+        margin: 12px 0 0;
+        padding: 0;
+      }
+      [data-dsh-desktop-settings] [data-dsh-health-result] {
+        align-items: start;
+        background: var(--dsh-controls-panel-muted);
+        border-radius: 9px;
+        display: grid;
+        gap: 3px 10px;
+        grid-template-columns: auto minmax(0, 1fr);
+        padding: 9px 10px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-health-badge] {
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+        grid-row: 1 / span 2;
+        line-height: 1;
+        min-width: 34px;
+        padding: 5px 6px;
+        text-align: center;
+      }
+      [data-dsh-desktop-settings] [data-dsh-health-badge][data-status="ok"] { background: rgba(18, 139, 92, .12); color: #128b5c; }
+      [data-dsh-desktop-settings] [data-dsh-health-badge][data-status="warning"] { background: rgba(154, 103, 0, .13); color: #9a6700; }
+      [data-dsh-desktop-settings] [data-dsh-health-badge][data-status="failed"] { background: rgba(204, 51, 51, .11); color: #c33; }
+      [data-dsh-desktop-settings] [data-dsh-health-label] { font-size: 12px; font-weight: 650; line-height: 1.4; }
+      [data-dsh-desktop-settings] [data-dsh-health-detail],
+      [data-dsh-desktop-settings] [data-dsh-health-action] { color: var(--dsh-controls-muted); font-size: 11px; line-height: 1.45; }
+      [data-dsh-desktop-settings] [data-dsh-health-action] { color: var(--dsh-controls-text); grid-column: 2; }
       [data-dsh-desktop-settings] [data-dsh-desktop-advanced] {
         background: var(--dsh-controls-panel-muted);
         border: 1px solid var(--dsh-controls-border);
@@ -536,14 +667,17 @@ window.__ModuleLoader__.load({
 
     const COPY = {
       zh: {
-        trigger: "扩展入口", title: "桌面扩展", panelEyebrow: "DSH DESKTOP", panelCopy: "连接移动设备，或在异常时恢复 Harness。", ready: "已就绪",
+        trigger: "桌面工具", title: "桌面工具", panelEyebrow: "DSH DESKTOP", panelCopy: "连接移动设备、调整桌面习惯，或在异常时恢复 Harness。", ready: "已就绪",
         panelConnect: "连接", panelRecovery: "恢复", panelInfo: "信息",
         about: "关于",
         aboutDetail: "版本、运行时与项目来源",
         restartHarness: "重启 Harness",
         restartDetail: "保留设置并重新启动内核",
-        unavailable: "请右键窗口或点击系统托盘图标使用扩展入口。",
-        settingsTitle: "扩展设置", settingsCopy: "连接设备、调整桌面习惯；需要时可从这里恢复或维护 Harness。",
+        unavailable: "请右键窗口或点击系统托盘图标使用桌面工具。",
+        settingsTitle: "桌面设置", settingsCopy: "连接设备、调整桌面习惯；需要时可从这里体检、恢复或维护 Harness。",
+        guideEyebrow: "第一次使用", guideTitle: "从这里开始", guideClose: "关闭首次使用引导", guideIntro: "无需先安装插件，完成下面四步即可开始。",
+        guideRuntime: "运行环境就绪", guideWorkspace: "选择工作区", guideModel: "配置模型", guideTask: "完成第一条任务", guideDone: "完成", guidePending: "待完成", guideMarketOptional: "插件市场是可选项，不影响你先完成第一条任务。",
+        healthTitle: "运行体检", healthCopy: "检查运行环境、数据目录、Harness、本地连接、Profile 和插件状态。结果仅保留在本机并已脱敏，不上传，也不会自动修复文件。", healthRun: "开始体检", healthAgain: "重新体检", healthRunning: "检查中…", healthNetwork: "额外检查代理、registry 和更新源连通性（会发起网络请求）", healthOk: "正常", healthWarning: "警告", healthFailed: "失败",
         groupHabits: "桌面习惯", groupServices: "账户与插件", groupRecovery: "恢复", groupPlugins: "插件", groupOptional: "维护与迁移",
         lanSettings: "连接移动设备", lanSettingsDetail: "手机与电脑连接同一局域网，扫码即可进入 Harness Web 界面。",
         lanStart: "开始配对", lanShowQr: "显示二维码", lanStop: "停止共享", lanPanelDetail: "同一局域网 · 扫码进入 Harness", lanActiveDetail: "局域网入口已开启", lanStopDetail: "关闭当前局域网入口",
@@ -578,14 +712,17 @@ window.__ModuleLoader__.load({
         invalid: "快捷键格式不正确。", conflict: "快捷键已被其它应用占用，请换一个。",
       },
       en: {
-        trigger: "Extensions", title: "Desktop tools", panelEyebrow: "DSH DESKTOP", panelCopy: "Connect another device or recover Harness when needed.", ready: "Ready",
+        trigger: "Desktop tools", title: "Desktop tools", panelEyebrow: "DSH DESKTOP", panelCopy: "Connect a device, tune desktop habits, or recover Harness when needed.", ready: "Ready",
         panelConnect: "Connect", panelRecovery: "Recovery", panelInfo: "Information",
         about: "About",
         aboutDetail: "Version, runtime, and project source",
         restartHarness: "Restart Harness",
         restartDetail: "Keep settings and restart the kernel",
-        unavailable: "Right-click the window or use the system tray for extensions.",
-        settingsTitle: "Extensions", settingsCopy: "Connect devices and tune desktop habits; recover or maintain Harness when needed.",
+        unavailable: "Right-click the window or use the system tray for desktop tools.",
+        settingsTitle: "Desktop settings", settingsCopy: "Connect devices and tune desktop habits; inspect, recover, or maintain Harness when needed.",
+        guideEyebrow: "FIRST RUN", guideTitle: "Start here", guideClose: "Dismiss first-run guide", guideIntro: "No plugin is required. Complete these four steps to get started.",
+        guideRuntime: "Runtime ready", guideWorkspace: "Choose a workspace", guideModel: "Configure a model", guideTask: "Complete your first task", guideDone: "Done", guidePending: "To do", guideMarketOptional: "The plugin market is optional and never blocks your first task.",
+        healthTitle: "Run health check", healthCopy: "Checks the runtime, data folders, Harness, loopback, profile, and plugin state. Results stay local and sanitized; nothing is uploaded or repaired automatically.", healthRun: "Run check", healthAgain: "Run again", healthRunning: "Checking…", healthNetwork: "Also check proxy, registry, and update-source connectivity (sends network requests)", healthOk: "OK", healthWarning: "Warning", healthFailed: "Failed",
         groupHabits: "Desktop habits", groupServices: "Account & plugins", groupRecovery: "Recovery", groupPlugins: "Plugins", groupOptional: "Maintenance & migration",
         lanSettings: "Connect a mobile device", lanSettingsDetail: "Same LAN as the computer; scan the QR code to enter the Harness Web UI.",
         lanStart: "Start pairing", lanShowQr: "Show QR code", lanStop: "Stop sharing", lanPanelDetail: "Same LAN · scan to enter Harness", lanActiveDetail: "LAN access is active", lanStopDetail: "Close the current LAN entry point",
@@ -645,6 +782,7 @@ window.__ModuleLoader__.load({
         })).filter((job) => job.id !== "") : [];
         return {
           id, title: String(item.displayTitle ?? item.title ?? id), running: item.running === true,
+          ...(typeof item.blank === "boolean" ? { blank: item.blank } : {}),
           ...(typeof item.pendingInteraction === "string" ? { pendingInteraction: item.pendingInteraction } : {}), jobs,
         };
       });
@@ -708,6 +846,9 @@ window.__ModuleLoader__.load({
       const [recording, setRecording] = react.useState(false);
       const [message, setMessage] = react.useState("");
       const [startup, setStartup] = react.useState(null);
+      const [healthReport, setHealthReport] = react.useState(null);
+      const [healthBusy, setHealthBusy] = react.useState(false);
+      const [healthNetwork, setHealthNetwork] = react.useState(false);
 
       react.useEffect(() => {
         if (typeof bridge?.getDesktopPreferences !== "function") return;
@@ -739,6 +880,17 @@ window.__ModuleLoader__.load({
             : result.reason === "invalid" ? copy.invalid
             : result.reason === "screen-permission" ? copy.screenCapturePermission
             : copy.unsupported);
+        }
+      };
+
+      const runHealth = async () => {
+        if (typeof bridge?.runHealthCheck !== "function") return;
+        setHealthBusy(true);
+        try {
+          const report = await bridge.runHealthCheck({ includeNetwork: healthNetwork });
+          if (report !== null) setHealthReport(report);
+        } finally {
+          setHealthBusy(false);
         }
       };
 
@@ -969,6 +1121,25 @@ window.__ModuleLoader__.load({
         children: [
           react_jsx_runtime.jsx("h3", { "data-dsh-desktop-settings-heading": true, children: copy.settingsTitle }),
           react_jsx_runtime.jsx("p", { "data-dsh-desktop-settings-copy": true, children: copy.settingsCopy }),
+          typeof bridge?.runHealthCheck === "function" ? react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, "data-dsh-desktop-health": true, children: [
+            react_jsx_runtime.jsxs("div", { "data-dsh-health-head": true, children: [
+              react_jsx_runtime.jsxs("span", { children: [
+                react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.healthTitle }),
+                react_jsx_runtime.jsx("small", { "data-dsh-health-copy": true, children: copy.healthCopy }),
+              ] }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: healthBusy, onClick: () => void runHealth(), children: healthBusy ? copy.healthRunning : healthReport === null ? copy.healthRun : copy.healthAgain }),
+            ] }),
+            react_jsx_runtime.jsxs("label", { "data-dsh-health-network": true, children: [
+              react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: healthNetwork, disabled: healthBusy, onChange: (event) => setHealthNetwork(event.target.checked) }),
+              react_jsx_runtime.jsx("span", { children: copy.healthNetwork }),
+            ] }),
+            healthReport === null ? null : react_jsx_runtime.jsx("ul", { "data-dsh-health-results": true, "aria-live": "polite", children: healthReport.results.map((result) => react_jsx_runtime.jsxs("li", { "data-dsh-health-result": result.id, children: [
+              react_jsx_runtime.jsx("span", { "data-dsh-health-badge": true, "data-status": result.status, children: result.status === "ok" ? copy.healthOk : result.status === "warning" ? copy.healthWarning : copy.healthFailed }),
+              react_jsx_runtime.jsx("strong", { "data-dsh-health-label": true, children: result.label }),
+              react_jsx_runtime.jsx("span", { "data-dsh-health-detail": true, children: result.detail }),
+              result.action ? react_jsx_runtime.jsx("span", { "data-dsh-health-action": true, children: result.action }) : null,
+            ] }, result.id)) }),
+          ] }) : null,
           react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, "data-dsh-desktop-group": "habits", children: [
             react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupHabits }),
           typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-lan-row": true, "data-dsh-desktop-setting-row": true, children: [
@@ -1070,6 +1241,35 @@ window.__ModuleLoader__.load({
       });
     }
 
+    function guideProgressOf(state, startup, preferences) {
+      const sessions = Object.values(state?.byId ?? {});
+      return [
+        startup?.harnessPhase === "ready",
+        sessions.some((session) => typeof session?.cwd === "string" && session.cwd.trim() !== ""),
+        sessions.some((session) => session?.running === true || session?.blank === false),
+        preferences?.firstTaskCompleted === true,
+      ];
+    }
+
+    function FirstSuccessGuide({ copy, progress, onDismiss }) {
+      const labels = [copy.guideRuntime, copy.guideWorkspace, copy.guideModel, copy.guideTask];
+      return react_jsx_runtime.jsxs("section", { "data-dsh-first-success-guide": true, "aria-label": copy.guideTitle, children: [
+        react_jsx_runtime.jsxs("div", { "data-dsh-guide-head": true, children: [
+          react_jsx_runtime.jsxs("span", { children: [
+            react_jsx_runtime.jsx("span", { "data-dsh-controls-eyebrow": true, children: copy.guideEyebrow }),
+            react_jsx_runtime.jsx("h2", { "data-dsh-guide-title": true, children: copy.guideTitle }),
+          ] }),
+          react_jsx_runtime.jsx("button", { type: "button", "data-dsh-guide-close": true, "aria-label": copy.guideClose, title: copy.guideClose, onClick: onDismiss, children: "×" }),
+        ] }),
+        react_jsx_runtime.jsx("p", { "data-dsh-guide-intro": true, children: copy.guideIntro }),
+        react_jsx_runtime.jsx("ol", { "data-dsh-guide-steps": true, children: labels.map((label, index) => react_jsx_runtime.jsxs("li", { "data-dsh-guide-step": true, "data-step": String(index + 1), "data-done": progress[index] || null, children: [
+          react_jsx_runtime.jsx("span", { children: label }),
+          react_jsx_runtime.jsx("small", { "data-dsh-guide-state": true, children: progress[index] ? copy.guideDone : copy.guidePending }),
+        ] }, label)) }),
+        react_jsx_runtime.jsx("p", { "data-dsh-guide-foot": true, children: copy.guideMarketOptional }),
+      ] });
+    }
+
     function SafeModeBanner({ copy, bridge }) {
       const [active, setActive] = react.useState(false);
       const [suspects, setSuspects] = react.useState([]);
@@ -1137,22 +1337,27 @@ window.__ModuleLoader__.load({
       const [startup, setStartup] = react.useState(null);
       const sessionState = useSessions((state) => state);
       const status = react.useMemo(() => publicStatusOf(sessionState), [sessionState]);
+      const guideProgress = react.useMemo(() => guideProgressOf(sessionState, startup, preferences), [sessionState, startup, preferences]);
 
       react.useEffect(() => {
         if (typeof bridge?.reportSessionStatus !== "function" || status === undefined) return;
-        void bridge.reportSessionStatus(status);
+        void bridge.reportSessionStatus(status).then(() => {
+          if (typeof bridge?.getDesktopPreferences !== "function") return;
+          void bridge.getDesktopPreferences().then((value) => { if (value !== null) setPreferences(value); });
+        });
       }, [bridge, status]);
 
       react.useEffect(() => {
-        if (!open || typeof bridge?.getDesktopPreferences !== "function") return undefined;
+        if (typeof bridge?.getDesktopPreferences !== "function") return undefined;
         void bridge.getDesktopPreferences().then((value) => { if (value !== null) setPreferences(value); });
         return undefined;
-      }, [open, bridge]);
+      }, [bridge]);
 
       react.useEffect(() => {
-        if (!open || typeof bridge?.getStartupStatus !== "function") return undefined;
+        if (typeof bridge?.getStartupStatus !== "function") return undefined;
         const refresh = () => void bridge.getStartupStatus().then((value) => { if (value !== null) setStartup(value); });
         refresh();
+        if (!open) return undefined;
         const timer = setInterval(refresh, 1000);
         return () => clearInterval(timer);
       }, [open, bridge]);
@@ -1244,6 +1449,12 @@ window.__ModuleLoader__.load({
         setOpen((current) => !current);
       };
 
+      const dismissGuide = async () => {
+        if (typeof bridge?.updateDesktopPreferences !== "function") return;
+        const result = await bridge.updateDesktopPreferences({ firstRunGuideDismissed: true });
+        if (result?.ok === true) setPreferences(result.preferences);
+      };
+
       const entryStyle = entryPosition === null
         ? undefined
         : { left: String(entryPosition.left) + "px", top: String(entryPosition.top) + "px", right: "auto" };
@@ -1266,6 +1477,9 @@ window.__ModuleLoader__.load({
               react_jsx_runtime.jsx("span", { "data-dsh-controls-label": true, children: copy.trigger }),
             ],
           }),
+          !open && preferences !== null && preferences.firstRunGuideDismissed !== true && preferences.firstTaskCompleted !== true
+            ? react_jsx_runtime.jsx(FirstSuccessGuide, { copy: copy, progress: guideProgress, onDismiss: () => void dismissGuide() })
+            : null,
           open ? react_jsx_runtime.jsxs("section", { id: "dsh-desktop-controls-panel", "data-dsh-controls-panel": true, role: "dialog", "aria-label": copy.title, children: [
             react_jsx_runtime.jsxs("header", { "data-dsh-controls-panel-head": true, children: [
               react_jsx_runtime.jsx("span", { "data-dsh-controls-eyebrow": true, children: copy.panelEyebrow }),
@@ -1309,10 +1523,10 @@ window.__ModuleLoader__.load({
       ctx.slots.inject("shell.overlay", () => ctx.slots.register({
         name: "shell.overlay", id: "dsh-desktop-controls", order: 100, label: "Desktop controls",
       }, DesktopControls));
-      // 独立设置分区（与通用/模型/插件并列），排版随 Harness 设置页。
+      // 独立桌面设置分区（与通用/模型/插件并列），排版随 Harness 设置页。
       ctx.slots.inject("settings.section", () => ctx.slots.register({
         name: "settings.section", id: "dsh-desktop-controls", order: 20,
-        label: () => document.documentElement.lang.toLowerCase().startsWith("zh") ? "扩展设置" : "Extensions",
+        label: () => document.documentElement.lang.toLowerCase().startsWith("zh") ? "桌面设置" : "Desktop settings",
       }, DesktopSettingsSection));
     }
 

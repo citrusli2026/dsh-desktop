@@ -144,7 +144,7 @@
           <div class="hero__highlight hero__highlight--balance">
             <span class="hero__highlight-label" data-i18n="hero.highlightBalance.label">账户余额</span>
             <strong class="hero__highlight-value" data-i18n="hero.highlightBalance.value">托盘里直接查看</strong>
-            <span class="hero__highlight-note" data-i18n="hero.highlightBalance.note">有可用 API Key 时，在托盘与扩展设置中显示。</span>
+            <span class="hero__highlight-note" data-i18n="hero.highlightBalance.note">有可用 API Key 时，在托盘与桌面设置中显示。</span>
           </div>
           <div class="hero__highlight hero__highlight--core">
             <span class="hero__highlight-label">CORE VERSION</span>
@@ -157,7 +157,7 @@
         <figcaption class="hero__shot-head">
           <div>
             <span class="hero__shot-kicker">真实应用截图</span>
-            <strong class="hero__shot-title" id="hero-shot-title">扩展入口，始终可达</strong>
+            <strong class="hero__shot-title" id="hero-shot-title">桌面工具，始终可达</strong>
           </div>
           <span class="hero__shot-theme">浅色 / 深色</span>
         </figcaption>
@@ -201,7 +201,7 @@
         <article>
           <p class="boundary-grid__eyebrow" data-i18n="ext.marker">扩展功能</p>
           <h3 data-i18n="ext.title">扫码，把 Harness 带到手机或平板</h3>
-          <p class="boundary-grid__body" data-i18n="ext.body">从扩展入口启动局域网 Web 代理，手机与电脑同网后扫码即可进入 Harness。</p>
+          <p class="boundary-grid__body" data-i18n="ext.body">从「桌面工具」启动局域网 Web 代理，手机与电脑同网后扫码即可进入 Harness。</p>
           <p class="boundary-grid__note" data-i18n="ext.note">不需要单独的 Android / iOS 应用。</p>
         </article>
       </div>
@@ -226,7 +226,7 @@
           <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">02</span><div><b data-i18n="mk.route2.title">装坏了也不怕</b><span data-i18n="mk.route2.body">出现问题时，用安全模式隔离第三方插件。</span></div></div>
         </div>
       </article>
-      <p class="note" data-reveal style="--i:4" data-i18n="mk.note">安装边界：先在「设置 → 扩展设置 → 插件市场」手动安装 dsh-market，再到 Harness「设置 → 插件市场」手动选择其他插件。</p>
+      <p class="note" data-reveal style="--i:4" data-i18n="mk.note">安装边界：按需在「设置 → 桌面设置 → 插件市场」手动安装 dsh-market，再到 Harness「设置 → 插件市场」手动选择其他插件；首次任务不依赖插件市场。</p>
     </div>
   </section>
 
@@ -270,7 +270,7 @@
           <h3 id="latest-title" data-i18n="latest.title">把可靠性做成用户看得懂的路径</h3>
           <p data-i18n="latest.lead">最新发布线继续围绕桌面壳收口，不增加第二套 Agent 产品。</p>
         </div>
-        <ul data-i18n="latest.items"><li><b>清晰状态：</b>桌面入口、托盘和设置保持一致。</li><li><b>直接恢复：</b>重试、Safe Mode、日志和诊断都有入口。</li><li><b>明确边界：</b>社区插件不预装，内核更新可回滚。</li></ul>
+        <ul data-i18n="latest.items"><li><b>首次成功：</b>主界面四步引导在首条任务完成后自动结束。</li><li><b>一键体检：</b>本地检查运行时、目录、loopback、Profile 与插件状态。</li><li><b>明确边界：</b>联网检查需主动勾选，社区插件仍完全可选。</li></ul>
       </article>
     </div>
   </section>
@@ -359,7 +359,7 @@
         </details>
         <details>
           <summary data-i18n="faq.q10">客户端带插件吗？怎么装更多插件？</summary>
-          <p class="faq-answer" data-i18n="faq.a10">dsh-desktop 安装包不内置社区插件，所有插件都需要用户手动安装。首次启动后，在 <b>设置 → 扩展设置 → 插件市场</b> 手动安装 dsh-market；装好后打开 Harness「设置 → 插件市场」，即可浏览并一键安装数千个社区插件与主题。安全模式会隔离所有第三方插件。</p>
+          <p class="faq-answer" data-i18n="faq.a10">dsh-desktop 安装包不内置社区插件，所有插件都需要用户手动安装。需要时在 <b>设置 → 桌面设置 → 插件市场</b> 手动安装 dsh-market；装好后打开 Harness「设置 → 插件市场」即可浏览和安装。首次任务不需要插件市场；安全模式会隔离所有第三方插件。</p>
         </details>
         <details>
           <summary data-i18n="faq.q14">启动失败或插件装坏了怎么办？</summary>

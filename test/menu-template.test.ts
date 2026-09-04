@@ -21,7 +21,7 @@ function labels(items: readonly MenuItemConstructorOptions[]): string[] {
 
 test('macOS Chinese menu is native-shaped and avoids links duplicated by About', () => {
   const template = buildAppMenuTemplate({ locale: 'zh', platform: 'darwin', packaged: true, appName: 'dsh-desktop' }, actions)
-  assert.deepEqual(template.map(item => item.label), ['dsh-desktop', '文件', '编辑', '视图', '窗口', '扩展', '帮助'])
+  assert.deepEqual(template.map(item => item.label), ['dsh-desktop', '文件', '编辑', '视图', '窗口', '桌面工具', '帮助'])
   const all = labels(template)
   assert.ok(all.includes('关于 dsh-desktop'))
   assert.ok(all.includes('DeepSeek 官方网站'))
@@ -38,7 +38,7 @@ test('Windows English menu has a reliable quit path and disables restart while u
   const template = buildAppMenuTemplate({
     locale: 'en', platform: 'win32', packaged: true, appName: 'dsh-desktop', restartEnabled: false,
   }, actions)
-  assert.deepEqual(template.map(item => item.label), ['File', 'Edit', 'View', 'Window', 'Extensions', 'Help'])
+  assert.deepEqual(template.map(item => item.label), ['File', 'Edit', 'View', 'Window', 'Desktop tools', 'Help'])
   const all = labels(template)
   assert.ok(all.includes('Quit dsh-desktop'))
   assert.ok(all.includes('Close Window'))
@@ -55,15 +55,15 @@ test('developer actions appear only in unpackaged builds', () => {
   assert.ok(labels(template).includes('Reload'))
 })
 
-test('extensions menu exposes LAN pairing controls', () => {
+test('desktop tools menu exposes LAN pairing controls', () => {
   const stopped = buildAppMenuTemplate({ locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop' }, actions)
-  assert.ok(labels(stopped).includes('扩展'))
+  assert.ok(labels(stopped).includes('桌面工具'))
   assert.ok(labels(stopped).includes('连接移动设备…'))
 
   const busy = buildAppMenuTemplate({
     locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop', lanBusy: true,
   }, actions)
-  const busyLan = busy.find(item => item.label === '扩展')?.submenu
+  const busyLan = busy.find(item => item.label === '桌面工具')?.submenu
   assert.ok(Array.isArray(busyLan))
   const startItem = busyLan.find((item: any) => item.label === '连接移动设备…')
   assert.equal(startItem?.enabled, false)
@@ -79,9 +79,9 @@ test('extensions menu exposes LAN pairing controls', () => {
   assert.ok(!labels(running).includes('连接移动设备…'))
 })
 
-test('extensions menu mirrors the desktop-controls overlay (pairing, Safe Mode, restart, About)', () => {
+test('desktop tools menu mirrors the desktop-controls overlay (pairing, Safe Mode, restart, About)', () => {
   const inactive = buildAppMenuTemplate({ locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop' }, actions)
-  const extensions = inactive.find(item => item.label === '扩展')?.submenu
+  const extensions = inactive.find(item => item.label === '桌面工具')?.submenu
   assert.ok(Array.isArray(extensions))
   assert.ok(labels(extensions).includes('连接移动设备…'))
   assert.ok(labels(extensions).includes('以安全模式启动'))
@@ -94,16 +94,16 @@ test('extensions menu mirrors the desktop-controls overlay (pairing, Safe Mode, 
   const active = buildAppMenuTemplate({
     locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop', safeMode: true,
   }, actions)
-  const activeExtensions = active.find(item => item.label === '扩展')?.submenu
+  const activeExtensions = active.find(item => item.label === '桌面工具')?.submenu
   assert.ok(Array.isArray(activeExtensions))
   assert.ok(labels(activeExtensions).includes('退出安全模式'))
 })
 
-test('extensions menu disables restart while the harness cannot restart', () => {
+test('desktop tools menu disables restart while the harness cannot restart', () => {
   const template = buildAppMenuTemplate({
     locale: 'zh', platform: 'linux', packaged: true, appName: 'dsh-desktop', restartEnabled: false,
   }, actions)
-  const extensions = template.find(item => item.label === '扩展')?.submenu
+  const extensions = template.find(item => item.label === '桌面工具')?.submenu
   assert.ok(Array.isArray(extensions))
   const restart = extensions.find(item => item.label === '重启 Harness…')
   assert.equal(restart?.enabled, false)

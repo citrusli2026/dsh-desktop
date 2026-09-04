@@ -54,8 +54,9 @@ import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from 
 import { isMainWindowHarnessSender, isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
 import { DesktopPreferencesController, type DesktopPreferencesResult, type DesktopPreferencesUpdate } from './desktop-preferences.ts'
 import { createShellPreferences } from './shell-preferences.ts'
-import { focusWindowOnNotificationClick, normalizePublicStatusSnapshot, notificationsForPublicStatus, type PublicStatusSnapshot } from './desktop-notifications.ts'
+import { conversationSucceeded, focusWindowOnNotificationClick, normalizePublicStatusSnapshot, notificationsForPublicStatus, type PublicStatusSnapshot } from './desktop-notifications.ts'
 import { completeMarketInstall, type MarketInstallCommandResult, type MarketInstallProgress, type MarketInstallResult } from './market-install.ts'
+import { runDesktopHealthCheck } from './health-check.ts'
 
 const DEV_WEB_URL = process.env[DEV_WEB_URL_ENV]
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -722,6 +723,7 @@ ipcMain.handle('desktop:preferences:update', (event, patch: unknown) => {
   if (typeof candidate.launchHidden === 'boolean') update.launchHidden = candidate.launchHidden
   if (typeof candidate.notificationsEnabled === 'boolean') update.notificationsEnabled = candidate.notificationsEnabled
   if (typeof candidate.screenCapture === 'boolean') update.screenCapture = candidate.screenCapture
+  if (typeof candidate.firstRunGuideDismissed === 'boolean') update.firstRunGuideDismissed = candidate.firstRunGuideDismissed
   const result = desktopPreferencesController?.update(update) ?? null
   // The screen capture flag reaches the harness through its spawn env; a
   // change lands on the next kernel boot (same restart semantics as Safe Mode).
@@ -733,11 +735,34 @@ ipcMain.handle('desktop:session-status', (event, raw: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
   const next = normalizePublicStatusSnapshot(raw)
   if (next === undefined) return false
+  if (desktopPreferencesController?.snapshot.firstTaskCompleted !== true && conversationSucceeded(lastPublicStatus, next)) {
+    desktopPreferencesController?.update({ firstTaskCompleted: true })
+  }
   for (const notification of notificationsForPublicStatus(lastPublicStatus, next, currentLocale)) {
     showDesktopNotification(notification.title, notification.body)
   }
   lastPublicStatus = next
   return true
+})
+
+ipcMain.handle('desktop:health-check', async (event, raw: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  const candidate = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? raw as Record<string, unknown> : {}
+  const includeNetwork = candidate.includeNetwork === true
+  const state = kernelState(harnessRoot(), kernelDir())
+  return runDesktopHealthCheck({
+    harnessRoot: harnessRoot(),
+    mobileShellRoot: mobileShellRoot(),
+    dshHome: desktopDshHome(),
+    userData: app.getPath('userData'),
+    harnessState: shellApp.state,
+    safeMode: safeModeActive(),
+    kernelVersion: state.overlayVersion ?? state.bundledVersion,
+    locale: currentLocale,
+    includeNetwork,
+    fetch: mainFetch,
+    resolveProxy: url => session.defaultSession.resolveProxy(url),
+  })
 })
 
 function desktopDshHome(): string {

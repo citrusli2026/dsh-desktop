@@ -189,6 +189,16 @@
 | R3 | 错误归因 | 自动 Issue 只报告运行链接和失败事实，不再猜测依赖年龄或上游不兼容 | `.github/workflows/dsh-watch.yml`、GitHub Issue #23 | 当前 Issue 写明实际缺失 artifact 并关闭；未来 Issue 不带推测结论 |
 | R4 | 安全与升级 | 提升已知脆弱传递依赖下限，复跑真实市场、Safe Mode 和上一版本覆盖升级 | 两套 workspace/lockfile、既有 release gates | 官方 npm audit 零已知漏洞；7 个用户文件保持不变；三平台 CI 全绿 |
 
+### 6.9 rc.1.shell.1：首次成功路径与一键运行体检
+
+本轮不重做视觉语言，只把桌面能力前移，并让常见环境问题能够在本地自助分类。
+
+| ID | 功能点 | 修改方式 | 主要文件 | 验收 |
+|---|---|---|---|---|
+| P1-1 | 首次成功引导 | 「扩展入口 / 扩展设置」改名为「桌面工具 / 桌面设置」；主界面增加可关闭非模态四步卡片 | `plugins/dsh-desktop-controls/lib/client.js`、壳偏好 | 插件市场明确可选；首条任务成功后自动结束；存量成功会话不重新打扰 |
+| P1-2 | 一键运行体检 | 默认只读检查 runtime、目录/磁盘、loopback、Profile/插件/版本；联网检查显式 opt-in | `src/main/health-check.ts`、preload、桌面设置 | 每项正常/警告/失败并给动作；结果本地脱敏、不上传、不自动修复 |
+| P1-3 | 真实 UI 与边界验证 | 单测覆盖状态、隐私与故障分类；Electron stub + 真实 Harness 覆盖本地/联网与 UI | `test/health-check.test.ts`、`e2e/electron-shell.spec.ts` | 中英文入口一致；打包 UI 四步、四项本地体检和显式联网路径均可用 |
+
 ## 7. 延后评估：签名与公证
 
 这不是当前迭代任务，也不阻塞上述功能完成。达到以下任一信号后再重新评估：

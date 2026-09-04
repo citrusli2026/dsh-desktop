@@ -141,6 +141,12 @@ export class DesktopPreferencesController {
     if (patch.screenCapture !== undefined) {
       this.current = this.store.updateDesktopPreferences({ screenCapture: patch.screenCapture })
     }
+    if (patch.firstRunGuideDismissed !== undefined) {
+      this.current = this.store.updateDesktopPreferences({ firstRunGuideDismissed: patch.firstRunGuideDismissed })
+    }
+    if (patch.firstTaskCompleted !== undefined) {
+      this.current = this.store.updateDesktopPreferences({ firstTaskCompleted: patch.firstTaskCompleted })
+    }
     return { ok: true, preferences: this.snapshot }
   }
 
