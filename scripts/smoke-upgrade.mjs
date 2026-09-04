@@ -182,5 +182,7 @@ try {
   console.log(`cross-version upgrade smoke: OK (${method}) — preserved ${preserved.length} user-owned files`)
 } finally {
   await chmod(dshHome, 0o755).catch(() => undefined)
-  await rm(root, { recursive: true, force: true })
+  await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 250 }).catch(error => {
+    console.warn(`cross-version upgrade smoke: temporary cleanup skipped (${error?.code ?? 'unknown error'})`)
+  })
 }
