@@ -178,6 +178,17 @@
 
 明确边界：真实市场安装只在本地发布前执行，避免 CI 依赖社区 registry；CI 保留确定性离线链路。真实 API Key 对话、代码签名和公证仍不在本轮范围内。
 
+### 6.8 rc.1.shell.0：候选内核与自动同步恢复
+
+本轮不改变产品功能面，先把官方 `0.1.2-rc.1` 稳定带到三平台，并修复 dsh-watch 因未准备 mobile-shell Web artifact 而在 smoke 阶段产生的假失败。
+
+| ID | 功能点 | 修改方式 | 主要文件 | 验收 |
+|---|---|---|---|---|
+| R1 | 候选内核 | 升级并锁定 `@deepseek-ai/dsh` `0.1.2-rc.1`，同步完整 release-age 清单和锁文件 | `package.json`、`manifest/harness/` | frozen install、闭包部署、peer 审计、真实 Harness UI 均通过 |
+| R2 | watcher 恢复 | 像 CI/Release 一样 checkout 固定 mobile-shell tag、生成 Web artifact，再执行 smoke | `.github/workflows/dsh-watch.yml` | 本地复现 checkout → package:web → smoke；远端 watcher 可完成验证并创建 PR |
+| R3 | 错误归因 | 自动 Issue 只报告运行链接和失败事实，不再猜测依赖年龄或上游不兼容 | `.github/workflows/dsh-watch.yml`、GitHub Issue #23 | 当前 Issue 写明实际缺失 artifact 并关闭；未来 Issue 不带推测结论 |
+| R4 | 安全与升级 | 提升已知脆弱传递依赖下限，复跑真实市场、Safe Mode 和上一版本覆盖升级 | 两套 workspace/lockfile、既有 release gates | 官方 npm audit 零已知漏洞；7 个用户文件保持不变；三平台 CI 全绿 |
+
 ## 7. 延后评估：签名与公证
 
 这不是当前迭代任务，也不阻塞上述功能完成。达到以下任一信号后再重新评估：

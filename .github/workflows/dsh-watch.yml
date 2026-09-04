@@ -3,8 +3,8 @@ name: dsh-watch
 # Daily upstream watch (docs/decisions/0009): when a newer @deepseek-ai/dsh
 # appears on npm, bump the manifest pin + composite version, regenerate the
 # closure lockfile, rebuild, smoke-test, and open a PR with the result. If
-# verification fails (commonly the 24h minimumReleaseAge floor on a fresh
-# upstream release — it succeeds on the next day's run), open an issue.
+# verification fails, open an issue that links the exact run without guessing
+# whether dependency age, an upstream change, or release infrastructure caused it.
 on:
   schedule:
     # 09:42 Beijing, off-peak minute.
@@ -19,6 +19,8 @@ permissions:
 jobs:
   watch:
     runs-on: ubuntu-latest
+    env:
+      DSH_MOBILE_SHELL_WEB_ROOT: ${{ github.workspace }}/dsh-mobile-shell/dist/web
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -49,6 +51,15 @@ jobs:
         run: exit 1
       - run: pnpm install --frozen-lockfile
         if: steps.check.outputs.code == '3'
+      - uses: actions/checkout@v7
+        if: steps.check.outputs.code == '3'
+        with:
+          repository: citrusli2026/dsh-mobile-shell
+          ref: v1.0.0
+          path: dsh-mobile-shell
+      - name: Package mobile-shell Web artifact
+        if: steps.check.outputs.code == '3'
+        run: npm --prefix dsh-mobile-shell run package:web
       - name: Bump dsh pin + composite version
         if: steps.check.outputs.code == '3'
         run: node scripts/version.mjs bump dsh "${{ steps.check.outputs.new }}"
@@ -98,4 +109,4 @@ jobs:
           NEW: ${{ steps.check.outputs.new }}
         run: |
           gh issue create --title "dsh-watch: bump to $NEW failed verification" \
-            --body "The automated bump to @deepseek-ai/dsh $NEW failed in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Most often this is the 24h minimumReleaseAge floor on a fresh upstream release (the next daily run usually succeeds); otherwise inspect the run for an upstream breaking change."
+            --body "The automated bump to @deepseek-ai/dsh $NEW failed verification in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Inspect the first failing step and its logs before assigning a cause; this report does not assume dependency age or an upstream incompatibility."

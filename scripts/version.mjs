@@ -1,7 +1,7 @@
 /**
  * Composite versioning (docs/decisions/0009): the app version and git tag are
- * `<dsh version>.shell.<shell revision>` — e.g. `0.1.2-alpha.3.shell.0` bundles
- * @deepseek-ai/dsh 0.1.2-alpha.3 at shell revision 0. This tool is the single
+ * `<dsh version>.shell.<shell revision>` — e.g. `0.1.2-rc.1.shell.0` bundles
+ * @deepseek-ai/dsh 0.1.2-rc.1 at shell revision 0. This tool is the single
  * writer of package.json's `version` field and the manifest's dsh pin.
  *
  *   node scripts/version.mjs show                  current parts + consistency check

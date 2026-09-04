@@ -47,7 +47,7 @@ Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the
 
 ## Versioning
 
-Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.2-alpha.4.shell.0` bundles `@deepseek-ai/dsh` 0.1.2-alpha.4 at shell revision 0. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically (decision 0009).
+Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.2-rc.1.shell.0` bundles `@deepseek-ai/dsh` 0.1.2-rc.1 at shell revision 0. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically (decision 0009).
 
 ## Development
 
