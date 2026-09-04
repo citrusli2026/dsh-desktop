@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-04T13:03:06.747Z",
+  "generated_at": "2026-09-04T13:04:38.137Z",
   "repo": {
     "full_name": "citrusli2026/dsh-desktop",
     "html_url": "https://github.com/citrusli2026/dsh-desktop",
@@ -7,9 +7,9 @@
     "license": "MIT"
   },
   "stats": {
-    "installer_downloads": 579,
+    "installer_downloads": 582,
     "mac_downloads": 150,
-    "win_downloads": 317,
+    "win_downloads": 320,
     "linux_downloads": 112,
     "releases": 35
   },
@@ -63,7 +63,7 @@
       {
         "name": "dsh-desktop-setup-0.1.2-rc.1.shell.2.exe",
         "size": 164584316,
-        "downloads": 0,
+        "downloads": 3,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-rc.1.shell.2/dsh-desktop-setup-0.1.2-rc.1.shell.2.exe",
         "kind": "installer",
         "sha256": null,
