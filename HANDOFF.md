@@ -9,12 +9,12 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.2-rc.1.shell.2`（2026-09-04 已发布；内核 `0.1.2-rc.1`） |
-| 已发布 | ✅ `0.1.2-rc.1.shell.2`（2026-09-04，三端 dmg/exe/deb；首次成功引导 + 一键运行体检） |
+| 最新代码基线 | ✅ `0.1.2-rc.1.shell.3`（2026-09-05 已发布；内核 `0.1.2-rc.1`） |
+| 已发布 | ✅ `0.1.2-rc.1.shell.3`（2026-09-05，三端 dmg/exe/deb；错误页插件一键恢复） |
 | 本地门禁 | ✅ 197 项单测、类型检查、runtime/site 门禁、构建全绿；dev/packaged/real Harness/Safe Mode/offline + real market/macOS cross-version upgrade E2E 通过 |
-| 核心发布 | ✅ `v0.1.2-rc.1.shell.2` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.2`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.2-rc.1.shell.2` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `82cf496`） |
+| 核心发布 | ✅ `v0.1.2-rc.1.shell.3` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复、插件恢复全链路与安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.3`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.2-rc.1.shell.3` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `f29517a`） |
 | 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；核验时累计 670（mac 164 / win 385 / linux 121） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -1188,3 +1188,34 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1
 ---
 
 _更新于 2026-09-04_
+
+## 四十一、v0.1.2-rc.1.shell.3 发布：错误页插件一键恢复（2026-09-05）
+
+1. **插件恢复功能**：启动因不兼容社区插件失败时，错误页按包列出可疑插件，
+   提供「升级 / 禁用 / 全部升级并重启」；升级复用 `dsh plugin add` 通道拉取
+   npm 最新版（新增 `src/main/plugin-recovery.ts`：semver 比较、registry 查询、
+   profile manifest 编辑），禁用只移除启动 bundle 条目、文件保留、可从
+   「设置 → 插件」恢复；官方内置包硬性拒绝，防误升级破坏内核版本锁定。
+   市场安装命令抽取为共享 `runProfilePluginAdd`，两条路径共用超时/脱敏/分类。
+2. **验证**：204 项单测、`pnpm run verify` 全绿；E2E 15 通过——含
+   「一次性注入崩溃（DSH_DESKTOP_TEST_FAIL_HARNESS）→ 恢复行只列 dshmarket →
+   禁用 → 重启成功 → manifest 逐项断言 → 官方/未安装包 guard 拒绝」全链路，
+   以及 LAN 配对二维码真实链路（私网地址、6 位单次码、QR SVG 渲染）。
+   QR 用例在 CI runner（docker 网桥 172.x）会误判私网可用，已加 `CI` 显式跳过，
+   定位为本机回归门禁。
+3. **GitHub 发布**：tag `v0.1.2-rc.1.shell.3` → `f29517a`。首次 run `33896853457`
+   因上述 CI QR 误判失败（保留审计），修正后 run `33897417690` 全绿：
+   verify + 三平台 build + publish，8 文件契约齐全，attestation 核验通过。
+4. **GitCode 镜像**：本机 SOCKS 代理不可用，走 backfill workflow 兜底
+   （run `33898772565` 一次成功）；Range GET 6/6 资产 302 在线。
+5. **网站数据**：Site Data Refresh run `33901514863` 自动同步成功；
+   本地 `gen-site-data.mjs` 复核 `gitcode_ok` 6/6 true 后提交。核验时累计
+   610（mac 152 / win 344 / linux 114），共 36 个 release。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.3>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.3>；
+官网：<https://dsh-desktop.com>。
+
+---
+
+_更新于 2026-09-05_
