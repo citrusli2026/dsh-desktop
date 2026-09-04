@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.2-rc.1.shell.0`（2026-09-04 已发布；内核 `0.1.2-rc.1`，壳修订归零） |
-| 已发布 | ✅ `0.1.2-rc.1.shell.0`（2026-09-04，三端 dmg/exe/deb；AppImage 已整体移除） |
-| 本地门禁 | ✅ 193 项单测、类型检查、runtime/site 门禁、构建全绿；dev/packaged/real Harness/Safe Mode/offline + real market/cross-version upgrade E2E 通过 |
-| 核心发布 | ✅ `v0.1.2-rc.1.shell.0` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.0`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.2-rc.1.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `c9fc556`） |
-| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；静态回退累计 532（mac 139 / win 288 / linux 105） |
+| 最新代码基线 | ✅ `0.1.2-rc.1.shell.2`（2026-09-04 已发布；内核 `0.1.2-rc.1`） |
+| 已发布 | ✅ `0.1.2-rc.1.shell.2`（2026-09-04，三端 dmg/exe/deb；首次成功引导 + 一键运行体检） |
+| 本地门禁 | ✅ 197 项单测、类型检查、runtime/site 门禁、构建全绿；dev/packaged/real Harness/Safe Mode/offline + real market/macOS cross-version upgrade E2E 通过 |
+| 核心发布 | ✅ `v0.1.2-rc.1.shell.2` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.2`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.2-rc.1.shell.2` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `82cf496`） |
+| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；核验时累计 670（mac 164 / win 385 / linux 121） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -118,7 +118,7 @@ fallback 依次为 gitcode-backfill workflow 与
   推送 ~150 KB/s 且预签名 URL 过期 502；拉取式流水线复杂度不成比例，放弃）。
   自部署 gh-proxy（`GH_PROXY_PREFIX` 思路）仅作备选；公共代理实例实测
   不可靠（mirror.ghproxy.com / ghfast.top 已失联），不进入任何链路。
-- GitCode 与 GitHub 的 rc.1.shell.0 tag 已核对为同一发布提交 `c9fc556`；
+- GitCode 与 GitHub 的 rc.1.shell.2 tag 已核对为同一发布提交 `82cf496`；
   后续仍要在发版后核对 tag peeled
   commit，不能只检查"同名 tag 已存在"。
 - macOS 仍未签名/公证；首次运行需右键打开，应用只检查更新并引导下载。
@@ -1146,6 +1146,43 @@ Agent 工作台；社区插件全部手动安装；签名与公证继续留到�
 
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.0>；
 Issue 更正：<https://github.com/citrusli2026/dsh-desktop/issues/23#issuecomment-5534085880>；
+官网：<https://dsh-desktop.com>。
+
+---
+
+## 四十、v0.1.2-rc.1.shell.2 发布：首次成功路径与本地运行体检（2026-09-04）
+
+本轮完成 P1 前两项，保持“可靠 Electron 壳 + 开箱即用支持”的产品边界，
+没有增加拦截式向导，也没有把插件市场变成首次使用前置条件。
+
+1. **首次成功路径**：`51ecd13` 将“扩展入口 / 扩展设置”改为“桌面工具 /
+   桌面设置”，主界面增加运行环境 → 工作区 → 模型 → 第一条任务的可关闭非模态卡片；
+   首条任务从运行到完成后自动结束引导，既有非空会话的升级用户不会再次被打扰。
+2. **一键运行体检**：桌面设置新增用户主动触发的只读体检，覆盖内置 Node/Harness/
+   关键文件、两个数据根与磁盘、loopback、Profile、用户插件、市场、安全模式和内核版本；
+   代理、registry、更新源只有显式勾选才联网。报告只返回脱敏状态、说明与动作，
+   不上传、不暴露路径/URL/日志/代理地址，也不自动修复用户文件。
+3. **本地与视觉验证**：197 项单测、typecheck、runtime/site/build、13 项开发态 E2E、
+   packaged smoke、真实 Harness UI、Safe Mode 坏插件隔离、离线与真实市场安装均通过；
+   真实市场覆盖中文/暗色/最小窗口/Unicode 路径，macOS 从 shell.0 升级后 7 个用户文件
+   保持不变。中英文 × 明暗共 12 张官网产品截图已重新生成并人工检查。
+4. **失败候选与修正**：`v0.1.2-rc.1.shell.1` 的 run `33872138672` 中 Windows
+   升级断言、两次启动与 7 文件保留均已成功，随后仅因清理临时安装目录遇到 `EPERM`
+   文件锁而误判失败。`82cf496` 为递归删除增加 Node 支持的重试/backoff，并将最终
+   清理失败降为临时目录告警；不放宽任何产品升级断言。失败 tag 保留为审计记录。
+5. **GitHub 发布**：tag `v0.1.2-rc.1.shell.2` 精确指向
+   `82cf49658c324ce28910f7937d9c885c94a465fb`；Release run `33873684318` 全绿，
+   verify、macOS/Windows/Linux build 与 publish 全部成功。8 个资产齐全，三安装包
+   SHA-256 和 artifact attestation 已在本地复核通过。
+6. **GitCode 与官网**：从同一成功 run 的 Actions artifacts 并行取得三安装包，
+   通过随附 SHA-256 后用 `mirror-gitcode.mjs` 上传，6/6 资产首次尝试成功并再次
+   `--check-only` 验证在线。Site Data Refresh run `33875021754` 成功、bot 提交
+   `8227b43`；镜像后复核提交 `1d7db6d`。正式域名 `/data/release.json` 与
+   `/api/downloads` 均为 200、指向 shell.2 且 6/6 `gitcode_ok=true`，核验时累计
+   670（mac 164 / win 385 / linux 121）。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.2>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.2>；
 官网：<https://dsh-desktop.com>。
 
 ---
