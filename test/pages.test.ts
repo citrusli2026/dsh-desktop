@@ -37,6 +37,28 @@ test('errorPageHtml names the suspected failing plugin when present', () => {
   assert.ok(html.includes('pkg-a'))
 })
 
+test('errorPageHtml renders one recovery row per unique failing package', () => {
+  const html = decodeURIComponent(errorPageHtml(6, 'tail', false, [
+    { id: 'row-1', name: 'dshmarket' },
+    { id: 'row-2', name: 'dshmarket' },
+    { id: 'row-3', name: 'dsh-better-sidebar' },
+  ]))
+  assert.ok(/<button[^>]+data-plugin-action="update"/.test(html), 'each row offers Update')
+  assert.ok(/<button[^>]+data-plugin-action="disable"/.test(html), 'each row offers Disable')
+  assert.ok(/<button[^>]+data-plugin-action="update-all"/.test(html), 'an update-all action exists')
+  assert.equal((html.match(/<span class="plugin-state"/g) ?? []).length, 2, 'duplicate rows collapse onto one state slot')
+  assert.ok(html.includes('data-plugin="dshmarket"'))
+  assert.ok(html.includes('data-plugin="dsh-better-sidebar"'))
+  // The update-all path passes no name; the per-row path passes the package.
+  assert.ok(html.includes("invoke(all ? undefined : name)"), 'update-all must not send a package name')
+})
+
+test('errorPageHtml without suspects renders no plugin recovery section', () => {
+  const html = decodeURIComponent(errorPageHtml(6, 'tail'))
+  assert.ok(!/data-plugin-action=/.test(html.replace(/function[\s\S]*?\n      }/g, '')), 'no action buttons without suspects')
+  assert.ok(!html.includes('class="plugin-row"'))
+})
+
 test('loadingPageHtml and errorPageHtml render as data URLs', () => {
   assert.ok(loadingPageHtml().startsWith('data:text/html;charset=utf-8,'))
   assert.ok(errorPageHtml(6, 'tail').startsWith('data:text/html;charset=utf-8,'))

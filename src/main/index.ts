@@ -9,6 +9,7 @@ import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
 import { readProfileStatus } from './profile.ts'
+import { readProfileManifest, writeProfileManifest, withoutBundle } from './plugin-recovery.ts'
 import { BalanceService, formatBalance, readDeepSeekApiKey, type FetchLike } from './balance.ts'
 import {
   activeKernelBin,
@@ -43,7 +44,7 @@ import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } fr
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
 import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport, redactDiagnosticsLog } from './diagnostics.ts'
-import { updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, type ComposedRow } from './safe-mode.ts'
+import { updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, OFFICIAL_BUNDLES, type ComposedRow } from './safe-mode.ts'
 import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage } from './presets.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
@@ -258,18 +259,16 @@ async function installDshMarket(): Promise<MarketInstallResult> {
   }
 }
 
-async function runDshMarketInstallCommand(): Promise<MarketInstallCommandResult> {
+/** Spawn `dsh plugin --profile web add <spec>` and reduce its output into a
+ *  classified command result shared by the market install and the error-page
+ *  plugin recovery actions. */
+async function runProfilePluginAdd(spec: string, timeoutMs: number): Promise<MarketInstallCommandResult> {
   const root = harnessRoot()
-  // A unique package name keeps the packaged offline E2E on the real dsh/pnpm
-  // path without allowing a developer's global metadata cache to satisfy it.
-  const packageSpec = process.env.DSH_E2E_MARKET_MODE === 'offline'
-    ? `dshmarket-dsh-desktop-offline-e2e-${process.pid}`
-    : DSHMARKET_PACKAGE
   let child
   try {
     child = spawn(
       nodeBin(root),
-      [dshBin(root), 'plugin', '--profile', WEB_PROFILE, 'add', packageSpec],
+      [dshBin(root), 'plugin', '--profile', WEB_PROFILE, 'add', spec],
       { env: await installChildEnv(), stdio: ['ignore', 'pipe', 'pipe'] },
     )
   } catch (error) {
@@ -296,13 +295,22 @@ async function runDshMarketInstallCommand(): Promise<MarketInstallCommandResult>
       timedOut = true
       child.kill()
       finish(1)
-    }, DSHMARKET_INSTALL_TIMEOUT_MS)
+    }, timeoutMs)
     timer.unref()
     child.on('close', value => finish(value ?? 1))
     child.on('error', () => { spawnFailed = true; finish(1) })
   })
   const detail = redactDiagnosticsLog(redactDiagnosticsLog(outputTail), desktopDshHome()).trim().slice(-2_000)
   return { code, stderr: detail, ...(timedOut ? { timedOut: true } : {}), ...(spawnFailed ? { spawnFailed: true } : {}) }
+}
+
+async function runDshMarketInstallCommand(): Promise<MarketInstallCommandResult> {
+  // A unique package name keeps the packaged offline E2E on the real dsh/pnpm
+  // path without allowing a developer's global metadata cache to satisfy it.
+  const packageSpec = process.env.DSH_E2E_MARKET_MODE === 'offline'
+    ? `dshmarket-dsh-desktop-offline-e2e-${process.pid}`
+    : DSHMARKET_PACKAGE
+  return runProfilePluginAdd(packageSpec, DSHMARKET_INSTALL_TIMEOUT_MS)
 }
 
 async function installDshMarketInternal(): Promise<MarketInstallResult> {
@@ -575,7 +583,7 @@ const trayActions: TrayActions = {
 ipcMain.handle('harness:retry', async (event) => {
   if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
   if (SMOKE_TEST && process.env[TEST_RETRY_FAIL_ENV] === '1') return false
-  return shellApp.runHarnessRestart()
+  return restartForPluginRecovery()
 })
 
 ipcMain.handle('harness:safe-mode', (event, enabled: unknown) => {
@@ -859,6 +867,55 @@ ipcMain.handle('desktop:suspects:get', (event) => {
   return lastPluginFailures
 })
 
+// Error-page plugin recovery: update the failing packages through the same
+// `dsh plugin add` path as the market install, or disable one by removing it
+// from the boot bundle list (files stay on disk; reversible from Settings →
+// Plugins). Both restart the harness on success so the page's retry bridge
+// reports a real outcome. Dev builds with a web-URL override "restart" by
+// re-applying that URL — there is no supervised kernel to restart.
+function restartForPluginRecovery(): Promise<boolean> {
+  if (!app.isPackaged && DEV_WEB_URL !== undefined) {
+    shellApp.applyState({ phase: 'ready', url: DEV_WEB_URL })
+    return Promise.resolve(true)
+  }
+  return shellApp.runHarnessRestart()
+}
+
+ipcMain.handle('desktop:plugin:update', async (event, rawName: unknown) => {
+  if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
+  const dshHome = resolveDshHome(process.env, homedir())
+  const { bundles } = await readProfileStatus(dshHome)
+  const requested = typeof rawName === 'string' && rawName !== '' ? [rawName] : undefined
+  const targets = requested ?? [...new Set(lastPluginFailures.map(row => row.name).filter((name): name is string => typeof name === 'string' && bundles.includes(name)))]
+  // Official bundles are version-locked to the kernel; only community
+  // packages may be updated through this recovery path.
+  if (requested !== undefined && (!bundles.includes(requested[0]!) || OFFICIAL_BUNDLES.includes(requested[0] as never))) return false
+  if (targets.length === 0) return false
+  for (const name of targets) {
+    const result = await runProfilePluginAdd(`${name}@latest`, DSHMARKET_INSTALL_TIMEOUT_MS)
+    if (result.code !== 0) {
+      console.warn(`dsh-desktop: plugin recovery update failed for ${name}: ${result.stderr.slice(-500)}`)
+      return false
+    }
+  }
+  return restartForPluginRecovery()
+})
+
+ipcMain.handle('desktop:plugin:disable', async (event, rawName: unknown) => {
+  if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
+  if (typeof rawName !== 'string' || rawName === '' || OFFICIAL_BUNDLES.includes(rawName as never)) return false
+  const dshHome = resolveDshHome(process.env, homedir())
+  const manifest = await readProfileManifest(dshHome)
+  if (!(manifest.dsh?.profile?.bundles ?? []).includes(rawName)) return false
+  try {
+    await writeProfileManifest(dshHome, withoutBundle(manifest, rawName))
+  } catch (error) {
+    console.warn(`dsh-desktop: plugin disable write failed: ${error instanceof Error ? error.message : String(error)}`)
+    return false
+  }
+  return restartForPluginRecovery()
+})
+
 ipcMain.handle('desktop:presets:export', (event, id: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
   if (typeof id !== 'string') return null
@@ -879,6 +936,15 @@ function verifyHarness(root: string): void {
 
 async function boot(): Promise<string> {
   if (!app.isPackaged && DEV_WEB_URL !== undefined) {
+    // One-shot test injection: simulate a plugin-induced crash so dev E2E can
+    // exercise the error page's plugin recovery rows without the real kernel.
+    // The env var deletes itself so the post-recovery restart succeeds.
+    if (process.env[TEST_FAIL_HARNESS_ENV] === '1') {
+      delete process.env[TEST_FAIL_HARNESS_ENV]
+      const logTail = `failed to apply loader entry dsh-market (dshmarket): simulated plugin boot failure (test injection)`
+      shellApp.applyState({ phase: 'crashed', attempts: 6, logTail })
+      throw new Error(logTail)
+    }
     console.log(`dsh-desktop: dev mode, loading ${DEV_WEB_URL}`)
     shellApp.applyState({ phase: 'ready', url: DEV_WEB_URL })
     return DEV_WEB_URL

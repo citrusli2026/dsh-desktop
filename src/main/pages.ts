@@ -53,6 +53,15 @@ const STYLE = `
   .suspects { background: var(--signal-soft); color: var(--text); border-radius: 8px; font-size: 13px;
               font-weight: 600; line-height: 1.6; margin: 4px 0 10px; padding: 10px 12px; }
   .suspects code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .plugin-list { margin: 8px 0 4px; display: grid; gap: 8px; }
+  .plugin-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 12px;
+                border: 1px solid var(--line); border-radius: 9px; }
+  .plugin-row code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+                     font-weight: 700; margin-right: auto; overflow-wrap: anywhere; }
+  .plugin-row button { padding: 6px 12px; font-size: 12px; }
+  .plugin-state { min-width: 100%; font-size: 12px; color: var(--muted); }
+  .plugin-state[data-ok] { color: var(--signal); font-weight: 600; }
+  .plugin-state[data-fail] { color: var(--danger); font-weight: 600; }
   button:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
   #hint { min-height: 1.2em; margin: 14px 0 0; color: var(--danger); }
   @media (prefers-reduced-motion: reduce) { .loading-line::after { animation: none; width: 100%; } }
@@ -109,6 +118,20 @@ export function errorPageHtml(
     : `<p class="suspects">${escapeHtml(shellText(locale, 'page.suspects'))}</p>`
       .replace('{id}', escapeHtml(suspect.id))
       .replace('{name}', escapeHtml(suspect.name ?? ''))
+  // One recovery row per unique failing package; patch rows of the same
+  // bundle collapse onto the package the user can actually update or disable.
+  const pluginNames = [...new Set(suspects.map(row => row.name).filter((name): name is string => typeof name === 'string' && name !== ''))]
+  const pluginSection = pluginNames.length === 0
+    ? ''
+    : `<p class="log-label">${escapeHtml(shellText(locale, 'page.pluginsHeading'))}</p>
+    <p>${escapeHtml(shellText(locale, 'page.pluginsHint'))}</p>
+    <div class="plugin-list">${pluginNames.map(name => `
+      <div class="plugin-row"><code>${escapeHtml(name)}</code>
+      <button type="button" data-plugin-action="update" data-plugin="${escapeHtml(name)}">${escapeHtml(shellText(locale, 'page.pluginUpdate'))}</button>
+      <button type="button" class="secondary" data-plugin-action="disable" data-plugin="${escapeHtml(name)}">${escapeHtml(shellText(locale, 'page.pluginDisable'))}</button>
+      <span class="plugin-state" data-plugin-state="${escapeHtml(name)}"></span></div>`).join('')}
+    </div>
+    <div class="actions"><button type="button" data-plugin-action="update-all">${escapeHtml(shellText(locale, 'page.pluginUpdateAll'))}</button></div>`
   return asDataUrl(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>dsh-desktop — ${escapeHtml(shellText(locale, 'page.errorTitle'))}</title>
     <meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
     <style>${STYLE}</style></head><body><main class="card">
@@ -116,6 +139,7 @@ export function errorPageHtml(
     <h1>${escapeHtml(shellText(locale, 'page.errorHeading'))}</h1>
     <p>${escapeHtml(shellText(locale, 'page.errorBody', { count: attempts }))}</p>
     ${suspectLine}
+    ${pluginSection}
     <p class="log-label">${escapeHtml(shellText(locale, 'page.logLabel'))}</p>
     <pre>${escapeHtml(logTail)}</pre>
     <div class="actions"><button type="button" onclick="retry()">${escapeHtml(retry)}</button>
@@ -167,6 +191,46 @@ export function errorPageHtml(
         var bridge = window.dshDesktop && window.dshDesktop.openLogsFolder;
         if (bridge) bridge();
       }
+      var WORKING = ${JSON.stringify(shellText(locale, 'page.pluginWorking'))};
+      var UPDATED = ${JSON.stringify(shellText(locale, 'page.pluginUpdated'))};
+      var ACTION_FAILED = ${JSON.stringify(shellText(locale, 'page.pluginActionFailed'))};
+      function pluginBridge() { return window.dshDesktop || {}; }
+      function setState(name, text, ok) {
+        var state = document.querySelector('[data-plugin-state="' + name + '"]');
+        if (!state) return;
+        state.textContent = text;
+        if (ok === true) state.setAttribute('data-ok', '');
+        if (ok === false) state.setAttribute('data-fail', '');
+      }
+      function setPluginBusy(busy) {
+        document.querySelectorAll('[data-plugin-action]').forEach(function (button) { button.disabled = busy; });
+      }
+      function afterRecovery(state, ok) {
+        setPluginBusy(false);
+        if (ok !== true) { setState(state, ACTION_FAILED, false); return; }
+        setState(state, UPDATED, true);
+        var bridge = pluginBridge().retryHarness;
+        if (bridge) bridge();
+      }
+      function runPluginAction(action, name) {
+        var bridge = pluginBridge();
+        var invoke = action === 'disable' ? bridge.disablePlugin : bridge.updatePlugin;
+        if (!invoke) return;
+        setPluginBusy(true);
+        document.querySelectorAll('[data-plugin-state]').forEach(function (state) {
+          if (name === undefined || state.dataset.pluginState === name) state.textContent = WORKING;
+        });
+        var all = action === 'update-all';
+        invoke(all ? undefined : name).then(function (ok) {
+          afterRecovery(all ? null : name, ok === true);
+        }).catch(function () { afterRecovery(all ? null : name, false); });
+      }
+      document.addEventListener('click', function (event) {
+        var button = event.target instanceof Element && event.target.closest('[data-plugin-action]');
+        if (!button || button.disabled) return;
+        var action = button.dataset.pluginAction;
+        runPluginAction(action, action === 'update-all' ? undefined : button.dataset.plugin);
+      });
     </script>
     </main></body></html>`)
 }

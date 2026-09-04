@@ -662,3 +662,95 @@ test.describe('environment edge paths', () => {
     await expect.poll(() => menuLabels(electronApp)).toContain('Help')
   })
 })
+
+shellTest('a plugin crash offers recovery rows and disabling one boots again', async ({ electronApp, window, dshHome, relaunch }) => {
+  await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
+  // Seed a profile as if dshmarket had been installed: the boot bundle list
+  // carries the community package alongside the official ones.
+  const profileDir = join(dshHome, 'profiles', 'web')
+  await mkdir(profileDir, { recursive: true })
+  const manifestPath = join(profileDir, 'package.json')
+  const manifest = {
+    name: 'dsh-profile-web',
+    private: true,
+    dependencies: { dshmarket: '^1.36.0' },
+    dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'dshmarket'] } },
+  }
+  await writeFile(manifestPath, JSON.stringify(manifest))
+
+  // One-shot dev injection (src/main/index.ts boot): the app boots onto the
+  // error page with dshmarket named as the suspected failing plugin.
+  process.env.DSH_DESKTOP_TEST_FAIL_HARNESS = '1'
+  let next
+  try {
+    next = await relaunch()
+    const errorWindow = await next.firstWindow()
+    await errorWindow.waitForLoadState('domcontentloaded')
+    await expect.poll(async () => errorWindow.evaluate(() => document.body.innerText))
+      .toContain('PLUGIN RECOVERY')
+    await expect(errorWindow.locator('.plugin-row code', { hasText: 'dshmarket' })).toHaveCount(1)
+    // Official bundles are never offered as recovery targets.
+    expect(await errorWindow.locator('.plugin-row code').allInnerTexts()).toEqual(['dshmarket'])
+
+    await errorWindow.getByRole('button', { name: 'Disable', exact: true }).click()
+    // Recovery disables the bundle and restarts: the stub harness headline
+    // returns and the manifest keeps the official bundles without dshmarket.
+    await expect(errorWindow.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible({ timeout: 30_000 })
+    const updated = JSON.parse(await readFile(manifestPath, 'utf8')) as { dsh?: { profile?: { bundles?: string[] } } }
+    expect(updated.dsh?.profile?.bundles).toEqual(['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'])
+
+    // Guards hold on the live app: official and unlisted names are refused.
+    type RecoveryBridge = { disablePlugin(name: string): Promise<boolean>; updatePlugin(name: string): Promise<boolean> }
+    const guards = await errorWindow.evaluate(() => {
+      const bridge = (window as unknown as { dshDesktop?: RecoveryBridge }).dshDesktop
+      if (!bridge) throw new Error('bridge missing')
+      return Promise.all([
+        bridge.disablePlugin('@deepseek-ai/dsh-base'),
+        bridge.updatePlugin('@deepseek-ai/dsh-base'),
+        bridge.updatePlugin('never-installed'),
+      ])
+    })
+    expect(guards).toEqual([false, false, false])
+  } finally {
+    delete process.env.DSH_DESKTOP_TEST_FAIL_HARNESS
+    if (next !== undefined) await next.close().catch(() => {})
+  }
+})
+
+shellTest('LAN pairing shows a scannable QR link for the private address', async ({ electronApp, window }) => {
+  await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
+  const { networkInterfaces } = await import('node:os')
+  const hasPrivateLan = Object.values(networkInterfaces())
+    .flat()
+    .some(entry => entry?.family === 'IPv4' && !entry.internal
+      && (entry.address.startsWith('10.')
+        || /^172\.(1[6-9]|2\d|3[01])\./.test(entry.address)
+        || entry.address.startsWith('192.168.')))
+  test.skip(!hasPrivateLan, 'requires a machine with a private LAN IPv4 address')
+
+  const opened = await window.evaluate(() => (
+    window as unknown as { dshDesktop?: { desktopAction(action: string): Promise<unknown> } }
+  ).dshDesktop?.desktopAction('startLanPairing'))
+  expect(opened).toBe(true)
+
+  // The pairing window is a shell-owned data: page; find it by title. The QR
+  // encodes http://<private-lan>:<port>/launch#pair=<6 digits> while the page
+  // shows the same base address and the 6-digit code as text.
+  let pairingPage: Page | undefined
+  await expect.poll(() => {
+    pairingPage = electronApp.windows().find(candidate => candidate.url().startsWith('data:')
+      && candidate.isClosed() === false && candidate !== window)
+    return pairingPage !== undefined
+  }, { timeout: 30_000 }).toBe(true)
+  const content = await pairingPage!.evaluate(() => document.body.innerText)
+  expect(content).toMatch(/(Address|地址)[:：]\s*http:\/\/\d+\.\d+\.\d+\.\d+:\d+\//)
+  expect(content).toMatch(/\d{6}/)
+  expect(await pairingPage!.locator('svg[aria-label]').count()).toBe(1)
+  await pairingPage!.close().catch(() => {})
+  await expect.poll(() => electronApp.windows().some(candidate => candidate !== window
+    && candidate.url().startsWith('data:') && !candidate.isClosed()))
+    .toBe(false)
+  await expect.poll(() => electronApp.windows().some(candidate => candidate !== window
+    && candidate.url().startsWith('data:') && !candidate.isClosed()))
+    .toBe(false)
+})

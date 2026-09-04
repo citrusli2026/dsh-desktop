@@ -127,4 +127,8 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Failing-plugin suspects extracted from the last crash (recovery banner). */
   getRecoverySuspects: (): Promise<Array<{ id: string; name?: string }> | null> =>
     ipcRenderer.invoke('desktop:suspects:get'),
+  /** Update one failing plugin to the latest registry version and restart. */
+  updatePlugin: (name?: string): Promise<boolean> => ipcRenderer.invoke('desktop:plugin:update', name),
+  /** Remove one failing plugin from the boot bundle list and restart. */
+  disablePlugin: (name: string): Promise<boolean> => ipcRenderer.invoke('desktop:plugin:disable', name),
 })
