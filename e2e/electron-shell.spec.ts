@@ -726,7 +726,9 @@ shellTest('LAN pairing shows a scannable QR link for the private address', async
       && (entry.address.startsWith('10.')
         || /^172\.(1[6-9]|2\d|3[01])\./.test(entry.address)
         || entry.address.startsWith('192.168.')))
-  test.skip(!hasPrivateLan, 'requires a machine with a private LAN IPv4 address')
+  // CI runners expose docker-bridge 172.x addresses that pass the private-LAN
+  // probe but are not a usable LAN; this test is a local regression gate.
+  test.skip(!hasPrivateLan || process.env.CI === 'true', 'requires a local machine with a real private LAN IPv4 address')
 
   const opened = await window.evaluate(() => (
     window as unknown as { dshDesktop?: { desktopAction(action: string): Promise<unknown> } }
