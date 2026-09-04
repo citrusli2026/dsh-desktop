@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-09-02。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-09-04。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.2-alpha.4.shell.3`（2026-09-02 已发布；内核 `0.1.2-alpha.4`，壳修订 3） |
-| 已发布 | ✅ `0.1.2-alpha.4.shell.3`（2026-09-02，三端 dmg/exe/deb；AppImage 已整体移除） |
+| 最新代码基线 | ✅ `0.1.2-rc.1.shell.0`（2026-09-04 已发布；内核 `0.1.2-rc.1`，壳修订归零） |
+| 已发布 | ✅ `0.1.2-rc.1.shell.0`（2026-09-04，三端 dmg/exe/deb；AppImage 已整体移除） |
 | 本地门禁 | ✅ 193 项单测、类型检查、runtime/site 门禁、构建全绿；dev/packaged/real Harness/Safe Mode/offline + real market/cross-version upgrade E2E 通过 |
-| 核心发布 | ✅ `v0.1.2-alpha.4.shell.3` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-alpha.4.shell.3`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.2-alpha.4.shell.3` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `08dd85d`） |
-| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；线上实时累计 514（GitHub 461 + GitCode 53；mac 142 / win 266 / linux 106） |
+| 核心发布 | ✅ `v0.1.2-rc.1.shell.0` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复和安装态验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.0`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.2-rc.1.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `c9fc556`） |
+| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；静态回退累计 532（mac 139 / win 288 / linux 105） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -118,7 +118,7 @@ fallback 依次为 gitcode-backfill workflow 与
   推送 ~150 KB/s 且预签名 URL 过期 502；拉取式流水线复杂度不成比例，放弃）。
   自部署 gh-proxy（`GH_PROXY_PREFIX` 思路）仅作备选；公共代理实例实测
   不可靠（mirror.ghproxy.com / ghfast.top 已失联），不进入任何链路。
-- GitCode 与 GitHub 的 shell.3 tag 已核对为同一发布提交 `08dd85d`；
+- GitCode 与 GitHub 的 rc.1.shell.0 tag 已核对为同一发布提交 `c9fc556`；
   后续仍要在发版后核对 tag peeled
   commit，不能只检查"同名 tag 已存在"。
 - macOS 仍未签名/公证；首次运行需右键打开，应用只检查更新并引导下载。
@@ -1118,4 +1118,36 @@ Agent 工作台；社区插件全部手动安装；签名与公证继续留到�
 
 ---
 
-_更新于 2026-09-02_
+## 三十九、v0.1.2-rc.1.shell.0 发布：watcher 归因修正与 rc.1 全链验证（2026-09-04）
+
+本轮先验证已有 watcher 修复，再把上游内核升级到 `@deepseek-ai/dsh` `0.1.2-rc.1`；
+壳修订按组合版本规则归零。没有把社区插件重新带入安装包。
+
+1. **watcher 根因与修正**：失败 run `33723410376` 已完成版本检测、安装、pin/lock、
+   release-age 与闭包构建，真正失败在 smoke 前缺少 `dsh-mobile-shell/dist/web`；不是
+   minimumReleaseAge，也没有证据表明上游不兼容。workflow 现固定检出 mobile-shell
+   `v1.0.0`、先执行 `package:web` 并通过显式 `DSH_MOBILE_SHELL_WEB_ROOT` 交给桌面构建；
+   Issue #23 已追加更正说明，后续失败模板改为先记录首个失败步骤、保持中性归因。
+2. **本地真实验证**：watcher 原样序列与 `actionlint` 通过；193 项单测、类型、runtime、
+   官网/API、构建和 production audit 全绿；dev/packaged、真实 Harness、Safe Mode 坏插件
+   隔离、离线与真实插件市场、macOS 从 `v0.1.2-alpha.4.shell.3` 原位升级且 7 个用户文件
+   逐项不变，全部通过。
+3. **GitHub 发布**：tag `v0.1.2-rc.1.shell.0` →
+   `c9fc5569e30b2ed852dfc6637f9d40eb545f652a`。Release run `33823628740` 首次仅因 npm
+   advisory 请求连续超时停止；同一 run 的第 2 次尝试完整成功。verify、三平台 build、
+   Windows NSIS 静默安装、三平台跨版本升级、真实 Harness、Safe Mode、故障注入、
+   8 资产契约、provenance 与 publish 均通过。
+4. **GitCode 镜像**：从同一成功 run 的 Actions artifacts 并行取得 dmg/exe/deb，分别
+   通过 GitHub Release 发布的 SHA-256 后，用 `mirror-gitcode.mjs` 显式本地文件模式上传；
+   3 个安装包与 3 个校验文件均为 attempt 1/3，最终 6/6 稳定 URL 在线验证通过。
+5. **网站数据**：自动 Site Data Refresh run `33825639192` 成功、提交 `7705bb8`，但早于
+   国内镜像完成；镜像后本地重跑生成器并通过 `site:check` 与 `/api/downloads` 门禁，
+   修正提交 `75e1367` 将 6 个用户资产全部标记为 `gitcode_ok=true`。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.0>；
+Issue 更正：<https://github.com/citrusli2026/dsh-desktop/issues/23#issuecomment-5534085880>；
+官网：<https://dsh-desktop.com>。
+
+---
+
+_更新于 2026-09-04_
