@@ -57,4 +57,32 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/docs/faq" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/docs/faq" />
   </url>
+  <url>
+    <loc>https://dsh-desktop.com/docs/why-desktop</loc>
+    <lastmod>2026-09-04</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/docs/why-desktop" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/docs/why-desktop" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/docs/why-desktop" />
+  </url>
+  <url>
+    <loc>https://dsh-desktop.com/en/docs/why-desktop</loc>
+    <lastmod>2026-09-04</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/docs/why-desktop" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/docs/why-desktop" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/docs/why-desktop" />
+  </url>
+  <url>
+    <loc>https://dsh-desktop.com/changelog</loc>
+    <lastmod>2026-09-04</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/changelog" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/changelog" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/changelog" />
+  </url>
+  <url>
+    <loc>https://dsh-desktop.com/en/changelog</loc>
+    <lastmod>2026-09-04</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/changelog" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/changelog" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/changelog" />
+  </url>
 </urlset>

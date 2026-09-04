@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DSH Desktop 更新日志｜DeepSeek Harness 桌面版发布记录</title>
+<meta name="description" content="DSH Desktop 更新日志：DeepSeek Harness 社区桌面版的版本发布记录，包含内核升级、首次成功引导、一键体检、插件市场加固与跨版本升级验证。" />
+<meta property="og:site_name" content="DSH Desktop" />
+<meta property="og:title" content="DSH Desktop 更新日志" />
+<meta property="og:description" content="DeepSeek Harness 社区桌面版的版本发布记录与更新要点。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://dsh-desktop.com/changelog" />
+<meta property="og:image" content="https://dsh-desktop.com/assets/og-image.png" />
+<meta property="og:locale" content="zh_CN" />
+<meta property="og:locale:alternate" content="en_US" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="theme-color" content="#f9f8f8" />
+<meta name="color-scheme" content="light dark" />
+<link rel="canonical" href="https://dsh-desktop.com/changelog" />
+<link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/changelog" />
+<link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/changelog" />
+<link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/changelog" />
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/assets/style.css?v=44" />
+<link rel="stylesheet" href="/assets/seo.css?v=13" />
+<script>
+  try {
+    var savedTheme = localStorage.getItem('dsh-site-theme')
+    document.documentElement.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  } catch (e) {}
+</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop 更新日志","url":"https://dsh-desktop.com/changelog","inLanguage":"zh-CN","isPartOf":{"@id":"https://dsh-desktop.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/"},{"@type":"ListItem","position":2,"name":"更新日志","item":"https://dsh-desktop.com/changelog"}]}</script>
+</head>
+<body>
+<a class="skip-link" href="#main-content">跳到主要内容</a>
+<header class="topbar"><a class="topbar__brand" href="/"><img src="/assets/favicon.svg" alt="" width="20" height="20" /><span>dsh-desktop</span><span class="community-tag">社区版</span></a><nav class="topbar__nav" id="topbar-menu" aria-label="页面导航"><a href="/">首页</a><a href="/download">下载</a><a href="/docs/install">安装指南</a><a href="/docs/faq">常见问题</a><a href="/docs/why-desktop">为何桌面版</a><a href="/changelog">更新日志</a></nav><div class="topbar__right"><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换主题" title="切换主题"></button><a class="lang-toggle" href="/en/changelog" aria-label="切换到英文" title="切换到英文">EN</a><a class="gh-chip" href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"><span>GitHub</span></a><a class="btn btn--primary btn--sm" href="/download">立即下载</a><button class="menu-toggle" id="menu-toggle" type="button" aria-label="打开导航" aria-expanded="false" aria-controls="topbar-menu"><svg class="menu-icon menu-icon--open" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><svg class="menu-icon menu-icon--close" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div></header>
+<main id="main-content" class="seo-page"><div class="wrap seo-article">
+  <nav class="seo-breadcrumb" aria-label="面包屑"><a href="/">DSH Desktop</a><span>/</span><span>更新日志</span></nav>
+  <p class="sec-marker">CHANGELOG / 更新日志</p>
+  <h1>DSH Desktop 更新日志</h1>
+  <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
+
+  <h2>v0.1.2-rc.1.shell.2 <small>（2026-09-04，内核 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li>主界面新增四步首次成功引导（运行环境 → 工作区 → 模型 → 首条任务），「扩展入口 / 扩展设置」更名为「桌面工具 / 桌面设置」。</li>
+    <li>新增一键运行体检：随包运行时、数据目录、loopback、Profile、插件与版本，默认本地只读。</li>
+    <li>Windows 升级清理阶段容忍文件锁，避免升级被偶发的占用中断。</li>
+  </ul>
+
+  <h2>v0.1.2-rc.1.shell.0 <small>（2026-09-04，内核升级）</small></h2>
+  <ul>
+    <li>内核升级并锁定官方 <code>@deepseek-ai/dsh</code> 0.1.2-rc.1：会话加载、长会话内存与密集实时消息渲染优化。</li>
+    <li>依赖安全下限：锁定 fast-uri、qs、@xmldom/xmldom 安全版本，双锁文件官方审计零已知漏洞。</li>
+  </ul>
+
+  <h2>v0.1.2-alpha.4.shell.3 <small>（2026-09-02）</small></h2>
+  <ul>
+    <li>插件安装反馈：手动安装 dsh-market 展示准备、下载、验证与重启阶段，失败原因分类脱敏、可重试。</li>
+    <li>跨版本升级验证：三平台发布前对上一公开版本做真实升级，用户 Profile 内容逐项保持不变。</li>
+    <li>Windows 升级改为旧程序静默卸载后原位安装，不再 NSIS 覆盖。</li>
+  </ul>
+
+  <h2>v0.1.2-alpha.3.shell.0 <small>（2026-09-01）</small></h2>
+  <ul>
+    <li>扩展浮层按「连接 → 恢复 → 信息」重排，连接移动设备成为首要操作。</li>
+    <li>扩展设置分区展示，修复窄窗口下局域网、快捷键、插件市场与安全模式的布局问题。</li>
+  </ul>
+
+  <h2>v0.1.2-alpha.2.shell.0 <small>（2026-08-31）</small></h2>
+  <ul>
+    <li>设置页收敛：安全模式提升到首屏，低频工具收进「更多壳工具」。</li>
+    <li>官网轮播统一为真实应用截图，中英文、明暗主题一一对应。</li>
+  </ul>
+
+  <h2>v0.1.1-rc.2.shell.15 <small>（2026-08-30）</small></h2>
+  <ul>
+    <li>启动状态反馈：展示正在启动 / 等待就绪 / 自动重试 / 运行中 / 恢复暂停，含尝试次数。</li>
+    <li>托盘、设置页、加载页与诊断报告使用同一套生命周期状态。</li>
+  </ul>
+
+  <p>更早版本的说明见 <a href="https://github.com/citrusli2026/dsh-desktop/releases" target="_blank" rel="noopener">GitHub Releases</a>。</p>
+
+  <div class="seo-next-links"><a href="/download">下载最新版 →</a><a href="/docs/why-desktop">为什么选择桌面版 →</a><a href="/en/changelog">Read in English →</a></div>
+</div></main>
+<footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />与 DeepSeek AI 无隶属、授权或合作关系</p><a class="footer__top" href="#main-content">回到顶部 ↑</a></div><nav class="footer__links" aria-label="页脚链接"><a href="/">首页</a><a href="/download">下载</a><a href="/docs/install">安装指南</a><a href="/docs/faq">常见问题</a><a href="/docs/why-desktop">为何桌面版</a><a href="/changelog">更新日志</a><a href="/en/changelog">English</a><a href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">GitHub</a></nav><p class="footer__sync"><span>纯静态站点 · 部署于 Vercel<br />版本数据由 GitHub Actions 自动同步</span><br /><span>版本发布记录</span></p></div></footer>
+<script src="/assets/site-shell.js?v=3"></script>
+</body>
+</html>

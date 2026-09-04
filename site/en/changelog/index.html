@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DSH Desktop Changelog｜DeepSeek Harness desktop release notes</title>
+<meta name="description" content="DSH Desktop changelog: release notes for the community desktop shell for DeepSeek Harness — kernel bumps, first-success guide, one-click health check, plugin market hardening and verified upgrades." />
+<meta property="og:site_name" content="DSH Desktop" />
+<meta property="og:title" content="DSH Desktop Changelog" />
+<meta property="og:description" content="Release notes for the community desktop shell for DeepSeek Harness." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://dsh-desktop.com/en/changelog" />
+<meta property="og:image" content="https://dsh-desktop.com/assets/og-image.png" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:locale:alternate" content="zh_CN" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="theme-color" content="#f9f8f8" />
+<meta name="color-scheme" content="light dark" />
+<link rel="canonical" href="https://dsh-desktop.com/en/changelog" />
+<link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/changelog" />
+<link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/changelog" />
+<link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/changelog" />
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/assets/style.css?v=44" />
+<link rel="stylesheet" href="/assets/seo.css?v=13" />
+<script>
+  try {
+    var savedTheme = localStorage.getItem('dsh-site-theme')
+    document.documentElement.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  } catch (e) {}
+</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop Changelog","url":"https://dsh-desktop.com/en/changelog","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/en"},{"@type":"ListItem","position":2,"name":"Changelog","item":"https://dsh-desktop.com/en/changelog"}]}</script>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<header class="topbar"><a class="topbar__brand" href="/en"><img src="/assets/favicon.svg" alt="" width="20" height="20" /><span>dsh-desktop</span><span class="community-tag">Community</span></a><nav class="topbar__nav" id="topbar-menu" aria-label="Page navigation"><a href="/en">Home</a><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a><a href="/en/docs/why-desktop">Why desktop</a><a href="/en/changelog">Changelog</a></nav><div class="topbar__right"><button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch theme" title="Switch theme"></button><a class="lang-toggle" href="/changelog" aria-label="切换到中文" title="切换到中文">中</a><a class="gh-chip" href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"><span>GitHub</span></a><a class="btn btn--primary btn--sm" href="/en/download">Download</a><button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="topbar-menu"><svg class="menu-icon menu-icon--open" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><svg class="menu-icon menu-icon--close" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div></header>
+<main id="main-content" class="seo-page"><div class="wrap seo-article">
+  <nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/en">DSH Desktop</a><span>/</span><span>Changelog</span></nav>
+  <p class="sec-marker">CHANGELOG</p>
+  <h1>DSH Desktop Changelog</h1>
+  <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
+
+  <h2>v0.1.2-rc.1.shell.2 <small>（2026-09-04, kernel 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li>New dismissible four-step first-success guide (runtime → workspace → model → first task); "Extension entry / settings" renamed to "Desktop tools / Desktop settings".</li>
+    <li>One-click health check: bundled runtime, data folders, loopback, profile, plugins, versions — local and read-only by default.</li>
+    <li>Windows upgrade cleanup tolerates transient file locks.</li>
+  </ul>
+
+  <h2>v0.1.2-rc.1.shell.0 <small>（2026-09-04, kernel bump）</small></h2>
+  <ul>
+    <li>Kernel locked to official <code>@deepseek-ai/dsh</code> 0.1.2-rc.1: session loading, long-session memory and dense realtime rendering improvements.</li>
+    <li>Pinned safe versions of fast-uri, qs and @xmldom/xmldom; zero known vulnerabilities in both lockfiles.</li>
+  </ul>
+
+  <h2>v0.1.2-alpha.4.shell.3 <small>（2026-09-02）</small></h2>
+  <ul>
+    <li>Plugin install feedback: staged progress for dsh-market (prepare, download, verify, restart), sanitized retryable failure causes.</li>
+    <li>Cross-version upgrade verification: all three platforms really upgrade the previous public release; user profile contents preserved item by item.</li>
+    <li>Windows upgrades now silently uninstall the old build and install in place instead of NSIS overwriting.</li>
+  </ul>
+
+  <h2>v0.1.2-alpha.3.shell.0 <small>（2026-09-01）</small></h2>
+  <ul>
+    <li>Extension overlay reorganized around "connect → recover → info"; pairing a mobile device is the primary action.</li>
+    <li>Settings sections regrouped; fixed narrow-window layout issues across LAN, shortcut, market and Safe Mode cards.</li>
+  </ul>
+
+  <h2>v0.1.2-alpha.2.shell.0 <small>（2026-08-31）</small></h2>
+  <ul>
+    <li>Settings condensed: Safe Mode promoted to the first screen; low-frequency tools moved under "More shell tools".</li>
+    <li>Website carousel now uses real app screenshots matched per language and theme.</li>
+  </ul>
+
+  <h2>v0.1.1-rc.2.shell.15 <small>（2026-08-30）</small></h2>
+  <ul>
+    <li>Startup state feedback: starting / waiting / retrying / running / recovery paused, with attempt counts.</li>
+    <li>Tray, settings, loading page and diagnostic reports share one lifecycle state model.</li>
+  </ul>
+
+  <p>Older releases: <a href="https://github.com/citrusli2026/dsh-desktop/releases" target="_blank" rel="noopener">GitHub Releases</a>.</p>
+
+  <div class="seo-next-links"><a href="/en/download">Download the latest →</a><a href="/en/docs/why-desktop">Why desktop →</a><a href="/changelog">中文版本 →</a></div>
+</div></main>
+<footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />No affiliation with DeepSeek AI</p><a class="footer__top" href="#main-content">Back to top ↑</a></div><nav class="footer__links" aria-label="Footer links"><a href="/en">Home</a><a href="/en/download">Download</a><a href="/en/docs/install">Install guide</a><a href="/en/docs/faq">FAQ</a><a href="/en/docs/why-desktop">Why desktop</a><a href="/en/changelog">Changelog</a><a href="/changelog">中文</a><a href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">GitHub</a></nav><p class="footer__sync"><span>Static site · deployed on Vercel<br />Release data synced by GitHub Actions</span><br /><span>Release notes</span></p></div></footer>
+<script src="/assets/site-shell.js?v=3"></script>
+</body>
+</html>

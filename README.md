@@ -4,6 +4,24 @@
 
 A dependable Electron desktop shell for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`): the official WebUI, packaged for your desktop — download, install, and use. Functionally identical to `npx @deepseek-ai/dsh web`. Community-maintained, MIT-licensed, no affiliation with DeepSeek AI; DeepSeek Harness is a DeepSeek trademark and this repo only repackages it under MIT.
 
+<p align="center"><img src="site/assets/shots/app-main-en-dark.png" alt="dsh-desktop main window" width="880" /></p>
+
+## Why the desktop shell instead of `npx`?
+
+Same kernel, same WebUI — the shell removes the environment work and adds the desktop surface:
+
+| Capability | `npx @deepseek-ai/dsh web` | dsh-desktop |
+|---|---|---|
+| Node.js / pnpm | Install and maintain yourself | Bundled, pinned Node.js 22 — zero setup |
+| Launching | Terminal + command | Click the icon, or summon from anywhere (`Ctrl/Cmd + Shift + Space`) |
+| Window & tray | One more browser tab | Native window, hides to the system tray |
+| Crash recovery | Restart by hand | Auto-restart with backoff, error-page retry |
+| Broken plugins | Can wedge the WebUI | Safe Mode quarantines third-party plugins and still boots |
+| Diagnostics | Read terminal logs | One-click health check, exportable sanitized report |
+| Updates | Upgrade the npm package manually | Windows in-place auto-update; macOS release-page check |
+
+CLI and desktop can coexist — see [why-desktop](https://dsh-desktop.com/en/docs/why-desktop) for details, or the [changelog](https://dsh-desktop.com/en/changelog) for release notes.
+
 ## Product scope
 
 `dsh-desktop` is a community-maintained personal project focused on a reliable Electron shell plus an out-of-the-box experience. It adds the desktop surface around the official Harness WebUI — runtime packaging, native window and tray behavior, supervision, recovery, diagnostics, updates, and practical desktop entry points — without becoming a separate Agent workspace or chat product.

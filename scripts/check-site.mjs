@@ -54,7 +54,7 @@ const pageDocs = await Promise.all(pageFiles.map(async (file) => ({
   html: await readFile(file, 'utf8'),
 })))
 
-requireValue(pageDocs.length === 8, `expected 8 crawlable HTML pages, found ${pageDocs.length}`)
+requireValue(pageDocs.length === 12, `expected 12 crawlable HTML pages, found ${pageDocs.length}`)
 for (const { file, html: pageHtml } of pageDocs) {
   const relative = path.relative(SITE, file).split(path.sep).join('/')
   const expectedCanonical = relative === 'index.html'
@@ -118,6 +118,10 @@ const expectedSitemapLocations = [
   'https://dsh-desktop.com/en/docs/install',
   'https://dsh-desktop.com/docs/faq',
   'https://dsh-desktop.com/en/docs/faq',
+  'https://dsh-desktop.com/docs/why-desktop',
+  'https://dsh-desktop.com/en/docs/why-desktop',
+  'https://dsh-desktop.com/changelog',
+  'https://dsh-desktop.com/en/changelog',
 ]
 requireValue(/xmlns:xhtml="http:\/\/www.w3.org\/1999\/xhtml"/.test(sitemap), 'sitemap hreflang namespace is missing')
 requireValue(new Set(sitemapLocations).size === expectedSitemapLocations.length, 'sitemap contains duplicate URLs')

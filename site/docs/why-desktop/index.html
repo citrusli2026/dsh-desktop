@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>为什么选择 DSH Desktop 桌面版｜DeepSeek Harness 桌面客户端 vs 命令行</title>
+<meta name="description" content="对比 npx @deepseek-ai/dsh web 命令行与 DSH Desktop 桌面客户端：无需安装 Node.js、托盘常驻、崩溃自愈、快捷键唤起、自动更新，下载即用。" />
+<meta property="og:site_name" content="DSH Desktop" />
+<meta property="og:title" content="为什么选择 DSH Desktop 桌面版" />
+<meta property="og:description" content="对比 npx 命令行与桌面客户端：无需 Node.js、托盘常驻、崩溃自愈、快捷键唤起、自动更新。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://dsh-desktop.com/docs/why-desktop" />
+<meta property="og:image" content="https://dsh-desktop.com/assets/og-image.png" />
+<meta property="og:locale" content="zh_CN" />
+<meta property="og:locale:alternate" content="en_US" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="theme-color" content="#f9f8f8" />
+<meta name="color-scheme" content="light dark" />
+<link rel="canonical" href="https://dsh-desktop.com/docs/why-desktop" />
+<link rel="alternate" hreflang="zh-CN" href="https://dsh-desktop.com/docs/why-desktop" />
+<link rel="alternate" hreflang="en" href="https://dsh-desktop.com/en/docs/why-desktop" />
+<link rel="alternate" hreflang="x-default" href="https://dsh-desktop.com/en/docs/why-desktop" />
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/assets/style.css?v=44" />
+<link rel="stylesheet" href="/assets/seo.css?v=13" />
+<script>
+  try {
+    var savedTheme = localStorage.getItem('dsh-site-theme')
+    document.documentElement.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  } catch (e) {}
+</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"为什么选择 DSH Desktop 桌面版","url":"https://dsh-desktop.com/docs/why-desktop","inLanguage":"zh-CN","isPartOf":{"@id":"https://dsh-desktop.com/#website"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/"},{"@type":"ListItem","position":2,"name":"为什么选择桌面版","item":"https://dsh-desktop.com/docs/why-desktop"}]}</script>
+</head>
+<body>
+<a class="skip-link" href="#main-content">跳到主要内容</a>
+<header class="topbar"><a class="topbar__brand" href="/"><img src="/assets/favicon.svg" alt="" width="20" height="20" /><span>dsh-desktop</span><span class="community-tag">社区版</span></a><nav class="topbar__nav" id="topbar-menu" aria-label="页面导航"><a href="/">首页</a><a href="/download">下载</a><a href="/docs/install">安装指南</a><a href="/docs/faq">常见问题</a><a href="/docs/why-desktop">为何桌面版</a><a href="/changelog">更新日志</a></nav><div class="topbar__right"><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换主题" title="切换主题"></button><a class="lang-toggle" href="/en/docs/why-desktop" aria-label="切换到英文" title="切换到英文">EN</a><a class="gh-chip" href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"><span>GitHub</span></a><a class="btn btn--primary btn--sm" href="/download">立即下载</a><button class="menu-toggle" id="menu-toggle" type="button" aria-label="打开导航" aria-expanded="false" aria-controls="topbar-menu"><svg class="menu-icon menu-icon--open" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><svg class="menu-icon menu-icon--close" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div></header>
+<main id="main-content" class="seo-page"><div class="wrap seo-article">
+  <nav class="seo-breadcrumb" aria-label="面包屑"><a href="/">DSH Desktop</a><span>/</span><span>为什么选择桌面版</span></nav>
+  <p class="sec-marker">WHY DESKTOP / 为何桌面版</p>
+  <h1>为什么选择 DSH Desktop 桌面版？</h1>
+  <p class="seo-lead">DeepSeek Harness 官方用法是在终端运行 <code>npx @deepseek-ai/dsh web</code>，然后在浏览器里打开本地地址。功能上完全一致——DSH Desktop 就是把这个 WebUI 稳定地搬进一个原生桌面应用。区别在于：你不用再维护 Node 环境，也不用记住那行命令。</p>
+
+  <h2>命令行 vs 桌面客户端</h2>
+  <table>
+    <thead><tr><th scope="col">能力</th><th scope="col">npx 命令行 + 浏览器</th><th scope="col">DSH Desktop</th></tr></thead>
+    <tbody>
+      <tr><td>Node.js / pnpm 环境</td><td>需要自装并维护版本</td><td>内置锁定版本的 Node.js 22，零配置</td></tr>
+      <tr><td>启动方式</td><td>打开终端，记住并输入命令</td><td>双击图标，或用快捷键从任意应用唤起</td></tr>
+      <tr><td>窗口与托盘</td><td>占用一个浏览器标签页</td><td>独立原生窗口，可收进系统托盘常驻</td></tr>
+      <tr><td>崩溃恢复</td><td>进程挂了需要自己排查重启</td><td>指数退避自动重启，错误页一键重试</td></tr>
+      <tr><td>坏插件隔离</td><td>插件出错可能卡死整个 WebUI</td><td>安全模式隔离第三方插件，照常启动</td></tr>
+      <tr><td>数据隔离</td><td>与 CLI 共用 <code>~/.dsh</code></td><td>独立 <code>~/.dsh-desktop</code>，可经 <code>DSH_HOME</code> 共享</td></tr>
+      <tr><td>诊断</td><td>自己翻终端日志</td><td>一键体检 + 可导出的脱敏诊断报告</td></tr>
+      <tr><td>更新</td><td>手动升级 npm 包</td><td>Windows 原地自动更新；macOS 检查并直达发布页</td></tr>
+    </tbody>
+  </table>
+
+  <h2>适合谁</h2>
+  <ul>
+    <li><strong>不想折腾终端的用户</strong>：下载安装即用，不需要 Node.js、npm 或任何命令行基础。</li>
+    <li><strong>把 Harness 当日常工作台的人</strong>：托盘常驻 + 全局唤起快捷键（默认 <code>Ctrl/Cmd + Shift + Space</code>），随手打开、随手收起。</li>
+    <li><strong>多台机器或会给同事部署的人</strong>：Agent 预设可导出为单个 <code>.dshpreset</code> 文件迁移。</li>
+  </ul>
+
+  <h2>什么时候用命令行更好</h2>
+  <p>如果你已经在维护 Node 环境、需要在服务器上通过 SSH 使用 Harness、或想把 Harness 嵌入自己的脚本流水线，官方 <code>npx @deepseek-ai/dsh web</code> 仍然是正确选择。DSH Desktop 是同一内核的桌面形态，不是替代品；两者可以共存。</p>
+
+  <div class="seo-next-links"><a href="/download">下载 DSH Desktop →</a><a href="/docs/install">查看安装指南 →</a><a href="/en/docs/why-desktop">Read in English →</a></div>
+</div></main>
+<footer class="footer"><div class="wrap footer__grid"><div><p class="footer__brand">dsh-desktop</p><p class="footer__legal">MIT © 2026 dsh-desktop contributors<br />与 DeepSeek AI 无隶属、授权或合作关系</p><a class="footer__top" href="#main-content">回到顶部 ↑</a></div><nav class="footer__links" aria-label="页脚链接"><a href="/">首页</a><a href="/download">下载</a><a href="/docs/install">安装指南</a><a href="/docs/faq">常见问题</a><a href="/docs/why-desktop">为何桌面版</a><a href="/changelog">更新日志</a><a href="/en/docs/why-desktop">English</a><a href="https://github.com/citrusli2026/dsh-desktop" target="_blank" rel="noopener">GitHub</a></nav><p class="footer__sync"><span>纯静态站点 · 部署于 Vercel<br />版本数据由 GitHub Actions 自动同步</span><br /><span>为什么选择桌面版</span></p></div></footer>
+<script src="/assets/site-shell.js?v=3"></script>
+</body>
+</html>

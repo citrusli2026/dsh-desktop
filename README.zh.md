@@ -6,6 +6,24 @@ DeepSeek Harness 的可靠 Electron 桌面壳:官方 WebUI 的桌面封装,下�
 功能与 `npx @deepseek-ai/dsh web` 完全一致。社区维护,MIT 开源,与 DeepSeek AI 无关联;
 DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打包。
 
+<p align="center"><img src="site/assets/shots/app-main-zh-dark.png" alt="dsh-desktop 主界面" width="880" /></p>
+
+## 为什么用桌面版,而不是 `npx`?
+
+同一内核、同一 WebUI——桌面壳替你搞定环境,再补上桌面该有的部分:
+
+| 能力 | `npx @deepseek-ai/dsh web` | dsh-desktop |
+|---|---|---|
+| Node.js / pnpm | 自装自维护 | 内置锁定版 Node.js 22,零配置 |
+| 启动方式 | 开终端敲命令 | 双击图标,或快捷键全局唤起(`Ctrl/Cmd + Shift + Space`) |
+| 窗口与托盘 | 多占一个浏览器标签页 | 原生独立窗口,可收进系统托盘常驻 |
+| 崩溃恢复 | 自己排查重启 | 指数退避自动重启,错误页一键重试 |
+| 坏插件 | 可能卡死整个 WebUI | 安全模式隔离第三方插件,照常启动 |
+| 诊断 | 自己翻终端日志 | 一键体检 + 可导出脱敏诊断报告 |
+| 更新 | 手动升级 npm 包 | Windows 原地自动更新;macOS 直达发布页 |
+
+命令行与桌面版可以共存——详情见[为什么选择桌面版](https://dsh-desktop.com/docs/why-desktop),发布记录见[更新日志](https://dsh-desktop.com/changelog)。
+
 ## 产品定位与范围
 
 `dsh-desktop` 是社区维护的个人项目，定位是**可靠的 Electron 壳 + 开箱即用的支持**。
