@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T05:46:09.107Z",
+  "generated_at": "2026-09-05T06:56:46.823Z",
   "repo": {
     "full_name": "citrusli2026/dsh-desktop",
     "html_url": "https://github.com/citrusli2026/dsh-desktop",
@@ -7,9 +7,9 @@
     "license": "MIT"
   },
   "stats": {
-    "installer_downloads": 637,
+    "installer_downloads": 644,
     "mac_downloads": 155,
-    "win_downloads": 365,
+    "win_downloads": 372,
     "linux_downloads": 117,
     "releases": 37
   },
@@ -33,7 +33,7 @@
       {
         "name": "dsh-desktop-0.1.2-rc.1.shell.4-amd64.deb.sha256",
         "size": 107,
-        "downloads": 2,
+        "downloads": 4,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-rc.1.shell.4/dsh-desktop-0.1.2-rc.1.shell.4-amd64.deb.sha256",
         "kind": "checksum",
         "sha256": "0a2eef2392228097624ae72156211c06adea00823baba3be95043f31d5749ae2",
@@ -53,7 +53,7 @@
       {
         "name": "dsh-desktop-0.1.2-rc.1.shell.4-arm64-mac.dmg.sha256",
         "size": 111,
-        "downloads": 2,
+        "downloads": 3,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-rc.1.shell.4/dsh-desktop-0.1.2-rc.1.shell.4-arm64-mac.dmg.sha256",
         "kind": "checksum",
         "sha256": "e87119cf33d7cb17668a74223eb4dcc589d8913f4a2e08ee73ddcc50cc18f4c0",
@@ -63,7 +63,7 @@
       {
         "name": "dsh-desktop-setup-0.1.2-rc.1.shell.4.exe",
         "size": 164591460,
-        "downloads": 7,
+        "downloads": 11,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-rc.1.shell.4/dsh-desktop-setup-0.1.2-rc.1.shell.4.exe",
         "kind": "installer",
         "sha256": null,
@@ -73,7 +73,7 @@
       {
         "name": "dsh-desktop-setup-0.1.2-rc.1.shell.4.exe.sha256",
         "size": 107,
-        "downloads": 2,
+        "downloads": 4,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.1.2-rc.1.shell.4/dsh-desktop-setup-0.1.2-rc.1.shell.4.exe.sha256",
         "kind": "checksum",
         "sha256": "2cd0a7668a4e7f809d53c7cb3fec89695891523827d617142b99f175ebec0cd6",
