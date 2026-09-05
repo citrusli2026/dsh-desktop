@@ -9,12 +9,12 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.2-rc.1.shell.4`（2026-09-05 已发布；内核 `0.1.2-rc.1`） |
-| 已发布 | ✅ `0.1.2-rc.1.shell.4`（2026-09-05，三端 dmg/exe/deb；真实失败签名修复 + 发布自动化） |
+| 最新代码基线 | ✅ `0.1.2-rc.1.shell.5`（2026-09-05 已发布；内核 `0.1.2-rc.1`） |
+| 已发布 | ✅ `0.1.2-rc.1.shell.5`（2026-09-05，三端 dmg/exe/deb；发布链路自愈 + 一键提交问题） |
 | 本地门禁 | ✅ 197 项单测、类型检查、runtime/site 门禁、构建全绿；dev/packaged/real Harness/Safe Mode/offline + real market/macOS cross-version upgrade E2E 通过 |
-| 核心发布 | ✅ `v0.1.2-rc.1.shell.4` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复、插件恢复与真实 registry 升级全链路验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.4`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.2-rc.1.shell.4` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `ed3cef5`） |
+| 核心发布 | ✅ `v0.1.2-rc.1.shell.5` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复、插件恢复与真实 registry 升级全链路验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.5`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.2-rc.1.shell.5` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `20fd7ec`） |
 | 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；核验时累计 670（mac 164 / win 385 / linux 121） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -1249,6 +1249,33 @@ _更新于 2026-09-05_
 
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.4>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.4>；
+官网：<https://dsh-desktop.com>。
+
+---
+## 四十三、v0.1.2-rc.1.shell.5 发布：发布链路自愈与反馈闭环（2026-09-05）
+
+1. **发布链路自愈**：新增 `.github/scripts/open-failure-issue.mjs`（按标题去重、
+   重复失败追加评论）；release.yml 与 gitcode-backfill 任何失败自动开 issue；
+   Release run 失败不再跳过官网数据同步（site-refresh 对 failure 也兜底）。
+   本次实战：publish 自动派发镜像成功（`actions:write` 修复首次验证，
+   run `33955481810`）——但海外 runner 上传 exe 再次超时，第 71 分钟尚无任何
+   安装包落地，取消后走本机 VPN 并行下载三安装包（~10 分钟）上传，SHA-256
+   核对通过，Range GET 6/6。
+2. **一键提交问题**：错误页新增「到 GitHub 提交问题」，预填脱敏上下文
+   （版本/平台/内核/安全模式/疑似插件/失败原因），诊断文件由用户自行附加，
+   应用不自动上传（`src/main/support.ts`，单测覆盖 URL 构造与换行注入）。
+3. **升级语义修正**：插件已是最新可获得版本时显示「已是当前可获得的最新
+   版本」而非误导性失败提示（registry 元数据可能滞后 dist-tag）；handler 返回
+   `true | 'current' | false` 三态。
+4. **发布实战**：tag `v0.1.2-rc.1.shell.5` → `20fd7ec`；Release run
+   `33954789652` 全绿（8 资产）。site-refresh 曾抢跑提交 `gitcode_ok=false`
+   （镜像未完成时），本地重新生成覆盖推送 `cf8ca9f`（保留 bot 计数）；
+   线上 `/data/release.json` 指向 shell.5、6/6 `gitcode_ok=true`；changelog 页
+   已含 shell.5；`/api/downloads` 核验时累计 777。给 `gen-site-data.mjs` 的
+   代理出口 curl 时限 60s→300s（大 payload 在慢隧道下需要更久）。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.5>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.5>；
 官网：<https://dsh-desktop.com>。
 
 ---
