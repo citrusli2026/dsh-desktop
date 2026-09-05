@@ -76,7 +76,7 @@ const port = Number(process.env.DSH_LISTEN_PORT)
 const server = createServer((req, res) => {
   if (req.url === '/healthz') {
     res.writeHead(200, { 'content-type': 'application/json' })
-    res.end('{"ok":true}')
+    res.end(JSON.stringify({ ok: true, upstreamToken: process.env.DSH_UPSTREAM_TOKEN ?? null }))
     return
   }
   if (req.url === '/pair/new' && req.method === 'POST') {
@@ -96,7 +96,8 @@ const server = createServer((req, res) => {
 server.listen(port, host)
 `)
 
-  // Fake harness target on loopback.
+  // Fake harness target on loopback; the ready URL carries the kernel's
+  // browser trust token, which the shell must relay to the proxy.
   const target: Server = createServer((_req, res) => { res.writeHead(200); res.end('harness') })
   await new Promise<void>(resolve => target.listen(0, '127.0.0.1', resolve))
   const targetPort = (target.address() as AddressInfo).port
@@ -105,7 +106,7 @@ server.listen(port, host)
   const service = new LanService({
     mobileShellRoot: root,
     nodeExecutable: () => process.execPath,
-    getTargetUrl: () => `http://127.0.0.1:${targetPort}`,
+    getTargetUrl: () => `http://127.0.0.1:${targetPort}/?token=launch-token-abc123`,
     lanAddress: () => '127.0.0.1',
     onStateChanged: () => { stateChanges += 1 },
   })
@@ -120,6 +121,8 @@ server.listen(port, host)
     assert.equal(service.currentPairing?.code, pairing.code)
     assert.equal(pairing.expiresAt > Date.now(), true)
     assert.ok(stateChanges > 0, 'start should have notified state changes')
+    const health = await fetch(`${pairing.baseUrl}healthz`).then(response => response.json()) as { upstreamToken?: string | null }
+    assert.equal(health.upstreamToken, 'launch-token-abc123')
 
     // Restart: stop + start, yielding a fresh pairing.
     const restarted = await service.restart()

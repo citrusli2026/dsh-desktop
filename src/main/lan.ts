@@ -294,6 +294,12 @@ export class LanService {
         lanAddress = discovered
       }
       const target = parseTargetUrl(targetUrl)
+      // Kernels ≥ 0.1.2-alpha.2 print the ready URL with a browser trust
+      // token; handing it to the proxy lets it hold an upstream session
+      // cookie so paired devices can load the UI (see dsh-remote.mjs).
+      // applyState restarts the proxy whenever the ready URL changes, so the
+      // token tracks kernel restarts.
+      const upstreamToken = new URL(targetUrl).searchParams.get('token') ?? undefined
       const listenPort = await chooseListenPort(lanAddress)
       if (controller.signal.aborted) throw new Error('LAN proxy start cancelled')
       const token = randomBytes(32).toString('hex')
@@ -307,6 +313,7 @@ export class LanService {
         cwd: mobileShell.root,
         env: proxyEnvironment({
           DSH_REMOTE_TOKEN: token,
+          ...(upstreamToken === undefined ? {} : { DSH_UPSTREAM_TOKEN: upstreamToken }),
           DSH_LISTEN_HOST: lanAddress,
           DSH_LISTEN_PORT: String(listenPort),
           DSH_TARGET_HOST: target.host,
