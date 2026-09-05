@@ -1,0 +1,82 @@
+name: dsh-release
+
+# Automated kernel-bump release (decision 0009 follow-up): merging a
+# dsh-bump/* PR is the only human step. This workflow writes the templated
+# release notes, tags the merge commit, and pushes the tag — release.yml then
+# runs the full gated pipeline (verify, three-platform builds, publish), and
+# its publish job dispatches gitcode-backfill. Nothing here bypasses a gate:
+# every quality check still lives in release.yml and the watch run that built
+# the PR. Failures open an issue with the failing run linked.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: dsh-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: >-
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'dsh-bump/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Resolve the composite version and guard against an existing tag
+        id: version
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v${VERSION}"
+          # A kernel bump resets the shell revision to zero (decision 0009);
+          # anything else means the PR was not a pure bump.
+          case "$VERSION" in
+            *.shell.0) ;;
+            *) echo "dsh-release: $VERSION is not a *.shell.0 kernel bump; refusing to auto-release" >&2; exit 1 ;;
+          esac
+          if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+            echo "dsh-release: tag $TAG already exists; refusing to re-tag" >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "dsh-release: will tag $TAG at $(git rev-parse --short HEAD)"
+      - name: Generate the kernel-bump release notes
+        env:
+          DSH_WATCH_RUN_URL: ${{ github.event.pull_request.html_url }}
+        run: node scripts/write-kernel-release-notes.mjs "${{ steps.version.outputs.tag }}"
+      - name: Verify the notes pass the placeholder gate
+        run: node scripts/write-release-notes.mjs check "${{ steps.version.outputs.tag }}"
+      - name: Commit notes, rebase over bot commits, and push the tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/release-notes/"$TAG".md
+          git commit -m "docs: release notes for $TAG (automated kernel bump)"
+          # Bot syncs (site-refresh) land between the merge and this push.
+          git pull --rebase origin main
+          git push origin main
+          git tag "$TAG"
+          git push origin "$TAG"
+      - name: Open an issue when the automated release fails
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          gh issue create --title "dsh-release: automated release of $TAG failed" \
+            --body "The automated kernel-bump release failed in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} (PR: ${{ github.event.pull_request.html_url }}). Inspect the first failing step before assigning a cause; the tag may not exist yet — check \`git ls-remote --tags origin\` before re-running anything."

@@ -163,7 +163,11 @@ export class ShellApp {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       console.error(`dsh-desktop: ${message}`)
-      this.applyState({ phase: 'crashed', attempts: 0, logTail: message })
+      // A failed first boot must still surface the harness's own output —
+      // that is where the failing plugin (upgrade cliff, missing bundle) is
+      // named and where the error page's recovery rows come from.
+      const logTail = [message, this.supervisor.logTailSnapshot()].filter(part => part !== '').join('\n')
+      this.applyState({ phase: 'crashed', attempts: 0, logTail })
       throw error
     }
   }

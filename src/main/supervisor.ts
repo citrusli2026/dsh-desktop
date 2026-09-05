@@ -158,6 +158,11 @@ export class HarnessSupervisor {
     return this.exitTimes.length
   }
 
+  /** The last captured harness output lines, for failure reporting. */
+  logTailSnapshot(): string {
+    return this.logLines.join('\n')
+  }
+
   /** Append one output line to the ring buffer and the log file. */
   private recordLine(line: string): void {
     this.logLines.push(line)

@@ -85,6 +85,7 @@ test('formatDiagnosticReport records versions and crash state without upload', (
       damagedBundles: [],
     },
     pluginFailures: [{ id: 'user-a', name: 'user-plugin' }],
+    pluginFailureCause: 'kernel-api',
     marketInstall: {
       status: 'download-failed', installed: false, stage: 'install', reason: 'proxy',
       detail: 'proxy refused Authorization: Bearer hidden-token',
@@ -113,7 +114,7 @@ test('formatDiagnosticReport includes the concrete startup stage', () => {
     platform: 'darwin', platformRelease: '25.0.0', arch: 'arm64',
     harnessState: { phase: 'starting', stage: 'waiting-for-ready' }, logTail: 'booting',
     harnessVersion: '0.1.1-rc.2', safeMode: false,
-    pluginInventory: undefined, pluginFailures: [],
+    pluginInventory: undefined, pluginFailures: [], pluginFailureCause: 'unknown',
   })
   assert.match(report, /harness_state=starting \(waiting-for-ready\)/)
 })

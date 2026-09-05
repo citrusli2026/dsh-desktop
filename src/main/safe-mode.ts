@@ -24,7 +24,33 @@ export const WEB_PROFILE = 'web'
 export const OFFICIAL_BUNDLES = ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] as const
 
 /** The failure chain a broken plugin emits on stderr (spike-captured). */
-export const PLUGIN_FAILURE_PATTERN = /failed to apply loader entry (\S+) \(([^)]*)\)/g
+export const PLUGIN_FAILURE_PATTERN = /failed to (?:apply|import) loader entry (\S+) \(([^)]*)\)/g
+
+/** A bundle listed in the profile but missing from node_modules (dsh-app-boot). */
+export const BUNDLE_RESOLUTION_PATTERN = /cannot resolve profile bundle "([^"]+)"/g
+
+/**
+ * Why a plugin failed to load. `kernel-api` is the recurring upgrade cliff:
+ * the plugin imports a symbol the bundled kernel no longer exports, so the
+ * fix is to update (or disable) the plugin — exactly what the error page's
+ * recovery rows offer.
+ */
+export type PluginFailureCause = 'kernel-api' | 'unknown'
+
+/** Log evidence that a loader entry failed on a kernel module import. */
+const KERNEL_API_EVIDENCE = [
+  /does not provide an export named/i,
+  /SyntaxError: The requested module '@deepseek-ai\/dsh-/,
+]
+
+/**
+ * Classify why the failing plugins in `logTail` failed. The kernel-API cliff
+ * always shows up as an ESM import error against a `@deepseek-ai/dsh-*`
+ * module; anything else stays `unknown` rather than guessing.
+ */
+export function classifyPluginFailureCause(logTail: string): PluginFailureCause {
+  return KERNEL_API_EVIDENCE.some(pattern => pattern.test(logTail)) ? 'kernel-api' : 'unknown'
+}
 
 /** A row id reachable through nested insert/group compositions. */
 export interface ComposedRow {
@@ -155,12 +181,16 @@ export async function buildSafeModeOverlay(dshHome: string, profile = WEB_PROFIL
  * that are not plugin failures.
  */
 export function detectPluginFailure(line: string): { id: string; name: string } | undefined {
-  const matches = [...line.matchAll(PLUGIN_FAILURE_PATTERN)]
-  const last = matches.at(-1)
-  const id = last?.[1]
-  const name = last?.[2]
-  if (id === undefined || name === undefined || !matches.length) return undefined
-  return { id, name }
+  const last = [...line.matchAll(PLUGIN_FAILURE_PATTERN)].at(-1)
+  if (last !== undefined) {
+    const id = last[1]
+    const name = last[2]
+    if (id !== undefined && name !== undefined) return { id, name }
+  }
+  const missing = [...line.matchAll(BUNDLE_RESOLUTION_PATTERN)].at(-1)
+  const bundle = missing?.[1]
+  if (bundle !== undefined) return { id: bundle, name: bundle }
+  return undefined
 }
 
 /** The disable patch rows for one computed overlay. */

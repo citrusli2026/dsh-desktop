@@ -81,3 +81,11 @@ test('built-in pages carry a restrictive CSP and the error page exposes local di
   assert.match(error, /Export Diagnostic Report/)
   assert.match(error, /dshDesktop\.exportDiagnostics/)
 })
+
+
+test('errorPageHtml swaps the plugin hint to the kernel-cliff copy when classified', () => {
+  const html = decodeURIComponent(errorPageHtml(6, 'tail', false, [{ id: 'r', name: 'dshmarket' }], 'en', 'kernel-api'))
+  assert.ok(html.includes('no longer exports'), 'kernel-api hint must explain the missing export')
+  const plain = decodeURIComponent(errorPageHtml(6, 'tail', false, [{ id: 'r', name: 'dshmarket' }], 'en', 'unknown'))
+  assert.ok(!plain.includes('no longer exports'))
+})

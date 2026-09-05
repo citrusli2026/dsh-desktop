@@ -6,7 +6,7 @@ import { homedir, release } from 'node:os'
 import { basename, join } from 'node:path'
 import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
-import { collectPluginFailures, inspectPluginInventory, type ComposedRow, type PluginInventory } from './safe-mode.ts'
+import { classifyPluginFailureCause, collectPluginFailures, inspectPluginInventory, type ComposedRow, type PluginInventory } from './safe-mode.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { harnessRoot } from './paths.ts'
 import { readProfileStatus, type ProfileStatus } from './profile.ts'
@@ -110,6 +110,8 @@ export interface DiagnosticFacts {
   profileStatus?: ProfileStatus
   pluginInventory: PluginInventory | undefined
   pluginFailures: ComposedRow[]
+  /** Classified cause for the failing plugins (kernel-api upgrade cliff vs unknown). */
+  pluginFailureCause: 'kernel-api' | 'unknown'
   /** Last manual market operation in this app session, already sanitized. */
   marketInstall?: MarketInstallResult
 }
@@ -160,9 +162,13 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
     ...inventoryLines(facts.pluginInventory),
     '',
     '# Suspected failing plugins (from harness output)',
+    `failure_cause=${facts.pluginFailureCause}`,
     ...(facts.pluginFailures.length === 0
       ? ['none']
       : facts.pluginFailures.map(row => `${row.id} (${row.name})`)),
+    ...(facts.pluginFailureCause === 'kernel-api'
+      ? ['hint=plugins import symbols the bundled kernel no longer exports; update plugins to the latest published version (error page offers one-click update/disable)']
+      : []),
     '',
     `# Harness log tail (up to ${DIAGNOSTIC_LOG_BYTES / 1024} KiB; common secrets and home path masked)`,
     redactDiagnosticsLog(facts.logTail).trimEnd(),
@@ -233,6 +239,7 @@ export async function exportDiagnosticReport(
       profileStatus,
       pluginInventory,
       pluginFailures: collectPluginFailures(logTail),
+      pluginFailureCause: classifyPluginFailureCause(logTail),
       marketInstall,
     })
     writeFileSync(result.filePath, report, { mode: 0o600 })

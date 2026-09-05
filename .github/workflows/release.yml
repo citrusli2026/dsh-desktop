@@ -299,3 +299,12 @@ jobs:
           done
           gh release upload "$TAG" artifacts/* --clobber --repo "$REPO"
           gh release edit "$TAG" --prerelease --draft=false --repo "$REPO"
+      - name: Dispatch the GitCode mirror backfill
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # workflow_dispatch runs even when triggered with GITHUB_TOKEN, so the
+          # mirror starts immediately; it is idempotent and re-runnable.
+          gh workflow run gitcode-backfill.yml --ref main -f tag="$TAG" --repo "${{ github.repository }}"

@@ -6,17 +6,22 @@ import type { HarnessState, HarnessSupervisor } from '../src/main/supervisor.ts'
 class FakeSupervisor {
   static instances: FakeSupervisor[] = []
   /** Shared config consumed by the next start(); cleared after one use. */
-  static nextStartResult: { url?: string; error?: Error } = {}
+  static nextStartResult: { url?: string; error?: Error; tail?: string } = {}
   onState!: (state: HarnessState) => void
   stopCalls = 0
   constructor(onState: (state: HarnessState) => void) {
     this.onState = onState
     FakeSupervisor.instances.push(this)
   }
+  logLines: string[] = []
+  logTailSnapshot(): string {
+    return this.logLines.join('\n')
+  }
   start(): Promise<string> {
     const result = FakeSupervisor.nextStartResult
     FakeSupervisor.nextStartResult = {}
     this.onState({ phase: 'starting' })
+    if (result.tail !== undefined) this.logLines = result.tail.split('\n')
     if (result.error !== undefined) return Promise.reject(result.error)
     const url = result.url ?? 'http://127.0.0.1:1234'
     this.onState({ phase: 'ready', url })
@@ -138,9 +143,15 @@ test('startHarness returns the ready URL and applies the crashed state on failur
   const harness = makeHarness()
   const url = await harness.app.startHarness()
   assert.equal(url, 'http://127.0.0.1:1234')
-  FakeSupervisor.nextStartResult = { error: new Error('no harness') }
+  FakeSupervisor.nextStartResult = { error: new Error('no harness'), tail: 'cannot resolve profile bundle "dshmarket"' }
   await assert.rejects(harness.app.startHarness(), /no harness/)
-  assert.deepEqual(harness.applied.at(-1), { phase: 'crashed', attempts: 0, logTail: 'no harness' })
+  // The failed first boot carries the harness's own output tail, so the error
+  // page can name the failing plugin.
+  assert.deepEqual(harness.applied.at(-1), {
+    phase: 'crashed',
+    attempts: 0,
+    logTail: 'no harness\ncannot resolve profile bundle "dshmarket"',
+  })
 })
 
 test('stopHarness stops the live supervisor and is safe to repeat', async () => {

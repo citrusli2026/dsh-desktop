@@ -99,6 +99,8 @@ export function loadingPageHtml(
  * @param safeMode - whether the profile is currently booted in Safe Mode.
  * @param suspects - failing-plugin rows extracted from the log tail.
  * @param locale - the active shell locale.
+ * @param cause - classified failure cause; `kernel-api` swaps the hint copy
+ *   to the upgrade-cliff message (update the plugin, don't reinstall the kernel).
  */
 export function errorPageHtml(
   attempts: number,
@@ -106,6 +108,7 @@ export function errorPageHtml(
   safeMode = false,
   suspects: readonly ComposedRow[] = [],
   locale: ShellLocale = 'en',
+  cause: 'kernel-api' | 'unknown' = 'unknown',
 ): string {
   const lang = locale === 'zh' ? 'zh-CN' : 'en'
   const retry = shellText(locale, 'page.retry')
@@ -124,7 +127,7 @@ export function errorPageHtml(
   const pluginSection = pluginNames.length === 0
     ? ''
     : `<p class="log-label">${escapeHtml(shellText(locale, 'page.pluginsHeading'))}</p>
-    <p>${escapeHtml(shellText(locale, 'page.pluginsHint'))}</p>
+    <p>${escapeHtml(shellText(locale, cause === 'kernel-api' ? 'page.pluginsHintKernel' : 'page.pluginsHint'))}</p>
     <div class="plugin-list">${pluginNames.map(name => `
       <div class="plugin-row"><code>${escapeHtml(name)}</code>
       <button type="button" data-plugin-action="update" data-plugin="${escapeHtml(name)}">${escapeHtml(shellText(locale, 'page.pluginUpdate'))}</button>

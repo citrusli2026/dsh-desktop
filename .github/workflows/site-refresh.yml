@@ -41,7 +41,7 @@ jobs:
           node-version: '22'
           package-manager-cache: false
 
-      - name: Regenerate site/data/release.json
+      - name: Regenerate site/data/release.json and the changelog pages
         id: gen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -49,6 +49,9 @@ jobs:
           git config user.name "dsh-shell-bot"
           git config user.email "bot@users.noreply.github.com"
           node scripts/gen-site-data.mjs
+          # Changelog pages render from docs/release-notes (same source as the
+          # GitHub Release body); idempotent — no diff when notes are unchanged.
+          node scripts/gen-site-changelog.mjs
 
       - name: Re-probe GitCode until the mirror settles
         # A Release-triggered run frequently finishes before the GitCode
@@ -78,7 +81,7 @@ jobs:
             exit 0
           fi
           TAG=$(node -p "require('./site/data/release.json').release.tag")
-          git add site/data/release.json
+          git add site/data/release.json site/changelog/index.html site/en/changelog/index.html
           git commit -m "site: sync release data ${TAG}"
           git pull --rebase origin main
           git push origin HEAD:main

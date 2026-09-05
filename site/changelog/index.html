@@ -41,45 +41,81 @@
   <h1>DSH Desktop 更新日志</h1>
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
-  <h2>v0.1.2-rc.1.shell.2 <small>（2026-09-04，内核 0.1.2-rc.1）</small></h2>
+  <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.3 <small>（内核 0.1.2-rc.1）</small></h2>
   <ul>
-    <li>主界面新增四步首次成功引导（运行环境 → 工作区 → 模型 → 首条任务），「扩展入口 / 扩展设置」更名为「桌面工具 / 桌面设置」。</li>
-    <li>新增一键运行体检：随包运行时、数据目录、loopback、Profile、插件与版本，默认本地只读。</li>
-    <li>Windows 升级清理阶段容忍文件锁，避免升级被偶发的占用中断。</li>
+    <li><strong>错误页插件恢复</strong>：启动因坏插件失败时，恢复中心现在按包列出可疑插件，并提供「升级」「禁用」与「全部升级并重启」。升级走现有 <code>dsh plugin add</code> 通道拉取 npm 最新版；禁用只从启动 bundle 列表移除，文件保留，可随时在「设置 → 插件」重新启用。官方内置包被明确拒绝，防止误升级破坏与内核的版本锁定。</li>
+    <li><strong>一键升级解决内核断崖</strong>：内核升级导致插件 API 不兼容（如 0.1.2-rc.1 移除 <code>installSettingsSection</code>）时，用户无需再手动翻日志排查——错误页直接给出可操作的修复动作，成功后自动重启。</li>
+    <li><strong>LAN 配对二维码回归保护</strong>：新增 E2E 覆盖二维码窗口全链路（代理启动、健康检查、配对码铸造、二维码渲染），验证地址为私网 IP、6 位单次配对码。</li>
+    <li><strong>边界说明</strong>：插件升级需要网络与 npm registry；禁用与升级只触碰用户 profile 的 bundle 清单，不删除插件文件；官方包不在可操作范围内。</li>
   </ul>
 
-  <h2>v0.1.2-rc.1.shell.0 <small>（2026-09-04，内核升级）</small></h2>
+  <h2>v0.1.2-rc.1.shell.2 <small>（内核 0.1.2-rc.1）</small></h2>
   <ul>
-    <li>内核升级并锁定官方 <code>@deepseek-ai/dsh</code> 0.1.2-rc.1：会话加载、长会话内存与密集实时消息渲染优化。</li>
-    <li>依赖安全下限：锁定 fast-uri、qs、@xmldom/xmldom 安全版本，双锁文件官方审计零已知漏洞。</li>
+    <li><strong>首次成功路径</strong>：应用内「扩展入口 / 扩展设置」更名为更直白的「桌面工具 / 桌面设置」。主界面新增可关闭、非模态的四步引导：运行环境就绪 → 选择工作区 → 配置模型 → 完成第一条任务；首次任务成功后自动结束，已有成功会话的升级用户不会被重新打扰。</li>
+    <li><strong>一键运行体检</strong>：桌面设置首屏可检查随包 Node/Harness/桌面组件、两个数据目录与磁盘、Harness loopback、Profile、插件市场、安全模式和内核版本。每项显示「正常 / 警告 / 失败」与对应动作。</li>
+    <li><strong>插件仍然可选</strong>：首次引导明确说明无需先装插件；社区插件和插件市场仍由用户主动安装，不进入安装包，也不会静默恢复。</li>
+    <li><strong>隐私与安全边界</strong>：体检默认仅在本地只读执行；代理、registry、更新源连通性只有勾选后才联网。结果不返回路径、URL、日志、代理地址或捕获错误，不上传，也不自动修复用户文件。</li>
+    <li><strong>发布门禁修正</strong>：Windows 跨版本验证结束后的临时目录清理会容忍短暂文件锁，不再把已成功的升级误判为产品失败。</li>
   </ul>
 
-  <h2>v0.1.2-alpha.4.shell.3 <small>（2026-09-02）</small></h2>
+  <h2>v0.1.2-rc.1.shell.1 <small>（内核 0.1.2-rc.1）</small></h2>
   <ul>
-    <li>插件安装反馈：手动安装 dsh-market 展示准备、下载、验证与重启阶段，失败原因分类脱敏、可重试。</li>
-    <li>跨版本升级验证：三平台发布前对上一公开版本做真实升级，用户 Profile 内容逐项保持不变。</li>
-    <li>Windows 升级改为旧程序静默卸载后原位安装，不再 NSIS 覆盖。</li>
+    <li><strong>首次成功路径</strong>：应用内「扩展入口 / 扩展设置」更名为更直白的「桌面工具 / 桌面设置」。主界面新增可关闭、非模态的四步引导：运行环境就绪 → 选择工作区 → 配置模型 → 完成第一条任务；首次任务成功后自动结束，已有成功会话的升级用户不会被重新打扰。</li>
+    <li><strong>一键运行体检</strong>：桌面设置首屏可检查随包 Node/Harness/桌面组件、两个数据目录与磁盘、Harness loopback、Profile、插件市场、安全模式和内核版本。每项显示「正常 / 警告 / 失败」与对应动作。</li>
+    <li><strong>插件仍然可选</strong>：首次引导明确说明无需先装插件；社区插件和插件市场仍由用户主动安装，不进入安装包，也不会静默恢复。</li>
+    <li><strong>隐私与安全边界</strong>：体检默认仅在本地只读执行；代理、registry、更新源连通性只有勾选后才联网。结果不返回路径、URL、日志、代理地址或捕获错误，不上传，也不自动修复用户文件。</li>
   </ul>
 
-  <h2>v0.1.2-alpha.3.shell.0 <small>（2026-09-01）</small></h2>
+  <h2>v0.1.2-rc.1.shell.0 <small>（内核 0.1.2-rc.1）</small></h2>
   <ul>
-    <li>扩展浮层按「连接 → 恢复 → 信息」重排，连接移动设备成为首要操作。</li>
-    <li>扩展设置分区展示，修复窄窗口下局域网、快捷键、插件市场与安全模式的布局问题。</li>
+    <li>正式候选内核：从 <code>0.1.2-alpha.4</code> 升级并锁定官方 <code>0.1.2-rc.1</code>，包含官方在会话加载、长会话内存与密集实时消息渲染方面的优化，以及新版连接恢复、模型配置和界面改进。</li>
+    <li>上游同步恢复：修复每日 dsh-watch 缺少 <code>dsh-mobile-shell</code> Web artifact 导致的假失败；后续失败 Issue 只链接真实运行和首个失败步骤，不再默认归因为依赖年龄或上游不兼容。</li>
+    <li>依赖安全下限：锁定 <code>fast-uri</code>、<code>qs</code> 与 <code>@xmldom/xmldom</code> 的安全版本并重新生成两套锁文件；根依赖与 Harness 生产闭包的官方 npm 安全审计均为零已知漏洞。</li>
+    <li>边界不变：社区插件仍不进入安装包、不静默安装；dsh-market 继续由用户主动确认安装，Safe Mode 和本地脱敏诊断不改写用户数据。</li>
   </ul>
 
-  <h2>v0.1.2-alpha.2.shell.0 <small>（2026-08-31）</small></h2>
+  <h2>v0.1.2-alpha.4.shell.3 <small>（内核 0.1.2-alpha.4）</small></h2>
   <ul>
-    <li>设置页收敛：安全模式提升到首屏，低频工具收进「更多壳工具」。</li>
-    <li>官网轮播统一为真实应用截图，中英文、明暗主题一一对应。</li>
+    <li>插件安装反馈：手动安装 dsh-market 现在明确展示准备、下载、验证与重启阶段；完成后显示 profile 中的实际安装版本，Harness 重载后仍保留本次结果。</li>
+    <li>可行动的失败原因：区分网络、代理、超时、数据目录、安装脚本和随包工具故障；dsh/pnpm 的 stdout 与 stderr 会合并、限长并脱敏，可在设置页查看/复制，也会写入本地诊断报告。失败不会被误标为已安装，修复环境后可直接重试。</li>
+    <li>真实环境回归：新增无网络/无缓存的确定性安装失败 E2E，以及中文、暗色、960×640、中文与空格路径下的真实 dshmarket 安装、重启、版本与布局检查；E2E 日志使用各系统原生临时目录。</li>
+    <li>跨版本升级：Release 三平台在发布前下载并校验上一公开版本；macOS/Linux 完成原位覆盖，Windows 完成旧程序静默卸载后向同一位置安装新版。三者都必须证明同一用户 Profile 中的设置、壳偏好、标记和插件文件逐项保持不变，Safe Mode 仍能隔离坏插件并启动。</li>
+    <li>发布门禁隔离：常规 Electron E2E 在没有 <code>dist</code> 的干净 CI 环境中会在 fixture 启动前跳过专用市场用例；离线和真实安装仍由各自的打包态门禁执行，避免本地旧产物掩盖配置错误。</li>
+    <li>内核与边界：锁定 <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>；随包与 CI pnpm 升级至修复 GHSA-vx52-2968-3vc6 的 <code>11.11.0</code>。社区插件仍不进入安装包，不会首次启动静默安装，真实市场安装仍由用户确认。</li>
   </ul>
 
-  <h2>v0.1.1-rc.2.shell.15 <small>（2026-08-30）</small></h2>
+  <h2>v0.1.2-alpha.4.shell.2 <small>（内核 0.1.2-alpha.4）</small></h2>
   <ul>
-    <li>启动状态反馈：展示正在启动 / 等待就绪 / 自动重试 / 运行中 / 恢复暂停，含尝试次数。</li>
-    <li>托盘、设置页、加载页与诊断报告使用同一套生命周期状态。</li>
+    <li>插件安装反馈：手动安装 dsh-market 现在明确展示准备、下载、验证与重启阶段；完成后显示 profile 中的实际安装版本，Harness 重载后仍保留本次结果。</li>
+    <li>可行动的失败原因：区分网络、代理、超时、数据目录、安装脚本和随包工具故障；dsh/pnpm 的 stdout 与 stderr 会合并、限长并脱敏，可在设置页查看/复制，也会写入本地诊断报告。失败不会被误标为已安装，修复环境后可直接重试。</li>
+    <li>真实环境回归：新增无网络/无缓存的确定性安装失败 E2E，以及中文、暗色、960×640、中文与空格路径下的真实 dshmarket 安装、重启、版本与布局检查。</li>
+    <li>跨版本升级：Release 三平台在发布前下载并校验上一公开版本；macOS/Linux 完成原位覆盖，Windows 完成旧程序静默卸载后向同一位置安装新版。三者都必须证明同一用户 Profile 中的设置、壳偏好、标记和插件文件逐项保持不变，Safe Mode 仍能隔离坏插件并启动。</li>
+    <li>发布门禁隔离：常规 Electron E2E 在没有 <code>dist</code> 的干净 CI 环境中会在 fixture 启动前跳过专用市场用例；离线和真实安装仍由各自的打包态门禁执行，避免本地旧产物掩盖配置错误。</li>
+    <li>内核与边界：锁定 <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>；随包与 CI pnpm 升级至修复 GHSA-vx52-2968-3vc6 的 <code>11.11.0</code>。社区插件仍不进入安装包，不会首次启动静默安装，真实市场安装仍由用户确认。</li>
   </ul>
 
-  <p>更早版本的说明见 <a href="https://github.com/citrusli2026/dsh-desktop/releases" target="_blank" rel="noopener">GitHub Releases</a>。</p>
+  <h2>v0.1.2-alpha.4.shell.1 <small>（内核 0.1.2-alpha.4）</small></h2>
+  <ul>
+    <li>插件安装反馈：手动安装 dsh-market 现在明确展示准备、下载、验证与重启阶段；完成后显示 profile 中的实际安装版本，Harness 重载后仍保留本次结果。</li>
+    <li>可行动的失败原因：区分网络、代理、超时、数据目录、安装脚本和随包工具故障；dsh/pnpm 的 stdout 与 stderr 会合并、限长并脱敏，可在设置页查看/复制，也会写入本地诊断报告。失败不会被误标为已安装，修复环境后可直接重试。</li>
+    <li>真实环境回归：新增无网络/无缓存的确定性安装失败 E2E，以及中文、暗色、960×640、中文与空格路径下的真实 dshmarket 安装、重启、版本与布局检查。</li>
+    <li>跨版本升级：Release 三平台在发布前下载并校验上一公开版本，完成 dmg、NSIS、deb 覆盖升级；同一用户 profile 中的设置、壳偏好、标记和插件文件必须逐项保持不变，Safe Mode 仍需能隔离坏插件并启动。</li>
+    <li>发布门禁隔离：常规 Electron E2E 在没有 <code>dist</code> 的干净 CI 环境中会在 fixture 启动前跳过专用市场用例；离线和真实安装仍由各自的打包态门禁执行，避免本地旧产物掩盖配置错误。</li>
+    <li>内核与边界：锁定 <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>；随包与 CI pnpm 升级至修复 GHSA-vx52-2968-3vc6 的 <code>11.11.0</code>。社区插件仍不进入安装包，不会首次启动静默安装，真实市场安装仍由用户确认。</li>
+  </ul>
+
+  <h2>v0.1.2-alpha.4.shell.0 <small>（内核 0.1.2-alpha.4）</small></h2>
+  <ul>
+    <li>插件安装反馈：手动安装 dsh-market 现在明确展示准备、下载、验证与重启阶段；完成后显示 profile 中的实际安装版本，Harness 重载后仍保留本次结果。</li>
+    <li>可行动的失败原因：区分网络、代理、超时、数据目录、安装脚本和随包工具故障；dsh/pnpm 的 stdout 与 stderr 会合并、限长并脱敏，可在设置页查看/复制，也会写入本地诊断报告。失败不会被误标为已安装，修复环境后可直接重试。</li>
+    <li>真实环境回归：新增无网络/无缓存的确定性安装失败 E2E，以及中文、暗色、960×640、中文与空格路径下的真实 dshmarket 安装、重启、版本与布局检查。</li>
+    <li>跨版本升级：Release 三平台在发布前下载并校验上一公开版本，完成 dmg、NSIS、deb 覆盖升级；同一用户 profile 中的设置、壳偏好、标记和插件文件必须逐项保持不变，Safe Mode 仍需能隔离坏插件并启动。</li>
+    <li>内核与边界：升级并锁定 <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>；随包与 CI pnpm 升级至修复 GHSA-vx52-2968-3vc6 的 <code>11.11.0</code>。社区插件仍不进入安装包，不会首次启动静默安装，真实市场安装仍由用户确认。</li>
+  </ul>
+  <!-- changelog:auto:end -->
+
+    <p>更早版本的说明见 <a href="https://github.com/citrusli2026/dsh-desktop/releases" target="_blank" rel="noopener">GitHub Releases</a>。</p>
 
   <div class="seo-next-links"><a href="/download">下载最新版 →</a><a href="/docs/why-desktop">为什么选择桌面版 →</a><a href="/en/changelog">Read in English →</a></div>
 </div></main>

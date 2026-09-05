@@ -63,7 +63,14 @@ bootstrap again until `audit-harness-peers: closure satisfied`.
 ### 3. Local gates
 
 ```sh
-pnpm run verify   # typecheck, 107 unit tests + coverage, site checks, build
+pnpm run verify   # typecheck, unit tests + coverage, site checks, build
+```
+
+CI skips the LAN-pairing QR E2E (CI runners expose docker-bridge addresses
+that pass the private-LAN probe), so it is a local-only release gate:
+
+```sh
+pnpm exec playwright test -g "LAN pairing"   # local machine with real Wi-Fi/Ethernet
 ```
 
 ### 4. Sync docs and examples to the new kernel

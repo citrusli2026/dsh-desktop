@@ -8,7 +8,7 @@ if (mode !== 'offline' && mode !== 'real') {
 const tag = mode === 'offline' ? '@market-offline' : '@market-real'
 const child = spawn(
   process.execPath,
-  ['scripts/run-e2e-guarded.mjs', 'e2e/market-install.spec.ts', '--grep', tag],
+  ['scripts/run-e2e-guarded.mjs', 'e2e', '--grep', tag],
   { stdio: 'inherit', env: { ...process.env, DSH_E2E_MARKET_MODE: mode } },
 )
 child.once('error', error => {

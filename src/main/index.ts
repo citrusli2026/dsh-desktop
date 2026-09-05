@@ -44,7 +44,7 @@ import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } fr
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
 import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport, redactDiagnosticsLog } from './diagnostics.ts'
-import { updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, OFFICIAL_BUNDLES, type ComposedRow } from './safe-mode.ts'
+import { updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, OFFICIAL_BUNDLES, classifyPluginFailureCause, type ComposedRow } from './safe-mode.ts'
 import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage } from './presets.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
@@ -371,7 +371,7 @@ const shellApp = new ShellApp({
     if (state.phase === 'ready') {
       void loadHarnessUrl(windowContext, state.url)
     } else if (state.phase === 'crashed') {
-      void loadErrorPage(windowContext, state.attempts, state.logTail, safeModeActive(), lastPluginFailures)
+      void loadErrorPage(windowContext, state.attempts, state.logTail, safeModeActive(), lastPluginFailures, classifyPluginFailureCause(state.logTail))
     } else {
       void loadLoadingPage(windowContext, state.stage ?? 'launching', state.retryDelayMs ?? 0)
     }
@@ -1070,9 +1070,9 @@ if (!gotLock) {
     } catch (error) {
       console.error('dsh-desktop: boot failed:', error instanceof Error ? error.message : error)
       if (!SMOKE_TEST) {
-        const message = error instanceof Error ? error.message : String(error)
         if (windowContext.mainWindow === undefined || windowContext.mainWindow.isDestroyed()) createMainWindow(windowContext)
-        shellApp.applyState({ phase: 'crashed', attempts: 0, logTail: message })
+        // startHarness already applied the crashed state with the harness's
+        // own output tail; re-applying here would strip the suspect evidence.
       } else if (process.env[TEST_FAIL_HARNESS_ENV] === '1' && windowContext.mainWindow !== undefined) {
         await verifySmokeFailureRecovery(windowContext.mainWindow, () => windowContext.allowedOrigin, currentLocale)
       } else {

@@ -41,45 +41,73 @@
   <h1>DSH Desktop Changelog</h1>
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
-  <h2>v0.1.2-rc.1.shell.2 <small>（2026-09-04, kernel 0.1.2-rc.1）</small></h2>
+  <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.3 <small>（kernel 0.1.2-rc.1）</small></h2>
   <ul>
-    <li>New dismissible four-step first-success guide (runtime → workspace → model → first task); "Extension entry / settings" renamed to "Desktop tools / Desktop settings".</li>
-    <li>One-click health check: bundled runtime, data folders, loopback, profile, plugins, versions — local and read-only by default.</li>
-    <li>Windows upgrade cleanup tolerates transient file locks.</li>
+    <li>Error-page plugin recovery: when startup fails on incompatible community plugins, the recovery center lists each suspect with Update, Disable, and Update-all-and-restart actions; updates pull the latest npm version via the existing <code>dsh plugin add</code> path, disable only removes the boot bundle entry (files kept, reversible from Settings → Plugins), and official bundles are always refused.</li>
+    <li>New E2E coverage: a simulated plugin crash renders the recovery rows, disabling boots the app again with the manifest verified on disk; the LAN pairing QR window is covered end to end (private address, single-use 6-digit code, QR rendered).</li>
+    <li>Bundled kernel unchanged at <code>@deepseek-ai/dsh</code> 0.1.2-rc.1 (shell revision +3).</li>
   </ul>
 
-  <h2>v0.1.2-rc.1.shell.0 <small>（2026-09-04, kernel bump）</small></h2>
+  <h2>v0.1.2-rc.1.shell.2 <small>（kernel 0.1.2-rc.1）</small></h2>
   <ul>
-    <li>Kernel locked to official <code>@deepseek-ai/dsh</code> 0.1.2-rc.1: session loading, long-session memory and dense realtime rendering improvements.</li>
-    <li>Pinned safe versions of fast-uri, qs and @xmldom/xmldom; zero known vulnerabilities in both lockfiles.</li>
+    <li>Renamed the hidden “Extensions” entry to <strong>Desktop tools / Desktop settings</strong> and added a dismissible, non-modal runtime → workspace → model → first-task guide that retires itself after the first successful task.</li>
+    <li>Added a one-click health check for bundled files and versions, both data roots and disk space, Harness loopback, profile, plugins, market, Safe Mode, and kernel state, with clear OK / warning / failed actions.</li>
+    <li>Local checks are read-only and offline by default. Proxy, registry, and update-source probes require explicit opt-in; results are sanitized, never uploaded, and never repair user files automatically.</li>
+    <li>The plugin market remains optional and manually installed; no community plugin is bundled or restored silently.</li>
+    <li>Windows cross-version CI now tolerates transient installer file locks during temporary cleanup instead of misclassifying a successful upgrade as a product failure.</li>
   </ul>
 
-  <h2>v0.1.2-alpha.4.shell.3 <small>（2026-09-02）</small></h2>
+  <h2>v0.1.2-rc.1.shell.1 <small>（kernel 0.1.2-rc.1）</small></h2>
   <ul>
-    <li>Plugin install feedback: staged progress for dsh-market (prepare, download, verify, restart), sanitized retryable failure causes.</li>
-    <li>Cross-version upgrade verification: all three platforms really upgrade the previous public release; user profile contents preserved item by item.</li>
-    <li>Windows upgrades now silently uninstall the old build and install in place instead of NSIS overwriting.</li>
+    <li>Renamed the hidden “Extensions” entry to <strong>Desktop tools / Desktop settings</strong> and added a dismissible, non-modal runtime → workspace → model → first-task guide that retires itself after the first successful task.</li>
+    <li>Added a one-click health check for bundled files and versions, both data roots and disk space, Harness loopback, profile, plugins, market, Safe Mode, and kernel state, with clear OK / warning / failed actions.</li>
+    <li>Local checks are read-only and offline by default. Proxy, registry, and update-source probes require explicit opt-in; results are sanitized, never uploaded, and never repair user files automatically.</li>
+    <li>The plugin market remains optional and manually installed; no community plugin is bundled or restored silently.</li>
   </ul>
 
-  <h2>v0.1.2-alpha.3.shell.0 <small>（2026-09-01）</small></h2>
+  <h2>v0.1.2-rc.1.shell.0 <small>（kernel 0.1.2-rc.1）</small></h2>
   <ul>
-    <li>Extension overlay reorganized around "connect → recover → info"; pairing a mobile device is the primary action.</li>
-    <li>Settings sections regrouped; fixed narrow-window layout issues across LAN, shortcut, market and Safe Mode cards.</li>
+    <li>Upgraded and pinned the bundled kernel to official <code>@deepseek-ai/dsh</code> <code>0.1.2-rc.1</code>, including upstream long-session, connection recovery, model configuration, and UI improvements.</li>
+    <li>Fixed the daily kernel watcher by packaging the pinned mobile-shell Web artifact before smoke validation, and removed speculative root-cause language from future failure issues.</li>
+    <li>Raised vulnerable transitive dependencies to explicit security floors; both the root tree and production Harness closure pass the official npm advisory audit with no known vulnerabilities.</li>
+    <li>Local gates cover 193 unit tests, Electron E2E, real Harness rendering, real/offline dsh-market paths, Safe Mode recovery, and a macOS upgrade that preserves seven user-owned files. Community plugins remain explicit opt-in installs.</li>
   </ul>
 
-  <h2>v0.1.2-alpha.2.shell.0 <small>（2026-08-31）</small></h2>
+  <h2>v0.1.2-alpha.4.shell.3 <small>（kernel 0.1.2-alpha.4）</small></h2>
   <ul>
-    <li>Settings condensed: Safe Mode promoted to the first screen; low-frequency tools moved under "More shell tools".</li>
-    <li>Website carousel now uses real app screenshots matched per language and theme.</li>
+    <li>Manual dsh-market installation reports prepare, download, verification, and restart phases, preserves the result across the Harness reload, and shows the actual installed profile version.</li>
+    <li>Actionable failure categories and sanitized diagnostics keep failed installs explainable and retryable. Packaged E2E covers deterministic offline failure and a real install under Chinese/dark/minimum-width and Unicode-path conditions; its log uses the host OS temporary directory.</li>
+    <li>Every release platform verifies the previous installer checksum and preserves user-owned Harness and shell state across an upgrade. macOS/Linux use in-place replacement; Windows silently removes old application binaries before installing the new version to the same target because electron-builder's assisted NSIS silent-overwrite path can stall.</li>
+    <li>Clean CI runs skip dedicated market specs before fixture setup, while their packaged gates still run separately. Bundled/CI pnpm is patched to <code>11.11.0</code>.</li>
   </ul>
 
-  <h2>v0.1.1-rc.2.shell.15 <small>（2026-08-30）</small></h2>
+  <h2>v0.1.2-alpha.4.shell.2 <small>（kernel 0.1.2-alpha.4）</small></h2>
   <ul>
-    <li>Startup state feedback: starting / waiting / retrying / running / recovery paused, with attempt counts.</li>
-    <li>Tray, settings, loading page and diagnostic reports share one lifecycle state model.</li>
+    <li>Manual dsh-market installation now reports prepare, download, verification, and restart phases, preserves the result across the Harness reload, and shows the actual installed profile version.</li>
+    <li>Network, proxy, timeout, profile, install-script, and bundled-tool failures are distinguished. Bounded stdout/stderr detail is sanitized before it can be viewed, copied, or written to local diagnostics; failed attempts remain retryable and are never shown as installed.</li>
+    <li>New packaged E2E covers deterministic offline failure and a real market install under Chinese/dark/minimum-width and Unicode-path conditions.</li>
+    <li>Every release platform verifies the previous installer checksum and preserves user-owned Harness and shell state across an upgrade. macOS/Linux use in-place replacement; Windows silently removes the old application binaries before installing the new version to the same target because electron-builder's assisted NSIS silent-overwrite path can stall. Clean CI runs skip dedicated market specs before fixture setup, while their packaged gates still run separately. Bundled/CI pnpm is patched to <code>11.11.0</code>.</li>
   </ul>
 
-  <p>Older releases: <a href="https://github.com/citrusli2026/dsh-desktop/releases" target="_blank" rel="noopener">GitHub Releases</a>.</p>
+  <h2>v0.1.2-alpha.4.shell.1 <small>（kernel 0.1.2-alpha.4）</small></h2>
+  <ul>
+    <li>Manual dsh-market installation now reports prepare, download, verification, and restart phases, preserves the result across the Harness reload, and shows the actual installed profile version.</li>
+    <li>Network, proxy, timeout, profile, install-script, and bundled-tool failures are distinguished. Bounded stdout/stderr detail is sanitized before it can be viewed, copied, or written to local diagnostics; failed attempts remain retryable and are never shown as installed.</li>
+    <li>New packaged E2E covers deterministic offline failure and a real market install under Chinese/dark/minimum-width and Unicode-path conditions.</li>
+    <li>Every release platform now verifies the previous installer checksum and performs a cross-version upgrade while preserving user-owned Harness and shell state. Clean CI runs skip the dedicated market specs before fixture setup; their packaged gates still run separately. The bundled kernel is pinned to <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>, and bundled/CI pnpm is upgraded to patched <code>11.11.0</code>.</li>
+  </ul>
+
+  <h2>v0.1.2-alpha.4.shell.0 <small>（kernel 0.1.2-alpha.4）</small></h2>
+  <ul>
+    <li>Manual dsh-market installation now reports prepare, download, verification, and restart phases, preserves the result across the Harness reload, and shows the actual installed profile version.</li>
+    <li>Network, proxy, timeout, profile, install-script, and bundled-tool failures are distinguished. Bounded stdout/stderr detail is sanitized before it can be viewed, copied, or written to local diagnostics; failed attempts remain retryable and are never shown as installed.</li>
+    <li>New packaged E2E covers deterministic offline failure and a real market install under Chinese/dark/minimum-width and Unicode-path conditions.</li>
+    <li>Every release platform now verifies the previous installer checksum and performs a cross-version upgrade while preserving user-owned Harness and shell state. The bundled kernel is pinned to <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>, and bundled/CI pnpm is upgraded to patched <code>11.11.0</code>; community plugins remain manual-only and outside the installer.</li>
+  </ul>
+  <!-- changelog:auto:end -->
+
+    <p>Older releases: <a href="https://github.com/citrusli2026/dsh-desktop/releases" target="_blank" rel="noopener">GitHub Releases</a>.</p>
 
   <div class="seo-next-links"><a href="/en/download">Download the latest →</a><a href="/en/docs/why-desktop">Why desktop →</a><a href="/changelog">中文版本 →</a></div>
 </div></main>

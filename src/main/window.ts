@@ -13,7 +13,7 @@ import { buildLanMenuItems, buildSafeModeMenuItems, type LanMenuActions, type La
 
 type BuiltInPage =
   | { kind: 'loading'; stage: HarnessStartupStage; retryDelayMs: number }
-  | { kind: 'error'; attempts: number; logTail: string; safeMode: boolean; suspects: ComposedRow[] }
+  | { kind: 'error'; attempts: number; logTail: string; safeMode: boolean; suspects: ComposedRow[]; cause?: 'kernel-api' | 'unknown' }
 
 export interface WindowLanApi {
   getState(): LanMenuState
@@ -261,7 +261,9 @@ export function showWindow(context: WindowContext): void {
     const harnessUrl = context.harnessUrl
     const builtInPage = context.builtInPage
     createMainWindow(context)
-    if (builtInPage?.kind === 'error') void loadErrorPage(context, builtInPage.attempts, builtInPage.logTail)
+    if (builtInPage?.kind === 'error') {
+      void loadErrorPage(context, builtInPage.attempts, builtInPage.logTail, builtInPage.safeMode, builtInPage.suspects, builtInPage.cause)
+    }
     else if (harnessUrl !== undefined && builtInPage === undefined) void loadHarnessUrl(context, harnessUrl)
     return
   }
@@ -286,9 +288,9 @@ export async function loadLoadingPage(
   await navigateWindow(context, loadingPageHtml(context.getLocale(), stage, retryDelayMs))
 }
 
-export async function loadErrorPage(context: WindowContext, attempts: number, logTail: string, safeMode = false, suspects: ComposedRow[] = []): Promise<void> {
-  context.builtInPage = { kind: 'error', attempts, logTail, safeMode, suspects }
-  await navigateWindow(context, errorPageHtml(attempts, logTail, safeMode, suspects, context.getLocale()))
+export async function loadErrorPage(context: WindowContext, attempts: number, logTail: string, safeMode = false, suspects: ComposedRow[] = [], cause: 'kernel-api' | 'unknown' = 'unknown'): Promise<void> {
+  context.builtInPage = { kind: 'error', attempts, logTail, safeMode, suspects, cause }
+  await navigateWindow(context, errorPageHtml(attempts, logTail, safeMode, suspects, context.getLocale(), cause))
 }
 
 /** Re-render shell-owned pages and title after a live language switch. */
@@ -296,7 +298,7 @@ export async function refreshWindowLocale(context: WindowContext): Promise<void>
   context.mainWindow?.setTitle(shellText(context.getLocale(), 'window.title'))
   if (context.builtInPage?.kind === 'loading') await loadLoadingPage(context, context.builtInPage.stage, context.builtInPage.retryDelayMs)
   else if (context.builtInPage?.kind === 'error') {
-    await loadErrorPage(context, context.builtInPage.attempts, context.builtInPage.logTail, context.builtInPage.safeMode, context.builtInPage.suspects)
+    await loadErrorPage(context, context.builtInPage.attempts, context.builtInPage.logTail, context.builtInPage.safeMode, context.builtInPage.suspects, context.builtInPage.cause)
   }
 }
 

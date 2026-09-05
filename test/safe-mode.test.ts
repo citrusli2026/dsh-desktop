@@ -1,3 +1,4 @@
+import { classifyPluginFailureCause } from '../src/main/safe-mode.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
@@ -226,4 +227,13 @@ test('inspectPluginInventory reports bundles, composed rows, and damaged package
   } finally {
     await cleanup()
   }
+})
+
+
+test('classifyPluginFailureCause detects the kernel-API upgrade cliff', () => {
+  const cliff = 'Error: failed to import loader entry dsh-market (dshmarket): The requested module \'@deepseek-ai/dsh-settings\' does not provide an export named \'installSettingsSection\''
+  assert.equal(classifyPluginFailureCause(cliff), 'kernel-api')
+  assert.equal(classifyPluginFailureCause('SyntaxError: The requested module \'@deepseek-ai/dsh-settings\' does not provide'), 'kernel-api')
+  assert.equal(classifyPluginFailureCause('failed to apply loader entry x (y): TypeError: boom'), 'unknown')
+  assert.equal(classifyPluginFailureCause(''), 'unknown')
 })
