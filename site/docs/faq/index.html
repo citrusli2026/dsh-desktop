@@ -58,6 +58,7 @@
   <details><summary>窗口收进托盘后如何快速打开？</summary><p>在任意应用中按 <code>Ctrl/Cmd + Shift + Space</code>（Windows/Linux 用 Ctrl，macOS 用 ⌘），dsh-desktop 会显示并获得焦点。若快捷键被占用，可使用系统托盘或窗口右键菜单；快捷键冲突不会影响 Harness 启动。</p></details>
   <details><summary>可以修改唤起快捷键或设置开机启动吗？</summary><p>可以。在 dsh-desktop 的「设置 → 桌面设置」中点击「重新设置」，按下包含修饰键的组合键，例如 <code>Ctrl + Alt + K</code>。如果组合键被占用，会提示换一个。开机启动默认关闭；Windows/macOS 还可以选择启动后隐藏到托盘，Linux 当前不提供该开关。</p></details>
   <details><summary>桌面通知会读取屏幕或上传数据吗？</summary><p>不会。通知只使用 Harness 已公开的会话运行态和后台任务状态，不读取截图、不做视觉识别，也不会上传数据。窗口未聚焦时，通知会提示完成、失败或需要确认，并可在「设置 → 桌面设置」关闭。</p></details>
+  <details><summary>误删的会话或文件还能找回吗？</summary><p>可以。桌面版自带垃圾桶：删除的会话、预设和插件都会先进入垃圾桶，在 Harness「设置 → 垃圾桶」中随时还原。Agent 执行的删除类命令也会被拦截：目标先移入垃圾桶，可疑的删除会被直接拦截并说明原因。垃圾桶保留 30 天，过期自动清理。</p></details>
 
   <div class="seo-next-links"><a href="/docs/why-desktop">为什么选择桌面版 →</a><a href="/changelog">更新日志 →</a><a href="/download">下载 DSH Desktop →</a><a href="/docs/install">查看安装指南 →</a><a href="/en/docs/faq">Read in English →</a></div>
 </div></main>

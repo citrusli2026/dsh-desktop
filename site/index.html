@@ -267,10 +267,10 @@
       <article class="latest-card" data-reveal style="--i:5" aria-labelledby="latest-title">
         <div class="latest-card__copy">
           <p class="sec-marker" data-i18n="latest.marker">当前版本重点</p>
-          <h3 id="latest-title" data-i18n="latest.title">这个版本，更稳也更好上手</h3>
-          <p data-i18n="latest.lead">本版本重点：安装、恢复与更新更可靠。</p>
+          <h3 id="latest-title" data-i18n="latest.title">这个版本：删掉的东西，都能找回</h3>
+          <p data-i18n="latest.lead">新增桌面垃圾桶：会话、预设、插件与 Agent 删除的文件，都先进垃圾桶，随时还原。</p>
         </div>
-        <ul data-i18n="latest.items"><li><b>首次成功：</b>主界面四步引导在首条任务完成后自动结束。</li><li><b>一键体检：</b>本地检查运行环境、数据目录、本地端口与插件状态。</li><li><b>隐私可控：</b>联网检查需主动勾选，社区插件仍完全可选。</li></ul>
+        <ul data-i18n="latest.items"><li><b>首次成功：</b>主界面四步引导在首条任务完成后自动结束。</li><li><b>垃圾桶兜底：</b>误删的会话在「设置 → 垃圾桶」一键还原。</li><li><b>隐私可控：</b>联网检查需主动勾选，社区插件仍完全可选。</li></ul>
       </article>
     </div>
   </section>
@@ -364,6 +364,10 @@
         <details>
           <summary data-i18n="faq.q14">启动失败或插件装坏了怎么办？</summary>
           <p class="faq-answer" data-i18n="faq.a14">应用仍可打开时，先到「设置 → 桌面设置 → 运行体检」查看本地运行环境、数据目录、本地端口与插件状态；联网检查需单独勾选，结果不上传也不自动修复。无法启动时，错误页提供「再次启动」「以安全模式启动」「打开日志目录」「导出诊断报告」；检测到可疑插件时还会逐个列出，可直接「升级」到最新版或「禁用」后重启——禁用只从启动列表移除，不删除文件，可随时在「设置 → 插件」恢复。</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q15">误删的会话或文件还能找回吗？</summary>
+          <p data-i18n="faq.a15">可以。桌面版自带垃圾桶：删除的会话、预设和插件都会先进入垃圾桶，在 <b>「设置 → 垃圾桶」</b> 中随时还原。Agent 执行的删除类命令也会被拦截：目标先移入垃圾桶，可疑的删除会被直接拦截并说明原因。垃圾桶保留 30 天，过期自动清理。</p>
         </details>
       </div>
     </div>

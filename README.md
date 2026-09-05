@@ -43,6 +43,7 @@ Community plugins are always installed manually by the user. The installer conta
 - **Recovers from a broken plugin** — when startup fails on an incompatible community plugin, the error page lists each suspect with one-click **Update** (pull the latest version) or **Disable** (remove it from the boot list; files stay and it is reversible from Settings → Plugins), plus Update-all-and-restart. Safe Mode (the error page, Desktop tools, or Desktop settings) remains the fallback: third-party plugins are quarantined while official and built-in extensions keep running, and the diagnostic report names the suspected failing plugin. Official bundles are never touchable from these actions.
 - **Portable agent presets** — Settings → Desktop settings exports a preset as one `.dshpreset` file and imports it elsewhere with conflict checks (skip / replace / clone) and a trust warning.
 - **Constrained renderer** — sandbox and context isolation stay on, Node integration stays off, and camera/location/Web notifications/filesystem are denied by default. Optional desktop notices use only public Harness status and never read the screen; clicking a notice focuses the app.
+- **Desktop trash** — deleted sessions, presets, and plugins stay recoverable from Settings → Trash; agent deletion commands are intercepted into the trash first, with ambiguous deletions blocked and explained. Entries are kept for 30 days.
 - **Updates** — Windows updates in place; unsigned macOS checks for releases and opens the exact release page.
 
 ## Download
