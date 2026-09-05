@@ -663,7 +663,7 @@ test.describe('environment edge paths', () => {
   })
 })
 
-shellTest('a plugin crash offers recovery rows and disabling one boots again', async ({ electronApp, window, dshHome, relaunch }) => {
+shellTest('a plugin crash auto-quarantines the suspect and boots again', async ({ electronApp, window, dshHome, relaunch }) => {
   await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
   // Seed a profile as if dshmarket had been installed: the boot bundle list
   // carries the community package alongside the official ones.
@@ -684,24 +684,26 @@ shellTest('a plugin crash offers recovery rows and disabling one boots again', a
   let next
   try {
     next = await relaunch()
-    const errorWindow = await next.firstWindow()
-    await errorWindow.waitForLoadState('domcontentloaded')
-    await expect.poll(async () => errorWindow.evaluate(() => document.body.innerText))
-      .toContain('PLUGIN RECOVERY')
-    await expect(errorWindow.locator('.plugin-row code', { hasText: 'dshmarket' })).toHaveCount(1)
-    // Official bundles are never offered as recovery targets.
-    expect(await errorWindow.locator('.plugin-row code').allInnerTexts()).toEqual(['dshmarket'])
-
-    await errorWindow.getByRole('button', { name: 'Disable', exact: true }).click()
-    // Recovery disables the bundle and restarts: the stub harness headline
-    // returns and the manifest keeps the official bundles without dshmarket.
-    await expect(errorWindow.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible({ timeout: 30_000 })
+    // Auto-quarantine removes the suspect from the boot list and restarts in
+    // one motion: the app comes back up without waiting on the error page.
+    const appWindow = await next.firstWindow()
+    // The recovery restart re-points the window at the stub; a fresh page in
+    // Electron may not expose the accessibility tree yet, so assert on the
+    // DOM directly.
+    await expect.poll(async () => appWindow.evaluate(() => document.querySelector('h1')?.textContent ?? '')
+      .catch(() => ''), { timeout: 30_000 }).toContain('Harness test workspace')
     const updated = JSON.parse(await readFile(manifestPath, 'utf8')) as { dsh?: { profile?: { bundles?: string[] } } }
     expect(updated.dsh?.profile?.bundles).toEqual(['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'])
+    // The quarantined plugin stays visible on the recovery surface.
+    await expect.poll(async () => appWindow.evaluate(() => {
+      const bridge = (window as unknown as { dshDesktop?: { getRecoverySuspects?: () => Promise<Array<{ id: string; name?: string }> | null> } }).dshDesktop
+      if (!bridge?.getRecoverySuspects) throw new Error('bridge missing')
+      return bridge.getRecoverySuspects().then(rows => (rows ?? []).map(row => row.name ?? row.id))
+    }), { timeout: 10_000 }).toContain('dshmarket')
 
     // Guards hold on the live app: official and unlisted names are refused.
     type RecoveryBridge = { disablePlugin(name: string): Promise<boolean>; updatePlugin(name: string): Promise<boolean> }
-    const guards = await errorWindow.evaluate(() => {
+    const guards = await appWindow.evaluate(() => {
       const bridge = (window as unknown as { dshDesktop?: RecoveryBridge }).dshDesktop
       if (!bridge) throw new Error('bridge missing')
       return Promise.all([
