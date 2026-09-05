@@ -10,6 +10,7 @@ import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
 import { readProfileStatus } from './profile.ts'
 import { readProfileManifest, writeProfileManifest, withoutBundle } from './plugin-recovery.ts'
+import { supportIssueUrl, type SupportContext } from './support.ts'
 import { BalanceService, formatBalance, readDeepSeekApiKey, type FetchLike } from './balance.ts'
 import {
   activeKernelBin,
@@ -611,6 +612,23 @@ ipcMain.handle('shell:close-lan-pairing', (event) => {
   return true
 })
 
+ipcMain.handle('shell:open-support-issue', (event) => {
+  if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
+  const state = shellApp.state
+  const kernel = kernelState(harnessRoot(), kernelDir())
+  const context: SupportContext = {
+    appVersion: app.getVersion(),
+    platform: process.platform,
+    arch: process.arch,
+    kernelVersion: kernel.overlayVersion ?? kernel.bundledVersion ?? 'unknown',
+    safeMode: safeModeActive(),
+    suspects: [...new Set(lastPluginFailures.map(row => row.name).filter((name): name is string => typeof name === 'string' && name !== ''))],
+    cause: classifyPluginFailureCause(state?.phase === 'crashed' ? state.logTail : ''),
+  }
+  void shell.openExternal(supportIssueUrl(context))
+  return true
+})
+
 ipcMain.handle('desktop:action', async (event, action: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
   if (typeof action !== 'string') return false
@@ -881,7 +899,16 @@ function restartForPluginRecovery(): Promise<boolean> {
   return shellApp.runHarnessRestart()
 }
 
-ipcMain.handle('desktop:plugin:update', async (event, rawName: unknown) => {
+async function installedPluginVersion(dshHome: string, name: string): Promise<string | undefined> {
+  try {
+    const packageJson = JSON.parse(await readFile(join(dshHome, 'profiles', WEB_PROFILE, 'node_modules', name, 'package.json'), 'utf8')) as { version?: unknown }
+    return typeof packageJson.version === 'string' ? packageJson.version : undefined
+  } catch {
+    return undefined
+  }
+}
+
+ipcMain.handle('desktop:plugin:update', async (event, rawName: unknown): Promise<boolean | 'current'> => {
   if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
   const dshHome = resolveDshHome(process.env, homedir())
   const { bundles } = await readProfileStatus(dshHome)
@@ -891,6 +918,7 @@ ipcMain.handle('desktop:plugin:update', async (event, rawName: unknown) => {
   // packages may be updated through this recovery path.
   if (requested !== undefined && (!bundles.includes(requested[0]!) || OFFICIAL_BUNDLES.includes(requested[0] as never))) return false
   if (targets.length === 0) return false
+  const before = new Map(await Promise.all(targets.map(async name => [name, await installedPluginVersion(dshHome, name)] as const)))
   for (const name of targets) {
     const result = await runProfilePluginAdd(`${name}@latest`, DSHMARKET_INSTALL_TIMEOUT_MS)
     if (result.code !== 0) {
@@ -898,7 +926,13 @@ ipcMain.handle('desktop:plugin:update', async (event, rawName: unknown) => {
       return false
     }
   }
-  return restartForPluginRecovery()
+  const restarted = await restartForPluginRecovery()
+  if (!restarted) return false
+  // Registry metadata can trail a just-published dist-tag, so a no-op install
+  // is not a failure: report 'current' so the error page can say so.
+  const after = await Promise.all(targets.map(name => installedPluginVersion(dshHome, name)))
+  const moved = targets.some((name, index) => before.get(name) !== after[index])
+  return moved ? true : 'current'
 })
 
 ipcMain.handle('desktop:plugin:disable', async (event, rawName: unknown) => {

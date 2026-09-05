@@ -27,7 +27,10 @@ concurrency:
 
 jobs:
   refresh:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    # A failed Release run must still refresh the site data (it will re-sync
+    # the latest published release and probe GitCode), so the site never
+    # silently stalls behind the newest tag.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
     # The GitCode re-probe below can wait ~30 min for a slow mirror.
     timeout-minutes: 45

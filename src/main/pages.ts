@@ -148,7 +148,8 @@ export function errorPageHtml(
     <div class="actions"><button type="button" onclick="retry()">${escapeHtml(retry)}</button>
     <button type="button" onclick="bootSafe()">${escapeHtml(safeModeLabel)}</button>
     <button type="button" class="secondary" onclick="exportReport()">${escapeHtml(shellText(locale, 'page.export'))}</button>
-    <button type="button" class="secondary" onclick="openLogs()">${escapeHtml(shellText(locale, 'page.openLogs'))}</button></div>
+    <button type="button" class="secondary" onclick="openLogs()">${escapeHtml(shellText(locale, 'page.openLogs'))}</button>
+    <button type="button" class="secondary" onclick="getHelp()">${escapeHtml(shellText(locale, 'page.getHelp'))}</button></div>
     <p id="hint" aria-live="polite"></p>
     <script>
       function retry() {
@@ -196,6 +197,7 @@ export function errorPageHtml(
       }
       var WORKING = ${JSON.stringify(shellText(locale, 'page.pluginWorking'))};
       var UPDATED = ${JSON.stringify(shellText(locale, 'page.pluginUpdated'))};
+      var ALREADY_CURRENT = ${JSON.stringify(shellText(locale, 'page.pluginAlreadyCurrent'))};
       var ACTION_FAILED = ${JSON.stringify(shellText(locale, 'page.pluginActionFailed'))};
       function pluginBridge() { return window.dshDesktop || {}; }
       function setState(name, text, ok) {
@@ -208,10 +210,15 @@ export function errorPageHtml(
       function setPluginBusy(busy) {
         document.querySelectorAll('[data-plugin-action]').forEach(function (button) { button.disabled = busy; });
       }
+      // The recovery bridge resolves true when the plugin moved to a newer
+      // version, 'current' when it was already the newest obtainable one
+      // (registry metadata can trail a just-published dist-tag), and false on
+      // failure — all three restart the harness.
       function afterRecovery(state, ok) {
         setPluginBusy(false);
-        if (ok !== true) { setState(state, ACTION_FAILED, false); return; }
-        setState(state, UPDATED, true);
+        if (ok === 'current') { setState(state, ALREADY_CURRENT, true); }
+        else if (ok !== true) { setState(state, ACTION_FAILED, false); return; }
+        else { setState(state, UPDATED, true); }
         var bridge = pluginBridge().retryHarness;
         if (bridge) bridge();
       }
@@ -225,8 +232,12 @@ export function errorPageHtml(
         });
         var all = action === 'update-all';
         invoke(all ? undefined : name).then(function (ok) {
-          afterRecovery(all ? null : name, ok === true);
+          afterRecovery(all ? null : name, ok === true ? true : ok === 'current' ? 'current' : false);
         }).catch(function () { afterRecovery(all ? null : name, false); });
+      }
+      function getHelp() {
+        var bridge = pluginBridge().openSupportIssue;
+        if (bridge) bridge();
       }
       document.addEventListener('click', function (event) {
         var button = event.target instanceof Element && event.target.closest('[data-plugin-action]');

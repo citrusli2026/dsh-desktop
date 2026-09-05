@@ -127,8 +127,14 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Failing-plugin suspects extracted from the last crash (recovery banner). */
   getRecoverySuspects: (): Promise<Array<{ id: string; name?: string }> | null> =>
     ipcRenderer.invoke('desktop:suspects:get'),
-  /** Update one failing plugin to the latest registry version and restart. */
-  updatePlugin: (name?: string): Promise<boolean> => ipcRenderer.invoke('desktop:plugin:update', name),
+  /**
+   * Update one failing plugin to the latest registry version and restart.
+   * Resolves true when a version moved, 'current' when the installed version
+   * is already the newest obtainable one, or false on failure.
+   */
+  updatePlugin: (name?: string): Promise<boolean | 'current'> => ipcRenderer.invoke('desktop:plugin:update', name),
   /** Remove one failing plugin from the boot bundle list and restart. */
   disablePlugin: (name: string): Promise<boolean> => ipcRenderer.invoke('desktop:plugin:disable', name),
+  /** Open a prefilled, sanitized GitHub issue from the built-in error page. */
+  openSupportIssue: (): Promise<boolean> => ipcRenderer.invoke('shell:open-support-issue'),
 })

@@ -89,3 +89,14 @@ test('errorPageHtml swaps the plugin hint to the kernel-cliff copy when classifi
   const plain = decodeURIComponent(errorPageHtml(6, 'tail', false, [{ id: 'r', name: 'dshmarket' }], 'en', 'unknown'))
   assert.ok(!plain.includes('no longer exports'))
 })
+
+
+test('errorPageHtml wires the support-issue action and the current-version tri-state', () => {
+  const html = decodeURIComponent(errorPageHtml(6, 'tail', false, [{ id: 'r', name: 'dshmarket' }]))
+  assert.ok(/<button[^>]+onclick="getHelp\(\)"/.test(html), 'a GitHub-issue action is offered')
+  assert.ok(html.includes('openSupportIssue'), 'the getHelp bridge calls openSupportIssue')
+  // The update bridge can resolve 'current' when a no-op install was already
+  // the newest obtainable version (registry metadata lag).
+  assert.ok(html.includes("ok === 'current'"), 'the recovery script handles the current-version result')
+  assert.ok(html.includes('ALREADY_CURRENT'), 'the current-version copy is wired')
+})

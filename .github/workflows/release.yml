@@ -311,3 +311,22 @@ jobs:
           # workflow_dispatch runs even when triggered with GITHUB_TOKEN, so the
           # mirror starts immediately; it is idempotent and re-runnable.
           gh workflow run gitcode-backfill.yml --ref main -f tag="$TAG" --repo "${{ github.repository }}"
+
+  report-failure:
+    if: ${{ failure() }}
+    needs: [verify, build, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Open or append to the failure issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node .github/scripts/open-failure-issue.mjs \
+            "Release ${{ github.ref_name }} failed" \
+            "The gated release pipeline for ${{ github.ref_name }} failed. Inspect the first failing job and its logs before assigning a cause; if assets were published but a post-step (e.g. mirror dispatch) failed, re-running the publish job or dispatching the backfill manually is safe."

@@ -76,3 +76,22 @@ jobs:
             echo "- **Status:** ${{ job.status }}"
             echo "- **Links:** https://gitcode.com/$GITCODE_REPO/releases/download/$TAG/…"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  report-failure:
+    if: ${{ failure() }}
+    needs: backfill
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Open or append to the failure issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node .github/scripts/open-failure-issue.mjs \
+            "GitCode mirror backfill ${{ inputs.tag }} failed" \
+            "The GitCode backfill for ${{ inputs.tag }} did not finish within its budget. Re-dispatch the workflow (idempotent), or mirror the missing installers from a domestic machine with mirror-gitcode.mjs — see the release runbook."
