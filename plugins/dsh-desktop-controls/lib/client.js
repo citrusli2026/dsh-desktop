@@ -828,6 +828,74 @@ window.__ModuleLoader__.load({
       return Math.min(Math.max(value, min), Math.max(min, max));
     }
 
+    /* 桌面垃圾桶：查看 / 还原 / 清除（资源 + 会话两页）。 */
+    function TrashSection() {
+      const zh = useChinese();
+      const bridge = typeof window !== "undefined" ? window.dshDesktop : undefined;
+      const [tab, setTab] = react.useState("items");
+      const [entries, setEntries] = react.useState([]);
+      const [sessions, setSessions] = react.useState([]);
+      const [busy, setBusy] = react.useState(false);
+      const [message, setMessage] = react.useState("");
+      const t = zh ? {
+        title: "桌面垃圾桶", empty: "垃圾桶是空的。",
+        items: "资源", sessions: "会话", restore: "还原", purge: "彻底删除",
+        purgeExpired: "清除已过期", refresh: "刷新", deletedAt: "删除于",
+        origin: "原位置", active: "会话正在运行,不能删除", unarchive: "取消归档",
+        done: "已完成", archived: "已归档",
+      } : {
+        title: "Desktop trash", empty: "The trash is empty.",
+        items: "Resources", sessions: "Sessions", restore: "Restore", purge: "Delete forever",
+        purgeExpired: "Clear expired", refresh: "Refresh", deletedAt: "Deleted",
+        origin: "From", active: "Session is running and cannot be deleted", unarchive: "Unarchive",
+        done: "Done", archived: "Archived",
+      };
+      const refresh = async () => {
+        if (typeof bridge?.listTrash !== "function") return;
+        setEntries(await bridge.listTrash() ?? []);
+        setSessions(await bridge.listTrashSessions() ?? []);
+      };
+      react.useEffect(() => { void refresh(); }, [bridge]);
+      const act = async (action) => {
+        setBusy(true);
+        try { await action(); await refresh(); setMessage(t.done); }
+        catch { setMessage(zh ? "操作失败" : "Action failed"); }
+        finally { setBusy(false); }
+      };
+      const fmt = (ms) => new Date(ms).toLocaleString();
+      const kindLabel = { preset: zh ? "预设" : "Preset", plugin: zh ? "插件" : "Plugin", kernel: zh ? "内核" : "Kernel", session: zh ? "会话" : "Session", file: zh ? "文件" : "File" };
+      return react_jsx_runtime.jsxs("div", { "data-dsh-trash-section": true, children: [
+        react_jsx_runtime.jsxs("div", { style: { display: "flex", gap: "8px", alignItems: "center" }, children: [
+          react_jsx_runtime.jsx("h3", { children: t.title }),
+          react_jsx_runtime.jsx("button", { type: "button", onClick: () => setTab("items"), disabled: tab === "items", children: t.items }),
+          react_jsx_runtime.jsx("button", { type: "button", onClick: () => setTab("sessions"), disabled: tab === "sessions", children: t.sessions }),
+          react_jsx_runtime.jsx("button", { type: "button", onClick: () => void act(() => bridge.purgeExpiredTrash()), disabled: busy, children: t.purgeExpired }),
+          react_jsx_runtime.jsx("button", { type: "button", onClick: () => void refresh(), children: t.refresh }),
+        ] }),
+        message ? react_jsx_runtime.jsx("p", { children: message }) : null,
+        tab === "items" && entries.length === 0 ? react_jsx_runtime.jsx("p", { children: t.empty }) : null,
+        tab === "items" ? entries.map((entry) => react_jsx_runtime.jsxs("div", { style: { display: "flex", gap: "8px", alignItems: "baseline", padding: "4px 0" }, children: [
+          react_jsx_runtime.jsx("code", { children: entry.name }),
+          react_jsx_runtime.jsx("small", { children: kindLabel[entry.kind] ?? entry.kind }),
+          react_jsx_runtime.jsx("small", { children: `${t.deletedAt} ${fmt(entry.deletedAt)}` }),
+          react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => void act(() => bridge.restoreTrash(entry.id)), children: t.restore }),
+          react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => void act(() => bridge.purgeTrash(entry.id)), children: t.purge }),
+          react_jsx_runtime.jsx("small", { children: `${t.origin}: ${entry.originPath}` }),
+        ] }, entry.id)) : null,
+        tab === "sessions" && sessions.length === 0 ? react_jsx_runtime.jsx("p", { children: t.empty }) : null,
+        tab === "sessions" ? sessions.map((session) => react_jsx_runtime.jsxs("div", { style: { display: "flex", gap: "8px", alignItems: "baseline", padding: "4px 0" }, children: [
+          react_jsx_runtime.jsx("code", { children: session.sessionId }),
+          session.archived ? react_jsx_runtime.jsx("small", { children: t.archived }) : null,
+          session.archived && typeof bridge.unarchiveSession === "function" ? react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => void act(() => bridge.unarchiveSession(session.sessionId)), children: t.unarchive }) : null,
+          react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => void act(async () => {
+            const outcome = await bridge.deleteTrashSession(session.projectKey, session.sessionId);
+            if (outcome === "active") setMessage(t.active);
+          }), children: t.purge }),
+          react_jsx_runtime.jsx("small", { children: fmt(session.modifiedAt) }),
+        ] }, session.sessionId + session.projectKey)) : null,
+      ] });
+    }
+
     /* 扩展设置分区：单独入口，排版与 Harness 设置页一致。 */
     function DesktopSettingsSection() {
       const zh = useChinese();
@@ -1528,6 +1596,11 @@ window.__ModuleLoader__.load({
         name: "settings.section", id: "dsh-desktop-controls", order: 20,
         label: () => document.documentElement.lang.toLowerCase().startsWith("zh") ? "桌面设置" : "Desktop settings",
       }, DesktopSettingsSection));
+      // 桌面垃圾桶分区：删除资源的查看 / 还原 / 清除。
+      ctx.slots.inject("settings.section", () => ctx.slots.register({
+        name: "settings.section", id: "dsh-desktop-trash", order: 21,
+        label: () => document.documentElement.lang.toLowerCase().startsWith("zh") ? "垃圾桶" : "Trash",
+      }, TrashSection));
     }
 
     exports.apply = apply;
