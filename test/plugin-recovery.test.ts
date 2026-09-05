@@ -14,7 +14,9 @@ import {
   latestVersions,
   pluginUpdateInfos,
   readProfileManifest,
+  pickQuarantinable,
   withoutBundle,
+  withoutBundles,
   writeProfileManifest,
 } from '../src/main/plugin-recovery.ts'
 
@@ -79,4 +81,28 @@ test('pluginUpdateInfos flags only plugins with a newer published version', () =
   assert.equal(byName.get('dshmarket')?.latest, '1.41.0')
   assert.equal(byName.get('already-newest')?.updatable, false)
   assert.equal(byName.get('unpublished')?.updatable, false)
+})
+
+test('withoutBundles removes several boot entries in one pass', () => {
+  const manifest = {
+    dependencies: { a: '^1', b: '^2', c: '^3' },
+    dsh: { profile: { bundles: ['official', 'a', 'b', 'c'] } },
+  }
+  const updated = withoutBundles(manifest, ['a', 'c'])
+  assert.deepEqual(updated.dsh?.profile?.bundles, ['official', 'b'])
+  assert.deepEqual(Object.keys(updated.dependencies ?? {}), ['b'])
+  // The input manifest is not mutated.
+  assert.deepEqual(manifest.dsh?.profile?.bundles, ['official', 'a', 'b', 'c'])
+})
+
+test('pickQuarantinable selects only listed, non-official, de-duplicated suspects', () => {
+  const bundles = ['@deepseek-ai/dsh-base', 'dshmarket', 'dsh-better-sidebar']
+  const official = ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app']
+  assert.deepEqual(
+    pickQuarantinable(['dshmarket', 'dshmarket', 'dsh-better-sidebar'], bundles, official),
+    ['dshmarket', 'dsh-better-sidebar'],
+  )
+  // Already-removed suspects (loop guard) and official names never qualify.
+  assert.deepEqual(pickQuarantinable(['dshmarket', '@deepseek-ai/dsh-base'], ['official'], official), [])
+  assert.deepEqual(pickQuarantinable(['', 'never-installed'], bundles, official), [])
 })

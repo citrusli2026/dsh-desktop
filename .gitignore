@@ -18,3 +18,4 @@ release-check/
 .workbuddy/
 test-results/
 playwright-report/
+index.cjs

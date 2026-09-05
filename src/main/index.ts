@@ -9,7 +9,7 @@ import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
 import { readProfileStatus } from './profile.ts'
-import { readProfileManifest, writeProfileManifest, withoutBundle } from './plugin-recovery.ts'
+import { readProfileManifest, writeProfileManifest, withoutBundle, withoutBundles, pickQuarantinable } from './plugin-recovery.ts'
 import { supportIssueUrl, type SupportContext } from './support.ts'
 import { BalanceService, formatBalance, readDeepSeekApiKey, type FetchLike } from './balance.ts'
 import {
@@ -373,6 +373,7 @@ const shellApp = new ShellApp({
       void loadHarnessUrl(windowContext, state.url)
     } else if (state.phase === 'crashed') {
       void loadErrorPage(windowContext, state.attempts, state.logTail, safeModeActive(), lastPluginFailures, classifyPluginFailureCause(state.logTail))
+      void autoQuarantineSuspects(lastPluginFailures)
     } else {
       void loadLoadingPage(windowContext, state.stage ?? 'launching', state.retryDelayMs ?? 0)
     }
@@ -622,7 +623,7 @@ ipcMain.handle('shell:open-support-issue', (event) => {
     arch: process.arch,
     kernelVersion: kernel.overlayVersion ?? kernel.bundledVersion ?? 'unknown',
     safeMode: safeModeActive(),
-    suspects: [...new Set(lastPluginFailures.map(row => row.name).filter((name): name is string => typeof name === 'string' && name !== ''))],
+    suspects: [...new Set(visibleSuspects().map(row => row.name).filter((name): name is string => typeof name === 'string' && name !== ''))],
     cause: classifyPluginFailureCause(state?.phase === 'crashed' ? state.logTail : ''),
   }
   void shell.openExternal(supportIssueUrl(context))
@@ -880,9 +881,50 @@ ipcMain.handle('desktop:presets:list', (event) => {
   return listUserPresets(desktopDshHome())
 })
 
+/**
+ * Auto-quarantine: a plugin-induced crash names its suspects in the log, so
+ * the shell removes exactly those bundles from the boot list and restarts —
+ * the app comes back up instead of looping on the error page. Quarantine is
+ * the same reversible manifest edit as the error page's Disable; the names
+ * stay visible in the recovery banner until the plugin is updated or
+ * re-enabled. Removal is its own loop guard: a removed bundle cannot crash
+ * the next boot.
+ */
+const autoQuarantined: ComposedRow[] = []
+let autoQuarantineInFlight = false
+async function autoQuarantineSuspects(suspects: readonly ComposedRow[]): Promise<void> {
+  if (autoQuarantineInFlight || suspects.length === 0) return
+  const dshHome = resolveDshHome(process.env, homedir())
+  const manifest = await readProfileManifest(dshHome)
+  const removable = pickQuarantinable(
+    suspects.flatMap(row => typeof row.name === 'string' ? [row.name] : []),
+    manifest.dsh?.profile?.bundles ?? [],
+    OFFICIAL_BUNDLES,
+  )
+  if (removable.length === 0) return
+  autoQuarantineInFlight = true
+  try {
+    await writeProfileManifest(dshHome, withoutBundles(manifest, removable))
+    for (const row of suspects.filter(suspect => typeof suspect.name === 'string' && removable.includes(suspect.name))) {
+      if (!autoQuarantined.some(existing => existing.id === row.id)) autoQuarantined.push(row)
+    }
+    console.warn(`dsh-desktop: boot failed on ${removable.join(', ')}; quarantined them from the boot list — update or re-enable in Settings → Plugins`)
+    await restartForPluginRecovery()
+  } catch (error) {
+    console.warn(`dsh-desktop: auto-quarantine failed: ${error instanceof Error ? error.message : String(error)}`)
+  } finally {
+    autoQuarantineInFlight = false
+  }
+}
+
+/** Suspects worth showing: live failures plus still-quarantined plugins. */
+function visibleSuspects(): ComposedRow[] {
+  return [...lastPluginFailures, ...autoQuarantined.filter(row => !lastPluginFailures.some(fail => fail.id === row.id))]
+}
+
 ipcMain.handle('desktop:suspects:get', (event) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
-  return lastPluginFailures
+  return visibleSuspects()
 })
 
 // Error-page plugin recovery: update the failing packages through the same
@@ -913,10 +955,14 @@ ipcMain.handle('desktop:plugin:update', async (event, rawName: unknown): Promise
   const dshHome = resolveDshHome(process.env, homedir())
   const { bundles } = await readProfileStatus(dshHome)
   const requested = typeof rawName === 'string' && rawName !== '' ? [rawName] : undefined
-  const targets = requested ?? [...new Set(lastPluginFailures.map(row => row.name).filter((name): name is string => typeof name === 'string' && bundles.includes(name)))]
+  const candidates = [...new Set(visibleSuspects().map(row => row.name).filter((name): name is string => typeof name === 'string'))]
+  // A quarantined plugin is off the boot list, but updating it re-adds the
+  // bundle — that is the upgrade-and-re-enable path the banner points at.
+  const targets = requested ?? candidates.filter(name => bundles.includes(name) || autoQuarantined.some(row => row.name === name))
   // Official bundles are version-locked to the kernel; only community
   // packages may be updated through this recovery path.
-  if (requested !== undefined && (!bundles.includes(requested[0]!) || OFFICIAL_BUNDLES.includes(requested[0] as never))) return false
+  const requestedName = requested?.[0]
+  if (requested !== undefined && (!bundles.includes(requestedName!) && !autoQuarantined.some(row => row.name === requestedName) || OFFICIAL_BUNDLES.includes(requestedName as never))) return false
   if (targets.length === 0) return false
   const before = new Map(await Promise.all(targets.map(async name => [name, await installedPluginVersion(dshHome, name)] as const)))
   for (const name of targets) {
@@ -928,6 +974,10 @@ ipcMain.handle('desktop:plugin:update', async (event, rawName: unknown): Promise
   }
   const restarted = await restartForPluginRecovery()
   if (!restarted) return false
+  for (const name of targets) {
+    const quarantinedIndex = autoQuarantined.findIndex(row => row.name === name)
+    if (quarantinedIndex !== -1) autoQuarantined.splice(quarantinedIndex, 1)
+  }
   // Registry metadata can trail a just-published dist-tag, so a no-op install
   // is not a failure: report 'current' so the error page can say so.
   const after = await Promise.all(targets.map(name => installedPluginVersion(dshHome, name)))
@@ -947,6 +997,8 @@ ipcMain.handle('desktop:plugin:disable', async (event, rawName: unknown) => {
     console.warn(`dsh-desktop: plugin disable write failed: ${error instanceof Error ? error.message : String(error)}`)
     return false
   }
+  const quarantinedIndex = autoQuarantined.findIndex(row => row.name === rawName || row.id === rawName)
+  if (quarantinedIndex !== -1) autoQuarantined.splice(quarantinedIndex, 1)
   return restartForPluginRecovery()
 })
 

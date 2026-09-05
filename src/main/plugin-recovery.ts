@@ -78,6 +78,28 @@ export function withoutBundle(manifest: ProfileManifest, name: string): ProfileM
   }
 }
 
+/** Remove several bundles from the boot list at once (reversible, files stay). */
+export function withoutBundles(manifest: ProfileManifest, names: readonly string[]): ProfileManifest {
+  return names.reduce((current, name) => withoutBundle(current, name), manifest)
+}
+
+/**
+ * Which crash suspects can be auto-quarantined right now: a suspect acts only
+ * when it is still on the boot list (removal is the loop guard) and never for
+ * official bundles.
+ */
+export function pickQuarantinable(
+  suspects: readonly string[],
+  bundles: readonly string[],
+  official: readonly string[],
+): string[] {
+  const listed = new Set(bundles)
+  return [...new Set(suspects)].filter(name => name !== ''
+    && typeof name === 'string'
+    && listed.has(name)
+    && !official.includes(name))
+}
+
 /** Query the npm registry for each package's latest published version. */
 export async function latestVersions(
   names: readonly string[],
