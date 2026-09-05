@@ -50,7 +50,7 @@
   <details><summary>插件会随安装包一起安装吗？</summary><p>不会。插件市场和社区插件都不打进发布包，必须由你在设置中手动安装；安装前请确认第三方仓库来源，因为安装过程可能下载并运行社区代码及安装脚本。</p></details>
   <details><summary>插件市场安装失败怎么办？</summary><p>「设置 → 桌面设置」会展示准备、下载、验证和重启阶段，并区分网络、代理、超时、数据目录、安装脚本和随包工具故障。可展开脱敏技术详情或导出诊断，修复对应问题后直接重试；失败不会被误标为已安装，成功后会显示实际版本。</p></details>
   <details><summary>怎样检查当前运行环境是否正常？</summary><p>打开「设置 → 桌面设置 → 运行体检」。默认只读检查随包运行时、数据目录和磁盘、Harness loopback、Profile、插件和版本，不联网、不上传、不自动修复。需要判断代理、registry 或更新源时，再单独勾选联网检查；每项会显示正常、警告或失败及对应动作。</p></details>
-  <details><summary>启动失败或插件装坏了怎么办？</summary><p>错误页提供「再次启动」「以安全模式启动」「打开日志目录」「导出诊断报告」。安全模式只保留官方与内置扩展，并隔离用户插件，不删除或移动插件文件；处理完成后请显式退出安全模式，再按需重试。</p></details>
+  <details><summary>启动失败或插件装坏了怎么办？</summary><p>错误页提供「再次启动」「以安全模式启动」「打开日志目录」「导出诊断报告」；检测到可疑插件时还会逐个列出，可直接「升级」到最新版或「禁用」后重启——禁用只从启动列表移除，不删除文件，可随时在「设置 → 插件」恢复。安全模式只保留官方与内置扩展，并隔离用户插件，作为兜底恢复路径。</p></details>
   <details><summary>Linux 支持哪些系统？</summary><p>当前提供 amd64 Debian 包，面向 Debian、Ubuntu、UOS、Deepin 和麒麟等系统。不同发行版的系统依赖可能不同，建议优先使用系统软件中心安装。</p></details>
   <details><summary>如何校验安装包没有被篡改？</summary><p>每个安装包都附带同名 <code>.sha256</code> 文件。macOS/Linux 使用 <code>shasum -a 256 -c 文件名.sha256</code>，Windows 使用 <code>CertUtil -hashfile 文件名 SHA256</code>，再与 Release 中的校验文件比较。</p></details>
   <details><summary>GitHub 下载慢怎么办？</summary><p>可以打开<a href="/download">下载页</a>中的 GitCode 镜像入口。镜像状态会随发布同步变化；如果镜像没有对应文件，请回到 GitHub Release 页面。</p></details>
