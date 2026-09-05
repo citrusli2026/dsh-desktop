@@ -4,7 +4,7 @@
    - 平台识别 CTA / 复制 / 滚动 reveal
    数据与文案字典见 ./data-model.js (纯数据层,亦被 check-site 直接导入)。
    零依赖,渐进增强。 */
-import { I18N, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=42'
+import { I18N, platformOf, publicKind, splitCompositeTag, fmtSize, fmtNum, fmtDate, normalizeReleasesPayload } from './data-model.js?v=43'
 
 var REPO = 'citrusli2026/dsh-desktop'
 var RELEASES_URL = 'https://github.com/' + REPO + '/releases'

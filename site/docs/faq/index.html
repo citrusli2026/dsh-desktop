@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>DSH Desktop 常见问题｜DeepSeek Harness 桌面版 FAQ</title>
-<meta name="description" content="DSH Desktop 常见问题：产品边界、Node.js、数据隔离、社区插件手动安装、安全模式恢复、首次启动和安装包校验。" />
+<meta name="description" content="DSH Desktop 常见问题：安装步骤、数据目录、插件市场、安全模式恢复、首次启动和安装包校验。" />
 <meta property="og:site_name" content="DSH Desktop" />
 <meta property="og:title" content="DSH Desktop 常见问题｜DeepSeek Harness 桌面版 FAQ" />
 <meta property="og:description" content="关于 DSH Desktop 安装、配置、平台支持和安全校验的常见问题。" />
@@ -46,7 +46,7 @@
   <details open><summary>需要安装 Node.js 或运行命令行吗？</summary><p>发布版内置锁定的 Node.js 运行时和 Harness 依赖，普通用户不需要另行安装 Node.js，也不需要先运行 <code>npx @deepseek-ai/dsh web</code>。</p></details>
   <details><summary>桌面版会读取命令行的配置吗？</summary><p>默认不会。桌面版使用 <code>~/.dsh-desktop</code>，命令行通常使用 <code>~/.dsh</code>。如果需要共享，可以设置 <code>DSH_HOME=~/.dsh</code>，建议先备份。</p></details>
   <details><summary>macOS 提示无法验证开发者怎么办？</summary><p>当前 macOS 构建可能未经过 Apple 公证。确认安装包来自公开 Release 后，在 Finder 中右键应用选择“打开”。不要从不明来源下载或执行来路不明的终端命令。</p></details>
-  <details><summary>Windows SmartScreen 拦截怎么办？</summary><p>当前 Windows 安装包可能未购买商业代码签名证书。确认来源和校验值后，点击“更多信息 → 仍要运行”。如果不确定文件来源，请停止安装并在 GitHub 仓库提交问题。</p></details>
+  <details><summary>Windows SmartScreen 拦截怎么办？</summary><p>当前 Windows 安装包尚未做代码签名。确认来源和校验值后，点击“更多信息 → 仍要运行”。如果不确定文件来源，请停止安装并在 GitHub 仓库提交问题。</p></details>
   <details><summary>插件会随安装包一起安装吗？</summary><p>不会。插件市场和社区插件都不打进发布包，必须由你在设置中手动安装；安装前请确认第三方仓库来源，因为安装过程可能下载并运行社区代码及安装脚本。</p></details>
   <details><summary>插件市场安装失败怎么办？</summary><p>「设置 → 桌面设置」会展示准备、下载、验证和重启阶段，并区分网络、代理、超时、数据目录、安装脚本和随包工具故障。可展开脱敏技术详情或导出诊断，修复对应问题后直接重试；失败不会被误标为已安装，成功后会显示实际版本。</p></details>
   <details><summary>怎样检查当前运行环境是否正常？</summary><p>打开「设置 → 桌面设置 → 运行体检」。默认只读检查随包运行时、数据目录和磁盘、Harness loopback、Profile、插件和版本，不联网、不上传、不自动修复。需要判断代理、registry 或更新源时，再单独勾选联网检查；每项会显示正常、警告或失败及对应动作。</p></details>

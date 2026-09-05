@@ -4,17 +4,17 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>DSH Desktop｜DeepSeek Harness 社区桌面版</title>
-<meta name="description" content="DSH Desktop 是 DeepSeek Harness 的社区桌面版：可靠的 Electron 壳加上开箱即用支持。无需 Node.js，插件全部手动安装，支持 Windows、macOS 和 Linux。" />
+<meta name="description" content="DSH Desktop 是 DeepSeek Harness 的社区桌面版：开箱即用，无需 Node.js，插件全部手动安装，支持 Windows、macOS 和 Linux。" />
 <meta name="google-site-verification" content="0NO32QsuJviivUirAXGOcVgj2knN_m5NCus7GpE-ZXg" />
 <meta property="og:site_name" content="DSH Desktop" />
 <meta property="og:title" content="DSH Desktop｜DeepSeek Harness 桌面端" />
-<meta property="og:description" content="可靠的 Electron 壳加上开箱即用支持：无需 Node.js，插件全部手动安装，支持 Windows、macOS 和 Linux。" />
+<meta property="og:description" content="开箱即用的 DeepSeek Harness 桌面版：无需 Node.js，插件全部手动安装，支持 Windows、macOS 和 Linux。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://dsh-desktop.com/" />
 <meta property="og:image" content="https://dsh-desktop.com/assets/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="DSH Desktop｜DeepSeek Harness 桌面端" />
-<meta name="twitter:description" content="可靠的 Electron 壳加上开箱即用支持：无需 Node.js，插件全部手动安装，支持 Windows、macOS 和 Linux。" />
+<meta name="twitter:description" content="开箱即用的 DeepSeek Harness 桌面版：无需 Node.js，插件全部手动安装，支持 Windows、macOS 和 Linux。" />
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9f8f8" />
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c0f16" />
 <meta name="color-scheme" content="light dark" />
@@ -128,10 +128,10 @@
     <div class="wrap hero__inner">
       <div class="hero__copy" data-reveal>
         <h1 class="headline" data-i18n="hero.h1">DeepSeek Harness<br />桌面版，可靠的 <em>本地桌面应用</em>。</h1>
-        <p class="subhead" data-i18n="hero.sub">社区维护的可靠 Electron 壳，加上开箱即用支持。自带运行时、隔离数据、桌面入口和恢复路径；只增强桌面体验，不改写 Harness 行为。</p>
+        <p class="subhead" data-i18n="hero.sub">社区维护的 DeepSeek Harness 桌面版：开箱即用。自带运行时、独立数据目录、桌面入口和恢复路径；只增强桌面体验，不改写 Harness 行为。</p>
         <div class="cta-row">
           <a class="btn btn--primary btn--glow" id="cta-primary" href="#download" data-i18n="hero.cta">下载桌面版</a>
-          <a class="btn btn--ghost" id="cta-secondary" href="#workflow" data-i18n="hero.secondary">先看定位与边界 →</a>
+          <a class="btn btn--ghost" id="cta-secondary" href="#workflow" data-i18n="hero.secondary">它和命令行有什么不同 →</a>
         </div>
         <p class="hero__social" id="hero-social" hidden></p>
         <p class="hero__meta" id="hero-meta">… · macOS / Windows · <span data-i18n="hero.meta">无需 Node.js</span></p>
@@ -173,8 +173,8 @@
     <div class="wrap trust-strip__grid">
       <div><b>LOCAL</b><span data-i18n="trust.local">Loopback 本地运行</span></div>
       <div><b>ISOLATED</b><span data-i18n="trust.isolated">默认独立数据目录</span></div>
-      <div><b>GUARDED</b><span data-i18n="trust.guarded">沙箱与权限默认收敛</span></div>
-      <div><b>VERIFIABLE</b><span data-i18n="trust.verifiable">公开 CI 与发布制品</span></div>
+      <div><b>GUARDED</b><span data-i18n="trust.guarded">沙箱隔离，权限默认最小</span></div>
+      <div><b>VERIFIABLE</b><span data-i18n="trust.verifiable">公开 CI 与真实应用测试</span></div>
     </div>
   </section>
 
@@ -182,12 +182,12 @@
   <section class="section" id="workflow">
     <div class="wrap">
       <p class="sec-marker" data-reveal>02 / <span data-i18n="wf.marker">产品定位</span></p>
-      <h2 class="sec-title sec-title--wide" data-reveal style="--i:1" data-i18n="wf.title">只把 Harness 带到桌面，不另做一套产品</h2>
+      <h2 class="sec-title sec-title--wide" data-reveal style="--i:1" data-i18n="wf.title">官方 Harness，原样跑进桌面窗口</h2>
       <p class="sec-lead" data-reveal style="--i:2" data-i18n="wf.lead">桌面壳负责安装、启动、恢复和入口；Agent、会话、工具、模型仍由官方 Harness 负责。</p>
       <div class="workflow-grid" data-reveal style="--i:3">
         <article><span>01</span><h3 data-i18n="wf.s1.title">开箱即用</h3><p data-i18n="wf.s1.body">内置 Node.js 与依赖，安装后直接启动。</p></article>
-        <article><span>02</span><h3 data-i18n="wf.s2.title">本地且隔离</h3><p data-i18n="wf.s2.body">只监听 loopback，默认使用独立的 ~/.dsh-desktop。</p></article>
-        <article><span>03</span><h3 data-i18n="wf.s3.title">出错可恢复</h3><p data-i18n="wf.s3.body">安全模式、诊断和回滚，让问题有下一步。</p></article>
+        <article><span>02</span><h3 data-i18n="wf.s2.title">本地且隔离</h3><p data-i18n="wf.s2.body">只在本机通信，不暴露到局域网；数据默认放在独立的 ~/.dsh-desktop。</p></article>
+        <article><span>03</span><h3 data-i18n="wf.s3.title">出错可恢复</h3><p data-i18n="wf.s3.body">安全模式隔离坏插件；错误页可一键升级或禁用可疑插件。</p></article>
       </div>
       <div class="boundary-grid" data-reveal style="--i:4">
         <article>
@@ -196,7 +196,7 @@
         </article>
         <article>
           <p class="boundary-grid__eyebrow" data-i18n="wf.keeps.label">Harness 继续负责</p>
-          <ul data-i18n="wf.keeps"><li>Agent、会话、工具与模型</li><li>官方 WebUI 与插件行为</li><li>账户配置；不新增工作台</li></ul>
+          <ul data-i18n="wf.keeps"><li>Agent、会话、工具与模型</li><li>官方 WebUI 与插件行为</li><li>账户配置与官方设置</li></ul>
         </article>
         <article>
           <p class="boundary-grid__eyebrow" data-i18n="ext.marker">扩展功能</p>
@@ -223,10 +223,10 @@
         </div>
         <div class="access-card__routes" aria-label="插件市场入口">
           <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">01</span><div><b data-i18n="mk.route1.title">浏览与一键安装</b><span data-i18n="mk.route1.body">在 Harness「设置 → 插件市场」按分类浏览、安装和更新。</span></div></div>
-          <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">02</span><div><b data-i18n="mk.route2.title">装坏了也不怕</b><span data-i18n="mk.route2.body">出现问题时，用安全模式隔离第三方插件。</span></div></div>
+          <div class="access-card__route"><span class="access-card__route-mark" aria-hidden="true">02</span><div><b data-i18n="mk.route2.title">装坏了也不怕</b><span data-i18n="mk.route2.body">插件装坏时，错误页可直接升级到最新版或先禁用；安全模式随时兜底。</span></div></div>
         </div>
       </article>
-      <p class="note" data-reveal style="--i:4" data-i18n="mk.note">安装边界：按需在「设置 → 桌面设置 → 插件市场」手动安装 dsh-market，再到 Harness「设置 → 插件市场」手动选择其他插件；首次任务不依赖插件市场。</p>
+      <p class="note" data-reveal style="--i:4" data-i18n="mk.note">如何安装：按需在「设置 → 桌面设置 → 插件市场」手动安装 dsh-market，再到 Harness「设置 → 插件市场」手动选择其他插件；首次任务不依赖插件市场。</p>
     </div>
   </section>
 
@@ -267,10 +267,10 @@
       <article class="latest-card" data-reveal style="--i:5" aria-labelledby="latest-title">
         <div class="latest-card__copy">
           <p class="sec-marker" data-i18n="latest.marker">当前版本重点</p>
-          <h3 id="latest-title" data-i18n="latest.title">把可靠性做成用户看得懂的路径</h3>
-          <p data-i18n="latest.lead">最新发布线继续围绕桌面壳收口，不增加第二套 Agent 产品。</p>
+          <h3 id="latest-title" data-i18n="latest.title">这个版本，更稳也更好上手</h3>
+          <p data-i18n="latest.lead">本版本重点：安装、恢复与更新更可靠。</p>
         </div>
-        <ul data-i18n="latest.items"><li><b>首次成功：</b>主界面四步引导在首条任务完成后自动结束。</li><li><b>一键体检：</b>本地检查运行时、目录、loopback、Profile 与插件状态。</li><li><b>明确边界：</b>联网检查需主动勾选，社区插件仍完全可选。</li></ul>
+        <ul data-i18n="latest.items"><li><b>首次成功：</b>主界面四步引导在首条任务完成后自动结束。</li><li><b>一键体检：</b>本地检查运行环境、数据目录、本地端口与插件状态。</li><li><b>隐私可控：</b>联网检查需主动勾选，社区插件仍完全可选。</li></ul>
       </article>
     </div>
   </section>
@@ -335,7 +335,7 @@
       <div class="faq" data-reveal style="--i:2">
         <details>
           <summary data-i18n="faq.q1">macOS 提示“无法打开，因为无法验证开发者”？</summary>
-          <p class="faq-answer" data-i18n="faq.a1">macOS 版未购买 Apple 开发者证书（决策记录 0004），首次启动请 <b>右键 → 打开</b>。如果仍没有放行选项，且你确认安装包来源可信，可在终端执行：<br /><code class="faq-command">xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"</code><code class="faq-command">open "/Applications/dsh-desktop.app"</code>这会移除下载隔离标记，但不会添加 Apple 签名或公证。<br /><br />安装包由公开 CI 构建，可用来源证明验证真伪：<br /><code class="faq-command">gh attestation verify /path/to/dsh-desktop-{ver}-arm64-mac.dmg -R citrusli2026/dsh-desktop</code></p>
+          <p class="faq-answer" data-i18n="faq.a1">当前 macOS 安装包尚未签名公证，首次启动请 <b>右键 → 打开</b>。如果仍没有放行选项，且你确认安装包来源可信，可在终端执行：<br /><code class="faq-command">xattr -dr com.apple.quarantine "/Applications/dsh-desktop.app"</code><code class="faq-command">open "/Applications/dsh-desktop.app"</code>这会移除下载隔离标记，但不会添加 Apple 签名或公证。<br /><br />安装包由公开 CI 构建，可用来源证明验证真伪：<br /><code class="faq-command">gh attestation verify /path/to/dsh-desktop-{ver}-arm64-mac.dmg -R citrusli2026/dsh-desktop</code></p>
         </details>
         <details>
           <summary data-i18n="faq.q2">Windows SmartScreen 拦截怎么办？</summary>
@@ -343,15 +343,15 @@
         </details>
         <details>
           <summary data-i18n="faq.q3">这和 DeepSeek 官方是什么关系？</summary>
-          <p data-i18n="faq.a3">社区维护的桌面封装：不改写 Harness 行为，数据与配置保持独立。项目与 DeepSeek AI 无隶属、授权或合作关系；DeepSeek Harness 是 DeepSeek 的商标，本仓库仅在 MIT 许可下再打包 <a href="https://www.npmjs.com/package/@deepseek-ai/dsh" target="_blank" rel="noopener">@deepseek-ai/dsh</a>，不改变其任何行为。</p>
+          <p data-i18n="faq.a3">社区维护的桌面封装：不改写 Harness 行为，数据与配置保持独立。项目与 DeepSeek AI 无隶属、授权或合作关系；DeepSeek Harness 是 DeepSeek 的商标，本项目仅在 MIT 许可下再打包 <a href="https://www.npmjs.com/package/@deepseek-ai/dsh" target="_blank" rel="noopener">@deepseek-ai/dsh</a>，不改变其任何行为。</p>
         </details>
         <details>
           <summary data-i18n="faq.q4">我在用 npx @deepseek-ai/dsh web，配置会带过来吗？</summary>
-          <p data-i18n="faq.a4">不会——桌面版是独立环境，数据放在 <code>~/.dsh-desktop</code>，与 CLI 的 <code>~/.dsh</code> 互不影响（决策记录 0012）。想沿用 CLI 配置，启动前设 <code>DSH_HOME=~/.dsh</code> 即可。</p>
+          <p data-i18n="faq.a4">不会——桌面版是独立环境，数据放在 <code>~/.dsh-desktop</code>，与 CLI 的 <code>~/.dsh</code> 互不影响。想沿用 CLI 配置，启动前设 <code>DSH_HOME=~/.dsh</code> 即可。</p>
         </details>
         <details>
           <summary data-i18n="faq.q6">桌面版会申请摄像头、定位或文件系统权限吗？</summary>
-          <p data-i18n="faq.a6">不会。当前功能不需要这些 Electron Web 权限，渲染层默认拒绝媒体、定位、Web 通知、采集和文件系统等额外请求；桌面状态通知是可关闭的本地壳功能，不读取屏幕，也不上传。未来如确有需要，必须经过明确的白名单审查。</p>
+          <p data-i18n="faq.a6">不会。桌面版默认拒绝摄像头、定位、网页通知、屏幕采集和文件系统这类请求；桌面通知是可关闭的本地功能，不读取屏幕，也不上传数据。</p>
         </details>
         <details>
           <summary data-i18n="faq.q8">如何校验下载文件的完整性？</summary>
@@ -363,7 +363,7 @@
         </details>
         <details>
           <summary data-i18n="faq.q14">启动失败或插件装坏了怎么办？</summary>
-          <p class="faq-answer" data-i18n="faq.a14">错误页提供「再次启动」「以安全模式启动」「打开日志目录」「导出诊断报告」；检测到可疑插件时还会逐个列出，可直接「升级」到最新版或「禁用」后重启——禁用只从启动列表移除，不删除文件，可随时在「设置 → 插件」恢复。安全模式只保留官方与内置扩展，并隔离用户插件。</p>
+          <p class="faq-answer" data-i18n="faq.a14">应用仍可打开时，先到「设置 → 桌面设置 → 运行体检」查看本地运行环境、数据目录、本地端口与插件状态；联网检查需单独勾选，结果不上传也不自动修复。无法启动时，错误页提供「再次启动」「以安全模式启动」「打开日志目录」「导出诊断报告」；检测到可疑插件时还会逐个列出，可直接「升级」到最新版或「禁用」后重启——禁用只从启动列表移除，不删除文件，可随时在「设置 → 插件」恢复。</p>
         </details>
       </div>
     </div>
@@ -380,11 +380,11 @@
       <div class="version-legend" data-reveal style="--i:3">
         <div class="legend-row">
           <code class="legend-chip legend-chip--core" id="legend-core">…</code>
-          <p data-i18n="vr.core"><b>内核版本</b> —— 内置的 <code>@deepseek-ai/dsh</code> 版本。每日工作流自动检查 npm 上游，有新版本就开升级 PR。</p>
+          <p data-i18n="vr.core"><b>内核版本</b> —— 内置的 <code>@deepseek-ai/dsh</code> 版本，跟随官方更新，新版本会尽快跟进。</p>
         </div>
         <div class="legend-row">
           <code class="legend-chip legend-chip--shell" id="legend-shell">…</code>
-          <p data-i18n="vr.shell"><b>壳修订号</b> —— 壳自身（窗口、守护、打包）的修订次数。同一内核可以有多次壳修订。</p>
+          <p data-i18n="vr.shell"><b>桌面版修订号</b> —— 同一内核下，桌面版自身（窗口、更新、修复）的更新次数。</p>
         </div>
       </div>
     </div>
@@ -416,7 +416,7 @@
   </div>
 </footer>
 
-<script type="module" src="/assets/app.js?v=42"></script>
+<script type="module" src="/assets/app.js?v=43"></script>
 
 <!-- 下载后提示(校验方式 + 未签名处理 + GitHub Star 邀请),由 app.js 填充 -->
 <div class="download-toast" id="download-toast" role="status" aria-live="polite" hidden></div>

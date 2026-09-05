@@ -2,16 +2,34 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { mkdtemp, rm } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const PROXY_PATH = fileURLToPath(new URL('../resources/mobile-shell/proxy/dsh-remote.mjs', import.meta.url))
+// The packaged proxy artifact is materialized, not tracked: CI exports
+// DSH_MOBILE_SHELL_WEB_ROOT, a dev checkout has the sibling repo, and a
+// built workspace has resources/mobile-shell.
+const PROXY_PATH = ((): string | undefined => {
+  const candidates = [
+    process.env.DSH_MOBILE_SHELL_WEB_ROOT,
+    resolve(dirname(fileURLToPath(import.meta.url)), '../dsh-mobile-shell/dist/web'),
+    resolve(dirname(fileURLToPath(import.meta.url)), '../resources/mobile-shell'),
+  ].filter((root): root is string => typeof root === 'string')
+  for (const root of candidates) {
+    const proxy = join(root, 'proxy', 'dsh-remote.mjs')
+    if (existsSync(proxy)) return proxy
+  }
+  return undefined
+})()
 const MASTER_TOKEN = 'master-token-0123456789'
 const LAUNCH_TOKEN = 'kernel-launch-token-0123456789abcdef'
 const KERNEL_401 = 'dsh web authentication required; reopen the URL printed by dsh web.'
+const SKIP_REASON = PROXY_PATH === undefined
+  ? 'mobile-shell proxy artifact is not materialized in this workspace'
+  : false
 
 interface UpstreamHandle {
   server: Server
@@ -78,7 +96,7 @@ interface ProxyHandle {
 async function startProxy(upstreamPort: number, options: { upstreamToken?: string } = {}): Promise<ProxyHandle> {
   const root = await mkdtemp(join(tmpdir(), 'dsh-lan-proxy-'))
   const listenPort = await freePort()
-  const child = spawn(process.execPath, [PROXY_PATH], {
+  const child = spawn(process.execPath, [PROXY_PATH!], {
     env: {
       ...process.env,
       DSH_REMOTE_TOKEN: MASTER_TOKEN,
@@ -91,27 +109,40 @@ async function startProxy(upstreamPort: number, options: { upstreamToken?: strin
       DSH_PAIR_QR: 'off',
       DSH_STATE_FILE: join(root, 'devices.json'),
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
+    // stdout ignored: a pipe nobody drains would fill up and stall the proxy.
+    stdio: ['ignore', 'ignore', 'pipe'],
   })
+  let stderr = ''
   child.stderr.setEncoding('utf8')
-  child.stderr.on('data', chunk => process.stderr.write(`dsh-remote: ${chunk}`))
+  child.stderr.on('data', chunk => { stderr += chunk })
+  // Nothing may outlive the test: a running child keeps node --test alive.
+  const killChild = (): Promise<void> => new Promise(resolvePromise => {
+    if (child.exitCode !== null) { resolvePromise(); return }
+    child.once('exit', () => resolvePromise())
+    child.kill()
+  })
 
   const baseUrl = `http://127.0.0.1:${listenPort}/`
-  const deadline = Date.now() + 10_000
-  for (;;) {
-    try {
-      const response = await fetch(`${baseUrl}healthz`, { signal: AbortSignal.timeout(1000) })
-      await response.body?.cancel()
-      if (response.ok) break
-    } catch { /* not listening yet */ }
-    if (Date.now() > deadline) throw new Error('dsh-remote did not become healthy')
-    await new Promise(resolve => setTimeout(resolve, 100))
+  try {
+    const deadline = Date.now() + 10_000
+    for (;;) {
+      try {
+        const response = await fetch(`${baseUrl}healthz`, { signal: AbortSignal.timeout(1000) })
+        await response.body?.cancel()
+        if (response.ok) break
+      } catch { /* not listening yet */ }
+      if (Date.now() > deadline) throw new Error(`dsh-remote did not become healthy; stderr: ${stderr.trim()}`)
+      await new Promise(resolvePromise => setTimeout(resolvePromise, 100))
+    }
+  } catch (error) {
+    await killChild()
+    await rm(root, { recursive: true, force: true })
+    throw error
   }
   return {
     baseUrl,
     stop: async () => {
-      child.kill()
-      await new Promise<void>(resolve => child.once('exit', () => resolve()))
+      await killChild()
       await rm(root, { recursive: true, force: true })
     },
   }
@@ -136,7 +167,7 @@ async function pairDevice(baseUrl: string): Promise<string> {
   return body.token!
 }
 
-test('dsh-remote forwards the upstream 401 unchanged without DSH_UPSTREAM_TOKEN', async () => {
+test('dsh-remote forwards the upstream 401 unchanged without DSH_UPSTREAM_TOKEN', { skip: SKIP_REASON }, async () => {
   const upstream = await startUpstream()
   const proxy = await startProxy(upstream.port)
   try {
@@ -151,7 +182,7 @@ test('dsh-remote forwards the upstream 401 unchanged without DSH_UPSTREAM_TOKEN'
   }
 })
 
-test('dsh-remote exchanges DSH_UPSTREAM_TOKEN and presents the session cookie', async () => {
+test('dsh-remote exchanges DSH_UPSTREAM_TOKEN and presents the session cookie', { skip: SKIP_REASON }, async () => {
   const upstream = await startUpstream()
   const proxy = await startProxy(upstream.port, { upstreamToken: LAUNCH_TOKEN })
   try {
@@ -170,7 +201,7 @@ test('dsh-remote exchanges DSH_UPSTREAM_TOKEN and presents the session cookie', 
   }
 })
 
-test('dsh-remote re-exchanges once and replays when the upstream rejects the cookie', async () => {
+test('dsh-remote re-exchanges once and replays when the upstream rejects the cookie', { skip: SKIP_REASON }, async () => {
   const upstream = await startUpstream()
   const proxy = await startProxy(upstream.port, { upstreamToken: LAUNCH_TOKEN })
   try {

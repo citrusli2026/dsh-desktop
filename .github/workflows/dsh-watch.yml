@@ -55,7 +55,7 @@ jobs:
         if: steps.check.outputs.code == '3'
         with:
           repository: citrusli2026/dsh-mobile-shell
-          ref: v1.0.0
+          ref: v1.0.1
           path: dsh-mobile-shell
       - name: Package mobile-shell Web artifact
         if: steps.check.outputs.code == '3'

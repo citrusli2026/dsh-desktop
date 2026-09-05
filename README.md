@@ -26,14 +26,14 @@ CLI and desktop can coexist — see [why-desktop](https://dsh-desktop.com/en/doc
 
 `dsh-desktop` is a community-maintained personal project focused on a reliable Electron shell plus an out-of-the-box experience. It adds the desktop surface around the official Harness WebUI — runtime packaging, native window and tray behavior, supervision, recovery, diagnostics, updates, and practical desktop entry points — without becoming a separate Agent workspace or chat product.
 
-Community plugins are always installed manually by the user. The installer contains no community plugins and does not seed them on first launch; install `dsh-market` from Settings → Desktop settings → Plugin market only when needed, then choose other plugins yourself. Signing and notarization are intentionally deferred until the product has enough real-world usage to justify them.
+Community plugins are always installed manually by the user. The installer contains no community plugins and does not seed them on first launch; install `dsh-market` from Settings → Desktop settings → Plugin market only when needed, then choose other plugins yourself. Installers are currently unsigned: expect the right-click → Open prompt on macOS and "More info → Run anyway" on Windows, and verify downloads with the published `.sha256` files.
 
 **Website**: [dsh-desktop.com](https://dsh-desktop.com) — product intro, downloads (GitHub and the verified GitCode mirror, in whichever order is usable), and a FAQ covering unsigned-macOS first launch, SmartScreen, checksum & provenance verification. The site syncs with GitHub Releases automatically.
 
 ## What you get
 
 - **No runtime setup** — bundles a pinned Node.js 22 runtime and the complete `@deepseek-ai/dsh` dependency closure; no separate Node install or terminal bootstrap.
-- **Isolated by default** — its own data home (`~/.dsh-desktop`) keeps settings, sessions, API keys, and plugins away from your CLI. `DSH_HOME=~/.dsh` shares them again (decision 0012).
+- **Isolated by default** — its own data home (`~/.dsh-desktop`) keeps settings, sessions, API keys, and plugins away from your CLI. `DSH_HOME=~/.dsh` shares them again.
 - **Dependable** — crash auto-restart with backoff, error-page retry, tray with live harness status, single-instance lock, window geometry persistence, and an exportable diagnostic report. On Windows, desktop actions remain reachable from Desktop tools, the window context menu, or the tray even when the menu bar is hidden.
 - **Quick to return to** — press the configurable summon shortcut from anywhere to show and focus the desktop app after it has been hidden to the tray. It defaults to `Ctrl/Cmd + Shift + Space`; if another app owns it, the tray and context-menu fallbacks remain available.
 - **A clear first-success path** — a lightweight, dismissible main-screen guide tracks runtime → workspace → model → first completed task and then gets out of the way. The plugin market is explicitly optional.
@@ -42,8 +42,8 @@ Community plugins are always installed manually by the user. The installer conta
 - **Out-of-the-box plugin path** — the installer keeps community plugins out of the bundle. Install the market manually from Settings → Desktop settings → Plugin market; the panel reports each install phase, the actual installed version, and a retryable, sanitized cause when the registry, proxy, profile, or install script fails.
 - **Recovers from a broken plugin** — when startup fails on an incompatible community plugin, the error page lists each suspect with one-click **Update** (pull the latest version) or **Disable** (remove it from the boot list; files stay and it is reversible from Settings → Plugins), plus Update-all-and-restart. Safe Mode (the error page, Desktop tools, or Desktop settings) remains the fallback: third-party plugins are quarantined while official and built-in extensions keep running, and the diagnostic report names the suspected failing plugin. Official bundles are never touchable from these actions.
 - **Portable agent presets** — Settings → Desktop settings exports a preset as one `.dshpreset` file and imports it elsewhere with conflict checks (skip / replace / clone) and a trust warning.
-- **Constrained renderer** — sandbox and context isolation stay on, Node integration stays off, and camera/location/Web notifications/filesystem are denied by default (decision 0014). Optional desktop notices use only public Harness status and never read the screen; clicking a notice focuses the app.
-- **Updates** — Windows updates in place; unsigned macOS checks for releases and opens the exact release page (decisions 0010, 0016).
+- **Constrained renderer** — sandbox and context isolation stay on, Node integration stays off, and camera/location/Web notifications/filesystem are denied by default. Optional desktop notices use only public Harness status and never read the screen; clicking a notice focuses the app.
+- **Updates** — Windows updates in place; unsigned macOS checks for releases and opens the exact release page.
 
 ## Download
 
@@ -68,7 +68,7 @@ Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the
 
 ## Versioning
 
-Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.2-rc.1.shell.2` bundles `@deepseek-ai/dsh` 0.1.2-rc.1 at shell revision 2. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically (decision 0009).
+Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.2-rc.1.shell.2` bundles `@deepseek-ai/dsh` 0.1.2-rc.1 at shell revision 2. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically.
 
 ## Development
 
