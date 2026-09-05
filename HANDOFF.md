@@ -1281,3 +1281,12 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1
 ---
 
 _更新于 2026-09-05_
+
+## 四十四、v0.1.2-rc.1.shell.6 发布：扫码配对修复与自动隔离（2026-09-05）
+
+1. **内核不变**：`0.1.2-rc.1`，壳修订 +6（`bump shell`）；随包 dsh-mobile-shell 升至 **1.0.1**（代理用 `DSH_UPSTREAM_TOKEN` 换取内核签名 cookie，修复手机扫码配对后 401）。
+2. **发布**：tag `v0.1.2-rc.1.shell.6` → `cc37cef`。首次 CI 运行（33969921079）被取消：verify 卡死 50 分钟——根因是新增 lan-proxy-auth 单测在 CI 依赖未物化的 `resources/mobile-shell` 且失败路径不杀子进程（`node --test` 挂死）；修复路径解析 + 失败即杀 + 无产物跳过后重跑（33971562254）verify/build/publish 全绿，8 文件契约齐全。工作流对 dsh-mobile-shell 的 checkout 钉版由 v1.0.0 升至 v1.0.1。
+3. **GitCode 镜像**：本机 SOCKS 直传 dmg/exe/deb + 3×sha256（首次全部上传成功），Range GET 6×206；site-refresh 机器人同步的 release.json 已带 `gitcode_ok=true`×6，未需本地重生成。
+4. **同批落地（cc37cef，未随 shell.6 发布，进 shell.7）**：
+   - 官网/README 用户视角文案重构：移除决策编号、"发布线收口/第二套产品"、每日工作流 PR 等内部叙述；首页静态兜底文案与 I18N 字典同步；zh/en 镜像对齐；app.js/data-model 缓存版本升至 v=43。
+   - **插件自动隔离**：插件崩溃的 suspects 现在会被自动从启动列表摘除并重启一次（可逆，恢复横幅持续可见，升级即重新启用）——修复"安全模式只提示不解决"。实测来源：用户机器 dshmarket 1.36.0 / dsh-better-sidebar 0.17.1 与 rc.1 内核不兼容（`dsh-settings` 导出被移除），且持久化的 safe-mode.patch.yml 为空 `[]` 导致隔离未生效；写入正确 overlay 后内核干净启动。
