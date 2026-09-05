@@ -57,6 +57,17 @@ function installWindowDragRegion(): void {
       }
     `
     document.head.append(safeInset)
+  } else {
+    // The native min/max/close overlay owns the top-right strip on Windows/Linux;
+    // the kernel's session-header export capsule renders underneath it. The class
+    // hash prefix changes per kernel release, so match the stable suffix only.
+    // /export keeps the same download path when the capsule is hidden.
+    const overlapGuard = document.createElement('style')
+    overlapGuard.dataset.dshWindowControlsOverlapGuard = ''
+    overlapGuard.textContent = `
+      button[class*="sessionLogButton"] { display: none !important; }
+    `
+    document.head.append(overlapGuard)
   }
 }
 
