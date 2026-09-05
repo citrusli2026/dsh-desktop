@@ -7,6 +7,9 @@ on:
 
 permissions:
   contents: write
+  # Dispatching gitcode-backfill.yml from the publish job needs actions:write
+  # (workflow_dispatch via GITHUB_TOKEN is otherwise HTTP 403).
+  actions: write
   # Build provenance: OIDC + attestations let actions/attest@v4 sign the
   # installers with GitHub's key; users can then verify them with
   # `gh attestation verify <file> -R citrusli2026/dsh-desktop`.
