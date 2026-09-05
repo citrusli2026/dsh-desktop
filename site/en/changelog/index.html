@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.5 <small>（kernel 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li>Release-chain self-healing: release.yml and gitcode-backfill failures now open (or append to) a GitHub issue automatically, and a failed Release run no longer skips the site data sync.</li>
+    <li>The error page gains &quot;Open a GitHub issue&quot;, prefilling sanitized context (version/platform/kernel/Safe Mode/suspects/cause) — never log text or paths; the diagnostic file is attached by the user only.</li>
+    <li>Plugin Update now resolves &quot;current&quot; when the install was a no-op and the error page says the plugin is already the newest obtainable version, instead of implying failure.</li>
+  </ul>
+
   <h2>v0.1.2-rc.1.shell.4 <small>（kernel 0.1.2-rc.1）</small></h2>
   <ul>
     <li>Fixed real-world failure signatures: the detector now matches the <code>failed to import loader entry</code> variant (the one actual kernel-API cliffs emit) and the missing-bundle <code>cannot resolve profile bundle</code> error, so the error page finally lists suspects in real crashes; a failed first boot now carries the harness's own output tail instead of a one-line summary.</li>
@@ -96,14 +103,6 @@
     <li>Network, proxy, timeout, profile, install-script, and bundled-tool failures are distinguished. Bounded stdout/stderr detail is sanitized before it can be viewed, copied, or written to local diagnostics; failed attempts remain retryable and are never shown as installed.</li>
     <li>New packaged E2E covers deterministic offline failure and a real market install under Chinese/dark/minimum-width and Unicode-path conditions.</li>
     <li>Every release platform verifies the previous installer checksum and preserves user-owned Harness and shell state across an upgrade. macOS/Linux use in-place replacement; Windows silently removes the old application binaries before installing the new version to the same target because electron-builder's assisted NSIS silent-overwrite path can stall. Clean CI runs skip dedicated market specs before fixture setup, while their packaged gates still run separately. Bundled/CI pnpm is patched to <code>11.11.0</code>.</li>
-  </ul>
-
-  <h2>v0.1.2-alpha.4.shell.1 <small>（kernel 0.1.2-alpha.4）</small></h2>
-  <ul>
-    <li>Manual dsh-market installation now reports prepare, download, verification, and restart phases, preserves the result across the Harness reload, and shows the actual installed profile version.</li>
-    <li>Network, proxy, timeout, profile, install-script, and bundled-tool failures are distinguished. Bounded stdout/stderr detail is sanitized before it can be viewed, copied, or written to local diagnostics; failed attempts remain retryable and are never shown as installed.</li>
-    <li>New packaged E2E covers deterministic offline failure and a real market install under Chinese/dark/minimum-width and Unicode-path conditions.</li>
-    <li>Every release platform now verifies the previous installer checksum and performs a cross-version upgrade while preserving user-owned Harness and shell state. Clean CI runs skip the dedicated market specs before fixture setup; their packaged gates still run separately. The bundled kernel is pinned to <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>, and bundled/CI pnpm is upgraded to patched <code>11.11.0</code>.</li>
   </ul>
   <!-- changelog:auto:end -->
 

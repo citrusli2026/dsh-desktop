@@ -42,6 +42,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.5 <small>（内核 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li><strong>发布链路自愈</strong>：release 或 GitCode 镜像任何一环失败都会自动开 issue（按标题去重，重复失败追加评论），不再出现“官网悄悄停在旧版本、没人知道”。Release 失败后官网数据同步也会照常兜底执行。</li>
+    <li><strong>一键提交问题</strong>：错误页新增「到 GitHub 提交问题」——自动预填版本、平台、内核、安全模式、疑似插件与失败原因，全部脱敏，不含日志原文或路径；诊断报告由你自己导出并拖进 issue，应用不会自动上传任何文件。</li>
+    <li><strong>升级结果语义修正</strong>：插件已是最新可获得版本时，错误页显示「已是当前可获得的最新版本,正在重启…」，不再让人误以为升级失败（registry 元数据可能滞后于刚发布的 dist-tag）。</li>
+    <li><strong>边界说明</strong>：支持入口只在壳自有错误页出现；预填内容不包含密钥、日志或用户路径。</li>
+  </ul>
+
   <h2>v0.1.2-rc.1.shell.4 <small>（内核 0.1.2-rc.1）</small></h2>
   <ul>
     <li><strong>真实世界的失败签名修复</strong>：此前失败检测只匹配 <code>failed to apply loader entry</code>，而真实内核断崖（如 0.1.2-rc.1 移除 <code>installSettingsSection</code>）在日志中是 <code>failed to import loader entry</code>——错误页在真实场景下列不出嫌疑插件。现在同时匹配 import 变体与缺失包的 <code>cannot resolve profile bundle</code> 签名，本机实测你遇到的那种崩溃终于能在恢复中心逐个列出插件。</li>
@@ -101,16 +109,6 @@
     <li>可行动的失败原因：区分网络、代理、超时、数据目录、安装脚本和随包工具故障；dsh/pnpm 的 stdout 与 stderr 会合并、限长并脱敏，可在设置页查看/复制，也会写入本地诊断报告。失败不会被误标为已安装，修复环境后可直接重试。</li>
     <li>真实环境回归：新增无网络/无缓存的确定性安装失败 E2E，以及中文、暗色、960×640、中文与空格路径下的真实 dshmarket 安装、重启、版本与布局检查。</li>
     <li>跨版本升级：Release 三平台在发布前下载并校验上一公开版本；macOS/Linux 完成原位覆盖，Windows 完成旧程序静默卸载后向同一位置安装新版。三者都必须证明同一用户 Profile 中的设置、壳偏好、标记和插件文件逐项保持不变，Safe Mode 仍能隔离坏插件并启动。</li>
-    <li>发布门禁隔离：常规 Electron E2E 在没有 <code>dist</code> 的干净 CI 环境中会在 fixture 启动前跳过专用市场用例；离线和真实安装仍由各自的打包态门禁执行，避免本地旧产物掩盖配置错误。</li>
-    <li>内核与边界：锁定 <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>；随包与 CI pnpm 升级至修复 GHSA-vx52-2968-3vc6 的 <code>11.11.0</code>。社区插件仍不进入安装包，不会首次启动静默安装，真实市场安装仍由用户确认。</li>
-  </ul>
-
-  <h2>v0.1.2-alpha.4.shell.1 <small>（内核 0.1.2-alpha.4）</small></h2>
-  <ul>
-    <li>插件安装反馈：手动安装 dsh-market 现在明确展示准备、下载、验证与重启阶段；完成后显示 profile 中的实际安装版本，Harness 重载后仍保留本次结果。</li>
-    <li>可行动的失败原因：区分网络、代理、超时、数据目录、安装脚本和随包工具故障；dsh/pnpm 的 stdout 与 stderr 会合并、限长并脱敏，可在设置页查看/复制，也会写入本地诊断报告。失败不会被误标为已安装，修复环境后可直接重试。</li>
-    <li>真实环境回归：新增无网络/无缓存的确定性安装失败 E2E，以及中文、暗色、960×640、中文与空格路径下的真实 dshmarket 安装、重启、版本与布局检查。</li>
-    <li>跨版本升级：Release 三平台在发布前下载并校验上一公开版本，完成 dmg、NSIS、deb 覆盖升级；同一用户 profile 中的设置、壳偏好、标记和插件文件必须逐项保持不变，Safe Mode 仍需能隔离坏插件并启动。</li>
     <li>发布门禁隔离：常规 Electron E2E 在没有 <code>dist</code> 的干净 CI 环境中会在 fixture 启动前跳过专用市场用例；离线和真实安装仍由各自的打包态门禁执行，避免本地旧产物掩盖配置错误。</li>
     <li>内核与边界：锁定 <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>；随包与 CI pnpm 升级至修复 GHSA-vx52-2968-3vc6 的 <code>11.11.0</code>。社区插件仍不进入安装包，不会首次启动静默安装，真实市场安装仍由用户确认。</li>
   </ul>
