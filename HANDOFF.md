@@ -9,12 +9,12 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.2-rc.1.shell.3`（2026-09-05 已发布；内核 `0.1.2-rc.1`） |
-| 已发布 | ✅ `0.1.2-rc.1.shell.3`（2026-09-05，三端 dmg/exe/deb；错误页插件一键恢复） |
+| 最新代码基线 | ✅ `0.1.2-rc.1.shell.4`（2026-09-05 已发布；内核 `0.1.2-rc.1`） |
+| 已发布 | ✅ `0.1.2-rc.1.shell.4`（2026-09-05，三端 dmg/exe/deb；真实失败签名修复 + 发布自动化） |
 | 本地门禁 | ✅ 197 项单测、类型检查、runtime/site 门禁、构建全绿；dev/packaged/real Harness/Safe Mode/offline + real market/macOS cross-version upgrade E2E 通过 |
-| 核心发布 | ✅ `v0.1.2-rc.1.shell.3` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复、插件恢复全链路与安装态验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.3`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.2-rc.1.shell.3` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `f29517a`） |
+| 核心发布 | ✅ `v0.1.2-rc.1.shell.4` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复、插件恢复与真实 registry 升级全链路验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.4`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.2-rc.1.shell.4` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `ed3cef5`） |
 | 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；核验时累计 670（mac 164 / win 385 / linux 121） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -1187,8 +1187,6 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1
 
 ---
 
-_更新于 2026-09-04_
-
 ## 四十一、v0.1.2-rc.1.shell.3 发布：错误页插件一键恢复（2026-09-05）
 
 1. **插件恢复功能**：启动因不兼容社区插件失败时，错误页按包列出可疑插件，
@@ -1214,6 +1212,43 @@ _更新于 2026-09-04_
 
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.3>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.3>；
+官网：<https://dsh-desktop.com>。
+
+---
+
+_更新于 2026-09-05_
+
+## 四十二、v0.1.2-rc.1.shell.4 发布：真实失败签名与发布自动化（2026-09-05）
+
+1. **失败签名修复（真 bug）**：旧检测只匹配 `failed to apply loader entry`，
+   而真实内核断崖（0.1.2-rc.1 移除 `installSettingsSection`）输出的是
+   `failed to import loader entry`——错误页在真实场景下列不出嫌疑插件。
+   现在同时匹配 import 变体与缺失包的 `cannot resolve profile bundle` 签名；
+   首次启动失败也携带 harness 完整输出（原来只有一行 supervisor 摘要）。
+2. **内核断崖提示**：错误页按日志证据分类失败原因，识别为插件引用内核已移除
+   导出时给出针对性文案；诊断报告新增 `failure_cause` 与动作建议。
+3. **真实回归**：新增打包级 E2E——预置坏 dshmarket → 崩溃 → 错误页「升级」→
+   真实 npm 安装 → harness 携新插件启动。实测发现 `@latest` 可能因 registry
+   元数据时滞落后 dist-tag（发布当天 1.42.0 装到 1.41.0），断言放宽为
+   「真实已发布版本」。发布门禁新增本机 LAN QR 用例（CI 跳过，runbook 已固化）。
+4. **发布自动化**：`dsh-release.yml` 在 dsh-bump PR 合并后自动写说明、打 tag、
+   触发完整发布；publish 成功后自动派发 gitcode-backfill；官网 changelog 由
+   `gen-site-changelog.mjs` 从发布说明生成（site-refresh 自动同步）。
+5. **发布实战记录**：tag `v0.1.2-rc.1.shell.4` → `ed3cef5`；Release run
+   `33939762105` verify + 三平台 build + publish 成功，publish 尾部派发镜像被
+   403 拒绝（GITHUB_TOKEN 缺 `actions:write`，`07f61e8` 修复）。GitCode exe
+   两轮 CI 上传均未完成（海外 runner → OBS 已知慢点，第二轮 120 分钟预算耗尽），
+   改走本机 SOCKS 下载（20 分钟 curl 限额超时后改无限额续传）+ 本地文件上传，
+   SHA-256 核对通过后上传成功；Range GET 6/6 资产 302。
+6. **网站数据**：release 事件未触发 site-refresh（Release run 因 403 判失败，
+   workflow_run 门控跳过；GITHUB_TOKEN 发布不触发 release 事件），本地
+   `gen-site-data.mjs` 重新生成并提交 `cee2f48`——直连 GitHub 抖动期间给
+   `gen-site-data.mjs` 增加 `GH_SOCKS5` 出口（curl 子进程，与镜像脚本同一旋钮）。
+   线上 `/data/release.json` 指向 shell.4、6/6 `gitcode_ok=true`；changelog 页
+   已含 shell.4；`/api/downloads` 核验时累计 734。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.4>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.4>；
 官网：<https://dsh-desktop.com>。
 
 ---
