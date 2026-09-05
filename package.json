@@ -33,7 +33,7 @@
     "smoke:packaged": "node scripts/smoke-packaged.mjs",
     "smoke:packaged-ui": "DSH_SMOKE_UI=1 node scripts/smoke-packaged.mjs",
     "verify:full": "pnpm run verify && pnpm run test:e2e && pnpm run dist:dir && pnpm run smoke:packaged && pnpm run smoke:packaged-ui && pnpm run test:e2e:market:offline",
-    "site:check": "node --check site/assets/app.js && node scripts/check-site.mjs && node scripts/check-api-downloads.mjs",
+    "site:check": "node --check site/assets/app.js && node --check site/assets/star-prompt.js && node scripts/check-site.mjs && node scripts/check-api-downloads.mjs",
     "runtime:check": "node scripts/check-runtime-boundary.mjs",
     "verify": "pnpm run typecheck && pnpm run runtime:check && pnpm run test:coverage && pnpm run site:check && pnpm run build",
     "security:audit": "pnpm --registry=https://registry.npmjs.org audit && pnpm --dir manifest/harness --registry=https://registry.npmjs.org audit --prod",
