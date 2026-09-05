@@ -42,6 +42,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.7 <small>（内核 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li><strong>桌面垃圾桶</strong>：删除的会话、预设和插件都先进垃圾桶，不再一去不返。在 Harness「设置 → 垃圾桶」中查看、按原位置还原（同名冲突自动落副本）、或彻底清除；保留 30 天，过期自动清理。</li>
+    <li><strong>Agent 删除有兜底</strong>：Agent 执行的 <code>rm</code> 类删除命令会被桌面版拦截，目标先移入垃圾桶再放行；解析不了或越出工作区、触及 <code>node_modules</code>/<code>.git</code> 的可疑删除直接拦截并说明原因。可在「设置 → 桌面设置」关闭该开关。</li>
+    <li><strong>插件失败自动隔离</strong>：插件导致启动失败时，桌面版自动把问题插件移出启动列表并重启，应用先跑起来；被隔离的插件在恢复横幅中持续可见，升级即自动重新启用。</li>
+    <li><strong>边界说明</strong>：垃圾桶只覆盖桌面版自有资源与被拦截的 Agent 删除；壳外手动删除、系统其它操作不在覆盖范围。隔离与入桶都不删除原始文件，随时可逆。</li>
+  </ul>
+
   <h2>v0.1.2-rc.1.shell.6 <small>（内核 0.1.2-rc.1）</small></h2>
   <ul>
     <li><strong>修复扫码配对后手机提示需要重新认证</strong>：内核 0.1.2-alpha.2 起，<code>dsh web</code> 首页只在携带单次启动令牌或签名 cookie 时提供，配对成功后手机加载界面会收到内核的 401（&quot;dsh web authentication required&quot;）。桌面版现在把就绪 URL 中的启动令牌交给配对代理（dsh-mobile-shell 1.0.1），由代理换取签名会话 cookie 并附在转发请求上；内核重启时代理随之自动重启轮换令牌。手机端仍然只对桌面版代理认证，不接触内核令牌。</li>
@@ -98,16 +106,6 @@
     <li>上游同步恢复：修复每日 dsh-watch 缺少 <code>dsh-mobile-shell</code> Web artifact 导致的假失败；后续失败 Issue 只链接真实运行和首个失败步骤，不再默认归因为依赖年龄或上游不兼容。</li>
     <li>依赖安全下限：锁定 <code>fast-uri</code>、<code>qs</code> 与 <code>@xmldom/xmldom</code> 的安全版本并重新生成两套锁文件；根依赖与 Harness 生产闭包的官方 npm 安全审计均为零已知漏洞。</li>
     <li>边界不变：社区插件仍不进入安装包、不静默安装；dsh-market 继续由用户主动确认安装，Safe Mode 和本地脱敏诊断不改写用户数据。</li>
-  </ul>
-
-  <h2>v0.1.2-alpha.4.shell.3 <small>（内核 0.1.2-alpha.4）</small></h2>
-  <ul>
-    <li>插件安装反馈：手动安装 dsh-market 现在明确展示准备、下载、验证与重启阶段；完成后显示 profile 中的实际安装版本，Harness 重载后仍保留本次结果。</li>
-    <li>可行动的失败原因：区分网络、代理、超时、数据目录、安装脚本和随包工具故障；dsh/pnpm 的 stdout 与 stderr 会合并、限长并脱敏，可在设置页查看/复制，也会写入本地诊断报告。失败不会被误标为已安装，修复环境后可直接重试。</li>
-    <li>真实环境回归：新增无网络/无缓存的确定性安装失败 E2E，以及中文、暗色、960×640、中文与空格路径下的真实 dshmarket 安装、重启、版本与布局检查；E2E 日志使用各系统原生临时目录。</li>
-    <li>跨版本升级：Release 三平台在发布前下载并校验上一公开版本；macOS/Linux 完成原位覆盖，Windows 完成旧程序静默卸载后向同一位置安装新版。三者都必须证明同一用户 Profile 中的设置、壳偏好、标记和插件文件逐项保持不变，Safe Mode 仍能隔离坏插件并启动。</li>
-    <li>发布门禁隔离：常规 Electron E2E 在没有 <code>dist</code> 的干净 CI 环境中会在 fixture 启动前跳过专用市场用例；离线和真实安装仍由各自的打包态门禁执行，避免本地旧产物掩盖配置错误。</li>
-    <li>内核与边界：锁定 <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>；随包与 CI pnpm 升级至修复 GHSA-vx52-2968-3vc6 的 <code>11.11.0</code>。社区插件仍不进入安装包，不会首次启动静默安装，真实市场安装仍由用户确认。</li>
   </ul>
   <!-- changelog:auto:end -->
 

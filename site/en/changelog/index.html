@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.7 <small>（kernel 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li>Desktop trash: deleted sessions, presets, and plugins stay recoverable from Settings → Trash with a 30-day retention window; restore falls back to numbered copies so newer data is never overwritten.</li>
+    <li>Agent deletion interception: rm-style commands from the agent move targets into the trash before proceeding; ambiguous or out-of-scope deletions are blocked with an explanation (toggle in Desktop settings).</li>
+    <li>Plugin crashes now auto-quarantine the suspect from the boot list and restart, so the app comes back up; quarantined plugins stay visible in the recovery banner until updated.</li>
+  </ul>
+
   <h2>v0.1.2-rc.1.shell.6 <small>（kernel 0.1.2-rc.1）</small></h2>
   <ul>
     <li>Fixed &quot;dsh web authentication required&quot; on phones after LAN pairing: the shell now hands the ready-URL launch token to the pairing proxy (dsh-mobile-shell 1.0.1), which exchanges it for the kernel's signed session cookie and presents it on forwarded requests; the proxy restarts with the token on kernel restarts.</li>
@@ -93,14 +100,6 @@
     <li>Fixed the daily kernel watcher by packaging the pinned mobile-shell Web artifact before smoke validation, and removed speculative root-cause language from future failure issues.</li>
     <li>Raised vulnerable transitive dependencies to explicit security floors; both the root tree and production Harness closure pass the official npm advisory audit with no known vulnerabilities.</li>
     <li>Local gates cover 193 unit tests, Electron E2E, real Harness rendering, real/offline dsh-market paths, Safe Mode recovery, and a macOS upgrade that preserves seven user-owned files. Community plugins remain explicit opt-in installs.</li>
-  </ul>
-
-  <h2>v0.1.2-alpha.4.shell.3 <small>（kernel 0.1.2-alpha.4）</small></h2>
-  <ul>
-    <li>Manual dsh-market installation reports prepare, download, verification, and restart phases, preserves the result across the Harness reload, and shows the actual installed profile version.</li>
-    <li>Actionable failure categories and sanitized diagnostics keep failed installs explainable and retryable. Packaged E2E covers deterministic offline failure and a real install under Chinese/dark/minimum-width and Unicode-path conditions; its log uses the host OS temporary directory.</li>
-    <li>Every release platform verifies the previous installer checksum and preserves user-owned Harness and shell state across an upgrade. macOS/Linux use in-place replacement; Windows silently removes old application binaries before installing the new version to the same target because electron-builder's assisted NSIS silent-overwrite path can stall.</li>
-    <li>Clean CI runs skip dedicated market specs before fixture setup, while their packaged gates still run separately. Bundled/CI pnpm is patched to <code>11.11.0</code>.</li>
   </ul>
   <!-- changelog:auto:end -->
 
