@@ -6,7 +6,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -36,7 +36,10 @@ test('listSessions reports every on-disk session with its archive flag', async (
   try {
     await makeSession(home, '--Users-me-project--', 'abc')
     await makeSession(home, '--Users-me-project--', 'def')
-    await makeSession(home, 'other-key', 'ghi')
+    const ghiDir = await makeSession(home, 'other-key', 'ghi')
+    // Filesystem mtime resolution varies (ext4 ties are real): pin the order
+    // the sort is supposed to produce.
+    await utimes(ghiDir, Date.now() + 60_000, Date.now() + 60_000)
     await writeWorkspace(home, ['def'])
 
     const sessions = await listSessions(home)
