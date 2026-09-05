@@ -42,6 +42,12 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.6 <small>（kernel 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li>Fixed &quot;dsh web authentication required&quot; on phones after LAN pairing: the shell now hands the ready-URL launch token to the pairing proxy (dsh-mobile-shell 1.0.1), which exchanges it for the kernel's signed session cookie and presents it on forwarded requests; the proxy restarts with the token on kernel restarts.</li>
+    <li>Fixed the session-log export capsule overlapping the native min/max/close controls on Windows/Linux: the capsule is hidden there and the same export remains available via the /export command.</li>
+  </ul>
+
   <h2>v0.1.2-rc.1.shell.5 <small>（kernel 0.1.2-rc.1）</small></h2>
   <ul>
     <li>Release-chain self-healing: release.yml and gitcode-backfill failures now open (or append to) a GitHub issue automatically, and a failed Release run no longer skips the site data sync.</li>
@@ -95,14 +101,6 @@
     <li>Actionable failure categories and sanitized diagnostics keep failed installs explainable and retryable. Packaged E2E covers deterministic offline failure and a real install under Chinese/dark/minimum-width and Unicode-path conditions; its log uses the host OS temporary directory.</li>
     <li>Every release platform verifies the previous installer checksum and preserves user-owned Harness and shell state across an upgrade. macOS/Linux use in-place replacement; Windows silently removes old application binaries before installing the new version to the same target because electron-builder's assisted NSIS silent-overwrite path can stall.</li>
     <li>Clean CI runs skip dedicated market specs before fixture setup, while their packaged gates still run separately. Bundled/CI pnpm is patched to <code>11.11.0</code>.</li>
-  </ul>
-
-  <h2>v0.1.2-alpha.4.shell.2 <small>（kernel 0.1.2-alpha.4）</small></h2>
-  <ul>
-    <li>Manual dsh-market installation now reports prepare, download, verification, and restart phases, preserves the result across the Harness reload, and shows the actual installed profile version.</li>
-    <li>Network, proxy, timeout, profile, install-script, and bundled-tool failures are distinguished. Bounded stdout/stderr detail is sanitized before it can be viewed, copied, or written to local diagnostics; failed attempts remain retryable and are never shown as installed.</li>
-    <li>New packaged E2E covers deterministic offline failure and a real market install under Chinese/dark/minimum-width and Unicode-path conditions.</li>
-    <li>Every release platform verifies the previous installer checksum and preserves user-owned Harness and shell state across an upgrade. macOS/Linux use in-place replacement; Windows silently removes the old application binaries before installing the new version to the same target because electron-builder's assisted NSIS silent-overwrite path can stall. Clean CI runs skip dedicated market specs before fixture setup, while their packaged gates still run separately. Bundled/CI pnpm is patched to <code>11.11.0</code>.</li>
   </ul>
   <!-- changelog:auto:end -->
 
