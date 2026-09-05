@@ -42,6 +42,14 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.4 <small>（kernel 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li>Fixed real-world failure signatures: the detector now matches the <code>failed to import loader entry</code> variant (the one actual kernel-API cliffs emit) and the missing-bundle <code>cannot resolve profile bundle</code> error, so the error page finally lists suspects in real crashes; a failed first boot now carries the harness's own output tail instead of a one-line summary.</li>
+    <li>Kernel-cliff classification: the error page explains the missing-export cause and points at one-click Update; diagnostics reports <code>failure_cause</code>.</li>
+    <li>New packaged E2E proves the full recovery loop against the real registry (damaged plugin → error page Update → real install → harness boots).</li>
+    <li>Release automation: merging a dsh-bump PR now writes release notes, tags, and triggers the full gated pipeline, then dispatches the GitCode mirror; the site changelog is generated from release notes.</li>
+  </ul>
+
   <h2>v0.1.2-rc.1.shell.3 <small>（kernel 0.1.2-rc.1）</small></h2>
   <ul>
     <li>Error-page plugin recovery: when startup fails on incompatible community plugins, the recovery center lists each suspect with Update, Disable, and Update-all-and-restart actions; updates pull the latest npm version via the existing <code>dsh plugin add</code> path, disable only removes the boot bundle entry (files kept, reversible from Settings → Plugins), and official bundles are always refused.</li>
@@ -96,14 +104,6 @@
     <li>Network, proxy, timeout, profile, install-script, and bundled-tool failures are distinguished. Bounded stdout/stderr detail is sanitized before it can be viewed, copied, or written to local diagnostics; failed attempts remain retryable and are never shown as installed.</li>
     <li>New packaged E2E covers deterministic offline failure and a real market install under Chinese/dark/minimum-width and Unicode-path conditions.</li>
     <li>Every release platform now verifies the previous installer checksum and performs a cross-version upgrade while preserving user-owned Harness and shell state. Clean CI runs skip the dedicated market specs before fixture setup; their packaged gates still run separately. The bundled kernel is pinned to <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>, and bundled/CI pnpm is upgraded to patched <code>11.11.0</code>.</li>
-  </ul>
-
-  <h2>v0.1.2-alpha.4.shell.0 <small>（kernel 0.1.2-alpha.4）</small></h2>
-  <ul>
-    <li>Manual dsh-market installation now reports prepare, download, verification, and restart phases, preserves the result across the Harness reload, and shows the actual installed profile version.</li>
-    <li>Network, proxy, timeout, profile, install-script, and bundled-tool failures are distinguished. Bounded stdout/stderr detail is sanitized before it can be viewed, copied, or written to local diagnostics; failed attempts remain retryable and are never shown as installed.</li>
-    <li>New packaged E2E covers deterministic offline failure and a real market install under Chinese/dark/minimum-width and Unicode-path conditions.</li>
-    <li>Every release platform now verifies the previous installer checksum and performs a cross-version upgrade while preserving user-owned Harness and shell state. The bundled kernel is pinned to <code>@deepseek-ai/dsh</code> <code>0.1.2-alpha.4</code>, and bundled/CI pnpm is upgraded to patched <code>11.11.0</code>; community plugins remain manual-only and outside the installer.</li>
   </ul>
   <!-- changelog:auto:end -->
 

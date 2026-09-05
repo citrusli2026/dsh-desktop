@@ -10,6 +10,7 @@
 // If nothing meaningful changed since the last run, the existing file (and its
 // generated_at timestamp) is left untouched so `git diff` stays empty.
 
+import { execFileSync } from 'node:child_process'
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -27,15 +28,28 @@ const GITCODE_BASE = `https://gitcode.com/${GITCODE_REPO}/releases/download`
 
 const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || ''
 
+// GitHub connectivity from a domestic machine is unreliable and may be
+// route-dependent; when GH_SOCKS5 is set (same knob as mirror-gitcode.mjs),
+// route fetches through the local SOCKS proxy via curl instead of fetch().
+const SOCKS = process.env.GH_SOCKS5
+
+function curlText(url, headers) {
+  const args = ['-sfSL', '--max-time', '60']
+  if (SOCKS) args.push('-x', `socks5h://${SOCKS}`)
+  for (const [name, value] of Object.entries(headers)) args.push('-H', `${name}: ${value}`)
+  args.push(url)
+  return execFileSync('curl', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+}
+
 async function api(url) {
-  const res = await fetch(url, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'User-Agent': 'dsh-desktop-site-generator',
-    },
-  })
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    'User-Agent': 'dsh-desktop-site-generator',
+  }
+  if (SOCKS !== undefined) return JSON.parse(curlText(url, headers))
+  const res = await fetch(url, { headers })
   if (!res.ok) {
     throw new Error(`GitHub API ${res.status} for ${url}: ${await res.text()}`)
   }
@@ -43,14 +57,18 @@ async function api(url) {
 }
 
 async function readChecksum(asset) {
-  const response = await fetch(asset.browser_download_url, {
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'User-Agent': 'dsh-desktop-site-generator',
-    },
-  })
-  if (!response.ok) throw new Error(`checksum download ${response.status} for ${asset.name}`)
-  const match = SHA256_LINE.exec(await response.text())
+  const headers = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    'User-Agent': 'dsh-desktop-site-generator',
+  }
+  const text = SOCKS !== undefined
+    ? curlText(asset.browser_download_url, headers)
+    : await (async () => {
+        const response = await fetch(asset.browser_download_url, { headers })
+        if (!response.ok) throw new Error(`checksum download ${response.status} for ${asset.name}`)
+        return response.text()
+      })()
+  const match = SHA256_LINE.exec(text)
   if (match === null || `${match[2]}.sha256` !== asset.name) throw new Error(`invalid checksum asset ${asset.name}`)
   return match[1]
 }
