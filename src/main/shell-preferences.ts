@@ -17,6 +17,7 @@ export interface DesktopPreferences {
   safeMode: boolean
   /** Screen capture model tool (decision 0027): opt-in, default off. */
   screenCapture: boolean
+  agentDeletionInterception: boolean
   /** Lightweight first-success guide: independently dismissible. */
   firstRunGuideDismissed: boolean
   /** Set by the main process after an existing or newly completed conversation. */
@@ -31,6 +32,7 @@ interface ShellPreferences {
   notificationsEnabled?: boolean
   safeMode?: boolean
   screenCapture?: boolean
+  agentDeletionInterception?: boolean
   firstRunGuideDismissed?: boolean
   firstTaskCompleted?: boolean
 }
@@ -49,6 +51,7 @@ export const DEFAULT_DESKTOP_PREFERENCES: DesktopPreferences = {
   notificationsEnabled: true,
   safeMode: false,
   screenCapture: false,
+  agentDeletionInterception: true,
   firstRunGuideDismissed: false,
   firstTaskCompleted: false,
 }
@@ -61,6 +64,7 @@ function desktopPreferencesOf(raw: ShellPreferences): DesktopPreferences {
     notificationsEnabled: raw.notificationsEnabled !== false,
     safeMode: raw.safeMode === true,
     screenCapture: raw.screenCapture === true,
+    agentDeletionInterception: raw.agentDeletionInterception !== false,
     firstRunGuideDismissed: raw.firstRunGuideDismissed === true,
     firstTaskCompleted: raw.firstTaskCompleted === true,
   }
@@ -95,6 +99,7 @@ export function createShellPreferences(path: string): ShellPreferencesStore {
           notificationsEnabled: next.notificationsEnabled,
           safeMode: next.safeMode,
           screenCapture: next.screenCapture,
+          agentDeletionInterception: next.agentDeletionInterception,
           firstRunGuideDismissed: next.firstRunGuideDismissed,
           firstTaskCompleted: next.firstTaskCompleted,
         }

@@ -64,6 +64,7 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       notificationsEnabled: true,
       safeMode: false,
       screenCapture: false,
+      agentDeletionInterception: true,
       firstRunGuideDismissed: false,
       firstTaskCompleted: false,
     })
@@ -75,6 +76,7 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       notificationsEnabled: false,
       safeMode: false,
       screenCapture: false,
+      agentDeletionInterception: true,
       firstRunGuideDismissed: false,
       firstTaskCompleted: false,
     })

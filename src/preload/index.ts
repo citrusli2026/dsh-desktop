@@ -14,6 +14,23 @@ import type { KernelOperationResult } from '../main/kernel-manager.ts'
 import type { MarketInstallProgress, MarketInstallResult } from '../main/market-install.ts'
 import type { DesktopHealthReport } from '../main/health-check.ts'
 
+export interface DesktopTrashSession {
+  projectKey: string
+  sessionId: string
+  dirPath: string
+  archived: boolean
+  modifiedAt: number
+}
+
+export interface DesktopTrashEntry {
+  id: string
+  kind: 'preset' | 'plugin' | 'kernel' | 'session' | 'file'
+  name: string
+  originPath: string
+  deletedAt: number
+  source?: string
+}
+
 export interface DesktopStartupStatus {
   appVersion: string
   dshHome: string
@@ -148,4 +165,26 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   disablePlugin: (name: string): Promise<boolean> => ipcRenderer.invoke('desktop:plugin:disable', name),
   /** Open a prefilled, sanitized GitHub issue from the built-in error page. */
   openSupportIssue: (): Promise<boolean> => ipcRenderer.invoke('shell:open-support-issue'),
+  /** List the desktop trash, newest first. */
+  listTrash: (): Promise<DesktopTrashEntry[] | null> => ipcRenderer.invoke('desktop:trash:list'),
+  /** Restore one trash entry to its origin (numbered sibling on conflict). */
+  restoreTrash: (id: string): Promise<DesktopTrashEntry | null> => ipcRenderer.invoke('desktop:trash:restore', id),
+  /** Purge one trash entry permanently. */
+  purgeTrash: (id: string): Promise<boolean> => ipcRenderer.invoke('desktop:trash:purge', id),
+  /** Purge every entry past the retention window; resolves to the count. */
+  purgeExpiredTrash: (): Promise<number | null> => ipcRenderer.invoke('desktop:trash:purge-expired'),
+  /** Delete one user preset into the desktop trash (restore moves it back). */
+  deletePreset: (id: string): Promise<boolean> => ipcRenderer.invoke('desktop:presets:delete', id),
+  /** List on-disk sessions with their archive flag, newest first. */
+  listTrashSessions: (): Promise<DesktopTrashSession[] | null> => ipcRenderer.invoke('desktop:trash:sessions'),
+  /**
+   * Delete one session into the desktop trash. Resolves false for unknown
+   * errors and 'active' when the WebUI still reports the session as running.
+   */
+  deleteTrashSession: (projectKey: string, sessionId: string): Promise<boolean | 'active' | null> =>
+    ipcRenderer.invoke('desktop:trash:session-delete', projectKey, sessionId),
+  /** Restore a trashed session and clear its archive flag. */
+  restoreTrashSession: (trashId: string): Promise<boolean | null> => ipcRenderer.invoke('desktop:trash:session-restore', trashId),
+  /** Remove one session id from the workspace archive set (show it again). */
+  unarchiveSession: (sessionId: string): Promise<boolean | null> => ipcRenderer.invoke('desktop:trash:session-unarchive', sessionId),
 })

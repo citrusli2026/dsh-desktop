@@ -12,6 +12,7 @@ import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
 import { join } from 'node:path'
 import { parse as parseYaml } from 'yaml'
+import { moveToTrash } from './trash.ts'
 
 export const PRESET_FORMAT = 'dsh-preset/v1'
 const PRESET_DIR = '.agent-presets'
@@ -127,6 +128,15 @@ export async function importPresetPackage(
   let targetId = pkg.id
   if (existing) {
     if (mode === 'skip') return { ok: true, skipped: true, id: pkg.id }
+    if (mode === 'overwrite') {
+      // The previous version is recoverable from the desktop trash instead of
+      // being overwritten in place.
+      try {
+        await moveToTrash(dshHome, join(root, pkg.id), { kind: 'preset', name: pkg.id, source: 'overwritten by preset import' })
+      } catch {
+        return { ok: false, reason: 'write-failed' }
+      }
+    }
     if (mode === 'clone') targetId = await nextCloneId(pkg.id, root)
   }
   const targetDir = join(root, targetId)
@@ -153,8 +163,9 @@ async function nextCloneId(id: string, root: string): Promise<string> {
   }
 }
 
-/** Remove a user preset directory (safe-ids only). */
+/** Delete a user preset into the desktop trash (safe-ids only); restore
+ *  moves the directory straight back — presets carry no registry. */
 export async function removeUserPreset(dshHome: string, id: string): Promise<void> {
   if (!isSafePresetId(id)) throw new Error(`unsafe preset id: ${id}`)
-  await rm(join(presetUserRoot(dshHome), id), { recursive: true, force: true })
+  await moveToTrash(dshHome, join(presetUserRoot(dshHome), id), { kind: 'preset', name: id, source: 'deleted from preset settings' })
 }

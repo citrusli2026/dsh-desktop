@@ -86,6 +86,12 @@ export interface SupervisorOptions {
    * the supervisor. Returns the absolute bin path to spawn, or undefined to
    * keep the bundled kernel. */
   dshBinOverride?: () => string | undefined
+  /** Agent deletion interception: evaluated per spawn; the hook patch and
+   * hooks.json are regenerated on every start so paths never go stale. */
+  trashHook?: {
+    enabled(): boolean
+    patchFactory(): Promise<string | undefined>
+  }
 }
 
 function defaultLogDir(): string {
@@ -129,6 +135,7 @@ export class HarnessSupervisor {
   private readonly readyTimeoutMs: number
   private readonly cwd: string | undefined
   private readonly safeMode: NonNullable<SupervisorOptions['safeMode']> | undefined
+  private readonly trashHook: NonNullable<SupervisorOptions['trashHook']> | undefined
   private readonly dshBinOverride: (() => string | undefined) | undefined
 
   constructor(
@@ -147,6 +154,7 @@ export class HarnessSupervisor {
     this.readyTimeoutMs = options.readyTimeoutMs ?? READY_TIMEOUT_MS
     this.cwd = options.cwd ?? defaultCwd()
     this.safeMode = options.safeMode
+    this.trashHook = options.trashHook
     mkdirSync(logDir, { recursive: true })
     const logPath = join(logDir, 'harness.log')
     this.logWriter = new RollingLogWriter(logPath)
@@ -190,6 +198,14 @@ export class HarnessSupervisor {
         if (overlay !== undefined) patches.push(overlay)
       } catch (error) {
         console.warn(`dsh-desktop: safe mode overlay failed, booting without it: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    if (this.trashHook?.enabled()) {
+      try {
+        const patch = await this.trashHook.patchFactory()
+        if (patch !== undefined) patches.push(patch)
+      } catch (error) {
+        console.warn(`dsh-desktop: trash hook patch failed, booting without agent interception: ${error instanceof Error ? error.message : String(error)}`)
       }
     }
     const base = [this.dshBinOverride?.() ?? this.args[0]!, ...this.args.slice(1)]

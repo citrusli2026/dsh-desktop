@@ -4,7 +4,7 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
@@ -46,7 +46,10 @@ import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRend
 import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport, redactDiagnosticsLog } from './diagnostics.ts'
 import { updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, OFFICIAL_BUNDLES, classifyPluginFailureCause, type ComposedRow } from './safe-mode.ts'
-import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage } from './presets.ts'
+import { listTrash, moveToTrash, purgeExpiredTrash, purgeFromTrash, restoreFromTrash } from './trash.ts'
+import { writeTrashHookFiles } from './trash-hook.ts'
+import { deleteSessionToTrash, listSessions, restoreSessionFromTrash, unarchiveSession, ActiveSessionError } from './trash-sessions.ts'
+import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage, removeUserPreset } from './presets.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
 import { DEEPSEEK_PLATFORM_RECHARGE_URL } from './links.ts'
@@ -330,6 +333,11 @@ async function installDshMarketInternal(): Promise<MarketInstallResult> {
   return result
 }
 
+/** The trash hook entry script ships beside the harness under resources/. */
+function agentTrashHookScriptPath(): string {
+  return join(dirname(harnessRoot()), 'agent-trash-hook', 'agent-trash-hook.mjs')
+}
+
 /** Rebuild the Safe Mode overlay from the live profile and return its path. */
 async function safeModeOverlayPath(): Promise<string | undefined> {
   const dshHome = resolveDshHome(process.env, homedir())
@@ -342,6 +350,14 @@ const shellApp = new ShellApp({
     { onState },
     {
       safeMode: { enabled: safeModeActive, overlayFactory: safeModeOverlayPath },
+      trashHook: {
+        enabled: () => desktopPreferencesController?.snapshot.agentDeletionInterception === true,
+        patchFactory: async () => writeTrashHookFiles({
+          hookScriptPath: agentTrashHookScriptPath(),
+          nodePath: nodeBin(),
+          userData: app.getPath('userData'),
+        }),
+      },
       env: {
         ...harnessChildEnv,
         DSH_HOME: resolveDshHome(process.env, homedir()),
@@ -1013,6 +1029,62 @@ ipcMain.handle('desktop:presets:import', (event) => {
   return importPresetFlow()
 })
 
+// Desktop trash: list/restore/purge trashed resources. The trash page lives
+// in the harness-mounted desktop-controls surface, so the harness-origin
+// sender guard applies.
+ipcMain.handle('desktop:trash:list', (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return listTrash(desktopDshHome())
+})
+ipcMain.handle('desktop:trash:restore', (event, rawId: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  if (typeof rawId !== 'string' || rawId === '') return null
+  return restoreFromTrash(desktopDshHome(), rawId)
+})
+ipcMain.handle('desktop:trash:purge', (event, rawId: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
+  if (typeof rawId !== 'string' || rawId === '') return false
+  return purgeFromTrash(desktopDshHome(), rawId)
+})
+ipcMain.handle('desktop:trash:purge-expired', (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return 0
+  return purgeExpiredTrash(desktopDshHome()).then(entries => entries.length)
+})
+ipcMain.handle('desktop:presets:delete', (event, rawId: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
+  if (typeof rawId !== 'string') return false
+  return removeUserPreset(desktopDshHome(), rawId).then(() => true).catch(() => false)
+})
+
+// Session trash: list on-disk sessions with their archive flag, delete one
+// into the trash (live sessions are refused via the WebUI-reported ids),
+// restore a trashed session, and clear a phantom archive entry.
+ipcMain.handle('desktop:trash:sessions', (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return listSessions(desktopDshHome())
+})
+ipcMain.handle('desktop:trash:session-delete', (event, rawProjectKey: unknown, rawSessionId: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
+  if (typeof rawProjectKey !== 'string' || typeof rawSessionId !== 'string' || rawSessionId === '') return false
+  if (rawProjectKey.includes('..') || rawProjectKey.includes('/') || rawProjectKey.includes('\\')) return false
+  const live = new Set((lastPublicStatus?.sessions ?? []).filter(session => session.running).map(session => session.id))
+  return deleteSessionToTrash(desktopDshHome(), rawProjectKey, rawSessionId, [...live]).then(() => true).catch((error) => {
+    if (error instanceof ActiveSessionError) return 'active'
+    console.warn(`dsh-desktop: session delete failed: ${error instanceof Error ? error.message : String(error)}`)
+    return false
+  })
+})
+ipcMain.handle('desktop:trash:session-restore', (event, rawTrashId: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  if (typeof rawTrashId !== 'string' || rawTrashId === '') return null
+  return restoreSessionFromTrash(desktopDshHome(), rawTrashId).then(() => true).catch(() => false)
+})
+ipcMain.handle('desktop:trash:session-unarchive', (event, rawSessionId: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
+  if (typeof rawSessionId !== 'string' || rawSessionId === '') return false
+  return unarchiveSession(desktopDshHome(), rawSessionId)
+})
+
 function verifyHarness(root: string): void {
   const checks: ReadonlyArray<readonly [string, string]> = [['node', nodeBin(root)], ['dsh', dshBin(root)]]
   for (const [label, path] of checks) {
@@ -1036,6 +1108,9 @@ async function boot(): Promise<string> {
     return DEV_WEB_URL
   }
   verifyHarness(harnessRoot())
+  // Trash retention (desktop trash): sweep past-retention entries once per
+  // boot; failures never block startup.
+  void purgeExpiredTrash(desktopDshHome()).catch(() => {})
   if (SMOKE_TEST && process.env[TEST_FAIL_HARNESS_ENV] === '1') {
     shellApp.applyState({ phase: 'crashed', attempts: 6, logTail: 'simulated crash (smoke)' })
     throw new Error('simulated boot failure (smoke)')
