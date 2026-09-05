@@ -34,7 +34,7 @@ const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || ''
 const SOCKS = process.env.GH_SOCKS5
 
 function curlText(url, headers) {
-  const args = ['-sfSL', '--max-time', '60']
+  const args = ['-sfSL', '--max-time', '300']
   if (SOCKS) args.push('-x', `socks5h://${SOCKS}`)
   for (const [name, value] of Object.entries(headers)) args.push('-H', `${name}: ${value}`)
   args.push(url)
