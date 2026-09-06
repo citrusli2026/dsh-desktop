@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.8 <small>（kernel 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li>Fixed mobile QR sessions loading an empty/broken Harness UI: dsh-mobile-shell 1.0.2 preserves the raw <code>/plugins/??…</code> batch path instead of normalizing it into a 404 request.</li>
+    <li>Completed plugin recovery after auto-quarantine: the recovered Harness page now names the suspect and offers <strong>Update and re-enable</strong>, guarded to the verified main-window origin and eligible community packages only.</li>
+    <li>Added packaged Android-like Chromium and iPhone-like WebKit QR-to-Harness tests, plus a real-registry crash/quarantine/update/re-enable/restart test.</li>
+  </ul>
+
   <h2>v0.1.2-rc.1.shell.7 <small>（kernel 0.1.2-rc.1）</small></h2>
   <ul>
     <li>Desktop trash: deleted sessions, presets, and plugins stay recoverable from Settings → Trash with a 30-day retention window; restore falls back to numbered copies so newer data is never overwritten.</li>
@@ -92,14 +99,6 @@
     <li>Added a one-click health check for bundled files and versions, both data roots and disk space, Harness loopback, profile, plugins, market, Safe Mode, and kernel state, with clear OK / warning / failed actions.</li>
     <li>Local checks are read-only and offline by default. Proxy, registry, and update-source probes require explicit opt-in; results are sanitized, never uploaded, and never repair user files automatically.</li>
     <li>The plugin market remains optional and manually installed; no community plugin is bundled or restored silently.</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.0 <small>（kernel 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li>Upgraded and pinned the bundled kernel to official <code>@deepseek-ai/dsh</code> <code>0.1.2-rc.1</code>, including upstream long-session, connection recovery, model configuration, and UI improvements.</li>
-    <li>Fixed the daily kernel watcher by packaging the pinned mobile-shell Web artifact before smoke validation, and removed speculative root-cause language from future failure issues.</li>
-    <li>Raised vulnerable transitive dependencies to explicit security floors; both the root tree and production Harness closure pass the official npm advisory audit with no known vulnerabilities.</li>
-    <li>Local gates cover 193 unit tests, Electron E2E, real Harness rendering, real/offline dsh-market paths, Safe Mode recovery, and a macOS upgrade that preserves seven user-owned files. Community plugins remain explicit opt-in installs.</li>
   </ul>
   <!-- changelog:auto:end -->
 
