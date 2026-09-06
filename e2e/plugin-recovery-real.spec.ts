@@ -1,15 +1,14 @@
 /**
- * Real-registry plugin-recovery E2E (packaged, @market-real): a profile whose
- * bundle list references dshmarket without the package on disk fails to boot,
- * the error page lists it as a suspect, and the Update button pulls the real
- * latest version from npm and boots the harness for real.
+ * Real-registry plugin-recovery E2E (packaged, @market-real): an on-disk
+ * dshmarket bundle throws during composition, the shell auto-quarantines it
+ * and boots, then the recovery bridge pulls the real latest version from npm,
+ * re-enables it, and boots the harness for real.
  *
- * The recovery IPC is deliberately error-page-only (isMainWindowSender, never
- * the live Harness page), so this flow is the only honest way to exercise it
- * against the real registry.
+ * The recovery IPC accepts only the main window, so this flow exercises the
+ * same update-and-restart path exposed by the recovery banner.
  */
 import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
-import { chmod, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
@@ -32,16 +31,27 @@ const recoveryTest = test.extend<RecoveryFixture>({
     await mkdir(userData, { recursive: true })
     await writeFile(join(dshHome, 'settings.yaml'), 'locale:\n  preference: zh\nui-theme:\n  preference: dark\n')
     await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
-    // Seed the upgrade cliff: dshmarket is in the boot bundle list but the
-    // package was never installed, so the very first boot cannot compose it.
+    // Seed a deterministic broken dshmarket on disk. A missing dependency no
+    // longer fails current Harness startup, so it cannot prove quarantine.
     const profileDir = join(dshHome, 'profiles', 'web')
+    const brokenDir = join(profileDir, 'node_modules', 'dshmarket')
     await mkdir(profileDir, { recursive: true })
+    await mkdir(brokenDir, { recursive: true })
     await writeFile(join(profileDir, 'package.json'), JSON.stringify({
       name: 'dsh-profile-web',
       private: true,
-      dependencies: { dshmarket: '^1.36.0' },
+      dependencies: { dshmarket: 'file:dshmarket' },
       dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'dshmarket'] } },
     }))
+    await writeFile(join(brokenDir, 'package.json'), JSON.stringify({
+      name: 'dshmarket',
+      version: '0.0.0',
+      type: 'module',
+      main: 'index.js',
+      dsh: { bundle: { patch: './cordis.patch.yml' } },
+    }))
+    await writeFile(join(brokenDir, 'cordis.patch.yml'), '- insert:\n    - id: dsh-market\n      name: dshmarket\n')
+    await writeFile(join(brokenDir, 'index.js'), "export default class { constructor() { throw new Error('BROKEN_DSHMARKET_E2E') } }\n")
     const executablePath = await locatePackagedExecutable()
     const args = [`--user-data-dir=${userData}`]
     if (process.platform === 'linux') args.push('--no-sandbox')
@@ -51,11 +61,24 @@ const recoveryTest = test.extend<RecoveryFixture>({
       cwd: process.cwd(),
       env: { ...process.env, DSH_HOME: dshHome } as Record<string, string>,
     })
+    let mainOutput = ''
+    for (const stream of [app.process().stdout, app.process().stderr]) {
+      stream?.on('data', chunk => { mainOutput = `${mainOutput}${String(chunk)}`.slice(-20_000) })
+    }
     try {
       await use(app)
     } finally {
       if (testInfo.status !== testInfo.expectedStatus) {
         await app.windows()[0]?.screenshot({ path: testInfo.outputPath('recovery-window.png') }).catch(() => undefined)
+        await testInfo.attach('main-process.log', { body: mainOutput, contentType: 'text/plain' })
+        await testInfo.attach('harness.log', {
+          body: await readFile(join(userData, 'logs', 'harness.log')).catch(() => Buffer.from('missing')),
+          contentType: 'text/plain',
+        })
+        await testInfo.attach('profile-package.json', {
+          body: await readFile(join(dshHome, 'profiles', 'web', 'package.json')).catch(() => Buffer.from('missing')),
+          contentType: 'application/json',
+        })
       }
       const closing = app.close().then(() => 'closed', () => 'failed')
       const outcome = await Promise.race([
@@ -79,18 +102,24 @@ const recoveryTest = test.extend<RecoveryFixture>({
 
 recoveryTest.skip(MODE !== 'real', 'run through pnpm test:e2e:market:real')
 
-recoveryTest('error-page Update pulls the real latest plugin and boots @market-real', async ({ window, dshHome }) => {
-  // Crash loop reaches the recovery center; the suspect row names dshmarket.
-  // The page navigates (loading → error → …); tolerate destroyed contexts.
-  await expect.poll(async () => window.evaluate(() => document.body.innerText).catch(() => ''), { timeout: 180_000 })
-    .toContain('插件恢复')
-  const row = window.locator('.plugin-row', { hasText: 'dshmarket' })
-  await expect(row).toHaveCount(1)
-
-  await row.getByRole('button', { name: '升级', exact: true }).click()
-  // The update runs the real 'dsh plugin add dshmarket@latest' and restarts
-  // the packaged harness, which now composes the freshly installed market.
+recoveryTest('auto-quarantine Update pulls the real latest plugin and boots @market-real', async ({ window, dshHome }) => {
+  // The broken bundle is removed from the boot list and Harness comes back;
+  // its suspect remains actionable through the recovery bridge.
   await expect(window.locator('[data-dsh-boot]')).toHaveCount(0, { timeout: 300_000 })
+  await expect.poll(() => window.evaluate(() => (window as unknown as {
+    dshDesktop?: { getRecoverySuspects(): Promise<Array<{ id: string; name?: string }> | null> }
+  }).dshDesktop?.getRecoverySuspects().then(rows => (rows ?? []).map(row => row.name ?? row.id))).catch(() => []), { timeout: 60_000 })
+    .toContain('dshmarket')
+  const quarantined = JSON.parse(await import('node:fs/promises').then(fs => fs.readFile(join(dshHome, 'profiles', 'web', 'package.json'), 'utf8'))) as {
+    dsh?: { profile?: { bundles?: string[] } }
+  }
+  expect(quarantined.dsh?.profile?.bundles).not.toContain('dshmarket')
+
+  await window.getByRole('button', { name: '继续', exact: true }).click({ timeout: 30_000 })
+  await window.getByRole('button', { name: '稍后配置', exact: true }).click({ timeout: 30_000 })
+  const recoveryBanner = window.locator('[data-dsh-safe-mode-banner]')
+  await expect(recoveryBanner).toContainText('问题插件已自动隔离')
+  await recoveryBanner.getByRole('button', { name: '升级并重新启用', exact: true }).click()
   await expect.poll(() => window.evaluate(() => (window as unknown as {
     dshDesktop?: { getBundledPlugins(): Promise<{ dshMarket: { state: string; version?: string } } | null> }
   }).dshDesktop?.getBundledPlugins().then(value => value?.dshMarket)).catch(() => undefined), { timeout: 60_000 })

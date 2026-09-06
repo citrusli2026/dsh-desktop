@@ -702,6 +702,9 @@ window.__ModuleLoader__.load({
         kernelAvailable: "发现内核新版 {version}，可点击安装。", kernelInstalling: "正在安装并切换，可能需要几分钟…", kernelReady: "内核 {version} 已安装并运行。", kernelCheckFailed: "无法检查内核更新，请检查网络后重试。", kernelInstallFailed: "内核安装失败，尚未切换；请检查网络后重试。", kernelSwitchFailed: "内核已安装，但 Harness 重启失败。", kernelRolledBack: "新版内核健康检查失败，已恢复内置内核。", kernelRestored: "已恢复内置内核。", kernelRestoreFailed: "恢复内置内核后重启失败。", kernelUnavailable: "当前构建暂不可用内核更新。", kernelFailed: "操作未完成，请重试。",
         safeModeBanner: "安全模式：第三方插件已隔离",
         safeModeSuspect: "疑似插件：{id}（{name}），可在官方「设置 → 插件」中卸载。",
+        quarantineBanner: "问题插件已自动隔离，Harness 已恢复",
+        quarantineSuspect: "疑似插件：{id}（{name}）。可升级并重新启用，或保持隔离。",
+        quarantineUpdate: "升级并重新启用", quarantineWorking: "正在升级…",
         presetsTitle: "Agent 预设", presetsDetail: "导出或导入 .dshpreset 便携预设包，备份或分享 Agent 预设。",
         presetsExport: "导出预设", presetsImport: "导入预设",
         advancedTitle: "高级工具", advancedDetail: "屏幕捕获、内核维护和 Agent 预设",
@@ -747,6 +750,9 @@ window.__ModuleLoader__.load({
         kernelAvailable: "Kernel {version} is available; install it when ready.", kernelInstalling: "Installing and switching — this can take a few minutes…", kernelReady: "Kernel {version} is installed and running.", kernelCheckFailed: "Couldn't check for kernel updates. Check your network and retry.", kernelInstallFailed: "Kernel install failed before switching. Check your network and retry.", kernelSwitchFailed: "The kernel installed, but Harness could not restart.", kernelRolledBack: "The new kernel failed its health check; the bundled kernel was restored.", kernelRestored: "The bundled kernel is restored.", kernelRestoreFailed: "Harness could not restart after restoring the bundled kernel.", kernelUnavailable: "Kernel updates are not available in this build.", kernelFailed: "The operation did not finish; please retry.",
         safeModeBanner: "Safe Mode: third-party plugins are quarantined",
         safeModeSuspect: "Suspected plugin: {id} ({name}). Uninstall it from Settings → Plugins.",
+        quarantineBanner: "The problem plugin was quarantined and Harness recovered",
+        quarantineSuspect: "Suspected plugin: {id} ({name}). Update and re-enable it, or keep it quarantined.",
+        quarantineUpdate: "Update and re-enable", quarantineWorking: "Updating…",
         presetsTitle: "Agent presets", presetsDetail: "Export or import .dshpreset portable packages to back up or share agent presets.",
         presetsExport: "Export preset", presetsImport: "Import preset",
         advancedTitle: "Advanced tools", advancedDetail: "Screen capture, kernel maintenance, and agent presets",
@@ -1357,17 +1363,21 @@ window.__ModuleLoader__.load({
         }
         return () => { mounted = false; };
       }, [bridge]);
-      if (!active) return null;
       const suspect = suspects[0];
+      if (!active && suspect === undefined) return null;
+      const pluginName = typeof suspect?.name === "string" && suspect.name !== "" ? suspect.name : undefined;
       return react_jsx_runtime.jsxs("div", {
         "data-dsh-safe-mode-banner": true, role: "status",
         children: [
-          react_jsx_runtime.jsx("span", { children: copy.safeModeBanner }),
-          suspect === undefined ? null : react_jsx_runtime.jsx("span", { "data-dsh-safe-mode-suspect": true, children: copy.safeModeSuspect.replace("{id}", suspect.id).replace("{name}", suspect.name ?? "") }),
-          react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => {
+          react_jsx_runtime.jsx("span", { children: active ? copy.safeModeBanner : copy.quarantineBanner }),
+          suspect === undefined ? null : react_jsx_runtime.jsx("span", { "data-dsh-safe-mode-suspect": true, children: (active ? copy.safeModeSuspect : copy.quarantineSuspect).replace("{id}", suspect.id).replace("{name}", suspect.name ?? "") }),
+          active ? react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => {
             setBusy(true);
             void bridge?.desktopAction?.("exitSafeMode").finally(() => setBusy(false));
-          }, children: copy.safeModeExit }),
+          }, children: copy.safeModeExit }) : pluginName === undefined || typeof bridge?.updatePlugin !== "function" ? null : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-quarantine-update": true, disabled: busy, onClick: () => {
+            setBusy(true);
+            void bridge.updatePlugin(pluginName).finally(() => setBusy(false));
+          }, children: busy ? copy.quarantineWorking : copy.quarantineUpdate }),
         ],
       });
     }

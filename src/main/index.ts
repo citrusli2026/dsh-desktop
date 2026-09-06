@@ -595,7 +595,7 @@ const trayActions: TrayActions = {
   }),
 }
 
-// Shell-owned IPC handlers are exposed through the sandboxed preload. The
+// Shell-owned IPC handlers are exposed through the sandboxed preload. Core
 // recovery channels remain data-page-only; the desktop-controls plugin gets a
 // separate allowlisted set of handlers from the verified Harness origin.
 ipcMain.handle('harness:retry', async (event) => {
@@ -967,7 +967,8 @@ async function installedPluginVersion(dshHome: string, name: string): Promise<st
 }
 
 ipcMain.handle('desktop:plugin:update', async (event, rawName: unknown): Promise<boolean | 'current'> => {
-  if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
+  if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)
+    && !isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
   const dshHome = resolveDshHome(process.env, homedir())
   const { bundles } = await readProfileStatus(dshHome)
   const requested = typeof rawName === 'string' && rawName !== '' ? [rawName] : undefined
@@ -1002,7 +1003,8 @@ ipcMain.handle('desktop:plugin:update', async (event, rawName: unknown): Promise
 })
 
 ipcMain.handle('desktop:plugin:disable', async (event, rawName: unknown) => {
-  if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
+  if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)
+    && !isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
   if (typeof rawName !== 'string' || rawName === '' || OFFICIAL_BUNDLES.includes(rawName as never)) return false
   const dshHome = resolveDshHome(process.env, homedir())
   const manifest = await readProfileManifest(dshHome)

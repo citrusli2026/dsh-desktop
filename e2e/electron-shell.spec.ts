@@ -1,4 +1,4 @@
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { test, expect, _electron as electron, chromium, webkit, type ElectronApplication, type Page } from '@playwright/test'
 import { createServer, type Server } from 'node:http'
 import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
@@ -757,4 +757,74 @@ shellTest('LAN pairing shows a scannable QR link for the private address', async
   await expect.poll(() => electronApp.windows().some(candidate => candidate !== window
     && candidate.url().startsWith('data:') && !candidate.isClosed()))
     .toBe(false)
+})
+
+shellTest('LAN pairing completes from QR through a mobile browser', async ({ electronApp, window }) => {
+  await packagedOrStubHeadline(window)
+  const { networkInterfaces } = await import('node:os')
+  const hasPrivateLan = Object.values(networkInterfaces())
+    .flat()
+    .some(entry => entry?.family === 'IPv4' && !entry.internal
+      && (entry.address.startsWith('10.')
+        || /^172\.(1[6-9]|2\d|3[01])\./.test(entry.address)
+        || entry.address.startsWith('192.168.')))
+  test.skip(!hasPrivateLan || process.env.CI === 'true', 'requires a local machine with Chrome and a real private LAN IPv4 address')
+
+  const opened = await window.evaluate(() => (
+    window as unknown as { dshDesktop?: { desktopAction(action: string): Promise<unknown> } }
+  ).dshDesktop?.desktopAction('startLanPairing'))
+  expect(opened).toBe(true)
+
+  let pairingPage: Page | undefined
+  await expect.poll(() => {
+    pairingPage = electronApp.windows().find(candidate => candidate.url().startsWith('data:')
+      && candidate.isClosed() === false && candidate !== window)
+    return pairingPage !== undefined
+  }, { timeout: 30_000 }).toBe(true)
+  const content = await pairingPage!.evaluate(() => document.body.innerText)
+  const baseUrl = /(?:Address|地址)[:：]\s*(http:\/\/\d+\.\d+\.\d+\.\d+:\d+\/)/.exec(content)?.[1]
+  const code = /(?:Code|配对码)[:：]\s*(\d{6})/.exec(content)?.[1]
+  expect(baseUrl).toBeTruthy()
+  expect(code).toMatch(/^\d{6}$/)
+
+  const mobileBrowser = process.env.DSH_E2E_LAN_BROWSER === 'webkit' ? 'webkit' : 'chromium'
+  const browser = mobileBrowser === 'webkit'
+    ? await webkit.launch({ headless: true })
+    : await chromium.launch({ channel: 'chrome', headless: true })
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+    userAgent: mobileBrowser === 'webkit'
+      ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'
+      : 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 Chrome/126 Mobile Safari/537.36',
+  })
+  const mobile = await context.newPage()
+  const pageErrors: string[] = []
+  mobile.on('pageerror', error => pageErrors.push(error.message))
+  try {
+    await mobile.goto(`${baseUrl}launch#pair=${code}`, { waitUntil: 'domcontentloaded' })
+    await expect(mobile.getByTestId('pair-code')).toHaveValue(code!)
+    await mobile.getByTestId('pair-btn').click()
+    await expect.poll(() => new URL(mobile.url()).pathname, { timeout: PACKAGED ? 120_000 : 30_000 }).toBe('/')
+    if (PACKAGED) {
+      await expect.poll(
+        () => mobile.evaluate(() => ({
+          failed: document.body.innerText.includes('Failed to load plugins'),
+          control: document.querySelector('input, textarea, [role="textbox"]') !== null,
+        })),
+        { timeout: 120_000 },
+      ).toEqual({ failed: false, control: true })
+    } else {
+      await expect(mobile.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
+    }
+    const session = await context.request.get(`${baseUrl}session/check`)
+    expect(session.status()).toBe(200)
+    expect(pageErrors).toEqual([])
+  } finally {
+    await context.close()
+    await browser.close()
+    await pairingPage!.close().catch(() => {})
+  }
 })

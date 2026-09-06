@@ -37,13 +37,16 @@ interface UpstreamHandle {
   /** Invalidate the currently issued session, as a kernel secret rotation would. */
   rotate(): void
   exchanges(): number
+  requests(): string[]
 }
 
 /** Kernel-like upstream: index served only with the issued signed cookie. */
 async function startUpstream(): Promise<UpstreamHandle> {
   let session: string | undefined
   let issued = 0
+  const requests: string[] = []
   const server = createServer((req, res) => {
+    requests.push(req.url ?? '/')
     const url = new URL(req.url ?? '/', 'http://dsh.invalid')
     const token = url.searchParams.get('token')
     if (token !== null) {
@@ -77,6 +80,7 @@ async function startUpstream(): Promise<UpstreamHandle> {
     port: (server.address() as AddressInfo).port,
     rotate: () => { session = 'rotated-away' },
     exchanges: () => issued,
+    requests: () => [...requests],
   }
 }
 
@@ -216,6 +220,24 @@ test('dsh-remote re-exchanges once and replays when the upstream rejects the coo
     assert.equal(second.status, 200)
     assert.match(await second.text(), /upstream index/)
     assert.ok(upstream.exchanges() >= 2, 'proxy should have re-filed the exchange after rotation')
+  } finally {
+    await proxy.stop()
+    await new Promise<void>(resolve => upstream.server.close(() => resolve()))
+  }
+})
+
+test('dsh-remote preserves Harness double-question plugin batch paths', { skip: SKIP_REASON }, async () => {
+  const upstream = await startUpstream()
+  const proxy = await startProxy(upstream.port, { upstreamToken: LAUNCH_TOKEN })
+  try {
+    const deviceToken = await pairDevice(proxy.baseUrl)
+    const pluginPath = 'plugins/??@deepseek-ai/dsh-client-modules/client.js&rev=regression'
+    const response = await fetch(`${proxy.baseUrl}${pluginPath}`, {
+      headers: { authorization: `Bearer ${deviceToken}` },
+    })
+    assert.equal(response.status, 200)
+    assert.ok(upstream.requests().includes(`/${pluginPath}`),
+      `upstream requests did not preserve /${pluginPath}: ${JSON.stringify(upstream.requests())}`)
   } finally {
     await proxy.stop()
     await new Promise<void>(resolve => upstream.server.close(() => resolve()))
