@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.10 <small>（kernel 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li>Preserved paired mobile sessions across LAN sharing, Harness recovery, and full desktop restarts by persisting the proxy signing key and device registry under private Electron user data.</li>
+    <li>Added a real Android 15 emulator/Chrome journey covering pairing, background/resume, sharing restart, and desktop relaunch; LAN diagnostics expose connection facts without secrets or pairing codes.</li>
+    <li>Revalidated the real-registry broken-plugin flow from crash and automatic quarantine through update, re-enable, and successful Harness restart, plus packaged Safe Mode recovery.</li>
+  </ul>
+
   <h2>v0.1.2-rc.1.shell.9 <small>（kernel 0.1.2-rc.1）</small></h2>
   <ul>
     <li>Fixed mobile QR sessions loading an empty/broken Harness UI: dsh-mobile-shell 1.0.2 preserves the raw <code>/plugins/??…</code> batch path instead of normalizing it into a 404 request.</li>
@@ -90,15 +97,6 @@
     <li>Error-page plugin recovery: when startup fails on incompatible community plugins, the recovery center lists each suspect with Update, Disable, and Update-all-and-restart actions; updates pull the latest npm version via the existing <code>dsh plugin add</code> path, disable only removes the boot bundle entry (files kept, reversible from Settings → Plugins), and official bundles are always refused.</li>
     <li>New E2E coverage: a simulated plugin crash renders the recovery rows, disabling boots the app again with the manifest verified on disk; the LAN pairing QR window is covered end to end (private address, single-use 6-digit code, QR rendered).</li>
     <li>Bundled kernel unchanged at <code>@deepseek-ai/dsh</code> 0.1.2-rc.1 (shell revision +3).</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.2 <small>（kernel 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li>Renamed the hidden “Extensions” entry to <strong>Desktop tools / Desktop settings</strong> and added a dismissible, non-modal runtime → workspace → model → first-task guide that retires itself after the first successful task.</li>
-    <li>Added a one-click health check for bundled files and versions, both data roots and disk space, Harness loopback, profile, plugins, market, Safe Mode, and kernel state, with clear OK / warning / failed actions.</li>
-    <li>Local checks are read-only and offline by default. Proxy, registry, and update-source probes require explicit opt-in; results are sanitized, never uploaded, and never repair user files automatically.</li>
-    <li>The plugin market remains optional and manually installed; no community plugin is bundled or restored silently.</li>
-    <li>Windows cross-version CI now tolerates transient installer file locks during temporary cleanup instead of misclassifying a successful upgrade as a product failure.</li>
   </ul>
   <!-- changelog:auto:end -->
 

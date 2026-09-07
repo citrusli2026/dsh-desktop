@@ -42,6 +42,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.10 <small>（内核 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li><strong>修复手机会话在桌面重启后失效</strong>：LAN 代理不再每次启动都更换设备会话签名密钥。配对过的手机可以跨共享停止/重开、Harness 恢复和桌面应用完整重启继续使用，无需重复输入配对码。</li>
+    <li><strong>修复打包环境中的设备状态存储位置</strong>：签名密钥与设备登记迁移到 Electron userData 的 <code>lan/</code> 私有目录，密钥权限收紧为仅当前用户可读写，不再尝试把设备状态写入随包资源目录。</li>
+    <li><strong>补齐模拟器和支持诊断</strong>：新增 Android 15 模拟器真实 Chrome 的端到端门禁，覆盖配对、后台恢复、共享重启和桌面重启；诊断报告增加不含密钥/配对码的 LAN 状态，Issue 模板也能直接收集手机与插件恢复阶段。</li>
+    <li><strong>持续验证插件恢复</strong>：真实 npm 市场再次跑通坏插件崩溃、自动隔离、升级并重新启用和 Harness 重启；打包 Safe Mode 继续验证故障插件隔离与恢复横幅。</li>
+  </ul>
+
   <h2>v0.1.2-rc.1.shell.9 <small>（内核 0.1.2-rc.1）</small></h2>
   <ul>
     <li><strong>修复手机扫码后插件加载失败</strong>：随包 dsh-mobile-shell 升至 <code>1.0.2</code>。代理现在原样保留 Harness <code>/plugins/??…</code> 批量资源路径，不再把第二个问号 URL 编码后转发成 404；二维码、一次性配对码、设备会话与内核登录令牌仍保持分层隔离。</li>
@@ -96,15 +104,6 @@
     <li><strong>一键升级解决内核断崖</strong>：内核升级导致插件 API 不兼容（如 0.1.2-rc.1 移除 <code>installSettingsSection</code>）时，用户无需再手动翻日志排查——错误页直接给出可操作的修复动作，成功后自动重启。</li>
     <li><strong>LAN 配对二维码回归保护</strong>：新增 E2E 覆盖二维码窗口全链路（代理启动、健康检查、配对码铸造、二维码渲染），验证地址为私网 IP、6 位单次配对码。</li>
     <li><strong>边界说明</strong>：插件升级需要网络与 npm registry；禁用与升级只触碰用户 profile 的 bundle 清单，不删除插件文件；官方包不在可操作范围内。</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.2 <small>（内核 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li><strong>首次成功路径</strong>：应用内「扩展入口 / 扩展设置」更名为更直白的「桌面工具 / 桌面设置」。主界面新增可关闭、非模态的四步引导：运行环境就绪 → 选择工作区 → 配置模型 → 完成第一条任务；首次任务成功后自动结束，已有成功会话的升级用户不会被重新打扰。</li>
-    <li><strong>一键运行体检</strong>：桌面设置首屏可检查随包 Node/Harness/桌面组件、两个数据目录与磁盘、Harness loopback、Profile、插件市场、安全模式和内核版本。每项显示「正常 / 警告 / 失败」与对应动作。</li>
-    <li><strong>插件仍然可选</strong>：首次引导明确说明无需先装插件；社区插件和插件市场仍由用户主动安装，不进入安装包，也不会静默恢复。</li>
-    <li><strong>隐私与安全边界</strong>：体检默认仅在本地只读执行；代理、registry、更新源连通性只有勾选后才联网。结果不返回路径、URL、日志、代理地址或捕获错误，不上传，也不自动修复用户文件。</li>
-    <li><strong>发布门禁修正</strong>：Windows 跨版本验证结束后的临时目录清理会容忍短暂文件锁，不再把已成功的升级误判为产品失败。</li>
   </ul>
   <!-- changelog:auto:end -->
 
