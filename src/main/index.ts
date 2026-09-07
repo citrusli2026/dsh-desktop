@@ -1237,7 +1237,10 @@ if (!gotLock) {
         // startHarness already applied the crashed state with the harness's
         // own output tail; re-applying here would strip the suspect evidence.
       } else if (process.env[TEST_FAIL_HARNESS_ENV] === '1' && windowContext.mainWindow !== undefined) {
-        await verifySmokeFailureRecovery(windowContext.mainWindow, () => windowContext.allowedOrigin, currentLocale)
+        await verifySmokeFailureRecovery(windowContext.mainWindow, () => {
+          const state = shellApp.state
+          return state?.phase === 'ready' ? state.url : undefined
+        }, currentLocale)
       } else {
         quitGracefully(1)
       }

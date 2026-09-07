@@ -98,7 +98,7 @@ export function armSmokeTimeout(): void {
 
 export async function verifySmokeFailureRecovery(
   window: BrowserWindow,
-  getAllowedOrigin: () => string | undefined,
+  getReadyUrl: () => string | undefined,
   locale: ShellLocale,
 ): Promise<void> {
   const button = await window.webContents.executeJavaScript(
@@ -126,14 +126,17 @@ export async function verifySmokeFailureRecovery(
   }
 
   const deadline = Date.now() + 90_000
-  while (getAllowedOrigin() === undefined && Date.now() < deadline) {
+  while (getReadyUrl() === undefined && Date.now() < deadline) {
     await new Promise(resolve => setTimeout(resolve, 1000))
   }
-  const allowedOrigin = getAllowedOrigin()
-  if (allowedOrigin === undefined) {
+  const readyUrl = getReadyUrl()
+  if (readyUrl === undefined) {
     console.error('smoke: retry did not reach ready in time')
     quitGracefully(SMOKE_EXIT_FAIL)
   } else {
-    await smokeVerify(`${allowedOrigin}/`)
+    // Current Harness requires the one-shot launch token on the first request.
+    // Fetch the supervisor's exact ready URL instead of racing the renderer's
+    // token-to-cookie exchange via the tokenless allowed origin.
+    await smokeVerify(readyUrl)
   }
 }
