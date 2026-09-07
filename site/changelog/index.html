@@ -42,6 +42,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.2-rc.1.shell.9 <small>（内核 0.1.2-rc.1）</small></h2>
+  <ul>
+    <li><strong>修复手机扫码后插件加载失败</strong>：随包 dsh-mobile-shell 升至 <code>1.0.2</code>。代理现在原样保留 Harness <code>/plugins/??…</code> 批量资源路径，不再把第二个问号 URL 编码后转发成 404；二维码、一次性配对码、设备会话与内核登录令牌仍保持分层隔离。</li>
+    <li><strong>补齐坏插件自动恢复闭环</strong>：插件导致启动失败时，桌面端继续自动隔离并重启；恢复后的正常主页现在会显示问题插件和「升级并重新启用」按钮。该按钮只允许当前已验证的 Harness 本机页面调用，并继续拒绝官方包和未列入恢复上下文的包。</li>
+    <li><strong>强化真实端到端门禁</strong>：新增从桌面二维码到手机浏览器、再到真实 Harness 输入控件的打包测试，分别覆盖 Android 风格 Chromium 与 iPhone 风格 WebKit；同时用真实 npm 插件执行「崩溃 → 自动隔离 → 页面升级 → 重新启用 → 重启成功」。</li>
+    <li><strong>修正发布故障注入的认证竞态</strong>：失败候选 <code>shell.8</code> 的 macOS 门禁在重试后用无令牌地址探测 Harness，偶发先于页面完成 cookie 交换而收到 401。<code>shell.9</code> 改为直接验证 supervisor 返回的带一次性启动令牌 URL，不放宽产品断言。</li>
+  </ul>
+
   <h2>v0.1.2-rc.1.shell.8 <small>（内核 0.1.2-rc.1）</small></h2>
   <ul>
     <li><strong>修复手机扫码后插件加载失败</strong>：随包 dsh-mobile-shell 升至 <code>1.0.2</code>。代理现在原样保留 Harness <code>/plugins/??…</code> 批量资源路径，不再把第二个问号 URL 编码后转发成 404；二维码、一次性配对码、设备会话与内核登录令牌仍保持分层隔离。</li>
@@ -97,14 +105,6 @@
     <li><strong>插件仍然可选</strong>：首次引导明确说明无需先装插件；社区插件和插件市场仍由用户主动安装，不进入安装包，也不会静默恢复。</li>
     <li><strong>隐私与安全边界</strong>：体检默认仅在本地只读执行；代理、registry、更新源连通性只有勾选后才联网。结果不返回路径、URL、日志、代理地址或捕获错误，不上传，也不自动修复用户文件。</li>
     <li><strong>发布门禁修正</strong>：Windows 跨版本验证结束后的临时目录清理会容忍短暂文件锁，不再把已成功的升级误判为产品失败。</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.1 <small>（内核 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li><strong>首次成功路径</strong>：应用内「扩展入口 / 扩展设置」更名为更直白的「桌面工具 / 桌面设置」。主界面新增可关闭、非模态的四步引导：运行环境就绪 → 选择工作区 → 配置模型 → 完成第一条任务；首次任务成功后自动结束，已有成功会话的升级用户不会被重新打扰。</li>
-    <li><strong>一键运行体检</strong>：桌面设置首屏可检查随包 Node/Harness/桌面组件、两个数据目录与磁盘、Harness loopback、Profile、插件市场、安全模式和内核版本。每项显示「正常 / 警告 / 失败」与对应动作。</li>
-    <li><strong>插件仍然可选</strong>：首次引导明确说明无需先装插件；社区插件和插件市场仍由用户主动安装，不进入安装包，也不会静默恢复。</li>
-    <li><strong>隐私与安全边界</strong>：体检默认仅在本地只读执行；代理、registry、更新源连通性只有勾选后才联网。结果不返回路径、URL、日志、代理地址或捕获错误，不上传，也不自动修复用户文件。</li>
   </ul>
   <!-- changelog:auto:end -->
 
