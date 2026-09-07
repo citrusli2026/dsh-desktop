@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-09-04。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-09-07。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.2-rc.1.shell.5`（2026-09-05 已发布；内核 `0.1.2-rc.1`） |
-| 已发布 | ✅ `0.1.2-rc.1.shell.5`（2026-09-05，三端 dmg/exe/deb；发布链路自愈 + 一键提交问题） |
-| 本地门禁 | ✅ 197 项单测、类型检查、runtime/site 门禁、构建全绿；dev/packaged/real Harness/Safe Mode/offline + real market/macOS cross-version upgrade E2E 通过 |
-| 核心发布 | ✅ `v0.1.2-rc.1.shell.5` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复、插件恢复与真实 registry 升级全链路验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.5`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.2-rc.1.shell.5` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `20fd7ec`） |
-| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；核验时累计 670（mac 164 / win 385 / linux 121） |
+| 最新代码基线 | ✅ `0.1.2-rc.1.shell.9`（2026-09-07 已发布；内核 `0.1.2-rc.1`） |
+| 已发布 | ✅ `0.1.2-rc.1.shell.9`（2026-09-07，三端 dmg/exe/deb；手机扫码插件资源修复 + 坏插件恢复闭环） |
+| 本地门禁 | ✅ 235 项单测、类型检查、runtime/site 门禁、构建全绿；真实 Chromium/WebKit 手机扫码、packaged Harness/Safe Mode/offline + real market/坏插件升级重启 E2E 通过 |
+| 核心发布 | ✅ `v0.1.2-rc.1.shell.9` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复与插件恢复全链路验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.9`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.2-rc.1.shell.9` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `7abe252`） |
+| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；核验时累计 923（mac 197 / win 580 / linux 146；GitHub 798 + GitCode 125） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1296,3 +1296,44 @@ _更新于 2026-09-05_
 1. **内核不变**：`0.1.2-rc.1`，壳修订 +7。新增桌面垃圾桶（方案 C 全量）：删除=改名进 `$DSH_HOME/trash/` + index.json 记账；预设/插件/会话/内核版本可还原（同名落副本）；Agent 的 rm 类命令经内核 PreToolUse 钩子拦截入桶（可疑即拦、`node_modules`/`.git` 豁免、桌面设置可关）；30 天保留期启动清扫。见 CONTEXT「桌面垃圾桶」词条。
 2. **发布**：tag `v0.1.2-rc.1.shell.7` → `b97c6ef`。两次 CI 失败后第三次全绿：①trash-sessions 测试的 mtime 排序在 ext4 打平（utimes 钉序修复）；②插件崩溃 E2E 仍断言手动错误页流程，被自动隔离行为取代（E2E 改断言自动恢复 + 恢复横幅含被隔离插件）。verify/build/publish 全绿，8 文件契约齐全。工作流对 dsh-mobile-shell 钉版 v1.0.1（随 shell.6 变更生效）。
 3. **官网/文档**：首页「当前版本重点」、zh/en FAQ 新增垃圾桶问答、README「你得到什么」新增条目；I18N 词条 167→169。
+
+---
+
+## 四十六、v0.1.2-rc.1.shell.9 发布：手机扫码资源修复与坏插件恢复闭环（2026-09-07）
+
+1. **手机扫码真实故障与修复**：此前测试只证明二维码展示，未让真实移动浏览器加载 Harness。
+   新打包 E2E 首次复现手机配对成功后页面报 `Failed to load plugins`：移动代理无条件删除
+   `token` 查询参数时，用 URL API 把 Harness 特殊批量路径 `/plugins/??…` 归一化成
+   `/plugins/?%3F…`，上游资源因此 404。dsh-mobile-shell `v1.0.2` 仅在确有 `token`
+   参数时重写查询串，否则完整保留原始 path；其 release run `34040270048` 的 Web、
+   Android、iOS 构建全绿，独立代理矩阵 run `34039836667` 的 24 个 Chromium/WebKit
+   用例及 HTTP/WebSocket 冒烟全部通过。
+2. **坏插件恢复闭环**：真实打包用例在 profile 内写入启动即抛错的 `dshmarket`，验证
+   自动隔离并恢复主页。该路径暴露两个问题：正常 Harness 页被 IPC guard 拒绝调用升级，
+   且自动隔离后没有可见操作入口。现仅为当前主窗口的已验证 Harness origin 开放既有
+   社区插件更新/禁用 handler；主页持续显示嫌疑插件和「升级并重新启用」，官方包和
+   恢复上下文外包仍硬拒绝。真实 npm E2E 已通过「崩溃 → 隔离 → 页面点击升级 →
+   安装最新版 → 重新加入 bundle → Harness 重启」。
+3. **本地验证**：`verify:full` 全绿（235 单测，92.70% 行 / 84.04% 分支 / 85.51%
+   函数覆盖率；16 个开发态 E2E；构建、packaged smoke、真实 Harness、离线市场）；
+   Android 风格 Chromium 与 iPhone 风格 WebKit 的桌面二维码→配对→真实输入控件链路
+   均通过；Safe Mode 坏插件与 real-registry 两项恢复用例通过。
+4. **失败候选审计**：`shell.8` run `34040463824` 在 macOS 故障注入重试后用无令牌
+   origin 探测新 Harness，偶发抢在页面换取 cookie 前得到 401；产品启动、真实界面、
+   Safe Mode 与升级门禁此前均已通过。`shell.9` 改为探测 supervisor 返回的原始带
+   一次性启动令牌 URL，本机连续 3 次及 retry-failure 分支通过，不放宽断言。
+5. **正式发布**：tag `v0.1.2-rc.1.shell.9` → `7abe252`；Release run
+   `34081187843` verify、macOS/Windows/Linux build、跨版本数据保留、安装器冒烟、
+   故障恢复、8 资产契约、attestation 与 publish 全绿。
+6. **GitCode 与官网**：本地镜像器补传三安装包，自动任务已先传三个 SHA-256；最终
+   Range GET 6/6 在线。Site Data Refresh run `34081962406` 成功并提交 `dc1c04d`；
+   正式域名 `/data/release.json` 与 `/api/downloads` 均指向 shell.9、6/6
+   `gitcode_ok=true`，核验时累计 923（mac 197 / win 580 / linux 146）。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.9>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.9>；
+官网：<https://dsh-desktop.com>。
+
+---
+
+_更新于 2026-09-07_
