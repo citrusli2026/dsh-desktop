@@ -54,7 +54,7 @@ import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
 import { DEEPSEEK_PLATFORM_RECHARGE_URL } from './links.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
-import { LanService, qrSvgFromText } from './lan.ts'
+import { LanService, loadOrCreateLanMasterToken, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
 import { isMainWindowHarnessSender, isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
 import { DesktopPreferencesController, type DesktopPreferencesResult, type DesktopPreferencesUpdate } from './desktop-preferences.ts'
@@ -82,6 +82,8 @@ const lanService = new LanService({
   mobileShellRoot,
   nodeExecutable: () => nodeBin(),
   getTargetUrl: () => shellApp.state?.phase === 'ready' ? shellApp.state.url : undefined,
+  masterToken: () => loadOrCreateLanMasterToken(join(app.getPath('userData'), 'lan', 'master-token')),
+  stateFile: () => join(app.getPath('userData'), 'lan', 'devices.json'),
   onLog: line => console.log(`dsh-desktop: ${line}`),
   onStateChanged: () => {
     // A dead proxy or an expired pairing leaves the QR window pointing at a
@@ -544,7 +546,7 @@ function toggleMaximize(): void {
 function aboutMaintenance(): AboutMaintenanceActions {
   return {
     openLogs: () => { void openLogsFolder() },
-    exportDiagnostics: () => { void exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive(), lastMarketInstallResult) },
+    exportDiagnostics: () => { void exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive(), lastMarketInstallResult, lanService.diagnosticState) },
   }
 }
 
@@ -618,7 +620,7 @@ ipcMain.handle('shell:open-logs', (event) => {
 
 ipcMain.handle('shell:export-diagnostics', async (event) => {
   if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
-  return exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive(), lastMarketInstallResult)
+  return exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive(), lastMarketInstallResult, lanService.diagnosticState)
 })
 
 ipcMain.handle('shell:close-lan-pairing', (event) => {

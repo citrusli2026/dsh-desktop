@@ -15,3 +15,10 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     version-update-semver-scope: minor
+    ignore:
+      - dependency-name: electron
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major

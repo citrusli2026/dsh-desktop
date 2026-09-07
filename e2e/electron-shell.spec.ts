@@ -1,10 +1,11 @@
 import { test, expect, _electron as electron, chromium, webkit, type ElectronApplication, type Page } from '@playwright/test'
 import { createServer, type Server } from 'node:http'
 import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { spawn } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { promisify } from 'node:util'
 import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
 
 // Packaged mode runs the real bundled Harness (the dev web-URL override is
@@ -13,6 +14,7 @@ import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
 const PACKAGED = process.env.DSH_E2E_PACKAGED === '1'
 const require = createRequire(import.meta.url)
 const electronPath = require('electron') as string
+const execFileAsync = promisify(execFile)
 
 type PathStyle = 'normal' | 'weird' | 'readonly'
 
@@ -237,6 +239,25 @@ async function clickMenuItem(app: ElectronApplication, label: string): Promise<v
     item.click()
     return true
   }, label), { timeout: 10_000 }).toBe(true)
+}
+
+function adbExecutable(): string {
+  if (process.env.DSH_E2E_ADB !== undefined) return process.env.DSH_E2E_ADB
+  const sdk = process.env.ANDROID_SDK_ROOT ?? process.env.ANDROID_HOME
+    ?? (process.platform === 'darwin' ? join(homedir(), 'Library', 'Android', 'sdk') : undefined)
+  return sdk === undefined
+    ? (process.platform === 'win32' ? 'adb.exe' : 'adb')
+    : join(sdk, 'platform-tools', process.platform === 'win32' ? 'adb.exe' : 'adb')
+}
+
+async function adb(serial: string, ...args: string[]): Promise<string> {
+  const result = await execFileAsync(adbExecutable(), ['-s', serial, ...args], { encoding: 'utf8', timeout: 30_000 })
+  return result.stdout
+}
+
+async function captureAndroid(serial: string, path: string): Promise<void> {
+  const result = await execFileAsync(adbExecutable(), ['-s', serial, 'exec-out', 'screencap', '-p'], { encoding: 'buffer', timeout: 30_000 })
+  await writeFile(path, result.stdout)
 }
 
 shellTest('native menu and title follow the Harness locale preference @smoke @critical', async ({ electronApp, window, settingsPath }) => {
@@ -827,4 +848,111 @@ shellTest('LAN pairing completes from QR through a mobile browser', async ({ ele
     await browser.close()
     await pairingPage!.close().catch(() => {})
   }
+})
+
+shellTest.describe('Android emulator LAN journey', () => {
+  const serial = process.env.DSH_E2E_ANDROID_SERIAL
+  shellTest.skip(serial === undefined, 'set DSH_E2E_ANDROID_SERIAL to a running emulator')
+
+  shellTest('desktop QR pairs in Android Chrome and reconnects after sharing restarts @android-simulator', async ({ electronApp, window, relaunch }, testInfo) => {
+    shellTest.setTimeout(120_000)
+    await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
+    const opened = await window.evaluate(() => (
+      window as unknown as { dshDesktop?: { desktopAction(action: string): Promise<unknown> } }
+    ).dshDesktop?.desktopAction('startLanPairing'))
+    expect(opened).toBe(true)
+
+    let pairingPage: Page | undefined
+    await expect.poll(() => {
+      pairingPage = electronApp.windows().find(candidate => candidate.url().startsWith('data:')
+        && candidate.isClosed() === false && candidate !== window)
+      return pairingPage !== undefined
+    }, { timeout: 30_000 }).toBe(true)
+    const content = await pairingPage!.evaluate(() => document.body.innerText)
+    const baseUrl = /(?:Address|地址)[:：]\s*(http:\/\/\d+\.\d+\.\d+\.\d+:\d+\/)/.exec(content)?.[1]
+    const code = /(?:Code|配对码)[:：]\s*(\d{6})/.exec(content)?.[1]
+    expect(baseUrl).toBeTruthy()
+    expect(code).toMatch(/^\d{6}$/)
+
+    const cdpPort = '9222'
+    let androidBrowser: Awaited<ReturnType<typeof chromium.connectOverCDP>> | undefined
+    let currentApp = electronApp
+    try {
+      await adb(serial!, 'shell', 'am', 'force-stop', 'com.android.chrome')
+      await adb(serial!, 'forward', `tcp:${cdpPort}`, 'localabstract:chrome_devtools_remote')
+      await adb(serial!, 'shell', 'am', 'start', '-a', 'android.intent.action.VIEW', '-d', `${baseUrl}launch#pair=${code}`, 'com.android.chrome')
+      await expect.poll(async () => {
+        try {
+          return (await fetch(`http://127.0.0.1:${cdpPort}/json/version`)).ok
+        } catch {
+          return false
+        }
+      }, { timeout: 30_000 }).toBe(true)
+
+      androidBrowser = await chromium.connectOverCDP(`http://127.0.0.1:${cdpPort}`)
+      let mobile: Page | undefined
+      await expect.poll(async () => {
+        for (const page of androidBrowser!.contexts().flatMap(context => context.pages()).reverse()) {
+          if (!page.url().startsWith(baseUrl!)) continue
+          if (await page.getByTestId('pair-code').inputValue().catch(() => '') === code) {
+            mobile = page
+            return true
+          }
+        }
+        return false
+      }, { timeout: 30_000 }).toBe(true)
+      // connectOverCDP cannot retrofit Playwright's hasTouch metadata onto an
+      // already-running Android Chrome context; the click is still executed
+      // in the emulator's real mobile browser process.
+      const pairedResponse = mobile!.waitForResponse(response => response.url() === `${baseUrl}pair`
+        && response.request().method() === 'POST')
+      await mobile!.getByTestId('pair-btn').click()
+      expect((await pairedResponse).status()).toBe(200)
+      await expect.poll(() => new URL(mobile!.url()).pathname, { timeout: 30_000 }).toBe('/')
+      await expect(mobile!.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
+      await expect.poll(() => mobile!.evaluate(() => fetch('/session/check', { cache: 'no-store' }).then(response => response.status)))
+        .toBe(200)
+
+      // A real Android browser is backgrounded and foregrounded; the paired
+      // session must remain usable without re-entering the one-time code.
+      await adb(serial!, 'shell', 'input', 'keyevent', '3')
+      await adb(serial!, 'shell', 'am', 'start', '-n', 'com.android.chrome/com.google.android.apps.chrome.Main')
+      await expect.poll(() => mobile!.evaluate(() => document.visibilityState), { timeout: 30_000 }).toBe('visible')
+
+      // Plugin recovery and manual Harness restarts replace the LAN proxy.
+      // Stopping/starting the same sharing surface exercises the same secret
+      // and registry persistence while making the outage deterministic.
+      expect(await window.evaluate(() => (
+        window as unknown as { dshDesktop?: { desktopAction(action: string): Promise<unknown> } }
+      ).dshDesktop?.desktopAction('stopLanPairing'))).toBe(true)
+      expect(await window.evaluate(() => (
+        window as unknown as { dshDesktop?: { desktopAction(action: string): Promise<unknown> } }
+      ).dshDesktop?.desktopAction('startLanPairing'))).toBe(true)
+      await expect.poll(() => mobile!.evaluate(() => fetch('/session/check', { cache: 'no-store' })
+        .then(response => response.status).catch(() => 0)), { timeout: 30_000 }).toBe(200)
+      await mobile!.reload({ waitUntil: 'domcontentloaded' })
+      await expect(mobile!.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
+
+      // The signing key and device registry live in userData, so quitting and
+      // reopening the desktop app does not strand a remembered phone session.
+      currentApp = await relaunch()
+      const reopenedWindow = await currentApp.firstWindow()
+      await expect(reopenedWindow.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
+      expect(await reopenedWindow.evaluate(() => (
+        window as unknown as { dshDesktop?: { desktopAction(action: string): Promise<unknown> } }
+      ).dshDesktop?.desktopAction('startLanPairing'))).toBe(true)
+      await expect.poll(() => mobile!.evaluate(() => fetch('/session/check', { cache: 'no-store' })
+        .then(response => response.status).catch(() => 0)), { timeout: 30_000 }).toBe(200)
+      await mobile!.reload({ waitUntil: 'domcontentloaded' })
+      await expect(mobile!.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
+      await captureAndroid(serial!, testInfo.outputPath('android-device-reconnected.png'))
+    } finally {
+      await androidBrowser?.close().catch(() => {})
+      await adb(serial!, 'forward', '--remove', `tcp:${cdpPort}`).catch(() => {})
+      await adb(serial!, 'shell', 'am', 'force-stop', 'com.android.chrome').catch(() => {})
+      for (const page of currentApp.windows()) {
+        if (page.url().startsWith('data:')) await page.close().catch(() => {})
+      }
+    }
+  })
 })

@@ -84,7 +84,8 @@ pnpm run verify      # typecheck, unit tests + coverage, site checks, build
 pnpm run dist        # build installers for the current platform (into dist/)
 ```
 
-- **LAN Web connection**: "Desktop tools → Connect a mobile device" starts an isolated mobile-shell Web proxy and one-time pairing QR. The shell only stages the other repo's Web artifact (`dsh-mobile-shell`, immutable tag `v1.0.0`); `DSH_LAN_IP` selects an adapter when needed.
+- **LAN Web connection**: "Desktop tools → Connect a mobile device" starts an isolated mobile-shell Web proxy and one-time pairing QR. The shell only stages the other repo's Web artifact (`dsh-mobile-shell`, immutable tag `v1.0.2`); paired sessions survive Harness/proxy restarts, and `DSH_LAN_IP` selects an adapter when needed.
+- **Android emulator gate**: boot an AVD with Chrome, then run `DSH_E2E_ANDROID_SERIAL=<adb-serial> pnpm run test:e2e:android`. It drives the real emulator browser through pairing, background/resume, sharing restart, and a full desktop relaunch.
 - The bundled Node is pinned in `manifest/node-runtime.json` with per-platform SHA-256, so bootstrap is reproducible from the committed values.
 
 ## Layout

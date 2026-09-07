@@ -98,7 +98,11 @@ pnpm run dist        # 打当前平台安装包(产物在 dist/)
 
 - **局域网 Web 连接**：「桌面工具 → 连接移动设备」启动独立
   mobile-shell Web 代理并显示一次性配对码。壳只消费另一仓库的 Web 产物
-  (`dsh-mobile-shell`,不可变 tag `v1.0.0`);`DSH_LAN_IP` 可指定多网卡时的地址。
+  (`dsh-mobile-shell`,不可变 tag `v1.0.2`);已配对会话可跨 Harness/代理重启继续使用,
+  `DSH_LAN_IP` 可指定多网卡时的地址。
+- **Android 模拟器门禁**:启动带 Chrome 的 AVD 后执行
+  `DSH_E2E_ANDROID_SERIAL=<adb-serial> pnpm run test:e2e:android`。该用例使用模拟器里的
+  真实浏览器覆盖配对、后台恢复、共享重启和桌面应用完整重启。
 - 内置 Node 在 `manifest/node-runtime.json` 里 pin 死版本与各平台 SHA-256,
   bootstrap 从仓库提交值复现。
 

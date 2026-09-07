@@ -4,9 +4,9 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-09-04 · 当前代码基线 `0.1.2-rc.1.shell.2`（已发布）
+最后更新: 2026-09-07 · 当前代码基线 `0.1.2-rc.1.shell.10`（待发布）
 （主界面提供一次性首次成功引导；桌面设置提供本地优先、只读且脱敏的运行体检；
-发布门禁覆盖真实 Harness、插件市场、安全模式和跨版本升级；内核 `0.1.2-rc.1`）
+发布门禁覆盖真实 Harness、插件市场、安全模式、移动设备连接和跨版本升级；内核 `0.1.2-rc.1`）
 
 ## 1. 产品概述
 
@@ -43,7 +43,7 @@ src/main/desktop-preferences.ts  快捷键、启动/通知与首次成功引导�
 src/main/desktop-notifications.ts  公开会话/任务状态归一化、通知与首次成功边沿纯函数
 src/main/health-check.ts        本地运行时/目录/loopback/profile 检查与 opt-in 连通性探测
 src/main/balance.ts         DeepSeek 余额读数(0025):凭证读取、缓存与托盘行
-src/main/lan.ts             局域网 Web 代理与配对二维码
+src/main/lan.ts             局域网 Web 代理、私有设备状态与配对二维码
 src/main/diagnostics.ts     日志轮转、遮罩、报告格式与导出版
 src/main/presets.ts         便携预设包(.dshpreset)导出/导入、冲突与信任检查
 src/main/profile.ts         只读用户 Harness profile 清单与已安装插件状态
@@ -65,14 +65,15 @@ plugins/dsh-desktop-controls/  应用内桌面工具、首次成功引导与桌�
 
 0. 依赖安全审计（官方 npm registry）;
 1. TypeScript typecheck;
-2. 193 个 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
+2. 全部 `node:test` 单测，并执行 80% 行、75% 分支、70% 函数覆盖率门槛;
 3. `site:check` 与 `check-api-downloads`（双语键、静态资源与下载接口契约）;
 4. 主进程/预加载构建; Harness 闭包与内置 Node bootstrap;
 5. 三条 xvfb 冒烟: 正常启动、错误页重试成功、强制重试失败后按钮恢复;
-6. 真实 Electron E2E（`run-e2e-guarded.mjs`，12 用例）: 语言同步、托盘单实例、
+6. 真实 Electron E2E（`run-e2e-guarded.mjs`）: 语言同步、托盘单实例、
    设置面板 UI、更新检查、诊断导出、桌面状态通知（基线静默/未聚焦提示/点击
    聚焦/偏好开关）、便携预设导入、窗口几何恢复、真实第二实例、特殊路径、
-   只读 DSH_HOME。
+   只读 DSH_HOME、局域网配对与坏插件自动隔离。Android 模拟器现场门禁按需用
+   `DSH_E2E_ANDROID_SERIAL=<serial> pnpm run test:e2e:android` 运行，不要求通用 CI 配置 AVD。
 
 tag Release（release.yml: verify → build 三平台并行 → publish）在 CI 之上
 另加质量门禁，并强制:
@@ -110,5 +111,5 @@ tag Release（release.yml: verify → build 三平台并行 → publish）在 CI
   attestation 验证 → release 创建/上传。
 
 测试硬化的规划、成本护栏与已知边界（NSIS 覆盖安装挂死、macOS dmg
-安装路径无自动化等）见 `docs/test-hardening-plan.md`; 2026-08-23
-shell.2 首次全量执行全绿，十余次波折与修复记录见 HANDOFF 二十节。
+安装路径无自动化、物理相机扫码等）见 `docs/test-hardening-plan.md`; 2026-08-23
+shell.2 首次全量执行全绿，后续现场验证记录见 HANDOFF。

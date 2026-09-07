@@ -1,6 +1,6 @@
 {
   "name": "dsh-desktop",
-  "version": "0.1.2-rc.1.shell.9",
+  "version": "0.1.2-rc.1.shell.10",
   "description": "Unofficial DeepSeek Harness Electron desktop shell: download and use; identical to `dsh web`",
   "author": "dsh-desktop contributors <citrusli@126.com>",
   "license": "MIT",
@@ -27,6 +27,7 @@
     "test": "node --test \"test/**/*.test.ts\"",
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=75 --test-coverage-functions=70 \"test/**/*.test.ts\"",
     "test:e2e": "pnpm run build && playwright test",
+    "test:e2e:android": "pnpm run build && playwright test -g @android-simulator",
     "test:e2e:packaged": "node scripts/e2e-packaged.mjs",
     "test:e2e:market:offline": "node scripts/e2e-market.mjs offline",
     "test:e2e:market:real": "node scripts/e2e-market.mjs real",

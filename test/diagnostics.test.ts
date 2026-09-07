@@ -90,6 +90,14 @@ test('formatDiagnosticReport records versions and crash state without upload', (
       status: 'download-failed', installed: false, stage: 'install', reason: 'proxy',
       detail: 'proxy refused Authorization: Bearer hidden-token',
     },
+    lan: {
+      running: true,
+      busy: false,
+      lanAddress: '192.168.1.26',
+      listenPort: 3081,
+      targetOrigin: 'http://127.0.0.1:49152',
+      pairingExpiresAt: Date.parse('2026-08-15T00:10:00.000Z'),
+    },
   })
   assert.match(report, /app_version=1\.0\.0\.shell\.1/)
   assert.match(report, /harness_state=crashed \(attempts=6\)/)
@@ -104,6 +112,10 @@ test('formatDiagnosticReport records versions and crash state without upload', (
   assert.match(report, /uploaded_automatically=false/)
   assert.match(report, /market_install_status=download-failed/)
   assert.match(report, /market_install_reason=proxy/)
+  assert.match(report, /lan_running=true/)
+  assert.match(report, /lan_address=192\.168\.1\.26/)
+  assert.match(report, /lan_target_origin=http:\/\/127\.0\.0\.1:49152/)
+  assert.match(report, /lan_pairing_expires_at=2026-08-15T00:10:00\.000Z/)
   assert.doesNotMatch(report, /hidden-token/)
 })
 

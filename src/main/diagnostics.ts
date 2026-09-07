@@ -11,6 +11,7 @@ import { resolveDshHome } from './dsh-home.ts'
 import { harnessRoot } from './paths.ts'
 import { readProfileStatus, type ProfileStatus } from './profile.ts'
 import type { MarketInstallResult } from './market-install.ts'
+import type { LanRuntimeState } from './lan.ts'
 
 export const MAX_LOG_BYTES = 5 * 1024 * 1024
 export const KEPT_LOG_FILES = 3
@@ -114,6 +115,8 @@ export interface DiagnosticFacts {
   pluginFailureCause: 'kernel-api' | 'unknown'
   /** Last manual market operation in this app session, already sanitized. */
   marketInstall?: MarketInstallResult
+  /** Non-secret LAN bridge state captured when the user exports the report. */
+  lan?: LanRuntimeState
 }
 
 function stateLine(state: HarnessState | undefined): string {
@@ -155,6 +158,12 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
     `market_install_reason=${facts.marketInstall?.reason ?? 'none'}`,
     `market_install_version=${facts.marketInstall?.version ?? 'unknown'}`,
     `market_install_detail=${facts.marketInstall?.detail === undefined ? 'none' : JSON.stringify(redactDiagnosticsLog(facts.marketInstall.detail))}`,
+    `lan_running=${facts.lan?.running === true ? 'true' : 'false'}`,
+    `lan_busy=${facts.lan?.busy === true ? 'true' : 'false'}`,
+    `lan_address=${facts.lan?.lanAddress ?? 'none'}`,
+    `lan_port=${facts.lan?.listenPort ?? 'none'}`,
+    `lan_target_origin=${facts.lan?.targetOrigin ?? 'none'}`,
+    `lan_pairing_expires_at=${facts.lan?.pairingExpiresAt === undefined ? 'none' : new Date(facts.lan.pairingExpiresAt).toISOString()}`,
     'generated_locally=true',
     'uploaded_automatically=false',
     '',
@@ -183,6 +192,7 @@ export async function exportDiagnosticReport(
   locale: ShellLocale = 'en',
   safeMode = false,
   marketInstall?: MarketInstallResult,
+  lan?: LanRuntimeState,
 ): Promise<boolean> {
   const api = electron as unknown as typeof import('electron')
   const warning = await api.dialog.showMessageBox({
@@ -241,6 +251,7 @@ export async function exportDiagnosticReport(
       pluginFailures: collectPluginFailures(logTail),
       pluginFailureCause: classifyPluginFailureCause(logTail),
       marketInstall,
+      lan,
     })
     writeFileSync(result.filePath, report, { mode: 0o600 })
   } catch (error) {

@@ -25,6 +25,18 @@ body:
         - Linux (Debian/Ubuntu/UOS/Deepin/麒麟)
     validations:
       required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Startup / update
+        - Mobile pairing / LAN connection
+        - Plugin installation / recovery
+        - Window / tray / notifications
+        - Other
+    validations:
+      required: true
   - type: textarea
     id: what
     attributes:
@@ -52,6 +64,15 @@ body:
         - Recovery paused
         - Safe Mode
         - Unknown
+  - type: textarea
+    id: connection_recovery_context
+    attributes:
+      label: Mobile pairing or plugin recovery context
+      description: Optional. For mobile issues include phone OS/browser, whether both devices share Wi-Fi, and whether failure happened before pairing, after confirmation, or after a restart. For plugin issues include the plugin name/version and the recovery action used.
+      placeholder: |
+        Phone / browser or plugin / version:
+        Failure stage or recovery action:
+        Same Wi-Fi / guest network / VPN:
   - type: textarea
     id: diagnostics
     attributes:

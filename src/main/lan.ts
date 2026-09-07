@@ -1,10 +1,11 @@
 /** LAN bridge for the prebuilt dsh-mobile-shell token proxy. */
 import { type ChildProcessByStdio } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
+import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { networkInterfaces } from 'node:os'
 import { createInterface } from 'node:readline'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { Readable } from 'node:stream'
 import { readMobileShellArtifact } from './mobile-shell.ts'
@@ -20,10 +21,23 @@ export interface LanPairing {
   readonly listenPort: number
 }
 
+export interface LanRuntimeState {
+  readonly running: boolean
+  readonly busy: boolean
+  readonly lanAddress?: string
+  readonly listenPort?: number
+  readonly targetOrigin?: string
+  readonly pairingExpiresAt?: number
+}
+
 export interface LanServiceOptions {
   readonly mobileShellRoot: string | (() => string)
   readonly nodeExecutable?: () => string
   readonly getTargetUrl: () => string | undefined
+  /** Stable host-only signing key so paired device sessions survive proxy restarts. */
+  readonly masterToken?: () => string | Promise<string>
+  /** Writable device registry; packaged resources may be read-only. */
+  readonly stateFile?: () => string
   readonly onLog?: (line: string) => void
   readonly onStateChanged?: () => void
   /** Test hook: inject a fixed LAN address to skip private-LAN discovery. */
@@ -33,6 +47,32 @@ export interface LanServiceOptions {
 const DEFAULT_LISTEN_PORT = 3081
 const MAX_PORT_SEARCH = 100
 const START_TIMEOUT_MS = 10_000
+const MASTER_TOKEN_PATTERN = /^[a-f0-9]{64}$/
+
+/** Read or atomically create the LAN session signing key with owner-only permissions. */
+export async function loadOrCreateLanMasterToken(path: string): Promise<string> {
+  const readExisting = async (): Promise<string> => {
+    const token = (await readFile(path, 'utf8')).trim()
+    if (!MASTER_TOKEN_PATTERN.test(token)) throw new Error(`LAN master token is invalid: ${path}`)
+    await chmod(path, 0o600)
+    return token
+  }
+  try {
+    return await readExisting()
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+  }
+
+  await mkdir(dirname(path), { recursive: true })
+  const token = randomBytes(32).toString('hex')
+  try {
+    await writeFile(path, `${token}\n`, { flag: 'wx', mode: 0o600 })
+    return token
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+    return readExisting()
+  }
+}
 
 export function isPrivateLanIPv4(address: string): boolean {
   const octets = address.split('.').map(Number)
@@ -233,6 +273,27 @@ export class LanService {
     return this.targetUrl
   }
 
+  /** Non-secret connection facts suitable for a user-reviewed diagnostic report. */
+  get diagnosticState(): LanRuntimeState {
+    let targetOrigin: string | undefined
+    try {
+      targetOrigin = this.targetUrl === undefined ? undefined : new URL(this.targetUrl).origin
+    } catch {
+      targetOrigin = undefined
+    }
+    const pairing = this.currentPairing
+    return {
+      running: this.isRunning,
+      busy: this.isBusy,
+      ...(pairing === undefined ? {} : {
+        lanAddress: pairing.lanAddress,
+        listenPort: pairing.listenPort,
+        pairingExpiresAt: pairing.expiresAt,
+      }),
+      ...(targetOrigin === undefined ? {} : { targetOrigin }),
+    }
+  }
+
   start(): Promise<LanPairing> {
     if (this.startSlot.pending) return this.startSlot.current!
     const currentPairing = this.currentPairing
@@ -302,7 +363,8 @@ export class LanService {
       const upstreamToken = new URL(targetUrl).searchParams.get('token') ?? undefined
       const listenPort = await chooseListenPort(lanAddress)
       if (controller.signal.aborted) throw new Error('LAN proxy start cancelled')
-      const token = randomBytes(32).toString('hex')
+      const token = await this.options.masterToken?.() ?? randomBytes(32).toString('hex')
+      if (token.length < 8) throw new Error('LAN master token must contain at least 8 characters')
       const baseUrl = `http://${lanAddress}:${listenPort}/`
       const mobileShell = readMobileShellArtifact(this.mobileShellPath)
       const proxyPath = mobileShell.proxyPath
@@ -320,6 +382,7 @@ export class LanService {
           DSH_TARGET_PORT: String(target.port),
           DSH_LAUNCHER: launcherPath,
           DSH_PAIR_QR: 'off',
+          ...(this.options.stateFile === undefined ? {} : { DSH_STATE_FILE: resolve(this.options.stateFile()) }),
         }),
         windowsHide: true,
       }) as ChildProcessByStdio<null, Readable, Readable>

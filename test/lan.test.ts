@@ -1,11 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, writeFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, stat, writeFile, rm } from 'node:fs/promises'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { isLanPairingExpired, isPrivateLanIPv4, LanService, listPrivateLanIPv4, qrSvgFromCode } from '../src/main/lan.ts'
+import { isLanPairingExpired, isPrivateLanIPv4, LanService, listPrivateLanIPv4, loadOrCreateLanMasterToken, qrSvgFromCode } from '../src/main/lan.ts'
 import { pairingPageMarkup } from '../src/main/lan-page.ts'
 
 test('private LAN address detection rejects loopback and public addresses', () => {
@@ -44,6 +44,21 @@ test('QR SVG contains a crisp module grid and white quiet zone', () => {
   assert.match(svg, /fill="#fff"/)
 })
 
+test('LAN master token is private and stable across reads', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dsh-lan-token-'))
+  const path = join(root, 'lan', 'master-token')
+  try {
+    const first = await loadOrCreateLanMasterToken(path)
+    const second = await loadOrCreateLanMasterToken(path)
+    assert.match(first, /^[a-f0-9]{64}$/)
+    assert.equal(second, first)
+    assert.equal((await readFile(path, 'utf8')).trim(), first)
+    if (process.platform !== 'win32') assert.equal((await stat(path)).mode & 0o777, 0o600)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
 test('LAN start is single-flight and clears its busy state after failure', async () => {
   const service = new LanService({
     mobileShellRoot: '/tmp/missing-mobile-shell',
@@ -76,7 +91,12 @@ const port = Number(process.env.DSH_LISTEN_PORT)
 const server = createServer((req, res) => {
   if (req.url === '/healthz') {
     res.writeHead(200, { 'content-type': 'application/json' })
-    res.end(JSON.stringify({ ok: true, upstreamToken: process.env.DSH_UPSTREAM_TOKEN ?? null }))
+    res.end(JSON.stringify({
+      ok: true,
+      upstreamToken: process.env.DSH_UPSTREAM_TOKEN ?? null,
+      masterToken: process.env.DSH_REMOTE_TOKEN ?? null,
+      stateFile: process.env.DSH_STATE_FILE ?? null,
+    }))
     return
   }
   if (req.url === '/pair/new' && req.method === 'POST') {
@@ -108,6 +128,8 @@ server.listen(port, host)
     nodeExecutable: () => process.execPath,
     getTargetUrl: () => `http://127.0.0.1:${targetPort}/?token=launch-token-abc123`,
     lanAddress: () => '127.0.0.1',
+    masterToken: () => 'a'.repeat(64),
+    stateFile: () => join(root, 'lan', 'devices.json'),
     onStateChanged: () => { stateChanges += 1 },
   })
 
@@ -120,15 +142,28 @@ server.listen(port, host)
     assert.equal(service.isRunning, true)
     assert.equal(service.currentPairing?.code, pairing.code)
     assert.equal(pairing.expiresAt > Date.now(), true)
+    assert.deepEqual(service.diagnosticState, {
+      running: true,
+      busy: false,
+      lanAddress: '127.0.0.1',
+      listenPort: pairing.listenPort,
+      targetOrigin: `http://127.0.0.1:${targetPort}`,
+      pairingExpiresAt: pairing.expiresAt,
+    })
     assert.ok(stateChanges > 0, 'start should have notified state changes')
-    const health = await fetch(`${pairing.baseUrl}healthz`).then(response => response.json()) as { upstreamToken?: string | null }
+    const health = await fetch(`${pairing.baseUrl}healthz`).then(response => response.json()) as { upstreamToken?: string | null; masterToken?: string; stateFile?: string }
     assert.equal(health.upstreamToken, 'launch-token-abc123')
+    assert.equal(health.masterToken, 'a'.repeat(64))
+    assert.equal(health.stateFile, join(root, 'lan', 'devices.json'))
 
     // Restart: stop + start, yielding a fresh pairing.
     const restarted = await service.restart()
     assert.match(restarted.code, /^\d{6}$/)
     assert.equal(service.isRunning, true)
     assert.equal(service.currentPairing?.code, restarted.code)
+    const restartedHealth = await fetch(`${restarted.baseUrl}healthz`).then(response => response.json()) as { masterToken?: string; stateFile?: string }
+    assert.equal(restartedHealth.masterToken, health.masterToken, 'paired-device signing key must survive a proxy restart')
+    assert.equal(restartedHealth.stateFile, health.stateFile, 'device registry must stay in the writable user-data path')
 
     // Stop clears runtime state.
     await service.stop()
