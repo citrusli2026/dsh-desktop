@@ -1,6 +1,6 @@
 {
   "name": "dsh-desktop",
-  "version": "0.1.2-rc.1.shell.10",
+  "version": "0.1.3-alpha.2.shell.0",
   "description": "Unofficial DeepSeek Harness Electron desktop shell: download and use; identical to `dsh web`",
   "author": "dsh-desktop contributors <citrusli@126.com>",
   "license": "MIT",
@@ -47,7 +47,8 @@
     "gen-icons": "node scripts/gen-icons.mjs",
     "fetch-node": "node scripts/fetch-node.mjs",
     "deploy-harness": "node scripts/deploy-harness.mjs",
-    "bootstrap": "pnpm run deploy-harness && pnpm run fetch-node",
+    "rebuild-harness-native": "node scripts/rebuild-harness-native.mjs",
+    "bootstrap": "pnpm run deploy-harness && pnpm run fetch-node && pnpm run rebuild-harness-native",
     "postinstall": "node scripts/install-electron.mjs",
     "dist": "pnpm run build && electron-builder",
     "dist:dir": "pnpm run build && electron-builder --dir"

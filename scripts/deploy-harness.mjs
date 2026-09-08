@@ -4,7 +4,8 @@
  * its committed lockfile, then `pnpm deploy` (legacy, hoisted) a symlink-free
  * node_modules into resources/harness/ — the closure technique the upstream
  * deepseek-harness single-exe build uses. Clears resources/harness first, so
- * run fetch-node afterwards (that is the bootstrap order).
+ * bootstrap fetches the pinned Node afterwards and then rebuilds ABI-bound
+ * addons with that exact runtime.
  * @module scripts/deploy-harness
  */
 import { spawnSync } from 'node:child_process'

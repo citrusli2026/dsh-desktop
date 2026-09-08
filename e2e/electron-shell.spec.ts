@@ -255,6 +255,24 @@ async function adb(serial: string, ...args: string[]): Promise<string> {
   return result.stdout
 }
 
+async function ensureAndroidEmulatorRoute(serial: string): Promise<void> {
+  const current = await adb(serial, 'shell', 'ip', 'route', 'show')
+  if (/^default\s/m.test(current)) return
+  if (!serial.startsWith('emulator-')) throw new Error(`Android device ${serial} has no default route`)
+
+  // Android Emulator snapshots can occasionally restore eth0 without its
+  // 10.0.2.2 gateway. Repair only emulator instances; a physical device's
+  // network configuration must never be mutated by this test.
+  await execFileAsync(adbExecutable(), ['-s', serial, 'root'], { encoding: 'utf8', timeout: 30_000 })
+  await execFileAsync(adbExecutable(), ['-s', serial, 'wait-for-device'], { encoding: 'utf8', timeout: 30_000 })
+  await adb(serial, 'shell', 'ip', 'route', 'replace', 'default', 'via', '10.0.2.2', 'dev', 'eth0')
+  const repaired = await adb(serial, 'shell', 'ip', 'route', 'show')
+  if (!/^default\s+via\s+10\.0\.2\.2\s/m.test(repaired)) {
+    throw new Error(`Android emulator ${serial} default route could not be restored`)
+  }
+  console.log(`[android-e2e] restored missing emulator route via 10.0.2.2`)
+}
+
 async function captureAndroid(serial: string, path: string): Promise<void> {
   const result = await execFileAsync(adbExecutable(), ['-s', serial, 'exec-out', 'screencap', '-p'], { encoding: 'buffer', timeout: 30_000 })
   await writeFile(path, result.stdout)
@@ -857,6 +875,7 @@ shellTest.describe('Android emulator LAN journey', () => {
   shellTest('desktop QR pairs in Android Chrome and reconnects after sharing restarts @android-simulator', async ({ electronApp, window, relaunch }, testInfo) => {
     shellTest.setTimeout(120_000)
     await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
+    await ensureAndroidEmulatorRoute(serial!)
     const opened = await window.evaluate(() => (
       window as unknown as { dshDesktop?: { desktopAction(action: string): Promise<unknown> } }
     ).dshDesktop?.desktopAction('startLanPairing'))
