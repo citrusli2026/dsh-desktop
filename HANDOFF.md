@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.2-rc.1.shell.10`（2026-09-07 已发布，2026-09-08 完成镜像与官网收口；内核 `0.1.2-rc.1`） |
-| 已发布 | ✅ `0.1.2-rc.1.shell.10`（三端 dmg/exe/deb；手机会话跨 Harness/代理/桌面重启续用 + Android 模拟器门禁） |
-| 本地门禁 | ✅ 236 项单测、类型检查、runtime/site、安全审计、构建全绿；Android 15 真实 Chrome、移动 WebKit、packaged Harness/Safe Mode、offline + real market/坏插件升级重启 E2E 通过 |
-| 核心发布 | ✅ `v0.1.2-rc.1.shell.10` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复与插件恢复全链路验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.10`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.2-rc.1.shell.10` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `2eca3aa`） |
-| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1009（mac 195 / win 667 / linux 147）；正式域名在本次提交部署后复核 |
+| 最新代码基线 | ✅ `0.1.3-alpha.2.shell.0`（2026-09-08 已发布并完成 GitCode/官网收口；内核 `0.1.3-alpha.2`） |
+| 已发布 | ✅ `0.1.3-alpha.2.shell.0`（三端 dmg/exe/deb；Node 22 原生会话锁 ABI 门禁 + 手机会话跨 Harness/代理/桌面重启续用） |
+| 本地门禁 | ✅ 239 项单测、类型检查、runtime/site、安全审计、构建全绿；Android 15 真实 Chrome（含 AVD 路由自愈）、移动 WebKit、packaged Harness/Safe Mode、offline + real market/坏插件升级重启 E2E 通过 |
+| 核心发布 | ✅ `v0.1.3-alpha.2.shell.0` Release run `34223287457` 全绿：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.3-alpha.2.shell.0`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.3-alpha.2.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `3e143b0`） |
+| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1026（mac 200 / win 676 / linux 150；43 个版本）；正式域名在本次提交部署后复核 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1375,6 +1375,46 @@ _更新于 2026-09-07_
 
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.10>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.10>；
+官网：<https://dsh-desktop.com>。
+
+## 四十八、v0.1.3-alpha.2.shell.0 发布：新内核原生会话锁与全链收口（2026-09-08）
+
+1. **watcher 告警与内核升级**：`dsh-watch` run `34195055744` 正确发现上游
+   `@deepseek-ai/dsh 0.1.3-alpha.2`，但严格依赖脚本策略拦下新引入的
+   `fs-ext@2.1.1`，并自动建立 Issue #30。逐包审查确认其安装脚本仅执行标准
+   `node-gyp configure build`，来源链为
+   `dsh → dsh-session-persistence-jsonl → fs-ext`，用于跨进程 JSONL 会话文件锁；
+   现已精确加入 `allowBuilds`。同时把 manifest 中 30 个 dsh 直接 peer 契约同步至
+   `^0.1.3-alpha.2`，`cordis-plugin-group` 同步至 `^1.0.2`，冻结安装与 peer 审计通过。
+2. **原生 ABI 根因与修复**：仅放行脚本仍不够——本机 pnpm 使用 Node 24 编译出的
+   addon 为 ABI 137，而应用实际携带 Node 22.23.2 / ABI 127，真实运行会
+   `ERR_DLOPEN_FAILED`。`bootstrap` 现于随包 Node 落位后调用其自带 node-gyp 精确重编译
+   `fs-ext`，并用同一 Node 执行真实文件 `flock` 独占锁/解锁往返；新增 Unix/Windows
+   路径与 PATH 单测。macOS、本地安装包及 CI 三平台 bootstrap 均通过该探针。
+3. **移动模拟器与浏览器复验**：Android 15 AVD 首轮暴露模拟器快照恢复后 `eth0` 有地址
+   但丢失 `default via 10.0.2.2`；这不是应用故障。Android 专用 E2E 现仅对
+   `emulator-*` 自动恢复默认路由，明确不改物理设备网络。主动删除路由复现后，自愈与
+   `扫码深链 → 配对 → 前后台恢复 → 停止/重开共享 → 桌面完整重启 → 免重新配对`
+   全链通过；移动 WebKit 的二维码配对 2/2 通过。
+4. **插件与本地门禁**：真实 npm 市场 2/2 通过——含中文/空格路径安装，以及坏插件
+   `崩溃 → 自动隔离 → 拉取最新版并重新启用 → Harness 重启成功`；打包 Safe Mode
+   隔离/恢复横幅通过。`verify:full` 全绿：239 单测，92.25% 行 / 83.78% 分支 /
+   85.31% 函数覆盖率，16 个开发态 E2E、4 个打包态关键 E2E、真实 Harness UI、
+   offline market 全通过；官方 npm registry 两个依赖树均为 0 已知漏洞。
+5. **正式发布**：tag `v0.1.3-alpha.2.shell.0` → `3e143b0`；Release run
+   `34223287457` 的 verify、macOS/Windows/Linux build、跨版本数据保留、安装态与打包态
+   smoke、Safe Mode、故障注入、8 资产契约、attestation 和 publish 全绿。GitHub Release
+   于 `2026-09-08T12:12:35Z` 发布；同提交 CI run `34223280271` 与 CodeQL run
+   `34223280223` 均成功。
+6. **GitCode 与官网**：发布前已同步 GitCode main/tag，双方 peeled commit 均为
+   `3e143b0`；本机镜像首次上传 deb/dmg/exe，自动 backfill 已补三个 SHA-256，最终
+   6/6 Range GET 在线并通过 check-only。已确认完整后取消冗余 backfill run
+   `34224812113`。Site Data Refresh run `34224818376` 成功并提交 `b7c4484`；本地复核
+   `site/data/release.json` 的 6 个用户资产均为 `gitcode_ok=true`，生成时累计安装包下载
+   1026（mac 200 / win 676 / linux 150；43 个版本）。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.3-alpha.2.shell.0>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.3-alpha.2.shell.0>；
 官网：<https://dsh-desktop.com>。
 
 ---
