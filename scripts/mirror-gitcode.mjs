@@ -105,8 +105,32 @@ async function resolveAssetSet(tag, files) {
     .map(asset => ({ name: asset.name, size: asset.size }))
 }
 
-/** Ensure the GitCode release exists (idempotent); never moves an existing tag. */
-async function ensureGitCodeRelease(token, repo, tag) {
+/**
+ * Refuse to attach assets to a release whose GitCode tag points elsewhere.
+ * GitCode creates a missing tag from its default branch when a release is
+ * created without target_commitish, which is unsafe when the mirror lags.
+ */
+async function verifyGitCodeTag(repo, tag) {
+  const local = (await execFileP('git', ['rev-parse', `${tag}^{commit}`], { encoding: 'utf8', timeout: 30_000 })).stdout.trim()
+  const remoteUrl = `https://gitcode.com/${repo}.git`
+  const remote = (await execFileP('git', ['ls-remote', remoteUrl, `refs/tags/${tag}`, `refs/tags/${tag}^{}`], {
+    encoding: 'utf8', timeout: 30_000,
+  })).stdout.trim().split('\n').filter(Boolean)
+  const peeled = remote.find(line => line.endsWith(`refs/tags/${tag}^{}`))
+  const direct = remote.find(line => line.endsWith(`refs/tags/${tag}`))
+  const mirrored = (peeled ?? direct)?.split(/\s+/)[0]
+  if (mirrored === undefined) {
+    throw new Error(`GitCode tag ${tag} is missing; push GitCode main and the release tag before mirroring assets`)
+  }
+  if (mirrored !== local) {
+    throw new Error(`GitCode tag ${tag} points to ${mirrored.slice(0, 8)}, expected ${local.slice(0, 8)}; sync GitCode main and force the release tag before mirroring assets`)
+  }
+  console.log(`mirror-gitcode: tag ${tag} aligned at ${local.slice(0, 8)}`)
+  return local
+}
+
+/** Ensure the GitCode release exists after its tag has been verified. */
+async function ensureGitCodeRelease(token, repo, tag, targetCommitish) {
   const api = `https://api.gitcode.com/api/v5/repos/${repo}`
   const headers = { 'PRIVATE-TOKEN': token, 'Content-Type': 'application/json' }
   const existing = await fetch(`${api}/releases/${encodeURIComponent(tag)}`, { headers })
@@ -120,7 +144,8 @@ async function ensureGitCodeRelease(token, repo, tag) {
     body: JSON.stringify({
       tag_name: tag,
       name: `dsh-desktop ${tag}`,
-      prerelease: true,
+      target_commitish: targetCommitish,
+      release_status: 'pre',
       body: `Mirrored from https://github.com/${GITHUB_REPO}/releases`,
     }),
   })
@@ -158,6 +183,7 @@ async function main() {
   const assets = await resolveAssetSet(tag, explicitFiles)
   if (assets.length === 0) fail(`no public assets to mirror for ${tag}`)
   console.log(`mirror-gitcode: ${assets.length} asset(s) for ${tag}: ${assets.map(a => a.name).join(', ')}`)
+  const targetCommitish = await verifyGitCodeTag(GITCODE_REPO ?? 'citrusli2026/dsh-desktop', tag)
 
   if (checkOnly) {
     // Probe-only: report what GitCode already serves without touching anything.
@@ -174,7 +200,7 @@ async function main() {
 
   // Uploads do not need the release to exist first, but creating it early
   // makes the stable URLs probeable and catches tag mistakes up front.
-  await ensureGitCodeRelease(token, GITCODE_REPO, tag)
+  await ensureGitCodeRelease(token, GITCODE_REPO, tag, targetCommitish)
 
   const stagedDir = await mkdtemp(join(tmpdir(), `mirror-gitcode-${tag}-`))
   const toUpload = []

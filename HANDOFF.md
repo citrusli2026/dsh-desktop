@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-09-07。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-09-08。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.2-rc.1.shell.9`（2026-09-07 已发布；内核 `0.1.2-rc.1`） |
-| 已发布 | ✅ `0.1.2-rc.1.shell.9`（2026-09-07，三端 dmg/exe/deb；手机扫码插件资源修复 + 坏插件恢复闭环） |
-| 本地门禁 | ✅ 235 项单测、类型检查、runtime/site 门禁、构建全绿；真实 Chromium/WebKit 手机扫码、packaged Harness/Safe Mode/offline + real market/坏插件升级重启 E2E 通过 |
-| 核心发布 | ✅ `v0.1.2-rc.1.shell.9` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复与插件恢复全链路验证通过 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.9`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.2-rc.1.shell.9` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `7abe252`） |
-| 实时下载统计 | ✅ `/api/downloads` 正式域名验证 200；核验时累计 923（mac 197 / win 580 / linux 146；GitHub 798 + GitCode 125） |
+| 最新代码基线 | ✅ `0.1.2-rc.1.shell.10`（2026-09-07 已发布，2026-09-08 完成镜像与官网收口；内核 `0.1.2-rc.1`） |
+| 已发布 | ✅ `0.1.2-rc.1.shell.10`（三端 dmg/exe/deb；手机会话跨 Harness/代理/桌面重启续用 + Android 模拟器门禁） |
+| 本地门禁 | ✅ 236 项单测、类型检查、runtime/site、安全审计、构建全绿；Android 15 真实 Chrome、移动 WebKit、packaged Harness/Safe Mode、offline + real market/坏插件升级重启 E2E 通过 |
+| 核心发布 | ✅ `v0.1.2-rc.1.shell.10` Release 严格 8 文件门禁、attestation 核验、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入恢复与插件恢复全链路验证通过 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.2-rc.1.shell.10`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.2-rc.1.shell.10` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `2eca3aa`） |
+| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1009（mac 195 / win 667 / linux 147）；正式域名在本次提交部署后复核 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1337,3 +1337,46 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1
 ---
 
 _更新于 2026-09-07_
+
+## 四十七、v0.1.2-rc.1.shell.10 发布：手机会话持久化与模拟器闭环（2026-09-08 收口）
+
+1. **根因与修复**：桌面 `LanService` 原来每次拉起 mobile-shell 代理都生成新的
+   `DSH_REMOTE_TOKEN`，插件恢复或手动 Harness 重启会连带重启代理，从而让手机已签发的
+   device token 立即失效；设备登记还默认写在随包 `resources/mobile-shell/proxy/`，安装态
+   可能只读。现把 64 位随机主密钥和 `devices.json` 固定到 Electron userData 的 `lan/`
+   下，主密钥原子创建并收紧为 0600；停止/重开共享、Harness 恢复和整台桌面应用重启
+   都沿用同一签名密钥与设备登记。诊断报告只增加 LAN 运行状态、地址/端口、脱敏后的
+   upstream origin 和配对过期时间，不导出主密钥、device token 或配对码。
+2. **移动端现场验证**：新增条件式 `test:e2e:android`，在 Android 15 AVD 的真实 Chrome
+   中从桌面二维码窗口读取实际 LAN 深链，完成配对、后台/前台恢复、停止并重开共享、
+   桌面应用完整重启和页面重新加载；3 次 burn-in + 版本化后复验均通过，最终截图来自
+   `adb screencap`。另跑通移动 WebKit 的二维码→配对→Harness 页面链路。相机光学识别、
+   Wi-Fi AP 隔离和锁屏省电等变量仍明确保留给物理设备，不把深链注入冒充相机扫码。
+3. **插件与完整门禁**：真实 npm 市场 2/2 通过——含中文/空格路径安装，以及坏插件
+   `崩溃 → 自动隔离 → 升级并重新启用 → Harness 重启成功`；打包 Safe Mode 故障插件
+   隔离与恢复横幅通过。`verify:full` 全绿：236 单测，92.67% 行 / 83.74% 分支 /
+   85.60% 函数覆盖率，16 个开发态 E2E、打包、真实 Harness、offline market 全通过；
+   官方 npm registry 两个依赖树均为 0 已知漏洞。
+4. **正式发布**：tag `v0.1.2-rc.1.shell.10` → `2eca3aa`；Release run
+   `34124507908` 的 verify、macOS/Windows/Linux build、跨版本数据保留、安装态与打包态
+   smoke、Safe Mode、故障注入、8 资产契约、attestation 和 publish 全绿。GitHub Release
+   于 `2026-09-07T13:12:55Z` 发布。
+5. **GitCode 与发布自愈**：本机 SOCKS 一次补传 deb/dmg/exe，自动 backfill 已先传三个
+   SHA-256，最终 6/6 在线。核验时发现 GitCode 自动建 release 会在镜像仓库落后时把
+   新 tag 错指旧 main（本次为 `b6a47ed`）；已先同步 GitCode main，再把 tag 精确对齐
+   `2eca3aa`。随后加固本机镜像器、backfill workflow 与发布 runbook：资产操作前必须
+   比较 GitHub/GitCode peeled commit，release 创建显式传 `target_commitish`，失配直接
+   阻断，后续不再静默产出“资产正确、源码 tag 错误”的镜像。
+6. **项目收敛**：CodeQL v4 自动更新已合入；三个失败/越界 Dependabot PR（锁文件缺失的
+   sharp、Electron 44 主版本、Node 26 typings）已说明后关闭，并屏蔽后两类主版本噪音；
+   收口时 GitHub 开放 Issue/PR 均为 0。Site Data Refresh run `34198425398` 成功，随后
+   本地重新生成 `site/data/release.json`，6 个用户资产均为 `gitcode_ok=true`，生成时
+   累计安装包下载 1009（mac 195 / win 667 / linux 147）。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.10>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1.shell.10>；
+官网：<https://dsh-desktop.com>。
+
+---
+
+_更新于 2026-09-08_

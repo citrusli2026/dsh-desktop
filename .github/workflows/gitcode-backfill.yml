@@ -39,14 +39,22 @@ jobs:
       - name: Download release assets from GitHub
         run: gh release download "$TAG" --dir assets --clobber
 
-      - name: Create the GitCode release if missing
+      - name: Require the exact GitCode tag and create the release if missing
         run: |
           API="https://api.gitcode.com/api/v5/repos/$GITCODE_REPO"
+          git fetch --no-tags origin "refs/tags/$TAG:refs/tags/$TAG"
+          EXPECTED="$(git rev-parse "$TAG^{commit}")"
+          MIRRORED="$(git ls-remote "https://gitcode.com/$GITCODE_REPO.git" "refs/tags/$TAG" | awk '{print $1}')"
+          if [ -z "$MIRRORED" ] || [ "$MIRRORED" != "$EXPECTED" ]; then
+            echo "GitCode tag $TAG is missing or misaligned (expected $EXPECTED, got ${MIRRORED:-missing})." >&2
+            echo "Push GitCode main and the exact release tag before dispatching asset backfill." >&2
+            exit 1
+          fi
           curl -sf -H "PRIVATE-TOKEN: $GITCODE_TOKEN" "$API/releases/$TAG" >/dev/null || \
             curl -sf -X POST "$API/releases" \
               -H "PRIVATE-TOKEN: $GITCODE_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"tag_name\": \"$TAG\", \"name\": \"dsh-desktop $TAG\", \"prerelease\": true, \"body\": \"Mirrored from https://github.com/citrusli2026/dsh-desktop/releases\"}"
+              -d "{\"tag_name\": \"$TAG\", \"target_commitish\": \"$EXPECTED\", \"name\": \"dsh-desktop $TAG\", \"release_status\": \"pre\", \"body\": \"Mirrored from https://github.com/citrusli2026/dsh-desktop/releases\"}"
 
       - name: Upload only assets missing on GitCode
         run: |

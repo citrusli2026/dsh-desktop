@@ -107,7 +107,14 @@ git fetch origin && git pull --rebase origin main   # bot syncs happen often
 git tag v<version>
 git push origin main
 git push origin v<version>     # triggers .github/workflows/release.yml
+git push gitcode main
+git push gitcode refs/tags/v<version>:refs/tags/v<version>
 ```
+
+Push the GitCode branch and exact tag immediately after GitHub. The automated
+asset backfill refuses to create or use a GitCode release until that tag peels
+to the same commit, preventing a lagging GitCode default branch from receiving
+the new release tag by mistake.
 
 Watch the run: `gh run list --workflow=release.yml --limit 1`, then
 `gh run watch <id> --exit-status`. Jobs: verify → build (macos-14 +
