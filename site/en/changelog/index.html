@@ -42,6 +42,14 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.3-alpha.2.shell.0 <small>（kernel 0.1.3-alpha.2）</small></h2>
+  <ul>
+    <li>Upgraded the bundled Harness kernel to 0.1.3-alpha.2 and aligned its direct peer contracts.</li>
+    <li>Rebuilds the new <code>fs-ext</code> session-locking addon with the bundled Node 22 runtime and verifies a real lock roundtrip, preventing native ABI startup failures.</li>
+    <li>Makes the Android emulator LAN journey self-heal a missing emulator gateway, then verifies pairing and session continuity across proxy and desktop restarts.</li>
+    <li>Revalidated real plugin installation, crash quarantine/update recovery, packaged Safe Mode, mobile WebKit, and both dependency security audits.</li>
+  </ul>
+
   <h2>v0.1.2-rc.1.shell.10 <small>（kernel 0.1.2-rc.1）</small></h2>
   <ul>
     <li>Preserved paired mobile sessions across LAN sharing, Harness recovery, and full desktop restarts by persisting the proxy signing key and device registry under private Electron user data.</li>
@@ -90,13 +98,6 @@
     <li>Kernel-cliff classification: the error page explains the missing-export cause and points at one-click Update; diagnostics reports <code>failure_cause</code>.</li>
     <li>New packaged E2E proves the full recovery loop against the real registry (damaged plugin → error page Update → real install → harness boots).</li>
     <li>Release automation: merging a dsh-bump PR now writes release notes, tags, and triggers the full gated pipeline, then dispatches the GitCode mirror; the site changelog is generated from release notes.</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.3 <small>（kernel 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li>Error-page plugin recovery: when startup fails on incompatible community plugins, the recovery center lists each suspect with Update, Disable, and Update-all-and-restart actions; updates pull the latest npm version via the existing <code>dsh plugin add</code> path, disable only removes the boot bundle entry (files kept, reversible from Settings → Plugins), and official bundles are always refused.</li>
-    <li>New E2E coverage: a simulated plugin crash renders the recovery rows, disabling boots the app again with the manifest verified on disk; the LAN pairing QR window is covered end to end (private address, single-use 6-digit code, QR rendered).</li>
-    <li>Bundled kernel unchanged at <code>@deepseek-ai/dsh</code> 0.1.2-rc.1 (shell revision +3).</li>
   </ul>
   <!-- changelog:auto:end -->
 
