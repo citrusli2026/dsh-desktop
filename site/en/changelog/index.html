@@ -42,10 +42,11 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
-  <h2>v0.1.5-alpha.1.shell.0 <small>（kernel 0.1.5-alpha.1）</small></h2>
+  <h2>v0.1.5-alpha.1.shell.1 <small>（kernel 0.1.5-alpha.1）</small></h2>
   <ul>
     <li>Upgraded the bundled Harness kernel to 0.1.5-alpha.1 and realigned all 31 direct peer contracts, the lockfile, and the supply-chain allowlist.</li>
     <li>The kernel now locks session files through the prebuilt Node-API <code>@deepseek-ai/node-addon-system</code>; the shell's native-rebuild gate consults the lockfile and rebuilds/probes fs-ext only when the kernel still ships it.</li>
+    <li>Floors vulnerable transitive dependencies (sharp 0.35.4, js-yaml 4.3.2, hono 4.13.5) in both the build chain and the bundled kernel closure; both npm audit trees report zero known vulnerabilities.</li>
     <li>Revalidated real plugin installation with crash quarantine and update recovery, packaged Safe Mode, the real Harness UI, and the local LAN pairing QR gates.</li>
   </ul>
 
