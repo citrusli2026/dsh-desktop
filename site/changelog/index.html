@@ -42,6 +42,13 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-alpha.1.shell.0 <small>（内核 0.1.5-alpha.1）</small></h2>
+  <ul>
+    <li><strong>内核升级</strong>：随包 Harness 从 0.1.3-alpha.2 升至 0.1.5-alpha.1，同步全部 31 个直接 peer 契约、锁文件与供应链豁免清单。内核本版重构了会话持久化与终端子系统（新增 dsh-terminal、dsh-fs-local、dsh-session-projection 等子包）。</li>
+    <li><strong>会话锁原生化简化</strong>：新内核改用预编译的 <code>@deepseek-ai/node-addon-system</code>（稳定 Node-API，跨 ABI 兼容）承担文件锁，不再依赖需要按 Node ABI 重编译的 <code>fs-ext</code>。桌面壳的原生重建门禁改为按锁文件判定：内核仍携带 fs-ext 时照旧重编译并执行独占锁探针；内核不再携带时自动跳过；锁文件仍要求而闭包缺失时照旧报错拦截。</li>
+    <li><strong>边界说明</strong>：局域网配对密钥、设备登记、插件恢复、桌面垃圾桶和诊断仍只保存在本机，不上传用户数据。</li>
+  </ul>
+
   <h2>v0.1.3-alpha.2.shell.0 <small>（内核 0.1.3-alpha.2）</small></h2>
   <ul>
     <li><strong>内核升级</strong>：随包 Harness 从 0.1.2-rc.1 升至 0.1.3-alpha.2，并同步完整的直接 peer 契约与锁文件。</li>
@@ -94,16 +101,6 @@
     <li><strong>一键提交问题</strong>：错误页新增「到 GitHub 提交问题」——自动预填版本、平台、内核、安全模式、疑似插件与失败原因，全部脱敏，不含日志原文或路径；诊断报告由你自己导出并拖进 issue，应用不会自动上传任何文件。</li>
     <li><strong>升级结果语义修正</strong>：插件已是最新可获得版本时，错误页显示「已是当前可获得的最新版本,正在重启…」，不再让人误以为升级失败（registry 元数据可能滞后于刚发布的 dist-tag）。</li>
     <li><strong>边界说明</strong>：支持入口只在壳自有错误页出现；预填内容不包含密钥、日志或用户路径。</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.4 <small>（内核 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li><strong>真实世界的失败签名修复</strong>：此前失败检测只匹配 <code>failed to apply loader entry</code>，而真实内核断崖（如 0.1.2-rc.1 移除 <code>installSettingsSection</code>）在日志中是 <code>failed to import loader entry</code>——错误页在真实场景下列不出嫌疑插件。现在同时匹配 import 变体与缺失包的 <code>cannot resolve profile bundle</code> 签名，本机实测你遇到的那种崩溃终于能在恢复中心逐个列出插件。</li>
-    <li><strong>首次启动失败带完整日志</strong>：崩溃页不再只有一行 supervisor 摘要，而是携带 harness 自身输出——嫌疑插件的判定依据来源就在这里。</li>
-    <li><strong>内核断崖提示</strong>：错误页按日志证据分类失败原因；识别为「插件引用了内核已移除的导出」时，提示文案直接说明升级插件通常即可修复。诊断报告新增 <code>failure_cause</code> 字段与对应动作建议。</li>
-    <li><strong>恢复路径真实回归</strong>：新增打包级 E2E——预置坏插件 → 崩溃 → 错误页点「升级」→ 真实 npm 安装 → harness 携新插件启动，全程真实 registry。</li>
-    <li><strong>发布自动化</strong>：合并 dsh-bump PR 即自动写发布说明、打 tag、触发完整发布门禁，发布成功自动派发 GitCode 镜像；官网 changelog 页改由发布说明自动生成。</li>
-    <li><strong>边界说明</strong>：恢复操作仍仅限壳自有错误页调用（Harness 页面无法触碰 bundle 清单）；官方内置包不可被升级/禁用。</li>
   </ul>
   <!-- changelog:auto:end -->
 
