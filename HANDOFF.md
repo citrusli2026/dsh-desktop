@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-09-08。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-09-09。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.3-alpha.2.shell.0`（2026-09-08 已发布并完成 GitCode/官网收口；内核 `0.1.3-alpha.2`） |
-| 已发布 | ✅ `0.1.3-alpha.2.shell.0`（三端 dmg/exe/deb；Node 22 原生会话锁 ABI 门禁 + 手机会话跨 Harness/代理/桌面重启续用） |
-| 本地门禁 | ✅ 239 项单测、类型检查、runtime/site、安全审计、构建全绿；Android 15 真实 Chrome（含 AVD 路由自愈）、移动 WebKit、packaged Harness/Safe Mode、offline + real market/坏插件升级重启 E2E 通过 |
-| 核心发布 | ✅ `v0.1.3-alpha.2.shell.0` Release run `34223287457` 全绿：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.3-alpha.2.shell.0`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.3-alpha.2.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `3e143b0`） |
-| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1026（mac 200 / win 676 / linux 150；43 个版本）；正式域名在本次提交部署后复核 |
+| 最新代码基线 | ✅ `0.1.5-alpha.1.shell.1`（2026-09-09 已发布并完成 GitCode/官网收口；内核 `0.1.5-alpha.1`） |
+| 已发布 | ✅ `0.1.5-alpha.1.shell.1`（三端 dmg/exe/deb；内核 0.1.5 会话持久化/终端重构 + fs-ext 原生门禁按需化 + sharp/js-yaml/hono 依赖安全地板） |
+| 本地门禁 | ✅ 244 项单测、类型检查、runtime/site、安全审计（双树 0 已知漏洞）、构建全绿；Android 15 真实 Chrome、移动 WebKit、packaged Harness/Safe Mode、offline + real market/坏插件升级重启 E2E 通过 |
+| 核心发布 | ✅ `v0.1.5-alpha.1.shell.1` Release run `34363675275` 全绿：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-alpha.1.shell.1`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.5-alpha.1.shell.1` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `f02a589`） |
+| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1155（mac 210 / win 787 / linux 158；44 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1417,6 +1417,47 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.2-rc.1
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.3-alpha.2.shell.0>；
 官网：<https://dsh-desktop.com>。
 
+## 四十九、v0.1.5-alpha.1.shell.1 发布：内核 0.1.5 重构收口与依赖安全地板（2026-09-09）
+
+1. **Issue #31 诊断与 fs-ext 门禁修复**：dsh-watch 对 0.1.5-alpha.1 的自动 bump 在
+   "Rebuild the harness closure" 失败——0.1.5 内核的会话持久化改用预编译
+   Node-API `@deepseek-ai/node-addon-system`（per-platform prebuild，跨 ABI），
+   `dsh-session-persistence-jsonl` 不再依赖 `fs-ext`，而
+   `rebuild-harness-native.mjs` 把它硬编码为必备路径。修复 `49efbb8`：按
+   manifest 锁文件判定——闭包有 fs-ext 照旧重编译+独占锁探针；没有且锁文件
+   也无 pin 则跳过；锁文件仍 pin 而闭包缺失照旧报错。新增 5 项单测（244 总）。
+2. **内核升级**：`version.mjs bump dsh 0.1.5-alpha.1`；31 个 dsh-* peer 契约
+   sed 同步至 `^0.1.5-alpha.1`；lockfile 重出（675 包）；release-age 豁免
+   238 条同步（pnpm 自动新增 node-addon-system 平台包条目）；allowBuilds
+   移除 fs-ext 死条目；随包 Node 22 探针直载内核报 `0.1.5-alpha.1`。
+3. **首次候选 `.shell.0` 失败（tag 保留作审计）**：Release run `34352755235`
+   verify 挂在依赖审计——两条通告发布当天命中（GHSA-rgj7-g3m4-5g8c sharp
+   libheif、GHSA-2883-xcg3-v3hh js-yaml）。修复 `f02a589`：根树
+   `sharp ^0.35.4` + workspace override `js-yaml@^4.1.0: 4.3.2`；闭包侧
+   manifest override 加 `sharp 0.35.4 / js-yaml 4.3.2 / hono 4.13.5`
+   （hono CVE-2026-39408 修复版，sdk 声明 `^4.11.4`）。双树审计归零。
+4. **新运维坑：pnpm≥10 根项目 lockfile-only 静默失败**：仓库根
+   `pnpm install --lockfile-only` 在 pnpm 10.33/11.11/12.3 全部解析完成后
+   不写锁文件即以 0 退出（`--trace-exit` 无调用、ndjson 无错误事件）；
+   二分定位触发包为 `electron-builder@26.15.3`（其 10 个直接依赖平铺到
+   顶层则正常）；manifest 子项目不受影响。绕过：pnpm 9.15.9 + 临时
+   `packages: ['.']` + override 双写 package.json 生成锁文件，再用 11.11
+   `--frozen-lockfile` 验证通过（头部 overrides 记录四条语义一致）。
+5. **发布**：tag `v0.1.5-alpha.1.shell.1` → `f02a589`（peeled 核对，双端
+   一致）；Release run `34363675275` verify + mac/win/ubuntu build +
+   publish 全绿，8 资产契约 + attestation + 三平台 smoke 通过；
+   GitHub Release 于 `2026-09-09T14:42:18Z` 发布。
+6. **GitCode 与官网**：本机镜像约 5 分钟完成（sha256×3 由自动 backfill
+   先落，三个安装包由 mirror-gitcode 上传），6/6 Range GET 在线；
+   冗余 backfill run `34365402211` 已取消。Site Data Refresh run
+   `34365423794` 成功，重试探测吸收镜像后 6/6 `gitcode_ok=true`，
+   无需本地重生成；线上累计 1155（mac 210 / win 787 / linux 158）。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-alpha.1.shell.1>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-alpha.1.shell.1>；
+Issue 诊断：<https://github.com/citrusli2026/dsh-desktop/issues/31>；
+官网：<https://dsh-desktop.com>。
+
 ---
 
-_更新于 2026-09-08_
+_更新于 2026-09-09_
