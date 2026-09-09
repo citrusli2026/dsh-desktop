@@ -15,3 +15,4 @@ overrides:
   'fast-uri@^3.0.0': 3.1.6
   '@xmldom/xmldom@^0.8.8': 0.8.15
   '@xmldom/xmldom@^0.9.10': 0.9.12
+  'js-yaml@^4.1.0': 4.3.2

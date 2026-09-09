@@ -16,6 +16,11 @@ allowBuilds:
 overrides:
   'fast-uri@^3.0.0': 3.1.6
   'qs@^6.14.0': 6.16.0
+  # Security floors for vulnerable kernel transitives (audited 2026-09-09):
+  # sharp libheif GHSA-rgj7-g3m4-5g8c, js-yaml GHSA-2883-xcg3-v3hh, hono CVE-2026-39408 fix.
+  'sharp@^0.35.3': 0.35.4
+  'js-yaml@^4.1.0': 4.3.2
+  'hono@^4.11.4': 4.13.5
 minimumReleaseAgeExclude:
   - '@deepseek-ai/cordis-plugin-group@1.0.1'
   - '@deepseek-ai/dsh-anonymous-user-id@0.1.5-alpha.1'
