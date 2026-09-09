@@ -3,11 +3,17 @@
  * Rebuild ABI-bound harness addons with the bundled Node runtime, then prove
  * they load and perform their critical operation. The developer/CI Node may
  * be newer than the Node 22 runtime shipped inside the app.
+ *
+ * fs-ext is the only prebuild-less, ABI-locked addon in the closure, so it is
+ * rebuilt only when the kernel's dependency tree actually ships it: kernel
+ * 0.1.5-alpha.1 replaced it with the prebuilt Node-API
+ * @deepseek-ai/node-addon-system. The manifest lockfile is the source of
+ * truth for whether fs-ext should be present.
  * @module scripts/rebuild-harness-native
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
-import { posix, resolve, win32 } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { join, posix, resolve, win32 } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 export function harnessRuntimePaths(root, platform = process.platform) {
@@ -33,6 +39,29 @@ export function prependRuntimePath(env, node, platform = process.platform) {
   return { ...env, [key]: [path.dirname(node), env[key]].filter(Boolean).join(path.delimiter) }
 }
 
+/** Lockfile reference to fs-ext without catching fs-extra & friends: package
+ *  entries are `fs-ext@<version>:` and importer deps are a bare `fs-ext:` key. */
+const FS_EXT_LOCK_PATTERN = /fs-ext@\d|^\s*fs-ext:\s*$/m
+
+export function lockfileRequiresFsExt(lockfileText) {
+  return FS_EXT_LOCK_PATTERN.test(lockfileText)
+}
+
+/** Decide the fs-ext step from closure reality vs the lockfile: present →
+ *  rebuild; absent while still pinned → the closure was pruned wrongly;
+ *  absent and unpinned → the kernel dropped it, nothing to rebuild. */
+export function planFsExtStep(fsExtPath, root) {
+  if (existsSync(fsExtPath)) return { action: 'rebuild' }
+  const lockfilePath = join(root, 'manifest', 'harness', 'pnpm-lock.yaml')
+  if (!existsSync(lockfilePath)) {
+    return { error: `lockfile missing at ${lockfilePath}; cannot verify the fs-ext requirement` }
+  }
+  if (lockfileRequiresFsExt(readFileSync(lockfilePath, 'utf8'))) {
+    return { error: `fsExt missing at ${fsExtPath} while ${lockfilePath} still pins it` }
+  }
+  return { action: 'skip' }
+}
+
 function run(command, args, options) {
   const result = spawnSync(command, args, { stdio: 'inherit', ...options })
   if (result.error !== undefined) throw result.error
@@ -42,10 +71,18 @@ function run(command, args, options) {
 export function rebuildHarnessNative(root = process.cwd(), platform = process.platform) {
   const paths = harnessRuntimePaths(root, platform)
   for (const [label, path] of Object.entries(paths)) {
+    if (label === 'fsExt') continue
     if (!existsSync(path)) throw new Error(`${label} missing at ${path}`)
   }
 
   const env = prependRuntimePath(process.env, paths.node, platform)
+  const plan = planFsExtStep(paths.fsExt, root)
+  if (plan.error !== undefined) throw new Error(plan.error)
+  if (plan.action === 'skip') {
+    console.log('harness-native: fs-ext is not in this kernel tree (prebuilt Node-API addons); nothing to rebuild')
+    return
+  }
+
   run(paths.node, [paths.nodeGyp, 'rebuild'], { cwd: paths.fsExt, env })
 
   const probe = [
