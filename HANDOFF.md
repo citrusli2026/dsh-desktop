@@ -89,6 +89,7 @@ fallback 依次为 gitcode-backfill workflow 与
 | 补齐 GitCode 镜像 | 优先用 `mirror-gitcode.mjs` 上传 dmg/exe/deb 与 `.sha256`；backfill / `$gitcode-release-publisher` 为备用 |
 | 回补历史版本 | 同上（需 GitCode token 或维护者已登录会话）；镜像后重新生成站点数据 |
 | 下次壳发版 | `node scripts/version.mjs bump shell` → CI 绿 → 推 tag |
+| **每日内核巡检（ZCode 定时任务）** | 每天 23:00（国内时间）跑 `version.mjs check`；有新版则按 release-dsh-desktop skill 完整发版（门禁不全绿就停下留诊断），无新版安静结束。见「已知事项」 |
 | 线上部署 | push `main`；Vercel 项目 root=`site/` 自动部署 |
 | **推送代码到两个远端** | `git push origin main && git push gitcode main`（保持 GitHub/GitCode 同步，避免分叉冲突） |
 | **推送 tag 到两个远端** | `git push origin v<tag> && git push gitcode v<tag>`（GitCode Release 需要 tag 存在） |
@@ -110,6 +111,12 @@ fallback 依次为 gitcode-backfill workflow 与
    写入 HANDOFF 对应小节，把"当前代码基线"改为"已发布"。
 
 ## 六、已知事项
+
+- **每日内核巡检**：ZCode 定时任务（automation-fba7ffe9-a164-4adb-a5a4-2611a78227c6）
+  每天 23:00（国内时间）`version.mjs check`，有新版按 release-dsh-desktop skill
+  完整发版；dsh-watch 的 bump-PR 链路（Actions 已允许建 PR）作为备份信号，
+  两者并存不冲突。巡检的安全策略：门禁不全绿宁停不发、失败 tag 保留审计、
+  绝不删除 GitCode tag/release。
 
 - GitCode 资产镜像为维护者授权渠道：发版后优先用
   `mirror-gitcode.mjs` 上传 dmg/exe/deb 与哈希；只在 API 上传受阻时用
