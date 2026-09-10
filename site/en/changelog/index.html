@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.1.shell.0 <small>（kernel 0.1.5-rc.1）</small></h2>
+  <ul>
+    <li>Upgraded the bundled Harness kernel to 0.1.5-rc.1 and realigned all 31 direct peer contracts, the lockfile, and the supply-chain allowlist.</li>
+    <li>rc.1's WebUI probes the mobile handoff mux at startup; without LAN sharing enabled the probe leaves one console message and the page stays fully functional.</li>
+    <li>Revalidated the full local gate battery, both dependency audit trees (zero known vulnerabilities), and the Android emulator pairing journey.</li>
+  </ul>
+
   <h2>v0.1.5-alpha.1.shell.1 <small>（kernel 0.1.5-alpha.1）</small></h2>
   <ul>
     <li>Upgraded the bundled Harness kernel to 0.1.5-alpha.1 and realigned all 31 direct peer contracts, the lockfile, and the supply-chain allowlist.</li>
@@ -91,13 +98,6 @@
   <ul>
     <li>Fixed &quot;dsh web authentication required&quot; on phones after LAN pairing: the shell now hands the ready-URL launch token to the pairing proxy (dsh-mobile-shell 1.0.1), which exchanges it for the kernel's signed session cookie and presents it on forwarded requests; the proxy restarts with the token on kernel restarts.</li>
     <li>Fixed the session-log export capsule overlapping the native min/max/close controls on Windows/Linux: the capsule is hidden there and the same export remains available via the /export command.</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.5 <small>（kernel 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li>Release-chain self-healing: release.yml and gitcode-backfill failures now open (or append to) a GitHub issue automatically, and a failed Release run no longer skips the site data sync.</li>
-    <li>The error page gains &quot;Open a GitHub issue&quot;, prefilling sanitized context (version/platform/kernel/Safe Mode/suspects/cause) — never log text or paths; the diagnostic file is attached by the user only.</li>
-    <li>Plugin Update now resolves &quot;current&quot; when the install was a no-op and the error page says the plugin is already the newest obtainable version, instead of implying failure.</li>
   </ul>
   <!-- changelog:auto:end -->
 
