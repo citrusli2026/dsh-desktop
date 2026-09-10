@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-09-10。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-09-10（晚）。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.5-rc.1.shell.0`（2026-09-10 已发布并完成 GitCode/官网收口；内核 `0.1.5-rc.1`） |
-| 已发布 | ✅ `0.1.5-rc.1.shell.0`（三端 dmg/exe/deb；0.1.5 线首个 RC + 依赖安全地板延续） |
+| 最新代码基线 | ✅ `0.1.5-rc.2.shell.0`（2026-09-10 晚已发布并完成 GitCode/官网收口；内核 `0.1.5-rc.2`） |
+| 已发布 | ✅ `0.1.5-rc.2.shell.0`（三端 dmg/exe/deb；0.1.5 线 RC 迭代） |
 | 本地门禁 | ✅ 244 项单测、类型检查、runtime/site、安全审计（双树 0 已知漏洞）、构建全绿；dev E2E 16/16、打包 smoke、真实 Harness UI、Safe Mode、offline + real market、LAN QR、Android 15 AVD 真实 Chrome 全链通过 |
-| 核心发布 | ✅ `v0.1.5-rc.1.shell.0` Release run `34473945656` 全绿：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.1.shell.0`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.5-rc.1.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `8a3cde2`） |
-| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1277（45 个版本） |
+| 核心发布 | ✅ `v0.1.5-rc.2.shell.0` Release run `34494966339` 全绿（Ubuntu Safe Mode 冒烟首跑竞态失败，重跑通过）：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.0`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.5-rc.2.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `664b435`） |
+| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1324（46 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1510,6 +1510,35 @@ Issue 诊断：<https://github.com/citrusli2026/dsh-desktop/issues/31>；
 
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.1.shell.0>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.1.shell.0>；
+官网：<https://dsh-desktop.com>。
+
+## 五十一、v0.1.5-rc.2.shell.0 发布：每日巡检首跑（2026-09-10 晚）
+
+1. **巡检触发**：23:00 定时巡检首次实战——`version.mjs check` 发现上游
+   rc.2（rc.1 同日快速迭代），自动进入完整发版流程。
+2. **npmmirror 同步延迟（新已知坑）**：rc.2 上游刚发布，npmmirror 尚未
+   同步 `dsh-webhook-github@0.1.5-rc.2`（npmjs 已有），闭包 lockfile
+   重生成一度失败并留下半更新状态（frozen 安装报策略拒绝旧 rc.1 条目）。
+   处置：轮询重试（120s 间隔，第 4 次 ~6 分钟后镜像同步完成），锁文件
+   重生成成功并通过供应链策略。后续巡检遇同型失败先轮询等镜像。
+3. **内核升级**：bump + 31 pins + release-age 241 条；bootstrap 全绿，
+   探针 `0.1.5-rc.2`；双树审计 0 已知漏洞；本地门禁全绿（244 单测、
+   dev E2E 16、打包 smoke、真实 Harness UI、offline + real market 2/2、
+   LAN QR 2/2、Android 15 AVD 真实 Chrome 全链，路由自愈再次验证）。
+4. **发布波折（非回归）**：Release run `34494966339` Ubuntu 的 Safe Mode
+   两阶段冒烟首跑失败——阶段 1 坏插件在 profile 清单写入**之前**崩溃，
+   阶段 2 安全模式枚举不到用户束（`<missing profile manifest>`）→ overlay
+   为空 → 未禁用坏插件而再崩。属首启时序竞态（mac/win 未触发），重跑
+   failed job 全绿；#35 已附诊断关闭。可作为后续加固候选：清单缺失时
+   回退用持久化的插件嫌疑记忆构建 overlay。
+5. **发布元数据**：tag `v0.1.5-rc.2.shell.0` → `664b435`（peeled 双端
+   一致）；publish 后 GitHub Release `2026-09-10T15:47:37Z`，8 资产 +
+   attestation；GitCode 镜像 6/6 在线（sha256×3 由 backfill 先落，冗余
+   backfill run `34497976019` 已取消）；Site Data Refresh run `34497983819`
+   成功，6/6 `gitcode_ok=true` 无需本地重生成；生成时累计 1324。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.0>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.0>；
 官网：<https://dsh-desktop.com>。
 
 ---
