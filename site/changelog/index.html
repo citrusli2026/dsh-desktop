@@ -42,6 +42,12 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.0 <small>（内核 0.1.5-rc.2）</small></h2>
+  <ul>
+    <li><strong>内核升级</strong>：随包 Harness 从 0.1.5-rc.1 升至 0.1.5-rc.2，同步全部 31 个直接 peer 契约、锁文件与供应链豁免清单（241 条）。上游为同日快速迭代版本。</li>
+    <li><strong>边界说明</strong>：局域网配对密钥、设备登记、插件恢复、桌面垃圾桶和诊断仍只保存在本机，不上传用户数据。</li>
+  </ul>
+
   <h2>v0.1.5-rc.1.shell.0 <small>（内核 0.1.5-rc.1）</small></h2>
   <ul>
     <li><strong>内核升级</strong>：随包 Harness 从 0.1.5-alpha.1 升至 0.1.5-rc.1，同步全部 31 个直接 peer 契约、锁文件与供应链豁免清单（241 条）。</li>
@@ -94,13 +100,6 @@
     <li><strong>Agent 删除有兜底</strong>：Agent 执行的 <code>rm</code> 类删除命令会被桌面版拦截，目标先移入垃圾桶再放行；解析不了或越出工作区、触及 <code>node_modules</code>/<code>.git</code> 的可疑删除直接拦截并说明原因。可在「设置 → 桌面设置」关闭该开关。</li>
     <li><strong>插件失败自动隔离</strong>：插件导致启动失败时，桌面版自动把问题插件移出启动列表并重启，应用先跑起来；被隔离的插件在恢复横幅中持续可见，升级即自动重新启用。</li>
     <li><strong>边界说明</strong>：垃圾桶只覆盖桌面版自有资源与被拦截的 Agent 删除；壳外手动删除、系统其它操作不在覆盖范围。隔离与入桶都不删除原始文件，随时可逆。</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.6 <small>（内核 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li><strong>修复扫码配对后手机提示需要重新认证</strong>：内核 0.1.2-alpha.2 起，<code>dsh web</code> 首页只在携带单次启动令牌或签名 cookie 时提供，配对成功后手机加载界面会收到内核的 401（&quot;dsh web authentication required&quot;）。桌面版现在把就绪 URL 中的启动令牌交给配对代理（dsh-mobile-shell 1.0.1），由代理换取签名会话 cookie 并附在转发请求上；内核重启时代理随之自动重启轮换令牌。手机端仍然只对桌面版代理认证，不接触内核令牌。</li>
-    <li><strong>修复 Windows 右上角按钮重叠</strong>：Windows/Linux 的原生最小化/最大化/关闭按钮区域会压住内核会话头部右上角的「Session log」导出按钮。桌面版在该两平台隐藏该胶囊按钮；同样的导出能力仍可通过 <code>/export</code> 斜杠命令使用。</li>
-    <li><strong>边界说明</strong>：代理只对上游出示自己换取的会话 cookie，不向手机下发内核令牌；隐藏按钮不减少任何功能入口。</li>
   </ul>
   <!-- changelog:auto:end -->
 

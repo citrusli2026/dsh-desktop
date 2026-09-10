@@ -42,6 +42,12 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.0 <small>（kernel 0.1.5-rc.2）</small></h2>
+  <ul>
+    <li>Upgraded the bundled Harness kernel to 0.1.5-rc.2 and realigned all 31 direct peer contracts, the lockfile, and the supply-chain allowlist.</li>
+    <li>Revalidated the full local gate battery, both dependency audit trees (zero known vulnerabilities), and the Android emulator pairing journey.</li>
+  </ul>
+
   <h2>v0.1.5-rc.1.shell.0 <small>（kernel 0.1.5-rc.1）</small></h2>
   <ul>
     <li>Upgraded the bundled Harness kernel to 0.1.5-rc.1 and realigned all 31 direct peer contracts, the lockfile, and the supply-chain allowlist.</li>
@@ -92,12 +98,6 @@
     <li>Desktop trash: deleted sessions, presets, and plugins stay recoverable from Settings → Trash with a 30-day retention window; restore falls back to numbered copies so newer data is never overwritten.</li>
     <li>Agent deletion interception: rm-style commands from the agent move targets into the trash before proceeding; ambiguous or out-of-scope deletions are blocked with an explanation (toggle in Desktop settings).</li>
     <li>Plugin crashes now auto-quarantine the suspect from the boot list and restart, so the app comes back up; quarantined plugins stay visible in the recovery banner until updated.</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.6 <small>（kernel 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li>Fixed &quot;dsh web authentication required&quot; on phones after LAN pairing: the shell now hands the ready-URL launch token to the pairing proxy (dsh-mobile-shell 1.0.1), which exchanges it for the kernel's signed session cookie and presents it on forwarded requests; the proxy restarts with the token on kernel restarts.</li>
-    <li>Fixed the session-log export capsule overlapping the native min/max/close controls on Windows/Linux: the capsule is hidden there and the same export remains available via the /export command.</li>
   </ul>
   <!-- changelog:auto:end -->
 
