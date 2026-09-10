@@ -177,6 +177,13 @@ marketTest('real market install survives unicode paths, zh/dark, minimum width, 
     .map(node => node.textContent?.trim() ?? ''))
   expect(overflow).toEqual([])
   await window.screenshot({ path: testInfo.outputPath('market-installed-zh-dark-960.png') })
-  const unexpected = consoleErrors.filter(message => message !== 'Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING')
+  // Kernel 0.1.5-rc.1's WebUI probes the mobile handoff mux on the direct
+  // harness server; without LAN sharing the route does not exist and the UI
+  // logs one connection-refused message. Cosmetic — the page stays functional.
+  const benign = (message: string) =>
+    message === 'Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING' ||
+    (message.startsWith("WebSocket connection to 'ws://127.0.0.1:") &&
+      message.includes("/api/remote.mux' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"))
+  const unexpected = consoleErrors.filter(message => !benign(message))
   expect(unexpected).toEqual([])
 })
