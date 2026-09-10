@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-09-09。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-09-10。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.5-alpha.1.shell.1`（2026-09-09 已发布并完成 GitCode/官网收口；内核 `0.1.5-alpha.1`） |
-| 已发布 | ✅ `0.1.5-alpha.1.shell.1`（三端 dmg/exe/deb；内核 0.1.5 会话持久化/终端重构 + fs-ext 原生门禁按需化 + sharp/js-yaml/hono 依赖安全地板） |
-| 本地门禁 | ✅ 244 项单测、类型检查、runtime/site、安全审计（双树 0 已知漏洞）、构建全绿；Android 15 真实 Chrome、移动 WebKit、packaged Harness/Safe Mode、offline + real market/坏插件升级重启 E2E 通过 |
-| 核心发布 | ✅ `v0.1.5-alpha.1.shell.1` Release run `34363675275` 全绿：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-alpha.1.shell.1`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.5-alpha.1.shell.1` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `f02a589`） |
-| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1155（mac 210 / win 787 / linux 158；44 个版本） |
+| 最新代码基线 | ✅ `0.1.5-rc.1.shell.0`（2026-09-10 已发布并完成 GitCode/官网收口；内核 `0.1.5-rc.1`） |
+| 已发布 | ✅ `0.1.5-rc.1.shell.0`（三端 dmg/exe/deb；0.1.5 线首个 RC + 依赖安全地板延续） |
+| 本地门禁 | ✅ 244 项单测、类型检查、runtime/site、安全审计（双树 0 已知漏洞）、构建全绿；dev E2E 16/16、打包 smoke、真实 Harness UI、Safe Mode、offline + real market、LAN QR、Android 15 AVD 真实 Chrome 全链通过 |
+| 核心发布 | ✅ `v0.1.5-rc.1.shell.0` Release run `34473945656` 全绿：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.1.shell.0`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.5-rc.1.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `8a3cde2`） |
+| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1277（45 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1465,6 +1465,46 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-alph
 Issue 诊断：<https://github.com/citrusli2026/dsh-desktop/issues/31>；
 官网：<https://dsh-desktop.com>。
 
+## 五十、v0.1.5-rc.1.shell.0 发布：0.1.5 线首个 RC（2026-09-10）
+
+1. **上游与 #34 诊断**：上游 0.1.5 线出 rc.1（`latest`，alpha 线停在
+   alpha.2）。dsh-watch 的自动 bump（run `34446080565`）**验证链全绿**
+   （昨日 fs-ext 修复生效），只挂在最后 `gh pr create`——仓库设置默认
+   禁止 Actions 创建 PR（`GraphQL: GitHub Actions is not permitted to
+   create or approve pull requests`）。已开启仓库设置
+   （Actions → Allow GitHub Actions to create and approve pull requests），
+   之后 watch 的 bump-PR 链路可全自动；临时 bump 分支
+   `dsh-bump/0.1.5-rc.1` 已删除，#34 关闭。
+2. **内核升级**：`version.mjs bump dsh 0.1.5-rc.1`（壳修订归零）；31 个
+   dsh-* peer 契约同步 `^0.1.5-rc.1`；闭包 lockfile 重出（675 包）；
+   release-age 豁免 241 条同步；bootstrap 全绿，随包 Node 22 探针报
+   `0.1.5-rc.1`。昨日的 sharp/js-yaml/hono 安全地板在 rc.1 上继续有效。
+3. **rc.1 UI 新行为与测试适配**：rc.1 的 WebUI 启动时探测移动接力通道
+   `api/remote.mux`，未开 LAN 共享时在页面 console 留一条
+   ERR_CONNECTION_REFUSED（页面功能正常，路由属 mobile-shell 代理面）。
+   真实市场 E2E 的 console 断言按既有 allowlist 惯例精确放行该消息
+   （连续两次复现后适配，非放宽其他断言）。
+4. **本地门禁**：244 单测、verify 全绿、双树审计 0 已知漏洞、dev E2E
+   16/16、打包 smoke、真实 Harness UI、offline + real market 2/2、
+   LAN QR 2/2、Android 15 AVD 真实 Chrome 全链通过。
+5. **发布**：tag `v0.1.5-rc.1.shell.0` → `8a3cde2`（peeled 核对，双端
+   一致）；Release run `34473945656` verify + 三平台 build + publish
+   全绿，8 资产契约 + attestation 通过；GitHub Release 于
+   `2026-09-10T12:11:47Z` 发布。
+6. **GitCode 与官网**：本机镜像 6/6 在线验证（sha256×3 由 backfill 先落，
+   冗余 backfill run `34475372468` 已取消）；Site Data Refresh run
+   `34475381222` 成功，6/6 `gitcode_ok=true` 无需本地重生成；生成时
+   累计 1277。
+7. **顺带支持（#33）**：用户在旧版（0.1.2-rc.1.shell.9/win）装
+   `@nanmicoder/dsh-agent-teams` 后启动失败，诊断确认为插件调用
+   `ctx.subagents.registerContinuableSetup`——该 API 在任何已发布内核
+   （含 0.1.5-rc.1 闭包穷举）都不存在，插件瞄准上游更超前的开发版。
+   已回复指引：安全模式隔离生效、保持禁用、关注插件适配新版。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.1.shell.0>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.1.shell.0>；
+官网：<https://dsh-desktop.com>。
+
 ---
 
-_更新于 2026-09-09_
+_更新于 2026-09-10_
