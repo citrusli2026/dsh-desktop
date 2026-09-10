@@ -1452,6 +1452,13 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.3-alph
    冗余 backfill run `34365402211` 已取消。Site Data Refresh run
    `34365423794` 成功，重试探测吸收镜像后 6/6 `gitcode_ok=true`，
    无需本地重生成；线上累计 1155（mac 210 / win 787 / linux 158）。
+7. **发布后补验（2026-09-10）**：Android 15 AVD（SubScope-Pixel6-API35，
+   真实 Chrome）在 shell.1 代码上全链通过——桌面二维码 → 真机浏览器配对 →
+   停止/重开共享重连 → 桌面应用重启后会话续用；快照丢失默认路由的场景
+   复现并由测试自愈（`restored missing emulator route via 10.0.2.2`）。
+   依赖地板后未重跑的其余本地门禁一并补齐：dev E2E 16/16、离线市场、
+   LAN 扫码 2/2。仍然保留为人工项：Windows 真机托盘点击、macOS 未签名
+   右键首开。
 
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-alpha.1.shell.1>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-alpha.1.shell.1>；
