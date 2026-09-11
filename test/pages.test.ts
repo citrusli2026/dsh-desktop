@@ -100,3 +100,13 @@ test('errorPageHtml wires the support-issue action and the current-version tri-s
   assert.ok(html.includes("ok === 'current'"), 'the recovery script handles the current-version result')
   assert.ok(html.includes('ALREADY_CURRENT'), 'the current-version copy is wired')
 })
+
+test('errorPageHtml explains a damaged bundled runtime when the harness failed to spawn', () => {
+  // Issue #39: an upgrade-residue node binary fails at spawn with EFTYPE; the
+  // page must say "reinstall" instead of leaving the raw error as the only clue.
+  const damaged = decodeURIComponent(errorPageHtml(0, 'spawn EFTYPE'))
+  assert.ok(damaged.includes('Node'), 'a runtime hint names the Node runtime')
+  assert.ok(damaged.includes('Reinstall') || damaged.includes('重新安装'), 'the runtime hint calls for a reinstall')
+  const unrelated = decodeURIComponent(errorPageHtml(0, 'harness exited before ready (code 1)'))
+  assert.ok(!unrelated.includes('failed to start'), 'an ordinary crash keeps the plain page')
+})

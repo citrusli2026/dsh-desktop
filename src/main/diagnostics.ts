@@ -6,7 +6,7 @@ import { homedir, release } from 'node:os'
 import { basename, join } from 'node:path'
 import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
-import { classifyPluginFailureCause, collectPluginFailures, inspectPluginInventory, type ComposedRow, type PluginInventory } from './safe-mode.ts'
+import { classifyPluginFailureCause, classifyRuntimeSpawnFailure, collectPluginFailures, inspectPluginInventory, type ComposedRow, type PluginInventory } from './safe-mode.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { harnessRoot } from './paths.ts'
 import { readProfileStatus, type ProfileStatus } from './profile.ts'
@@ -177,6 +177,12 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
       : facts.pluginFailures.map(row => `${row.id} (${row.name})`)),
     ...(facts.pluginFailureCause === 'kernel-api'
       ? ['hint=plugins import symbols the bundled kernel no longer exports; update plugins to the latest published version (error page offers one-click update/disable)']
+      : []),
+    '',
+    '# Runtime spawn',
+    `runtime_spawn_failure=${classifyRuntimeSpawnFailure(facts.logTail)}`,
+    ...(classifyRuntimeSpawnFailure(facts.logTail)
+      ? ['hint=the bundled Node binary failed to spawn (damaged or blocked files); reinstall from the full installer']
       : []),
     '',
     `# Harness log tail (up to ${DIAGNOSTIC_LOG_BYTES / 1024} KiB; common secrets and home path masked)`,

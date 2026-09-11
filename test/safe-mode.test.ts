@@ -1,4 +1,4 @@
-import { classifyPluginFailureCause } from '../src/main/safe-mode.ts'
+import { classifyPluginFailureCause, classifyRuntimeSpawnFailure } from '../src/main/safe-mode.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
@@ -236,4 +236,23 @@ test('classifyPluginFailureCause detects the kernel-API upgrade cliff', () => {
   assert.equal(classifyPluginFailureCause('SyntaxError: The requested module \'@deepseek-ai/dsh-settings\' does not provide'), 'kernel-api')
   assert.equal(classifyPluginFailureCause('failed to apply loader entry x (y): TypeError: boom'), 'unknown')
   assert.equal(classifyPluginFailureCause(''), 'unknown')
+})
+
+test('classifyPluginFailureCause treats runtime type errors inside a loader failure as the kernel-API cliff', () => {
+  // The real-world shape (issue #33): the plugin calls a kernel API that only
+  // newer kernels ship, so the crash is a TypeError past the import, not a
+  // missing ESM export.
+  const runtimeCliff = 'Error: dsh: plugin tree failed to load: failed to apply loader entry include (cordis:include): failed to apply loader entry agent-teams (@nanmicoder/dsh-agent-teams): ctx.subagents.registerContinuableSetup is not a function'
+  assert.equal(classifyPluginFailureCause(runtimeCliff), 'kernel-api')
+  assert.equal(classifyPluginFailureCause('failed to apply loader entry x (y): TypeError: m.foo is not a constructor'), 'kernel-api')
+  // A type error with no loader-entry context stays unknown rather than guessing.
+  assert.equal(classifyPluginFailureCause('TypeError: undefined is not a function'), 'unknown')
+})
+
+test('classifyRuntimeSpawnFailure flags bundled-Node spawn errors only', () => {
+  assert.equal(classifyRuntimeSpawnFailure('spawn EFTYPE'), true)
+  assert.equal(classifyRuntimeSpawnFailure('boot failed: spawn ENOENT'), true)
+  assert.equal(classifyRuntimeSpawnFailure('spawn EACCES'), false)
+  assert.equal(classifyRuntimeSpawnFailure('harness exited before ready (code 1)'), false)
+  assert.equal(classifyRuntimeSpawnFailure(''), false)
 })

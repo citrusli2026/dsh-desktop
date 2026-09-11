@@ -130,3 +130,29 @@ test('formatDiagnosticReport includes the concrete startup stage', () => {
   })
   assert.match(report, /harness_state=starting \(waiting-for-ready\)/)
 })
+
+test('formatDiagnosticReport records a runtime spawn failure with the reinstall hint', () => {
+  const report = formatDiagnosticReport({
+    createdAt: '2026-09-10T00:00:00.000Z',
+    appVersion: '1.0.0.shell.1', electronVersion: '43.0.0', chromiumVersion: '142', nodeVersion: '22',
+    platform: 'win32', platformRelease: '10.0.19045', arch: 'x64',
+    harnessState: { phase: 'crashed', attempts: 1, logTail: 'spawn EFTYPE' }, logTail: 'spawn EFTYPE',
+    harnessVersion: '0.1.5-rc.2', pluginInventory: undefined, safeMode: false,
+    pluginFailureCause: 'unknown',
+    pluginFailures: [],
+  })
+  assert.match(report, /runtime_spawn_failure=true/)
+  assert.match(report, /hint=the bundled Node binary failed to spawn/)
+
+  const healthy = formatDiagnosticReport({
+    createdAt: '2026-09-10T00:00:00.000Z',
+    appVersion: '1.0.0.shell.1', electronVersion: '43.0.0', chromiumVersion: '142', nodeVersion: '22',
+    platform: 'win32', platformRelease: '10.0.19045', arch: 'x64',
+    harnessState: { phase: 'ready', url: 'http://127.0.0.1:1' }, logTail: 'ready',
+    harnessVersion: '0.1.5-rc.2', pluginInventory: undefined, safeMode: false,
+    pluginFailureCause: 'unknown',
+    pluginFailures: [],
+  })
+  assert.match(healthy, /runtime_spawn_failure=false/)
+  assert.doesNotMatch(healthy, /hint=the bundled Node binary failed to spawn/)
+})

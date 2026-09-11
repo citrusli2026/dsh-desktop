@@ -46,10 +46,31 @@ const KERNEL_API_EVIDENCE = [
 /**
  * Classify why the failing plugins in `logTail` failed. The kernel-API cliff
  * always shows up as an ESM import error against a `@deepseek-ai/dsh-*`
- * module; anything else stays `unknown` rather than guessing.
+ * module, or as a runtime TypeError on a kernel object inside a loader-entry
+ * failure chain (e.g. `ctx.subagents.registerContinuableSetup is not a
+ * function` — an API that only newer kernels ship); anything else stays
+ * `unknown` rather than guessing.
  */
 export function classifyPluginFailureCause(logTail: string): PluginFailureCause {
-  return KERNEL_API_EVIDENCE.some(pattern => pattern.test(logTail)) ? 'kernel-api' : 'unknown'
+  if (KERNEL_API_EVIDENCE.some(pattern => pattern.test(logTail))) return 'kernel-api'
+  if (/failed to (?:apply|import) loader entry/.test(logTail) &&
+    KERNEL_API_TYPE_ERRORS.some(pattern => pattern.test(logTail))) return 'kernel-api'
+  return 'unknown'
+}
+
+/** A loader entry crashed on a runtime type error against a kernel object —
+ * the same plugin-vs-kernel skew as a missing export, just past the import. */
+const KERNEL_API_TYPE_ERRORS = [/is not a function/i, /is not a constructor/i]
+
+/** Spawn-phase failures of the bundled Node runtime itself: the process the
+ * supervisor execs dies before any harness code runs. EFTYPE = the file
+ * exists but is not a valid executable (upgrade residue, antivirus rewrite);
+ * ENOENT = it is missing entirely. Both remediate to a clean reinstall. */
+const RUNTIME_SPAWN_EVIDENCE = /\bspawn (EFTYPE|ENOENT)\b/
+
+/** True when the log tail shows the bundled Node binary failed to spawn. */
+export function classifyRuntimeSpawnFailure(logTail: string): boolean {
+  return RUNTIME_SPAWN_EVIDENCE.test(logTail)
 }
 
 /** A row id reachable through nested insert/group compositions. */

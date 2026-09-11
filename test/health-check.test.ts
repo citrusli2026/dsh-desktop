@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { chmod, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { runDesktopHealthCheck } from '../src/main/health-check.ts'
+import { bundledNodeHeaderLooksValid, runDesktopHealthCheck, sampleNodeHeader } from '../src/main/health-check.ts'
 
 async function runtimeFixture(): Promise<{
   root: string
@@ -26,14 +26,14 @@ async function runtimeFixture(): Promise<{
     mkdir(userData, { recursive: true }),
   ])
   await Promise.all([
-    writeFile(join(harnessRoot, 'node', 'bin', 'node'), ''),
+    writeFile(join(harnessRoot, 'node', 'bin', process.platform === 'win32' ? 'node.exe' : 'node'), sampleNodeHeader(process.platform)),
     writeFile(join(harnessRoot, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js'), ''),
     writeFile(join(harnessRoot, 'node_modules', '@deepseek-ai', 'dsh', 'package.json'), JSON.stringify({ version: '0.1.2-rc.1' })),
     writeFile(join(harnessRoot, 'node_modules', 'dsh-desktop-controls', 'lib', 'client.js'), ''),
     writeFile(join(mobileShellRoot, 'app', 'www', 'index.html'), '<!doctype html>'),
     writeFile(join(dshHome, 'profiles', 'web', 'package.json'), JSON.stringify({ dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] } } })),
   ])
-  await chmod(join(harnessRoot, 'node', 'bin', 'node'), 0o755)
+  await chmod(join(harnessRoot, 'node', 'bin', process.platform === 'win32' ? 'node.exe' : 'node'), 0o755)
   return { root, harnessRoot, mobileShellRoot, dshHome, userData }
 }
 
@@ -92,6 +92,44 @@ test('health check classifies broken local state and keeps connectivity checks a
     assert.equal(report.networkIncluded, true)
     assert.doesNotMatch(JSON.stringify(report), /private log|proxy secret|secret path/)
     assert.doesNotMatch(JSON.stringify(report), new RegExp(fixture.root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true })
+  }
+})
+
+test('bundledNodeHeaderLooksValid accepts real Node headers and rejects damaged files', () => {
+  assert.equal(bundledNodeHeaderLooksValid(Buffer.from([0x4d, 0x5a, 0x90, 0x00]), 'win32'), true)
+  assert.equal(bundledNodeHeaderLooksValid(Buffer.from([0xcf, 0xfa, 0xed, 0xfe]), 'darwin'), true)
+  assert.equal(bundledNodeHeaderLooksValid(Buffer.from([0xca, 0xfe, 0xba, 0xbe]), 'darwin'), true)
+  assert.equal(bundledNodeHeaderLooksValid(Buffer.from([0x7f, 0x45, 0x4c, 0x46]), 'linux'), true)
+  // Cross-platform mismatches and damage all fail: a text or empty file
+  // cannot be spawned and reports EFTYPE at runtime.
+  assert.equal(bundledNodeHeaderLooksValid(Buffer.from([0x4d, 0x5a, 0x90, 0x00]), 'linux'), false)
+  assert.equal(bundledNodeHeaderLooksValid(Buffer.from([0x7f, 0x45, 0x4c, 0x46]), 'darwin'), false)
+  assert.equal(bundledNodeHeaderLooksValid(Buffer.from('#!/usr/bin/env node', 'utf8'), 'linux'), false)
+  assert.equal(bundledNodeHeaderLooksValid(Buffer.alloc(0), 'win32'), false)
+  assert.equal(bundledNodeHeaderLooksValid(Buffer.from([0x4d]), 'win32'), false)
+})
+
+test('health check flags a damaged bundled Node binary instead of calling the runtime ok', async () => {
+  const fixture = await runtimeFixture()
+  try {
+    const nodePath = join(fixture.harnessRoot, 'node', 'bin', process.platform === 'win32' ? 'node.exe' : 'node')
+    // Upgrade residue / antivirus rewrite: a readable file that cannot execute.
+    await writeFile(nodePath, 'This file was truncated by a partial upgrade')
+    const report = await runDesktopHealthCheck({
+      ...fixture,
+      harnessState: undefined,
+      safeMode: false,
+      locale: 'zh',
+      includeNetwork: false,
+      fetch: async () => new Response('ok'),
+      resolveProxy: async () => 'DIRECT',
+    })
+    const runtime = report.results.find(result => result.id === 'runtime')
+    assert.equal(runtime?.status, 'failed')
+    assert.match(runtime?.detail ?? '', /损坏|不可执行/)
+    assert.match(runtime?.action ?? '', /重装|重新下载/)
   } finally {
     await rm(fixture.root, { recursive: true, force: true })
   }

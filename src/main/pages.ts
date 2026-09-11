@@ -6,7 +6,7 @@
 
 import { shellText, type ShellLocale } from './locale.ts'
 import { asDataUrl, escapeHtml } from './shell-html.ts'
-import type { ComposedRow } from './safe-mode.ts'
+import { classifyRuntimeSpawnFailure, type ComposedRow } from './safe-mode.ts'
 import type { HarnessStartupStage } from './supervisor.ts'
 
 const STYLE = `
@@ -114,6 +114,12 @@ export function errorPageHtml(
   const retry = shellText(locale, 'page.retry')
   const retrying = shellText(locale, 'page.retrying')
   const retryFailed = shellText(locale, 'page.retryFailed')
+  // A spawn-phase failure of the bundled Node runtime means damaged/missing
+  // runtime files, not a plugin problem — say so instead of leaving the raw
+  // `spawn EFTYPE` line as the only clue.
+  const runtimeHint = classifyRuntimeSpawnFailure(logTail)
+    ? `<p class="suspects">${escapeHtml(shellText(locale, 'page.runtimeHint'))}</p>`
+    : ''
   const safeModeLabel = safeMode ? shellText(locale, 'page.safeModeExit') : shellText(locale, 'page.safeModeStart')
   const suspect = suspects[0]
   const suspectLine = suspect === undefined
@@ -141,6 +147,7 @@ export function errorPageHtml(
     <div class="brand"><span>DSH-DESKTOP</span><span class="status status--error">${escapeHtml(shellText(locale, 'page.recoveryStatus'))}</span></div>
     <h1>${escapeHtml(shellText(locale, 'page.errorHeading'))}</h1>
     <p>${escapeHtml(shellText(locale, 'page.errorBody', { count: attempts }))}</p>
+    ${runtimeHint}
     ${suspectLine}
     ${pluginSection}
     <p class="log-label">${escapeHtml(shellText(locale, 'page.logLabel'))}</p>

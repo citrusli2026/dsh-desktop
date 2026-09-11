@@ -1,6 +1,6 @@
 /** Read-only, local-first health checks for the desktop tools surface. */
 import { constants } from 'node:fs'
-import { access, readFile, stat, statfs } from 'node:fs/promises'
+import { access, open, readFile, stat, statfs } from 'node:fs/promises'
 import { join } from 'node:path'
 import { dshBin, nodeBin } from './paths.ts'
 import { readProfileStatus } from './profile.ts'
@@ -55,8 +55,8 @@ const COPY = {
     runtime: '内置运行环境', storage: '数据目录与磁盘', harness: 'Harness 与本地连接', profile: 'Profile、插件与版本',
     proxy: '系统代理', registry: '插件与内核源', updates: '桌面更新源',
     runtimeOk: (version: string) => `Node、Harness 与桌面组件完整 · 内核 ${version}`,
-    runtimeFailed: '安装包内的关键运行文件缺失或不可读取。',
-    runtimeAction: '重新下载安装包；不要手动补写运行文件。',
+    runtimeFailed: '安装包内的关键运行文件缺失、损坏或不可执行。',
+    runtimeAction: '重新下载安装包完整重装；不要手动补写运行文件。',
     storageOk: (free: string) => `两个数据目录可写 · 可用空间 ${free}`,
     storageWarn: (free: string) => `数据目录可写，但可用空间仅 ${free}。`,
     storageFailed: '数据目录不可写、不是目录，或磁盘空间严重不足。',
@@ -83,8 +83,8 @@ const COPY = {
     runtime: 'Bundled runtime', storage: 'Data folders & disk', harness: 'Harness & loopback', profile: 'Profile, plugins & versions',
     proxy: 'System proxy', registry: 'Plugin & kernel registry', updates: 'Desktop update source',
     runtimeOk: (version: string) => `Node, Harness, and desktop components are intact · kernel ${version}`,
-    runtimeFailed: 'A required bundled runtime file is missing or unreadable.',
-    runtimeAction: 'Download the installer again; do not patch runtime files by hand.',
+    runtimeFailed: 'A required bundled runtime file is missing, damaged, or not executable.',
+    runtimeAction: 'Reinstall from the full installer; do not patch runtime files by hand.',
     storageOk: (free: string) => `Both data folders are writable · ${free} available`,
     storageWarn: (free: string) => `Data folders are writable, but only ${free} is available.`,
     storageFailed: 'A data path is not a writable directory, or disk space is critically low.',
@@ -115,6 +115,46 @@ async function isReadableFile(path: string, executable = false): Promise<boolean
     if (!info.isFile()) return false
     await access(path, executable && process.platform !== 'win32' ? constants.R_OK | constants.X_OK : constants.R_OK)
     return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * The first bytes of a real bundled Node executable, per platform: PE (`MZ`)
+ * on Windows, Mach-O or a fat-universal slice on macOS, ELF on Linux. A file
+ * that is readable but carries none of these was truncated or rewritten
+ * (upgrade residue, antivirus quarantine) and fails its spawn with EFTYPE —
+ * the corruption this check exists to catch.
+ */
+export function bundledNodeHeaderLooksValid(header: Buffer, platform: NodeJS.Platform): boolean {
+  if (header.length < 4) return false
+  if (platform === 'win32') return header[0] === 0x4d && header[1] === 0x5a
+  if (platform === 'darwin') {
+    return header.equals(Buffer.from([0xcf, 0xfa, 0xed, 0xfe])) ||
+      header.equals(Buffer.from([0xca, 0xfe, 0xba, 0xbe])) ||
+      header.equals(Buffer.from([0xce, 0xfa, 0xed, 0xfe]))
+  }
+  return header[0] === 0x7f && header[1] === 0x45 && header[2] === 0x4c && header[3] === 0x46
+}
+
+/** A small valid-looking node header for tests and fixtures. */
+export function sampleNodeHeader(platform: NodeJS.Platform): Buffer {
+  if (platform === 'win32') return Buffer.from([0x4d, 0x5a, 0x90, 0x00])
+  if (platform === 'darwin') return Buffer.from([0xcf, 0xfa, 0xed, 0xfe])
+  return Buffer.from([0x7f, 0x45, 0x4c, 0x46])
+}
+
+async function bundledNodeExecutableLooksValid(path: string): Promise<boolean> {
+  try {
+    const handle = await open(path, 'r')
+    try {
+      const header = Buffer.alloc(4)
+      const read = await handle.read(header, 0, 4, 0)
+      return bundledNodeHeaderLooksValid(header.subarray(0, read.bytesRead), process.platform)
+    } finally {
+      await handle.close()
+    }
   } catch {
     return false
   }
@@ -168,14 +208,19 @@ function marketText(copy: typeof COPY.zh | typeof COPY.en, state: 'installed' | 
 export async function runDesktopHealthCheck(options: DesktopHealthCheckOptions): Promise<DesktopHealthReport> {
   const copy = COPY[options.locale]
   const results: DesktopHealthResult[] = []
-  const requiredFiles = [
-    [nodeBin(options.harnessRoot), true] as const,
-    [dshBin(options.harnessRoot), false] as const,
-    [join(options.harnessRoot, 'node_modules', '@deepseek-ai', 'dsh', 'package.json'), false] as const,
-    [join(options.harnessRoot, 'node_modules', 'dsh-desktop-controls', 'lib', 'client.js'), false] as const,
-    [join(options.mobileShellRoot, 'app', 'www', 'index.html'), false] as const,
-  ]
-  const runtimeReady = (await Promise.all(requiredFiles.map(([path, executable]) => isReadableFile(path, executable)))).every(Boolean)
+  const runtimeReady = await (async () => {
+    const [nodeReadable, dshReady, ...rest] = await Promise.all([
+      isReadableFile(nodeBin(options.harnessRoot), true),
+      isReadableFile(dshBin(options.harnessRoot)),
+      isReadableFile(join(options.harnessRoot, 'node_modules', '@deepseek-ai', 'dsh', 'package.json')),
+      isReadableFile(join(options.harnessRoot, 'node_modules', 'dsh-desktop-controls', 'lib', 'client.js')),
+      isReadableFile(join(options.mobileShellRoot, 'app', 'www', 'index.html')),
+    ])
+    // A readable node binary is not enough: upgrade residue and antivirus
+    // rewrites leave a file that exists but cannot execute (spawn EFTYPE).
+    if (!nodeReadable) return false
+    return dshReady && rest.every(Boolean) && await bundledNodeExecutableLooksValid(nodeBin(options.harnessRoot))
+  })()
   let harnessVersion = 'unknown'
   if (runtimeReady) {
     try {
