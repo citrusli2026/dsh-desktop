@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-09-10（晚）。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-09-12。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.5-rc.2.shell.0`（2026-09-10 晚已发布并完成 GitCode/官网收口；内核 `0.1.5-rc.2`） |
-| 已发布 | ✅ `0.1.5-rc.2.shell.0`（三端 dmg/exe/deb；0.1.5 线 RC 迭代） |
+| 最新代码基线 | ✅ `0.1.5-rc.2.shell.2`（2026-09-12 已发布并完成 GitCode/官网收口；内核 `0.1.5-rc.2`） |
+| 已发布 | ✅ `0.1.5-rc.2.shell.2`（三端 dmg/exe/deb；用户 issue 驱动的识别/体检/恢复加固 + Safe Mode 竞态修复） |
 | 本地门禁 | ✅ 244 项单测、类型检查、runtime/site、安全审计（双树 0 已知漏洞）、构建全绿；dev E2E 16/16、打包 smoke、真实 Harness UI、Safe Mode、offline + real market、LAN QR、Android 15 AVD 真实 Chrome 全链通过 |
-| 核心发布 | ✅ `v0.1.5-rc.2.shell.0` Release run `34494966339` 全绿（Ubuntu Safe Mode 冒烟首跑竞态失败，重跑通过）：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.0`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.5-rc.2.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `664b435`） |
-| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1324（46 个版本） |
+| 核心发布 | ✅ `v0.1.5-rc.2.shell.2` Release run `34644495414` 全绿（含三平台 Safe Mode 两阶段冒烟）：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.2`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.5-rc.2.shell.2` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `be8af12`） |
+| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1464（48 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1543,4 +1543,31 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 
 ---
 
-_更新于 2026-09-10_
+## 五十二、v0.1.5-rc.2.shell.1/.2 发布：用户 issue 驱动的识别与恢复加固（2026-09-12）
+
+1. **背景**：#33/#39 两份用户报告暴露两个测试盲区——①插件调用新内核 API 的
+   运行时 TypeError 不被归入"内核悬崖"，错误页不给针对性指引（#33）；
+   ②体检只查内置 Node 文件"存在可读"，升级残留/杀软改写后的损坏文件
+   （spawn EFTYPE）被误报正常（#39）。shell.1（ca5419e）修复并补 6 项单测。
+2. **shell.1 发布失败**：run `34642149997` Ubuntu Safe Mode 冒烟再触
+   `<missing profile manifest>` 竞态——两天内第二次，升级为确定性修复：
+   崩溃瞬间的插件嫌疑持久化到 `userData/safe-mode-suspects.json`，
+   Safe Mode 构建 overlay 遇清单缺失时回退用持久化嫌疑生成禁用补丁；
+   ready 启动与退出安全模式时清理。补 3 项单测（253 总），
+   SAFE_BREAK 两阶段冒烟本机通过。
+3. **发布**：shell.1 失败 tag 保留审计；`v0.1.5-rc.2.shell.2` → `be8af12`
+   （peeled 双端一致）；Release run `34644495414` 全绿（含三平台 Safe Mode
+   两阶段冒烟——本次在修复后的代码上验证），8 资产 + attestation，
+   GitHub Release `2026-09-11T20:44:28Z`。
+4. **GitCode 与官网**：镜像 6/6 在线（sha256×3 与 dmg 由 backfill 先落，
+   冗余 backfill run `34645815241` 已取消）；Site Data Refresh 成功，
+   6/6 `gitcode_ok=true`；生成时累计 1464。#33/#39 已回帖修复版本链接
+   （issue 闭环已纳入每日巡检任务：每天 0 点/12 点各一次）。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.2>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.2>；
+官网：<https://dsh-desktop.com>。
+
+---
+
+_更新于 2026-09-12_
