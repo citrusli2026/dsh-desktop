@@ -6,11 +6,14 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import {
   buildSafeModeOverlay,
+  clearPersistedPluginSuspects,
   collectInsertIds,
   collectPluginFailures,
   detectPluginFailure,
   inspectPluginInventory,
+  loadPersistedPluginSuspects,
   OFFICIAL_BUNDLES,
+  persistPluginSuspects,
   toDisablePatch,
   updatePluginFailureMemory,
   writeSafeModeOverlay,
@@ -255,4 +258,52 @@ test('classifyRuntimeSpawnFailure flags bundled-Node spawn errors only', () => {
   assert.equal(classifyRuntimeSpawnFailure('spawn EACCES'), false)
   assert.equal(classifyRuntimeSpawnFailure('harness exited before ready (code 1)'), false)
   assert.equal(classifyRuntimeSpawnFailure(''), false)
+})
+
+test('writeSafeModeOverlay falls back to persisted suspects when the manifest is missing', async () => {
+  // First-boot race (HANDOFF §51): the harness crashes before composing the
+  // profile manifest, so the overlay cannot enumerate user bundles. The
+  // suspects persisted at crash time must still drive the disable patch.
+  const { home, cleanup } = await makeHome()
+  try {
+    const dir = await mkdtemp(join(tmpdir(), 'dsh-safe-mode-fallback-'))
+    try {
+      const path = await writeSafeModeOverlay(home, dir, 'web', [
+        { id: 'agent-teams', name: '@nanmicoder/dsh-agent-teams' },
+      ])
+      assert.ok(path !== undefined)
+      const patch = await readFile(path, 'utf8')
+      assert.match(patch, /id: agent-teams/)
+      assert.match(patch, /disabled: true/)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  } finally {
+    await cleanup()
+  }
+})
+
+test('persisted suspects survive a restart and clear on demand', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'dsh-safe-mode-suspects-'))
+  try {
+    assert.deepEqual(await loadPersistedPluginSuspects(dir), [])
+    await persistPluginSuspects(dir, [{ id: 'agent-teams', name: '@nanmicoder/dsh-agent-teams' }])
+    assert.deepEqual(await loadPersistedPluginSuspects(dir), [{ id: 'agent-teams', name: '@nanmicoder/dsh-agent-teams' }])
+    await clearPersistedPluginSuspects(dir)
+    assert.deepEqual(await loadPersistedPluginSuspects(dir), [])
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('persisted suspects tolerate a damaged record', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'dsh-safe-mode-suspects-'))
+  try {
+    await writeFile(join(dir, 'safe-mode-suspects.json'), '{broken')
+    assert.deepEqual(await loadPersistedPluginSuspects(dir), [])
+    await writeFile(join(dir, 'safe-mode-suspects.json'), JSON.stringify({ suspects: [{ id: 42 }, 'nope', { id: 'ok' }] }))
+    assert.deepEqual(await loadPersistedPluginSuspects(dir), [{ id: 'ok' }])
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
 })

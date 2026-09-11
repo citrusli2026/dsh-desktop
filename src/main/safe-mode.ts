@@ -12,7 +12,7 @@
  * switch).
  * @module main/safe-mode
  */
-import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { rm, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { parse, stringify } from 'yaml'
@@ -279,9 +279,32 @@ export function updatePluginFailureMemory(
  * returning its path. Returns undefined when there is nothing to disable or
  * the write fails — Safe Mode must never block a boot over its own recovery
  * overlay. Unresolved bundles and unkeyed rows are only logged, never fatal.
+ *
+ * A missing profile manifest means the harness crashed before composing the
+ * profile (first-boot race). When that happens and `fallbackSuspects` are
+ * provided, they drive the disable patch instead — these are the suspects
+ * persisted at crash time, so recovery survives the restart that lost the
+ * in-process memory.
  */
-export async function writeSafeModeOverlay(dshHome: string, dir: string, profile = WEB_PROFILE): Promise<string | undefined> {
+export async function writeSafeModeOverlay(
+  dshHome: string,
+  dir: string,
+  profile = WEB_PROFILE,
+  fallbackSuspects: readonly ComposedRow[] = [],
+): Promise<string | undefined> {
   const overlay = await buildSafeModeOverlay(dshHome, profile)
+  const manifestMissing = overlay.unresolved.includes('<missing profile manifest>')
+  if (manifestMissing && overlay.ids.length === 0 && fallbackSuspects.length > 0) {
+    const fallbackPath = join(dir, 'safe-mode.patch.yml')
+    try {
+      await mkdir(dir, { recursive: true })
+      await writeFile(fallbackPath, stringify(toDisablePatch({ ids: [...fallbackSuspects], unkeyedRows: 0, unresolved: [] })))
+      return fallbackPath
+    } catch (error) {
+      console.warn(`dsh-desktop: safe mode overlay write failed: ${error instanceof Error ? error.message : String(error)}`)
+      return undefined
+    }
+  }
   for (const name of overlay.unresolved) {
     console.warn(`dsh-desktop: safe mode could not inspect bundle ${name}`)
   }
@@ -300,5 +323,38 @@ export async function writeSafeModeOverlay(dshHome: string, dir: string, profile
   } catch (error) {
     console.warn(`dsh-desktop: safe mode overlay write failed: ${error instanceof Error ? error.message : String(error)}`)
     return undefined
+  }
+}
+
+/** Crash-time record of the plugin suspects, so the Safe Mode overlay can be
+ * rebuilt after the restart that wipes the in-process memory. */
+const SUSPECTS_FILE = 'safe-mode-suspects.json'
+
+export async function persistPluginSuspects(dir: string, suspects: readonly ComposedRow[]): Promise<void> {
+  if (suspects.length === 0) return
+  try {
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, SUSPECTS_FILE), JSON.stringify({ suspects }), 'utf8')
+  } catch {
+    // Best effort only — losing the record degrades recovery to plain quarantine.
+  }
+}
+
+export async function clearPersistedPluginSuspects(dir: string): Promise<void> {
+  try {
+    await rm(join(dir, SUSPECTS_FILE), { force: true })
+  } catch {
+    // Nothing to recover from.
+  }
+}
+
+export async function loadPersistedPluginSuspects(dir: string): Promise<ComposedRow[]> {
+  try {
+    const data = JSON.parse(await readFile(join(dir, SUSPECTS_FILE), 'utf8')) as { suspects?: unknown }
+    if (!Array.isArray(data.suspects)) return []
+    return data.suspects.filter((row): row is ComposedRow =>
+      row !== null && typeof row === 'object' && typeof (row as ComposedRow).id === 'string')
+  } catch {
+    return []
   }
 }

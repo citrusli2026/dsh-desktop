@@ -45,7 +45,7 @@ import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } fr
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
 import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport, redactDiagnosticsLog } from './diagnostics.ts'
-import { updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, OFFICIAL_BUNDLES, classifyPluginFailureCause, type ComposedRow } from './safe-mode.ts'
+import { clearPersistedPluginSuspects, loadPersistedPluginSuspects, persistPluginSuspects, updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, OFFICIAL_BUNDLES, classifyPluginFailureCause, type ComposedRow } from './safe-mode.ts'
 import { listTrash, moveToTrash, purgeExpiredTrash, purgeFromTrash, restoreFromTrash } from './trash.ts'
 import { writeTrashHookFiles } from './trash-hook.ts'
 import { deleteSessionToTrash, listSessions, restoreSessionFromTrash, unarchiveSession, ActiveSessionError } from './trash-sessions.ts'
@@ -126,7 +126,10 @@ function safeModeActive(): boolean {
 /** Enter or exit Safe Mode: persist the flag, then restart the harness. */
 async function applySafeMode(enabled: boolean): Promise<boolean> {
   if (SMOKE_TEST || desktopPreferencesController === undefined) return false
-  if (!enabled) lastPluginFailures = []
+  if (!enabled) {
+    lastPluginFailures = []
+    void clearPersistedPluginSuspects(app.getPath('userData'))
+  }
   const result = desktopPreferencesController.update({ safeMode: enabled })
   if (!result.ok) return false
   refreshNativeSurfaces()
@@ -340,10 +343,14 @@ function agentTrashHookScriptPath(): string {
   return join(dirname(harnessRoot()), 'agent-trash-hook', 'agent-trash-hook.mjs')
 }
 
-/** Rebuild the Safe Mode overlay from the live profile and return its path. */
+/** Rebuild the Safe Mode overlay from the live profile and return its path.
+ * When the profile manifest is missing (the harness crashed before composing
+ * it), fall back to the suspects persisted at crash time so recovery survives
+ * the restart. */
 async function safeModeOverlayPath(): Promise<string | undefined> {
   const dshHome = resolveDshHome(process.env, homedir())
-  return writeSafeModeOverlay(dshHome, app.getPath('userData'))
+  const userData = app.getPath('userData')
+  return writeSafeModeOverlay(dshHome, userData, WEB_PROFILE, await loadPersistedPluginSuspects(userData))
 }
 
 /** The shell state machine, wired to the Electron surfaces it drives. */
@@ -389,8 +396,10 @@ const shellApp = new ShellApp({
     lastPluginFailures = updatePluginFailureMemory(lastPluginFailures, state.phase, state.phase === 'crashed' ? state.logTail : '', safeModeActive())
     if (state.phase === 'ready') {
       void loadHarnessUrl(windowContext, state.url)
+      void clearPersistedPluginSuspects(app.getPath('userData'))
     } else if (state.phase === 'crashed') {
       void loadErrorPage(windowContext, state.attempts, state.logTail, safeModeActive(), lastPluginFailures, classifyPluginFailureCause(state.logTail))
+      void persistPluginSuspects(app.getPath('userData'), lastPluginFailures)
       void autoQuarantineSuspects(lastPluginFailures)
     } else {
       void loadLoadingPage(windowContext, state.stage ?? 'launching', state.retryDelayMs ?? 0)
