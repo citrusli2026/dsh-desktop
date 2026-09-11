@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.1 <small>（kernel 0.1.5-rc.2）</small></h2>
+  <ul>
+    <li>Classifies plugin-vs-kernel API crashes (runtime type errors inside loader failures) so the error page gives the right guidance instead of a bare error.</li>
+    <li>The one-click health check now validates the bundled Node executable's integrity, catching upgrade-residue and antivirus damage that previously read as healthy.</li>
+    <li>The error page explains runtime spawn failures and calls for a clean reinstall; the diagnostics report records the state for support.</li>
+  </ul>
+
   <h2>v0.1.5-rc.2.shell.0 <small>（kernel 0.1.5-rc.2）</small></h2>
   <ul>
     <li>Upgraded the bundled Harness kernel to 0.1.5-rc.2 and realigned all 31 direct peer contracts, the lockfile, and the supply-chain allowlist.</li>
@@ -91,13 +98,6 @@
     <li>Fixed mobile QR sessions loading an empty/broken Harness UI: dsh-mobile-shell 1.0.2 preserves the raw <code>/plugins/??…</code> batch path instead of normalizing it into a 404 request.</li>
     <li>Completed plugin recovery after auto-quarantine: the recovered Harness page now names the suspect and offers <strong>Update and re-enable</strong>, guarded to the verified main-window origin and eligible community packages only.</li>
     <li>Added packaged Android-like Chromium and iPhone-like WebKit QR-to-Harness tests, plus a real-registry crash/quarantine/update/re-enable/restart test.</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.7 <small>（kernel 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li>Desktop trash: deleted sessions, presets, and plugins stay recoverable from Settings → Trash with a 30-day retention window; restore falls back to numbered copies so newer data is never overwritten.</li>
-    <li>Agent deletion interception: rm-style commands from the agent move targets into the trash before proceeding; ambiguous or out-of-scope deletions are blocked with an explanation (toggle in Desktop settings).</li>
-    <li>Plugin crashes now auto-quarantine the suspect from the boot list and restart, so the app comes back up; quarantined plugins stay visible in the recovery banner until updated.</li>
   </ul>
   <!-- changelog:auto:end -->
 
