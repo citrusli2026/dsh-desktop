@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.2 <small>（kernel 0.1.5-rc.2）</small></h2>
+  <ul>
+    <li>Makes Safe Mode recovery deterministic: crash-time plugin suspects are persisted and drive the disable patch even when the harness crashed before writing the profile manifest.</li>
+    <li>Classifies plugin-vs-kernel API crashes so the error page gives the right guidance instead of a bare error.</li>
+    <li>The one-click health check now validates the bundled Node executable's integrity, and runtime spawn failures get an explicit reinstall hint on the error page and in the diagnostics report.</li>
+  </ul>
+
   <h2>v0.1.5-rc.2.shell.1 <small>（kernel 0.1.5-rc.2）</small></h2>
   <ul>
     <li>Classifies plugin-vs-kernel API crashes (runtime type errors inside loader failures) so the error page gives the right guidance instead of a bare error.</li>
@@ -91,13 +98,6 @@
     <li>Completed plugin recovery after auto-quarantine: the recovered Harness page now names the suspect and offers <strong>Update and re-enable</strong>, guarded to the verified main-window origin and eligible community packages only.</li>
     <li>Added packaged Android-like Chromium and iPhone-like WebKit QR-to-Harness tests, plus a real-registry crash/quarantine/update/re-enable/restart test.</li>
     <li>Removed a macOS release-smoke authentication race by probing the supervisor's exact tokenized ready URL after failure recovery.</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.8 <small>（kernel 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li>Fixed mobile QR sessions loading an empty/broken Harness UI: dsh-mobile-shell 1.0.2 preserves the raw <code>/plugins/??…</code> batch path instead of normalizing it into a 404 request.</li>
-    <li>Completed plugin recovery after auto-quarantine: the recovered Harness page now names the suspect and offers <strong>Update and re-enable</strong>, guarded to the verified main-window origin and eligible community packages only.</li>
-    <li>Added packaged Android-like Chromium and iPhone-like WebKit QR-to-Harness tests, plus a real-registry crash/quarantine/update/re-enable/restart test.</li>
   </ul>
   <!-- changelog:auto:end -->
 
