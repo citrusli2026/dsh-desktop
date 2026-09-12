@@ -42,6 +42,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.4</h2>
+  <ul>
+    <li>The agent deletion hook now executes for real, ships in packaged builds, quotes paths safely, and rolls back if the trash index cannot be written.</li>
+    <li>Deletion interception is user-controllable from Desktop settings; toggling it restarts Harness so the hook patch is applied or removed.</li>
+    <li>Supervisor spawn errors after readiness enter the normal restart budget instead of silently stopping.</li>
+    <li>Trash index parsing rejects unsafe ids/paths, and public docs now match the actual trash scope.</li>
+  </ul>
+
   <h2>v0.1.5-rc.2.shell.3</h2>
   <ul>
     <li>The agent deletion hook now executes for real, ships in packaged builds, quotes paths safely, and rolls back if the trash index cannot be written.</li>
@@ -94,14 +102,6 @@
     <li><strong>会话持久化兼容</strong>：审查并精确放行新内核所需的 <code>fs-ext</code> 文件锁模块；部署后强制使用随包 Node 22 重编译，并执行真实独占锁/解锁探针，避免开发机 Node 24 产物在安装包内因 ABI 不匹配而启动崩溃。</li>
     <li><strong>模拟器测试收敛</strong>：Android 专用端到端测试会修复 AVD 快照偶发丢失的 <code>10.0.2.2</code> 默认路由，再验证扫码配对、前后台切换、共享重启和桌面应用重启后的会话续用；不会修改物理设备网络。</li>
     <li><strong>边界说明</strong>：局域网配对密钥、设备登记、插件恢复和诊断仍只保存在本机，不上传用户数据。</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.10 <small>（内核 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li><strong>修复手机会话在桌面重启后失效</strong>：LAN 代理不再每次启动都更换设备会话签名密钥。配对过的手机可以跨共享停止/重开、Harness 恢复和桌面应用完整重启继续使用，无需重复输入配对码。</li>
-    <li><strong>修复打包环境中的设备状态存储位置</strong>：签名密钥与设备登记迁移到 Electron userData 的 <code>lan/</code> 私有目录，密钥权限收紧为仅当前用户可读写，不再尝试把设备状态写入随包资源目录。</li>
-    <li><strong>补齐模拟器和支持诊断</strong>：新增 Android 15 模拟器真实 Chrome 的端到端门禁，覆盖配对、后台恢复、共享重启和桌面重启；诊断报告增加不含密钥/配对码的 LAN 状态，Issue 模板也能直接收集手机与插件恢复阶段。</li>
-    <li><strong>持续验证插件恢复</strong>：真实 npm 市场再次跑通坏插件崩溃、自动隔离、升级并重新启用和 Harness 重启；打包 Safe Mode 继续验证故障插件隔离与恢复横幅。</li>
   </ul>
   <!-- changelog:auto:end -->
 

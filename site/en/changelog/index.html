@@ -42,6 +42,14 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.4</h2>
+  <ul>
+    <li>The agent deletion hook now executes for real, ships in packaged builds, quotes paths safely, and rolls back if the trash index cannot be written.</li>
+    <li>Deletion interception is user-controllable from Desktop settings; toggling it restarts Harness so the hook patch is applied or removed.</li>
+    <li>Supervisor spawn errors after readiness enter the normal restart budget instead of silently stopping.</li>
+    <li>Trash index parsing rejects unsafe ids/paths, and public docs now match the actual trash scope.</li>
+  </ul>
+
   <h2>v0.1.5-rc.2.shell.3</h2>
   <ul>
     <li>The agent deletion hook now executes for real, ships in packaged builds, quotes paths safely, and rolls back if the trash index cannot be written.</li>
@@ -91,13 +99,6 @@
     <li>Rebuilds the new <code>fs-ext</code> session-locking addon with the bundled Node 22 runtime and verifies a real lock roundtrip, preventing native ABI startup failures.</li>
     <li>Makes the Android emulator LAN journey self-heal a missing emulator gateway, then verifies pairing and session continuity across proxy and desktop restarts.</li>
     <li>Revalidated real plugin installation, crash quarantine/update recovery, packaged Safe Mode, mobile WebKit, and both dependency security audits.</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.10 <small>（kernel 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li>Preserved paired mobile sessions across LAN sharing, Harness recovery, and full desktop restarts by persisting the proxy signing key and device registry under private Electron user data.</li>
-    <li>Added a real Android 15 emulator/Chrome journey covering pairing, background/resume, sharing restart, and desktop relaunch; LAN diagnostics expose connection facts without secrets or pairing codes.</li>
-    <li>Revalidated the real-registry broken-plugin flow from crash and automatic quarantine through update, re-enable, and successful Harness restart, plus packaged Safe Mode recovery.</li>
   </ul>
   <!-- changelog:auto:end -->
 
