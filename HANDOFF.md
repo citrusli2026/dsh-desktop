@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.5-rc.2.shell.2`（2026-09-12 已发布并完成 GitCode/官网收口；内核 `0.1.5-rc.2`） |
-| 已发布 | ✅ `0.1.5-rc.2.shell.2`（三端 dmg/exe/deb；用户 issue 驱动的识别/体检/恢复加固 + Safe Mode 竞态修复） |
+| 最新代码基线 | ✅ `0.1.5-rc.2.shell.4`（2026-09-12 已发布并完成 GitCode/官网收口；内核 `0.1.5-rc.2`） |
+| 已发布 | ✅ `0.1.5-rc.2.shell.4`（三端 dmg/exe/deb；桌面垃圾桶与删除拦截修复） |
 | 本地门禁 | ✅ 265 项单测、类型检查、runtime/site、安全审计（双树 0 已知漏洞）、构建全绿；dev E2E 16/16、打包 smoke、真实 Harness UI、Safe Mode、offline + real market、LAN QR、Android 15 AVD 真实 Chrome 全链通过 |
-| 核心发布 | ✅ `v0.1.5-rc.2.shell.2` Release run `34644495414` 全绿（含三平台 Safe Mode 两阶段冒烟）：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.2`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.5-rc.2.shell.2` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `be8af12`） |
-| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1464（48 个版本） |
+| 核心发布 | ✅ `v0.1.5-rc.2.shell.4` Release run `34688428708` 全绿（含三平台 Safe Mode 两阶段冒烟）：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.4`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.5-rc.2.shell.4` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `cf7b663`） |
+| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1566（48 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1569,5 +1569,15 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 官网：<https://dsh-desktop.com>。
 
 ---
+
+
+## 53. v0.1.5-rc.2.shell.4 release (2026-09-12)
+
+1. **Release**: tag `v0.1.5-rc.2.shell.4` -> `cf7b663`; Release run `34688428708` green (verify + macOS/Windows/Linux build + publish). The 8-asset contract landed and the GitHub release is public at 2026-09-12T10:42:02Z.
+2. **Failed attempt retained**: shell.3 (`46a4ff2`) failed the Ubuntu Safe Mode packaged smoke (step 20); its tag was kept for audit and shell.4 re-ran the same change set successfully.
+3. **Local gates**: `pnpm run verify` green; 265 unit tests; coverage 95.53% lines / 86.83% branches / 88.10% functions; main/preload build, runtime-boundary, site-check, and API-downloads checks passed.
+4. **GitCode mirror**: automatic backfill landed the three `.sha256` files; the three installers were uploaded from this machine through `GH_PROXY_PREFIX=https://ghproxy.net/https://github.com` (deb/dmg via existing full downloads, exe via resumed proxy download). All 6 user assets pass Range GET and the GitCode tag matches `cf7b663`.
+5. **Site data**: bot commit `b0936fe` pointed `site/data/release.json` at shell.4; local verification commit `8280200` sets all 6 assets `gitcode_ok=true`. Stats at generation: 1566 total installers (mac 253 / win 1125 / linux 188; 48 releases).
+6. **Notes**: `docs/release-notes/v0.1.5-rc.2.shell.4.md` passed the release-notes gate; README/CONTEXT/ARCHITECTURE and FAQ now describe the actual trash scope and shell revision 4.
 
 _更新于 2026-09-12_
