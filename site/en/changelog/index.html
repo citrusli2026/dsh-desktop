@@ -42,6 +42,14 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.3</h2>
+  <ul>
+    <li>The agent deletion hook now executes for real, ships in packaged builds, quotes paths safely, and rolls back if the trash index cannot be written.</li>
+    <li>Deletion interception is user-controllable from Desktop settings; toggling it restarts Harness so the hook patch is applied or removed.</li>
+    <li>Supervisor spawn errors after readiness enter the normal restart budget instead of silently stopping.</li>
+    <li>Trash index parsing rejects unsafe ids/paths, and public docs now match the actual trash scope.</li>
+  </ul>
+
   <h2>v0.1.5-rc.2.shell.2 <small>（kernel 0.1.5-rc.2）</small></h2>
   <ul>
     <li>Makes Safe Mode recovery deterministic: crash-time plugin suspects are persisted and drive the disable patch even when the harness crashed before writing the profile manifest.</li>
@@ -90,14 +98,6 @@
     <li>Preserved paired mobile sessions across LAN sharing, Harness recovery, and full desktop restarts by persisting the proxy signing key and device registry under private Electron user data.</li>
     <li>Added a real Android 15 emulator/Chrome journey covering pairing, background/resume, sharing restart, and desktop relaunch; LAN diagnostics expose connection facts without secrets or pairing codes.</li>
     <li>Revalidated the real-registry broken-plugin flow from crash and automatic quarantine through update, re-enable, and successful Harness restart, plus packaged Safe Mode recovery.</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.9 <small>（kernel 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li>Fixed mobile QR sessions loading an empty/broken Harness UI: dsh-mobile-shell 1.0.2 preserves the raw <code>/plugins/??…</code> batch path instead of normalizing it into a 404 request.</li>
-    <li>Completed plugin recovery after auto-quarantine: the recovered Harness page now names the suspect and offers <strong>Update and re-enable</strong>, guarded to the verified main-window origin and eligible community packages only.</li>
-    <li>Added packaged Android-like Chromium and iPhone-like WebKit QR-to-Harness tests, plus a real-registry crash/quarantine/update/re-enable/restart test.</li>
-    <li>Removed a macOS release-smoke authentication race by probing the supervisor's exact tokenized ready URL after failure recovery.</li>
   </ul>
   <!-- changelog:auto:end -->
 

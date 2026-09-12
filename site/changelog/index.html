@@ -42,6 +42,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.3</h2>
+  <ul>
+    <li>The agent deletion hook now executes for real, ships in packaged builds, quotes paths safely, and rolls back if the trash index cannot be written.</li>
+    <li>Deletion interception is user-controllable from Desktop settings; toggling it restarts Harness so the hook patch is applied or removed.</li>
+    <li>Supervisor spawn errors after readiness enter the normal restart budget instead of silently stopping.</li>
+    <li>Trash index parsing rejects unsafe ids/paths, and public docs now match the actual trash scope.</li>
+  </ul>
+
   <h2>v0.1.5-rc.2.shell.2 <small>（内核 0.1.5-rc.2）</small></h2>
   <ul>
     <li><strong>安全模式恢复更可靠</strong>：修复一个首次启动时序问题——Harness 在写入 Profile 清单之前因坏插件崩溃时，安全模式可能枚举不到用户插件而无法自动禁用它。现在崩溃瞬间的插件嫌疑会记录在本地，重启后的安全模式即使读不到清单也能据此生成禁用清单，恢复不再依赖时序运气。</li>
@@ -94,14 +102,6 @@
     <li><strong>修复打包环境中的设备状态存储位置</strong>：签名密钥与设备登记迁移到 Electron userData 的 <code>lan/</code> 私有目录，密钥权限收紧为仅当前用户可读写，不再尝试把设备状态写入随包资源目录。</li>
     <li><strong>补齐模拟器和支持诊断</strong>：新增 Android 15 模拟器真实 Chrome 的端到端门禁，覆盖配对、后台恢复、共享重启和桌面重启；诊断报告增加不含密钥/配对码的 LAN 状态，Issue 模板也能直接收集手机与插件恢复阶段。</li>
     <li><strong>持续验证插件恢复</strong>：真实 npm 市场再次跑通坏插件崩溃、自动隔离、升级并重新启用和 Harness 重启；打包 Safe Mode 继续验证故障插件隔离与恢复横幅。</li>
-  </ul>
-
-  <h2>v0.1.2-rc.1.shell.9 <small>（内核 0.1.2-rc.1）</small></h2>
-  <ul>
-    <li><strong>修复手机扫码后插件加载失败</strong>：随包 dsh-mobile-shell 升至 <code>1.0.2</code>。代理现在原样保留 Harness <code>/plugins/??…</code> 批量资源路径，不再把第二个问号 URL 编码后转发成 404；二维码、一次性配对码、设备会话与内核登录令牌仍保持分层隔离。</li>
-    <li><strong>补齐坏插件自动恢复闭环</strong>：插件导致启动失败时，桌面端继续自动隔离并重启；恢复后的正常主页现在会显示问题插件和「升级并重新启用」按钮。该按钮只允许当前已验证的 Harness 本机页面调用，并继续拒绝官方包和未列入恢复上下文的包。</li>
-    <li><strong>强化真实端到端门禁</strong>：新增从桌面二维码到手机浏览器、再到真实 Harness 输入控件的打包测试，分别覆盖 Android 风格 Chromium 与 iPhone 风格 WebKit；同时用真实 npm 插件执行「崩溃 → 自动隔离 → 页面升级 → 重新启用 → 重启成功」。</li>
-    <li><strong>修正发布故障注入的认证竞态</strong>：失败候选 <code>shell.8</code> 的 macOS 门禁在重试后用无令牌地址探测 Harness，偶发先于页面完成 cookie 交换而收到 401。<code>shell.9</code> 改为直接验证 supervisor 返回的带一次性启动令牌 URL，不放宽产品断言。</li>
   </ul>
   <!-- changelog:auto:end -->
 
