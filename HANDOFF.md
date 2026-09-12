@@ -11,7 +11,7 @@
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
 | 最新代码基线 | ✅ `0.1.5-rc.2.shell.2`（2026-09-12 已发布并完成 GitCode/官网收口；内核 `0.1.5-rc.2`） |
 | 已发布 | ✅ `0.1.5-rc.2.shell.2`（三端 dmg/exe/deb；用户 issue 驱动的识别/体检/恢复加固 + Safe Mode 竞态修复） |
-| 本地门禁 | ✅ 244 项单测、类型检查、runtime/site、安全审计（双树 0 已知漏洞）、构建全绿；dev E2E 16/16、打包 smoke、真实 Harness UI、Safe Mode、offline + real market、LAN QR、Android 15 AVD 真实 Chrome 全链通过 |
+| 本地门禁 | ✅ 265 项单测、类型检查、runtime/site、安全审计（双树 0 已知漏洞）、构建全绿；dev E2E 16/16、打包 smoke、真实 Harness UI、Safe Mode、offline + real market、LAN QR、Android 15 AVD 真实 Chrome 全链通过 |
 | 核心发布 | ✅ `v0.1.5-rc.2.shell.2` Release run `34644495414` 全绿（含三平台 Safe Mode 两阶段冒烟）：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.2`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
 | 国内镜像 | ✅ `v0.1.5-rc.2.shell.2` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `be8af12`） |
@@ -1300,7 +1300,7 @@ _更新于 2026-09-05_
 
 ## 四十五、v0.1.2-rc.1.shell.7 发布：桌面垃圾桶（2026-09-06）
 
-1. **内核不变**：`0.1.2-rc.1`，壳修订 +7。新增桌面垃圾桶（方案 C 全量）：删除=改名进 `$DSH_HOME/trash/` + index.json 记账；预设/插件/会话/内核版本可还原（同名落副本）；Agent 的 rm 类命令经内核 PreToolUse 钩子拦截入桶（可疑即拦、`node_modules`/`.git` 豁免、桌面设置可关）；30 天保留期启动清扫。见 CONTEXT「桌面垃圾桶」词条。
+1. **内核不变**：`0.1.2-rc.1`，壳修订 +7。新增桌面垃圾桶（方案 C 全量）：删除=改名进 `$DSH_HOME/trash/` + index.json 记账；预设/会话/Agent 文件可还原（同名落副本）；Agent 的 rm 类命令经内核 PreToolUse 钩子拦截入桶（可疑即拦、`node_modules`/`.git` 豁免、桌面设置可关）；30 天保留期启动清扫。见 CONTEXT「桌面垃圾桶」词条。
 2. **发布**：tag `v0.1.2-rc.1.shell.7` → `b97c6ef`。两次 CI 失败后第三次全绿：①trash-sessions 测试的 mtime 排序在 ext4 打平（utimes 钉序修复）；②插件崩溃 E2E 仍断言手动错误页流程，被自动隔离行为取代（E2E 改断言自动恢复 + 恢复横幅含被隔离插件）。verify/build/publish 全绿，8 文件契约齐全。工作流对 dsh-mobile-shell 钉版 v1.0.1（随 shell.6 变更生效）。
 3. **官网/文档**：首页「当前版本重点」、zh/en FAQ 新增垃圾桶问答、README「你得到什么」新增条目；I18N 词条 167→169。
 

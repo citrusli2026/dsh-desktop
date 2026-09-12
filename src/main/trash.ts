@@ -11,11 +11,14 @@
  */
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, rename, rm } from 'node:fs/promises'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, isAbsolute, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { atomicWriteFile } from './config-file.ts'
 
 export type TrashEntryKind = 'preset' | 'plugin' | 'kernel' | 'session' | 'file'
+
+const TRASH_ENTRY_KINDS = new Set<TrashEntryKind>(['preset', 'plugin', 'kernel', 'session', 'file'])
+const TRASH_ID_PATTERN = /^[a-z0-9-]+$/
 
 export interface TrashEntry {
   id: string
@@ -39,13 +42,15 @@ export function parseTrashIndex(raw: unknown): TrashEntry[] {
     if (row === null || typeof row !== 'object') continue
     const candidate = row as Partial<TrashEntry>
     const { id, name, originPath, deletedAt } = candidate
-    if (typeof id !== 'string' || id === '') continue
+    if (typeof id !== 'string' || TRASH_ID_PATTERN.test(id) === false) continue
     if (typeof name !== 'string' || name === '') continue
-    if (typeof originPath !== 'string' || originPath === '') continue
-    if (typeof deletedAt !== 'number' || !Number.isSafeInteger(deletedAt)) continue
+    if (typeof originPath !== 'string' || isAbsolute(originPath) === false) continue
+    if (typeof deletedAt !== 'number' || Number.isSafeInteger(deletedAt) === false || deletedAt < 0) continue
+    const kind = candidate.kind ?? 'file'
+    if (TRASH_ENTRY_KINDS.has(kind) === false) continue
     entries.push({
       id,
-      kind: candidate.kind ?? 'file',
+      kind,
       name,
       originPath,
       deletedAt,

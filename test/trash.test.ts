@@ -148,3 +148,14 @@ test('moveToTrash refuses missing paths and rolls the entry back when the index 
     await rm(home, { recursive: true, force: true })
   }
 })
+
+test('parseTrashIndex drops unsafe ids, relative origins, and unknown kinds', () => {
+  const entries = parseTrashIndex([
+    { id: '../escape', kind: 'file', name: 'x', originPath: '/tmp/x', deletedAt: 1 },
+    { id: 'safe-id', kind: 'weird', name: 'x', originPath: '/tmp/x', deletedAt: 2 },
+    { id: 'safe-id', kind: 'file', name: 'x', originPath: 'relative/x', deletedAt: 3 },
+    { id: 'safe-id', kind: 'file', name: 'x', originPath: '/tmp/x', deletedAt: -1 },
+    { id: 'safe-id', kind: 'file', name: 'x', originPath: '/tmp/x', deletedAt: 4 },
+  ])
+  assert.deepEqual(entries.map(entry => entry.id), ['safe-id'])
+})

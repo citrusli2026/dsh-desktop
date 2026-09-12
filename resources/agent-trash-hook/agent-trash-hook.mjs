@@ -18,7 +18,7 @@
  * cannot import the shell's TypeScript modules.
  */
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, rename, rm } from 'node:fs/promises'
+import { mkdir, open, readFile, rename, rm } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { parseDeletionCommand } from './rm-parser.mjs'
@@ -48,16 +48,26 @@ async function readIndex() {
 
 async function writeIndex(entries) {
   await mkdir(dirname(TRASH_INDEX), { recursive: true })
-  const temporary = `${TRASH_INDEX}.${process.pid}.${randomUUID().slice(0, 8)}.tmp`
-  await (await import('node:fs/promises')).open(temporary, 'w', 0o600)
-    .then(handle => handle.writeFile(`${JSON.stringify(entries, null, 2)}\n`, 'utf8').finally(() => handle.close()))
-  await rename(temporary, TRASH_INDEX)
+  const temporary = TRASH_INDEX + "." + process.pid + "." + randomUUID().slice(0, 8) + ".tmp"
+  const handle = await open(temporary, "w", 0o600)
+  try {
+    await handle.writeFile(JSON.stringify(entries, null, 2) + String.fromCharCode(10), "utf8")
+  } finally {
+    await handle.close()
+  }
+  try {
+    await rename(temporary, TRASH_INDEX)
+  } catch (error) {
+    await rm(temporary, { force: true })
+    throw error
+  }
 }
 
 async function moveToTrash(originPath, source) {
   const id = `${Date.now().toString(36)}-${randomUUID().slice(0, 8)}`
+  const storedPath = join(TRASH_ITEMS, id)
   await mkdir(TRASH_ITEMS, { recursive: true })
-  await rename(originPath, join(TRASH_ITEMS, id))
+  await rename(originPath, storedPath)
   const entries = await readIndex()
   entries.push({
     id,
@@ -67,14 +77,18 @@ async function moveToTrash(originPath, source) {
     deletedAt: Date.now(),
     ...(source === undefined ? {} : { source }),
   })
-  await writeIndex(entries)
+  try {
+    await writeIndex(entries)
+  } catch (error) {
+    await rename(storedPath, originPath).catch(() => {})
+    throw error
+  }
 }
 
 const payload = await readStdinJson()
 if (payload === undefined) process.exit(0)
-// The interception switch lives in the shell preferences file the shell keeps
-// in its userData; the generated hooks.json only exists while it is on.
-if (!existsSync(new URL('./hooks.json', import.meta.url).pathname)) process.exit(0)
+// The shell only mounts this hook when interception is enabled, so reaching
+// this process means the PreToolUse payload must be evaluated.
 
 const command = payload?.tool_input?.command
 if (typeof command !== 'string' || command === '') process.exit(0)

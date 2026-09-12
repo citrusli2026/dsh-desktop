@@ -38,6 +38,10 @@ extraResources:
     to: mobile-shell
     filter:
       - "**/*"
+  - from: resources/agent-trash-hook
+    to: agent-trash-hook
+    filter:
+      - "**/*"
 
 asar: true
 npmRebuild: false

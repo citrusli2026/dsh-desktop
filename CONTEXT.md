@@ -43,7 +43,7 @@ DeepSeek Harness(`@deepseek-ai/dsh`,简称 **dsh**)的非官方 Electron 桌面�
 | **运行体检** | 「桌面设置」中的用户触发、只读检查；默认只查本地运行时、两类数据目录/磁盘、Harness loopback、Profile/插件/版本，代理/registry/更新源必须显式勾选；结果脱敏、不上传、不自动修复（决策 0031） |
 | **LAN 配对状态** | 代理主密钥和设备登记只保存在应用 userData 的 `lan/` 下（0600），不写随包资源；设备会话可跨 Harness/代理重启继续使用。诊断报告只导出连接状态、局域网地址/端口、脱敏后的 loopback origin 与配对过期时间，不导出密钥或配对码 |
 | **恢复中心** | 错误恢复页四动作:重试 / 以安全模式启动(已在安全模式时为退出)/ 导出诊断 / 打开日志文件夹 |
-| **桌面垃圾桶** | 壳拥有的删除回收层:删除=改名进 `$DSH_HOME/trash/items/<id>` 并记入 `trash/index.json`(原路径/时间/来源),桌面设置「垃圾桶」分区查看/还原/清除,30 天保留;覆盖预设、插件、会话(整目录移走,内核索引自愈)与 Agent 的 rm 类删除(PreToolUse 钩子拦截,可疑即拦,设置可关) |
+| **桌面垃圾桶** | 壳拥有的删除回收层:删除=改名进 `$DSH_HOME/trash/items/<id>` 并记入 `trash/index.json`(原路径/时间/来源),桌面设置「垃圾桶」分区查看/还原/清除,30 天保留;覆盖预设、会话(整目录移走,内核索引自愈)与 Agent 的 rm 类删除(PreToolUse 钩子拦截,可疑即拦,设置可关) |
 | **.dshpreset** | 便携 Agent 预设包(JSON,`dsh-preset/v1`):导出某用户预设(`$DSH_HOME/.agent-presets/<id>/agent.cordis.yml + preset.yml`),导入带冲突检测(跳过/替换/克隆)与信任警告;写回用户预设根即被官方预设选择器挂载(决策 0021) |
 
 ## 快问快答

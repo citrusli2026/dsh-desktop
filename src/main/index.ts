@@ -777,11 +777,12 @@ ipcMain.handle('desktop:preferences:update', (event, patch: unknown) => {
   if (typeof candidate.launchHidden === 'boolean') update.launchHidden = candidate.launchHidden
   if (typeof candidate.notificationsEnabled === 'boolean') update.notificationsEnabled = candidate.notificationsEnabled
   if (typeof candidate.screenCapture === 'boolean') update.screenCapture = candidate.screenCapture
+  if (typeof candidate.agentDeletionInterception === 'boolean') update.agentDeletionInterception = candidate.agentDeletionInterception
   if (typeof candidate.firstRunGuideDismissed === 'boolean') update.firstRunGuideDismissed = candidate.firstRunGuideDismissed
   const result = desktopPreferencesController?.update(update) ?? null
   // The screen capture flag reaches the harness through its spawn env; a
   // change lands on the next kernel boot (same restart semantics as Safe Mode).
-  if (update.screenCapture !== undefined) void shellApp.runHarnessRestart()
+  if (update.screenCapture !== undefined || update.agentDeletionInterception !== undefined) void shellApp.runHarnessRestart()
   return result
 })
 

@@ -158,3 +158,11 @@ test('desktop controls mount links the complete package into the profile lookup 
     await rm(harness, { recursive: true, force: true })
   }
 })
+
+test('desktop controls expose the agent deletion interception preference', async () => {
+  const client = await readFile(join(pluginRoot, 'lib/client.js'), 'utf8')
+  const main = await readFile(resolve('src/main/index.ts'), 'utf8')
+  assert.match(client, /deletionInterception/)
+  assert.match(client, /agentDeletionInterception/)
+  assert.match(main, /candidate\.agentDeletionInterception/)
+})

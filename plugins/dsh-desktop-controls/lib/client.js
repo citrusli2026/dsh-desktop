@@ -686,6 +686,8 @@ window.__ModuleLoader__.load({
         launchAtLogin: "开机启动",
         launchHidden: "启动后隐藏到托盘",
         notifications: "桌面通知",
+        deletionInterception: '删除拦截',
+        deletionInterceptionDetail: '开启后 Agent 删除命令会先移入垃圾桶；切换后自动重启内核。',
         screenCapture: "屏幕捕获", screenCaptureDetail: "开启后 Agent 可截屏并作为会话附件（需要视觉模型）；切换后自动重启内核。",
         screenCapturePermission: "尚未授权屏幕录制：请在 系统设置 → 隐私与安全性 → 屏幕录制 中允许 dsh-desktop，然后重试。",
         safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展。",
@@ -734,6 +736,8 @@ window.__ModuleLoader__.load({
         launchAtLogin: "Launch at login",
         launchHidden: "Start hidden in the tray",
         notifications: "Desktop notifications",
+        deletionInterception: "Deletion interception",
+        deletionInterceptionDetail: "Intercept agent delete commands into the desktop trash first; the kernel restarts on toggle.",
         screenCapture: "Screen capture", screenCaptureDetail: "Lets the agent capture the screen as conversation attachments (vision model required); the kernel restarts on toggle.",
         screenCapturePermission: "Screen recording is not authorized; allow dsh-desktop in System Settings → Privacy → Screen Recording, then retry.",
         safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; official and built-in extensions only.",
@@ -1234,6 +1238,10 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.notifications }),
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.notificationsEnabled === true, onChange: (event) => void update({ notificationsEnabled: event.target.checked }) }),
           ] }) : null,
+          react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
+            react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.deletionInterception, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.deletionInterceptionDetail })] }),
+            react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.agentDeletionInterception !== false, onChange: (event) => void update({ agentDeletionInterception: event.target.checked }) }),
+          ] }),
           canLaunch ? react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, children: [
             react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.launchAtLogin }),
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.launchAtLogin === true, onChange: (event) => void update({ launchAtLogin: event.target.checked }) }),

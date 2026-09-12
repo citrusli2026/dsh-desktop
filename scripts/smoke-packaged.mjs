@@ -1,15 +1,19 @@
 /** Locate the current platform's unpacked app and run its built-in smoke mode. */
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { locatePackagedExecutable } from './packaged-locator.mjs'
+import { locatePackagedExecutable, packagedResourcesDir } from './packaged-locator.mjs'
 // Shared with the app's built-in smoke mode (src/main/smoke.ts) so the flag,
 // exit codes, and injection env vars cannot drift between the two sides.
 import { SMOKE_EXIT_OK, SMOKE_FLAG, SMOKE_SAFE_ENV, SMOKE_UI_FLAG } from '../src/main/smoke-protocol.ts'
 
 const distRoot = process.argv[2] ?? 'dist'
 const executable = await locatePackagedExecutable(distRoot)
+for (const required of ['agent-trash-hook/agent-trash-hook.mjs', 'agent-trash-hook/rm-parser.mjs']) {
+  await access(join(packagedResourcesDir(executable), required))
+}
+
 // DSH_SMOKE_UI adds the UI-render variant: the plain smoke fetches the boot
 // HTML, the UI variant additionally proves the real Harness bundle rendered.
 const smokeUi = process.env.DSH_SMOKE_UI === '1'

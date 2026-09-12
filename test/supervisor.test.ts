@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile } from 'node:fs/promises'
+import { chmod, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { addDesktopControlsPatch, HARNESS_WEB_ARGS, insertPatches, HarnessSupervisor, type HarnessState } from '../src/main/supervisor.ts'
@@ -85,4 +85,34 @@ test('start is single-flight and stop cancels a pending readiness wait', async (
   const stopping = supervisor.stop()
   await assert.rejects(first, /harness stopped before ready/)
   await stopping
+})
+
+async function waitFor(predicate: () => boolean, timeoutMs = 8_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (predicate()) return
+    await new Promise(resolve => setTimeout(resolve, 25))
+  }
+  throw new Error('waitFor timed out')
+}
+
+test('a spawn error after readiness enters the restart path', { skip: process.platform === 'win32' }, async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dsh-supervisor-spawn-error-'))
+  const command = join(root, 'fake-harness')
+  await symlink(process.execPath, command)
+  const logDir = join(root, 'logs')
+  const states: HarnessState[] = []
+  const supervisor = new HarnessSupervisor(
+    { onState: state => states.push(state) },
+    { command, args: ['-e', "console.log('dsh web: http://127.0.0.1:43125');setTimeout(() => process.exit(0), 50)"], logDir, env: {}, readyTimeoutMs: 2_000 },
+  )
+  try {
+    assert.equal(await supervisor.start(), 'http://127.0.0.1:43125')
+    await waitFor(() => states.some(state => state.phase === 'starting' && state.stage === 'retrying'))
+    await rm(command, { force: true })
+    await waitFor(() => states.filter(state => state.phase === 'starting' && state.stage === 'retrying').length >= 2, 6_000)
+  } finally {
+    await supervisor.stop()
+    await rm(root, { recursive: true, force: true })
+  }
 })

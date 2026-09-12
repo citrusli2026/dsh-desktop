@@ -245,13 +245,22 @@ export class HarnessSupervisor {
         if (url !== undefined) this.onReady(url)
       })
     }
+    let spawnErrorHandled = false
     child.once('error', (error) => {
-      this.recordLine(`supervisor: spawn error: ${String(error)}`)
-      this.failStart(error)
+      this.recordLine('supervisor: spawn error: ' + String(error))
+      if (this.rejectReady !== undefined) {
+        this.failStart(error)
+        return
+      }
+      if (this.stopping || spawnErrorHandled) return
+      spawnErrorHandled = true
+      this.exitTimes.push(Date.now())
+      this.scheduleRestart()
     })
     child.once('exit', (code, signal) => {
       this.recordLine(`supervisor: harness exited code=${String(code)} signal=${String(signal)}`)
       if (this.stopping) return
+      if (spawnErrorHandled) return
       if (this.rejectReady !== undefined) {
         // Died before ever reaching readiness: fail this start attempt.
         this.failStart(new Error(`harness exited before ready (code ${String(code)}, signal ${String(signal)})`))

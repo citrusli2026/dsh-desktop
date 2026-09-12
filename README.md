@@ -43,7 +43,7 @@ Community plugins are always installed manually by the user. The installer conta
 - **Recovers from a broken plugin** — when startup fails on an incompatible community plugin, the error page lists each suspect with one-click **Update** (pull the latest version) or **Disable** (remove it from the boot list; files stay and it is reversible from Settings → Plugins), plus Update-all-and-restart. Safe Mode (the error page, Desktop tools, or Desktop settings) remains the fallback: third-party plugins are quarantined while official and built-in extensions keep running, and the diagnostic report names the suspected failing plugin. Official bundles are never touchable from these actions.
 - **Portable agent presets** — Settings → Desktop settings exports a preset as one `.dshpreset` file and imports it elsewhere with conflict checks (skip / replace / clone) and a trust warning.
 - **Constrained renderer** — sandbox and context isolation stay on, Node integration stays off, and camera/location/Web notifications/filesystem are denied by default. Optional desktop notices use only public Harness status and never read the screen; clicking a notice focuses the app.
-- **Desktop trash** — deleted sessions, presets, and plugins stay recoverable from Settings → Trash; agent deletion commands are intercepted into the trash first, with ambiguous deletions blocked and explained. Entries are kept for 30 days.
+- **Desktop trash** — deleted sessions and presets stay recoverable from Settings → Trash; agent deletion commands are intercepted into the trash first, with ambiguous deletions blocked and explained. Entries are kept for 30 days.
 - **Updates** — Windows updates in place; unsigned macOS checks for releases and opens the exact release page.
 
 ## Download
@@ -69,7 +69,7 @@ Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the
 
 ## Versioning
 
-Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.5-rc.2.shell.2` bundles `@deepseek-ai/dsh` 0.1.5-rc.2 at shell revision 2. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically.
+Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.1.5-rc.2.shell.3` bundles `@deepseek-ai/dsh` 0.1.5-rc.2 at shell revision 3. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically.
 
 ## Development
 

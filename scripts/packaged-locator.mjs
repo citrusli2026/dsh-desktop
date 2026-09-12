@@ -1,6 +1,6 @@
 /** Shared unpacked-app locator for packaged smoke and packaged E2E. */
 import { readdir } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 
 async function filesBelow(root) {
   const result = []
@@ -19,7 +19,13 @@ function isExecutable(path) {
   return basename(path) === 'dsh-desktop' && normalized.includes('/linux-unpacked/')
 }
 
-/** Absolute path of the current platform's unpacked app binary under distRoot. */
+/** Resources directory for the current platform unpacked app. */
+export function packagedResourcesDir(executable) {
+  if (process.platform === 'darwin') return join(dirname(executable), '..', 'Resources')
+  return join(dirname(executable), 'resources')
+}
+
+/** Absolute path of the unpacked app binary under distRoot. */
 export async function locatePackagedExecutable(distRoot = 'dist') {
   const executable = (await filesBelow(distRoot)).find(isExecutable)
   if (executable === undefined) throw new Error(`packaged executable not found under ${distRoot} for ${process.platform}`)
