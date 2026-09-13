@@ -398,6 +398,10 @@ const shellApp = new ShellApp({
       void loadHarnessUrl(windowContext, state.url)
       void clearPersistedPluginSuspects(app.getPath('userData'))
     } else if (state.phase === 'crashed') {
+      // In packaged smokes the harness's own output is not inherited; without
+      // this the CI log shows only "exited before ready" and a phase-2 safe
+      // boot failure is undiagnosable (issue #41's shell.3 run).
+      if (SMOKE_TEST) console.error(`dsh-desktop: harness log tail:\n${state.logTail}`)
       void loadErrorPage(windowContext, state.attempts, state.logTail, safeModeActive(), lastPluginFailures, classifyPluginFailureCause(state.logTail))
       void persistPluginSuspects(app.getPath('userData'), lastPluginFailures)
       void autoQuarantineSuspects(lastPluginFailures)
