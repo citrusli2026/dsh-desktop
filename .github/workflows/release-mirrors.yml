@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
           package-manager-cache: false
       - name: Download published assets
         run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir artifacts

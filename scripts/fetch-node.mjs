@@ -8,7 +8,7 @@
  *
  * Maintainers bump the pin deliberately:
  *   node scripts/fetch-node.mjs --update-pin
- * which resolves the latest 22.x LTS (>= 22.19.0) from nodejs.org and
+ * which resolves the latest 24.x LTS from nodejs.org and
  * records the official SHASUMS256.txt values into the pin file, then stages
  * it. Re-runs are skipped when the pinned version is already staged.
  * @module scripts/fetch-node
@@ -49,10 +49,10 @@ function distName() {
   return `${platform}-${arch}`
 }
 
-/** True when the version tag satisfies the >= 22.19.0 engines floor. */
-function atLeast22_19(tag) {
+/** True when the version tag satisfies the >= 24.0.0 engines floor. */
+function atLeast24_0(tag) {
   const parts = tag.slice(1).split('.').map(Number)
-  return parts.length === 3 && parts[0] === 22 && (parts[1] > 19 || (parts[1] === 19 && parts[2] >= 0))
+  return parts.length === 3 && parts[0] === 24
 }
 
 async function fetchText(url) {
@@ -80,16 +80,16 @@ async function readPin() {
 }
 
 /**
- * Refresh the pin from the official nodejs.org dist: latest 22.x LTS plus
+ * Refresh the pin from the official nodejs.org dist: latest 24.x LTS plus
  * the SHASUMS256.txt entry of every supported platform archive.
  */
 async function updatePin() {
   const index = JSON.parse(await fetchText(`${OFFICIAL_DIST}/index.json`))
   const version = index.find(entry =>
-    typeof entry.version === 'string' && entry.version.startsWith('v22.')
-    && entry.lts !== false && atLeast22_19(entry.version),
+    typeof entry.version === 'string' && entry.version.startsWith('v24.')
+    && entry.lts !== false && atLeast24_0(entry.version),
   )?.version
-  if (version === undefined) fail('no Node 22.x LTS (>= 22.19.0) found in official index.json')
+  if (version === undefined) fail('no Node 24.x LTS found in official index.json')
   const sums = await fetchText(`${OFFICIAL_DIST}/${version}/SHASUMS256.txt`)
   const hashes = {}
   for (const name of DIST_NAMES) {
@@ -104,7 +104,7 @@ async function updatePin() {
     version,
     pinnedAt: new Date().toISOString().slice(0, 10),
     source: `${OFFICIAL_DIST}/${version}/SHASUMS256.txt`,
-    comment: 'Pinned Node.js 22 LTS runtime for the bundled harness (scripts/fetch-node.mjs). Hashes are recorded from the official nodejs.org SHASUMS256.txt at pin time; mirrors only deliver bytes that must match. Bump deliberately: node scripts/fetch-node.mjs --update-pin',
+    comment: 'Pinned Node.js 24 LTS runtime for the bundled harness (scripts/fetch-node.mjs). Hashes are recorded from the official nodejs.org SHASUMS256.txt at pin time; mirrors only deliver bytes that must match. Bump deliberately: node scripts/fetch-node.mjs --update-pin',
     sha256: hashes,
   }
   await writeFile(PIN_PATH, `${JSON.stringify(pin, null, 2)}\n`)

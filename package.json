@@ -1,6 +1,6 @@
 {
   "name": "dsh-desktop",
-  "version": "0.1.5-rc.2.shell.5",
+  "version": "0.1.5-rc.2.shell.6",
   "description": "Unofficial DeepSeek Harness Electron desktop shell: download and use; identical to `dsh web`",
   "author": "dsh-desktop contributors <citrusli@126.com>",
   "license": "MIT",
@@ -55,8 +55,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
-    "@types/node": "^22.0.0",
-    "electron": "^43.4.0",
+    "@types/node": "^24.0.0",
+    "electron": "^44.3.0",
     "electron-builder": "^26.0.0",
     "electron-updater": "^6.8.9",
     "esbuild": "^0.25.0",
