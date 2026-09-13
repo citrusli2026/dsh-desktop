@@ -42,6 +42,13 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.7</h2>
+  <ul>
+    <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24.</li>
+    <li>The shell now writes kernel-shared files (profile manifest, Safe Mode overlay and suspects) atomically, eliminating the torn-manifest boot failure behind the Ubuntu Safe Mode smoke family.</li>
+    <li>Adds the Windows NSIS upgrade-residue analysis with a manual verification matrix.</li>
+  </ul>
+
   <h2>v0.1.5-rc.2.shell.6</h2>
   <ul>
     <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24; no native rebuilds needed.</li>
@@ -91,13 +98,6 @@
   <h2>v0.1.5-rc.2.shell.0 <small>（内核 0.1.5-rc.2）</small></h2>
   <ul>
     <li><strong>内核升级</strong>：随包 Harness 从 0.1.5-rc.1 升至 0.1.5-rc.2，同步全部 31 个直接 peer 契约、锁文件与供应链豁免清单（241 条）。上游为同日快速迭代版本。</li>
-    <li><strong>边界说明</strong>：局域网配对密钥、设备登记、插件恢复、桌面垃圾桶和诊断仍只保存在本机，不上传用户数据。</li>
-  </ul>
-
-  <h2>v0.1.5-rc.1.shell.0 <small>（内核 0.1.5-rc.1）</small></h2>
-  <ul>
-    <li><strong>内核升级</strong>：随包 Harness 从 0.1.5-alpha.1 升至 0.1.5-rc.1，同步全部 31 个直接 peer 契约、锁文件与供应链豁免清单（241 条）。</li>
-    <li><strong>移动接力探测说明</strong>：rc.1 的 Web 界面启动时会探测移动接力通道（<code>api/remote.mux</code>）；未开启&quot;连接移动设备&quot;共享时该探测会在开发者控制台留下一条连接拒绝消息，页面功能不受影响。</li>
     <li><strong>边界说明</strong>：局域网配对密钥、设备登记、插件恢复、桌面垃圾桶和诊断仍只保存在本机，不上传用户数据。</li>
   </ul>
   <!-- changelog:auto:end -->

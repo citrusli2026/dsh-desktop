@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.7</h2>
+  <ul>
+    <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24.</li>
+    <li>The shell now writes kernel-shared files (profile manifest, Safe Mode overlay and suspects) atomically, eliminating the torn-manifest boot failure behind the Ubuntu Safe Mode smoke family.</li>
+    <li>Adds the Windows NSIS upgrade-residue analysis with a manual verification matrix.</li>
+  </ul>
+
   <h2>v0.1.5-rc.2.shell.6</h2>
   <ul>
     <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24; no native rebuilds needed.</li>
@@ -88,13 +95,6 @@
   <h2>v0.1.5-rc.2.shell.0 <small>（kernel 0.1.5-rc.2）</small></h2>
   <ul>
     <li>Upgraded the bundled Harness kernel to 0.1.5-rc.2 and realigned all 31 direct peer contracts, the lockfile, and the supply-chain allowlist.</li>
-    <li>Revalidated the full local gate battery, both dependency audit trees (zero known vulnerabilities), and the Android emulator pairing journey.</li>
-  </ul>
-
-  <h2>v0.1.5-rc.1.shell.0 <small>（kernel 0.1.5-rc.1）</small></h2>
-  <ul>
-    <li>Upgraded the bundled Harness kernel to 0.1.5-rc.1 and realigned all 31 direct peer contracts, the lockfile, and the supply-chain allowlist.</li>
-    <li>rc.1's WebUI probes the mobile handoff mux at startup; without LAN sharing enabled the probe leaves one console message and the page stays fully functional.</li>
     <li>Revalidated the full local gate battery, both dependency audit trees (zero known vulnerabilities), and the Android emulator pairing journey.</li>
   </ul>
   <!-- changelog:auto:end -->
