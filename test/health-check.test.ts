@@ -22,7 +22,7 @@ async function runtimeFixture(): Promise<{
     mkdir(join(harnessRoot, 'node_modules', '@deepseek-ai', 'dsh', 'lib'), { recursive: true }),
     mkdir(join(harnessRoot, 'node_modules', 'dsh-desktop-controls', 'lib'), { recursive: true }),
     mkdir(join(mobileShellRoot, 'app', 'www'), { recursive: true }),
-    mkdir(join(dshHome, 'profiles', 'web'), { recursive: true }),
+    mkdir(join(dshHome, 'profiles', 'web', 'node_modules', 'example-plugin'), { recursive: true }),
     mkdir(userData, { recursive: true }),
   ])
   await Promise.all([
@@ -31,7 +31,14 @@ async function runtimeFixture(): Promise<{
     writeFile(join(harnessRoot, 'node_modules', '@deepseek-ai', 'dsh', 'package.json'), JSON.stringify({ version: '0.1.2-rc.1' })),
     writeFile(join(harnessRoot, 'node_modules', 'dsh-desktop-controls', 'lib', 'client.js'), ''),
     writeFile(join(mobileShellRoot, 'app', 'www', 'index.html'), '<!doctype html>'),
-    writeFile(join(dshHome, 'profiles', 'web', 'package.json'), JSON.stringify({ dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] } } })),
+    writeFile(join(dshHome, 'profiles', 'web', 'package.json'), JSON.stringify({ dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'example-plugin'] } } })),
+    writeFile(join(dshHome, 'profiles', 'web', 'node_modules', 'example-plugin', 'package.json'), JSON.stringify({
+      name: 'example-plugin',
+      version: '1.0.0',
+      dsh: { bundle: { patch: './cordis.patch.yml' } },
+      peerDependencies: { '@deepseek-ai/dsh-settings': '^0.1.2-alpha.2' },
+    })),
+    writeFile(join(dshHome, 'profiles', 'web', 'node_modules', 'example-plugin', 'cordis.patch.yml'), '- insert:\n    - id: example\n'),
   ])
   await chmod(join(harnessRoot, 'node', 'bin', process.platform === 'win32' ? 'node.exe' : 'node'), 0o755)
   return { root, harnessRoot, mobileShellRoot, dshHome, userData }
@@ -130,6 +137,28 @@ test('health check flags a damaged bundled Node binary instead of calling the ru
     assert.equal(runtime?.status, 'failed')
     assert.match(runtime?.detail ?? '', /损坏|不可执行/)
     assert.match(runtime?.action ?? '', /重装|重新下载/)
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true })
+  }
+})
+
+test('health check surfaces a compat advisory for plugins that exclude the current kernel', async () => {
+  const fixture = await runtimeFixture()
+  try {
+    const report = await runDesktopHealthCheck({
+      ...fixture,
+      harnessState: undefined,
+      safeMode: false,
+      kernelVersion: '0.1.5-rc.2',
+      locale: 'zh',
+      includeNetwork: false,
+      fetch: async () => new Response('ok'),
+      resolveProxy: async () => 'DIRECT',
+    })
+    const profile = report.results.find(result => result.id === 'profile')
+    assert.equal(profile?.status, 'warning')
+    assert.match(profile?.detail ?? '', /example-plugin/)
+    assert.match(profile?.detail ?? '', /兼容内核范围不含当前版本/)
   } finally {
     await rm(fixture.root, { recursive: true, force: true })
   }

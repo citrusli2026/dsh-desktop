@@ -19,6 +19,22 @@ GITCODE_REPO="citrusli2026/dsh-desktop"
 
 log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" >> "$LOG"; }
 
+# launchd provides no user PATH; resolve node from the usual install spots
+# (Homebrew ARM/Intel, volta, nvm) and allow an explicit override.
+NODE_BIN="${NODE_BIN:-}"
+if [ -z "$NODE_BIN" ]; then
+  for candidate in /opt/homebrew/bin/node /usr/local/bin/node "$HOME/.volta/bin/node" "$HOME"/.nvm/versions/node/*/bin/node; do
+    if [ -x "$candidate" ]; then NODE_BIN="$candidate"; break; fi
+  done
+fi
+if [ -z "$NODE_BIN" ] && command -v node > /dev/null 2>&1; then
+  NODE_BIN="$(command -v node)"
+fi
+if [ -z "$NODE_BIN" ]; then
+  log "node not found (set NODE_BIN in $ENV_FILE) — skipping"
+  exit 1
+fi
+
 [ -f "$ENV_FILE" ] || { log "no $ENV_FILE — skipping (mirror needs a token)"; exit 0; }
 [ -d "$REPO_DIR" ] || { log "no repo at $REPO_DIR — skipping"; exit 0; }
 
@@ -39,7 +55,7 @@ if [ -z "$TAG" ]; then
 fi
 
 log "mirror $TAG"
-if ! (cd "$REPO_DIR" && node scripts/mirror-gitcode.mjs "$TAG" >> "$LOG" 2>&1); then
+if ! (cd "$REPO_DIR" && "$NODE_BIN" scripts/mirror-gitcode.mjs "$TAG" >> "$LOG" 2>&1); then
   log "mirror $TAG FAILED — will retry on the next scheduled run"
   exit 1
 fi

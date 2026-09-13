@@ -4,7 +4,7 @@ import { access, open, readFile, stat, statfs } from 'node:fs/promises'
 import { join } from 'node:path'
 import { dshBin, nodeBin } from './paths.ts'
 import { readProfileStatus } from './profile.ts'
-import { inspectPluginInventory } from './safe-mode.ts'
+import { collectKernelCompatAdvisories, inspectPluginInventory, WEB_PROFILE } from './safe-mode.ts'
 import type { HarnessState } from './supervisor.ts'
 import type { ShellLocale } from './locale.ts'
 
@@ -64,14 +64,15 @@ const COPY = {
     harnessOk: 'Harness 已启动，loopback 页面可连接。',
     harnessFailed: 'Harness 未就绪，或当前 loopback 地址不可连接。',
     harnessAction: '从恢复区重启 Harness；仍失败时再启用安全模式。',
-    profileOk: (plugins: number, market: string, version: string) => `Profile 完整 · ${plugins} 个用户插件 · 插件市场${market}（可选） · 内核 ${version}`,
-    profileWarn: (plugins: number, market: string, version: string) => `Profile 需要留意 · ${plugins} 个用户插件 · 插件市场${market}（可选） · 内核 ${version}`,
-    profileSafeMode: (plugins: number, market: string, version: string) => `安全模式已开启 · ${plugins} 个用户插件已隔离 · 插件市场${market}（可选） · 内核 ${version}`,
+    profileOk: (plugins: number, market: string, version: string, compat = '') => `Profile 完整 · ${plugins} 个用户插件 · 插件市场${market}（可选） · 内核 ${version}${compat}`,
+    profileWarn: (plugins: number, market: string, version: string, compat = '') => `Profile 需要留意 · ${plugins} 个用户插件 · 插件市场${market}（可选） · 内核 ${version}${compat}`,
+    profileSafeMode: (plugins: number, market: string, version: string, compat = '') => `安全模式已开启 · ${plugins} 个用户插件已隔离 · 插件市场${market}（可选） · 内核 ${version}${compat}`,
     profileFailed: 'Profile 清单或插件目录不完整。',
     profileAction: '先使用安全模式启动，再到「设置 → 插件」检查异常插件；不会自动修复文件。',
     safeModeAction: '确认异常插件已处理后，再从恢复区退出安全模式。',
     marketInstalled: (version?: string) => version === undefined ? '已安装' : `已安装 ${version}`,
     marketMissing: '未安装', marketDamaged: '记录损坏',
+    compatAdvisory: (names: string) => ` · ${names} 声明的兼容内核范围不含当前版本，可能不稳定（声明仅供参考）`,
     proxyDirect: '当前连接为直连。', proxySystem: '已检测到系统代理；具体地址不会显示或上传。', proxyFailed: '无法读取系统代理状态。',
     proxyAction: '检查系统网络与代理设置后重试。',
     registryOk: 'npm registry 可连接。', registryFailed: 'npm registry 暂不可连接。',
@@ -92,14 +93,15 @@ const COPY = {
     harnessOk: 'Harness is ready and its loopback page is reachable.',
     harnessFailed: 'Harness is not ready or its current loopback address is unreachable.',
     harnessAction: 'Restart Harness from Recovery; use Safe Mode only if it still fails.',
-    profileOk: (plugins: number, market: string, version: string) => `Profile is intact · ${plugins} user plugins · market ${market} (optional) · kernel ${version}`,
-    profileWarn: (plugins: number, market: string, version: string) => `Profile needs attention · ${plugins} user plugins · market ${market} (optional) · kernel ${version}`,
-    profileSafeMode: (plugins: number, market: string, version: string) => `Safe Mode is active · ${plugins} user plugins quarantined · market ${market} (optional) · kernel ${version}`,
+    profileOk: (plugins: number, market: string, version: string, compat = '') => `Profile is intact · ${plugins} user plugins · market ${market} (optional) · kernel ${version}${compat}`,
+    profileWarn: (plugins: number, market: string, version: string, compat = '') => `Profile needs attention · ${plugins} user plugins · market ${market} (optional) · kernel ${version}${compat}`,
+    profileSafeMode: (plugins: number, market: string, version: string, compat = '') => `Safe Mode is active · ${plugins} user plugins quarantined · market ${market} (optional) · kernel ${version}${compat}`,
     profileFailed: 'The profile manifest or one or more plugin folders are incomplete.',
     profileAction: 'Start in Safe Mode, then inspect Settings → Plugins; no files will be repaired automatically.',
     safeModeAction: 'After handling the suspect plugin, exit Safe Mode from Recovery.',
     marketInstalled: (version?: string) => version === undefined ? 'installed' : `installed ${version}`,
     marketMissing: 'not installed', marketDamaged: 'damaged',
+    compatAdvisory: (names: string) => ` · ${names} declare kernel ranges that exclude the current kernel and may misbehave (declarations are advisory)`,
     proxyDirect: 'The current connection is direct.', proxySystem: 'A system proxy is configured; its address is never displayed or uploaded.', proxyFailed: 'The system proxy state could not be read.',
     proxyAction: 'Check the system network and proxy settings, then retry.',
     registryOk: 'The npm registry is reachable.', registryFailed: 'The npm registry is currently unreachable.',
@@ -263,15 +265,17 @@ export async function runDesktopHealthCheck(options: DesktopHealthCheckOptions):
     const [profile, inventory] = await Promise.all([readProfileStatus(options.dshHome), inspectPluginInventory(options.dshHome)])
     const market = marketText(copy, profile.dshMarket.state, profile.dshMarket.version)
     const version = options.kernelVersion ?? harnessVersion
+    const compatNames = await collectKernelCompatAdvisories(options.dshHome, WEB_PROFILE, version)
+    const compat = compatNames.length > 0 ? copy.compatAdvisory(compatNames.join(', ')) : ''
     const failed = profile.manifest === 'damaged' || inventory.damagedBundles.length > 0
-    const warning = !failed && (profile.manifest === 'missing' || profile.dshMarket.state === 'damaged' || options.safeMode)
+    const warning = !failed && (compatNames.length > 0 || profile.manifest === 'missing' || profile.dshMarket.state === 'damaged' || options.safeMode)
     results.push(failed
       ? { id: 'profile', status: 'failed', label: copy.profile, detail: copy.profileFailed, action: copy.profileAction }
       : warning
         ? options.safeMode
-          ? { id: 'profile', status: 'warning', label: copy.profile, detail: copy.profileSafeMode(inventory.userBundles.length, market, version), action: copy.safeModeAction }
-          : { id: 'profile', status: 'warning', label: copy.profile, detail: copy.profileWarn(inventory.userBundles.length, market, version), action: copy.profileAction }
-        : { id: 'profile', status: 'ok', label: copy.profile, detail: copy.profileOk(inventory.userBundles.length, market, version) })
+          ? { id: 'profile', status: 'warning', label: copy.profile, detail: copy.profileSafeMode(inventory.userBundles.length, market, version, compat), action: copy.safeModeAction }
+          : { id: 'profile', status: 'warning', label: copy.profile, detail: copy.profileWarn(inventory.userBundles.length, market, version, compat), action: copy.profileAction }
+        : { id: 'profile', status: 'ok', label: copy.profile, detail: copy.profileOk(inventory.userBundles.length, market, version, compat) })
   } catch {
     results.push({ id: 'profile', status: 'failed', label: copy.profile, detail: copy.profileFailed, action: copy.profileAction })
   }

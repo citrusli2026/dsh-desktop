@@ -14,6 +14,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { compareSemver, isSemver, parseCompositeVersion } from './release-shape.mjs'
+import { syncKernelPeerPins } from './kernel-peers.mjs'
 
 const ROOT = process.cwd()
 const PKG_PATH = join(ROOT, 'package.json')
@@ -128,8 +129,17 @@ async function main() {
     if (target === undefined) fail('usage: bump dsh <version|latest>')
     const dsh = target === 'latest' ? (await latestUpstream()).latest : target
     if (!isSemver(dsh)) fail(`not a semver: ${dsh}`)
+    const previous = state.pinned
     await writeState(dsh, 0)
-    console.log('version: next steps — pnpm -C manifest/harness install --lockfile-only && pnpm run bootstrap && pnpm run smoke')
+    // The kernel ships as a family: sync every @deepseek-ai/dsh-* peer that
+    // names the old version, so callers (dsh-watch included) cannot produce a
+    // mixed-version closure by bumping the main pin alone (issue #34's PR).
+    const manifest = await readJson(MANIFEST_PATH)
+    const synced = syncKernelPeerPins(manifest.dependencies ?? {}, previous, dsh)
+    if (synced !== (manifest.dependencies ?? {})) await writeJson(MANIFEST_PATH, manifest)
+    const moved = Object.values(synced).filter(range => typeof range === 'string' && range.includes(dsh)).length
+    console.log(`version: synced ${moved} dsh-* peer pins to ${dsh}`)
+    console.log('version: next steps — pnpm -C manifest/harness install --lockfile-only && node scripts/sync-release-age-excludes.mjs && pnpm -C manifest/harness install --frozen-lockfile && pnpm run bootstrap && pnpm run smoke')
     return
   }
 

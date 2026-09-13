@@ -16,6 +16,7 @@ import { rm, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { parse, stringify } from 'yaml'
+import { kernelCompatAdvisory } from './plugin-compat.ts'
 
 /** The web profile name the desktop shell always boots (HARNESS_WEB_ARGS). */
 export const WEB_PROFILE = 'web'
@@ -28,6 +29,37 @@ export const PLUGIN_FAILURE_PATTERN = /failed to (?:apply|import) loader entry (
 
 /** A bundle listed in the profile but missing from node_modules (dsh-app-boot). */
 export const BUNDLE_RESOLUTION_PATTERN = /cannot resolve profile bundle "([^"]+)"/g
+
+/**
+ * User-installed bundles whose declared `@deepseek-ai/dsh-*` peer ranges do
+ * not cover the bundled kernel. Purely advisory (the ecosystem's declarations
+ * are often stale), surfaced by the health check — never a blocker.
+ */
+export async function collectKernelCompatAdvisories(dshHome: string, profile: string, kernelVersion: string): Promise<string[]> {
+  let manifest: { dsh?: { profile?: { bundles?: string[] } } }
+  try {
+    manifest = JSON.parse(await readFile(join(dshHome, 'profiles', profile, 'package.json'), 'utf8')) as typeof manifest
+  } catch {
+    return []
+  }
+  const bundles = (manifest.dsh?.profile?.bundles ?? [])
+    .filter(name => !(OFFICIAL_BUNDLES as readonly string[]).includes(name))
+  const advisories: string[] = []
+  for (const name of bundles) {
+    const packageDir = installedPackagePath(dshHome, profile, name)
+    if (packageDir === undefined) continue
+    try {
+      const packageJson = JSON.parse(await readFile(join(packageDir, 'package.json'), 'utf8')) as {
+        peerDependencies?: Record<string, string>
+      }
+      const verdict = kernelCompatAdvisory(packageJson.peerDependencies, kernelVersion)
+      if (verdict.declared && !verdict.covers) advisories.push(name)
+    } catch {
+      continue
+    }
+  }
+  return advisories
+}
 
 /**
  * Why a plugin failed to load. `kernel-api` is the recurring upgrade cliff:

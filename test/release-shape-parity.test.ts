@@ -1,7 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { compareVersions, splitCompositeVersion, latestPublishedRelease } from '../src/main/update-check.ts'
-// @ts-expect-error Dependency-free CI scripts intentionally stay plain ESM JavaScript.
 import * as shape from '../scripts/release-shape.mjs'
 
 /**
