@@ -12,7 +12,8 @@
  * switch).
  * @module main/safe-mode
  */
-import { rm, readFile, writeFile, mkdir } from 'node:fs/promises'
+import { rm, readFile, mkdir } from 'node:fs/promises'
+import { atomicWriteFile } from './config-file.ts'
 import { existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { parse, stringify } from 'yaml'
@@ -330,7 +331,7 @@ export async function writeSafeModeOverlay(
     const fallbackPath = join(dir, 'safe-mode.patch.yml')
     try {
       await mkdir(dir, { recursive: true })
-      await writeFile(fallbackPath, stringify(toDisablePatch({ ids: [...fallbackSuspects], unkeyedRows: 0, unresolved: [] })))
+      await atomicWriteFile(fallbackPath, stringify(toDisablePatch({ ids: [...fallbackSuspects], unkeyedRows: 0, unresolved: [] })))
       return fallbackPath
     } catch (error) {
       console.warn(`dsh-desktop: safe mode overlay write failed: ${error instanceof Error ? error.message : String(error)}`)
@@ -350,7 +351,7 @@ export async function writeSafeModeOverlay(
   const path = join(dir, 'safe-mode.patch.yml')
   try {
     await mkdir(dir, { recursive: true })
-    await writeFile(path, stringify(toDisablePatch(overlay)))
+    await atomicWriteFile(path, stringify(toDisablePatch(overlay)))
     return path
   } catch (error) {
     console.warn(`dsh-desktop: safe mode overlay write failed: ${error instanceof Error ? error.message : String(error)}`)
@@ -366,7 +367,7 @@ export async function persistPluginSuspects(dir: string, suspects: readonly Comp
   if (suspects.length === 0) return
   try {
     await mkdir(dir, { recursive: true })
-    await writeFile(join(dir, SUSPECTS_FILE), JSON.stringify({ suspects }), 'utf8')
+    await atomicWriteFile(join(dir, SUSPECTS_FILE), JSON.stringify({ suspects }))
   } catch {
     // Best effort only — losing the record degrades recovery to plain quarantine.
   }

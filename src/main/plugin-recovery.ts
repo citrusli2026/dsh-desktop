@@ -6,9 +6,10 @@
  * the `dsh.profile.bundles` entry (and its dependency entry) is removed.
  * @module main/plugin-recovery
  */
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { WEB_PROFILE } from './safe-mode.ts'
+import { atomicWriteFile } from './config-file.ts'
 
 export interface ProfileManifest {
   name?: string
@@ -59,10 +60,11 @@ export async function writeProfileManifest(
   manifest: ProfileManifest,
   profile = WEB_PROFILE,
 ): Promise<void> {
-  await writeFile(
+  // Atomic: the kernel reads this file fail-loud on every boot, so a
+  // truncation window here would break the next start (config-file.ts).
+  await atomicWriteFile(
     join(dshHome, 'profiles', profile, 'package.json'),
     `${JSON.stringify(manifest, null, 2)}\n`,
-    'utf8',
   )
 }
 

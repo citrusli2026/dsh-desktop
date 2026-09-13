@@ -6,7 +6,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile, rm, mkdir, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, mkdir, writeFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -54,6 +54,25 @@ test('profile manifest round-trips through read/write', async () => {
     assert.deepEqual(manifest.dsh?.profile?.bundles, ['a'])
     // A missing manifest reads as empty, never throws.
     assert.deepEqual(await readProfileManifest(join(home, 'nope')), {})
+  } finally {
+    await rm(home, { recursive: true, force: true })
+  }
+})
+
+test('profile manifest writes are atomic: no torn state, no temp residue', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-plugin-recovery-'))
+  try {
+    const dir = join(home, 'profiles', 'web')
+    await mkdir(dir, { recursive: true })
+    await writeProfileManifest(home, { name: 'dsh-profile-web', dsh: { profile: { bundles: ['a'] } } })
+    // Overwrite twice; after every write the kernel-facing file must parse
+    // and no temp sibling may survive (a leftover .tmp would linger forever).
+    await writeProfileManifest(home, { name: 'dsh-profile-web', dsh: { profile: { bundles: ['a', 'b'] } } })
+    await writeProfileManifest(home, { name: 'dsh-profile-web', dsh: { profile: { bundles: ['c'] } } })
+    const parsed = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8')) as { dsh?: { profile?: { bundles?: string[] } } }
+    assert.deepEqual(parsed.dsh?.profile?.bundles, ['c'])
+    const leftovers = (await readdir(dir)).filter(name => name !== 'package.json')
+    assert.deepEqual(leftovers, [])
   } finally {
     await rm(home, { recursive: true, force: true })
   }

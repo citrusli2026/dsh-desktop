@@ -111,6 +111,11 @@ try {
     await writeFile(join(userData, 'shell-preferences.json'), JSON.stringify({ safeMode: true, closeToTrayExplained: true }))
     const safe = await runSmoke({ flags: [SMOKE_UI_FLAG], env: { [SMOKE_SAFE_ENV]: '1' } })
     if (safe.code !== SMOKE_EXIT_OK) {
+      // The kernel fail-louds on a torn/empty profile manifest; dump its
+      // exact on-disk state so a recurrence carries direct evidence.
+      const manifestPath = join(dshHome, 'profiles', 'web', 'package.json')
+      const raw = await readFile(manifestPath, 'utf8').catch(error => `<read failed: ${error.code ?? error}>`)
+      console.error(`safe-mode smoke: profile manifest ${manifestPath} (${typeof raw === 'string' ? `${Buffer.byteLength(raw)}B` : raw}): ${typeof raw === 'string' ? raw.slice(0, 400) : ''}`)
       throw new Error(`safe-mode smoke: safe boot failed with code ${String(safe.code)}`)
     }
     console.error('safe-mode smoke: OK — broken plugin quarantined, banner rendered')
