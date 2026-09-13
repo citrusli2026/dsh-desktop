@@ -108,7 +108,7 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Close the shell-owned LAN pairing modal. */
   closeLanPairing: (): Promise<boolean> => ipcRenderer.invoke('shell:close-lan-pairing'),
   /** Invoke one of the fixed, low-risk desktop controls from the Harness UI. */
-  desktopAction: (action: 'startLanPairing' | 'showLanPairing' | 'stopLanPairing' | 'restartHarness' | 'showAbout' | 'enterSafeMode' | 'exitSafeMode' | 'installDshMarket' | 'openRecharge' | 'kernelCheckUpdates' | 'kernelInstall' | 'kernelRestore'): Promise<boolean | MarketInstallResult | KernelOperationResult> =>
+  desktopAction: (action: 'startLanPairing' | 'showLanPairing' | 'stopLanPairing' | 'restartHarness' | 'showAbout' | 'enterSafeMode' | 'exitSafeMode' | 'installDshMarket' | 'openRecharge' | 'kernelCheckUpdates' | 'kernelInstall' | 'kernelRestore' | 'checkForUpdates' | 'openLogs' | 'exportDiagnostics'): Promise<boolean | MarketInstallResult | KernelOperationResult> =>
     ipcRenderer.invoke('desktop:action', action),
   /** Observe the four non-sensitive phases of a manual market install. */
   onMarketInstallProgress: (callback: (progress: MarketInstallProgress) => void): (() => void) => {

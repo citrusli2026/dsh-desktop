@@ -18,11 +18,13 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   const client = await readFile(join(pluginRoot, 'lib/client.js'), 'utf8')
   assert.match(client, /shell\.overlay/)
   assert.match(client, /startLanPairing/)
-  // The overlay carries extension actions only (pairing, Safe Mode, About);
-  // fullscreen, logs, and diagnostics belong to other surfaces.
+  // The overlay mirrors every desktop tool surface (2026-09 iteration:
+  // check-for-updates, logs, and diagnostics joined the panel); fullscreen
+  // stays a window function, not a tool (decision 0023).
   assert.doesNotMatch(client, /toggleFullscreen/)
-  assert.doesNotMatch(client, /openLogs/)
-  assert.doesNotMatch(client, /exportDiagnostics/)
+  assert.match(client, /checkForUpdates/)
+  assert.match(client, /openLogs/)
+  assert.match(client, /exportDiagnostics/)
   assert.match(client, /showAbout/)
   // Manual market entry: settings row + main-process install.
   assert.match(client, /getBundledPlugins/)
@@ -47,6 +49,7 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /data-dsh-controls-action-detail/)
   assert.match(client, /panelConnect/)
   assert.match(client, /panelRecovery/)
+  assert.match(client, /panelMaintenance/)
   assert.match(client, /panelInfo/)
   assert.match(client, /groupServices/)
   assert.match(client, /data-dsh-desktop-group/)

@@ -672,6 +672,18 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     refreshNativeSurfaces()
     return true
   }
+  if (action === 'checkForUpdates') {
+    void checkForUpdatesInteractively(currentLocale)
+    return true
+  }
+  if (action === 'openLogs') {
+    void openLogsFolder()
+    return true
+  }
+  if (action === 'exportDiagnostics') {
+    void exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive(), lastMarketInstallResult, lanService.diagnosticState)
+    return true
+  }
   if (action === 'showAbout') {
     await showAboutDialog(currentLocale, aboutMaintenance())
     return true

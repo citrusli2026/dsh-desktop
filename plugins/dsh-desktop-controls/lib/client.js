@@ -668,9 +668,12 @@ window.__ModuleLoader__.load({
     const COPY = {
       zh: {
         trigger: "桌面工具", title: "桌面工具", panelEyebrow: "DSH DESKTOP", panelCopy: "连接移动设备、调整桌面习惯，或在异常时恢复 Harness。", ready: "已就绪",
-        panelConnect: "连接", panelRecovery: "恢复", panelInfo: "信息",
+        panelConnect: "连接", panelRecovery: "恢复", panelMaintenance: "维护", panelInfo: "信息",
         about: "关于",
         aboutDetail: "版本、运行时与项目来源",
+        checkUpdates: "检查更新", checkUpdatesDetail: "检查 dsh-desktop 新版本",
+        openLogs: "打开日志", openLogsDetail: "查看本机运行日志",
+        exportDiagnostics: "导出诊断", exportDiagnosticsDetail: "生成脱敏诊断报告",
         restartHarness: "重启 Harness",
         restartDetail: "保留设置并重新启动内核",
         unavailable: "请右键窗口或点击系统托盘图标使用桌面工具。",
@@ -718,9 +721,12 @@ window.__ModuleLoader__.load({
       },
       en: {
         trigger: "Desktop tools", title: "Desktop tools", panelEyebrow: "DSH DESKTOP", panelCopy: "Connect a device, tune desktop habits, or recover Harness when needed.", ready: "Ready",
-        panelConnect: "Connect", panelRecovery: "Recovery", panelInfo: "Information",
+        panelConnect: "Connect", panelRecovery: "Recovery", panelMaintenance: "Maintenance", panelInfo: "Information",
         about: "About",
         aboutDetail: "Version, runtime, and project source",
+        checkUpdates: "Check for updates", checkUpdatesDetail: "Check for a new dsh-desktop release",
+        openLogs: "Open logs", openLogsDetail: "Reveal the local log folder",
+        exportDiagnostics: "Export diagnostics", exportDiagnosticsDetail: "Save a sanitized diagnostic report",
         restartHarness: "Restart Harness",
         restartDetail: "Keep settings and restart the kernel",
         unavailable: "Right-click the window or use the system tray for desktop tools.",
@@ -1590,6 +1596,14 @@ window.__ModuleLoader__.load({
                 react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
                   react_jsx_runtime.jsx(PanelAction, { mark: "SAFE", label: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart, detail: preferences?.safeMode === true ? copy.safeModeExitDetail : copy.safeModeDetail, disabled: busy !== "", onClick: () => void invoke(preferences?.safeMode === true ? "exitSafeMode" : "enterSafeMode") }),
                   react_jsx_runtime.jsx(PanelAction, { mark: "↻", label: copy.restartHarness, detail: copy.restartDetail, disabled: busy !== "", onClick: () => void invoke("restartHarness") }),
+                ] }),
+              ] }),
+              react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "maintenance", children: [
+                react_jsx_runtime.jsx("h3", { "data-dsh-controls-group-label": true, children: copy.panelMaintenance }),
+                react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
+                  react_jsx_runtime.jsx(PanelAction, { mark: "↑", label: copy.checkUpdates, detail: copy.checkUpdatesDetail, disabled: busy !== "", onClick: () => void invoke("checkForUpdates") }),
+                  react_jsx_runtime.jsx(PanelAction, { mark: "LOG", label: copy.openLogs, detail: copy.openLogsDetail, disabled: busy !== "", onClick: () => void invoke("openLogs") }),
+                  react_jsx_runtime.jsx(PanelAction, { mark: "TXT", label: copy.exportDiagnostics, detail: copy.exportDiagnosticsDetail, disabled: busy !== "", onClick: () => void invoke("exportDiagnostics") }),
                 ] }),
               ] }),
               react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "info", children: [

@@ -1,10 +1,11 @@
 /** Small modal window used to present a LAN pairing QR code. */
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, nativeTheme } from 'electron'
 import { join } from 'node:path'
 import { shellText, type ShellLocale } from './locale.ts'
 import type { LanPairing } from './lan.ts'
 import { asDataUrl } from './shell-html.ts'
 import { pairingPageMarkup } from './lan-page.ts'
+import { hiddenTitleBarOptions } from './window-chrome.ts'
 
 export { pairingPageMarkup } from './lan-page.ts'
 
@@ -31,6 +32,9 @@ export function showLanPairingWindow(parent: BrowserWindow | undefined, pairing:
     parent,
     center: true,
     title: shellText(locale, 'lan.qrTitle'),
+    // Match the main window's chrome: without this, Windows/Linux render a
+    // native menu bar on the pairing window while the home page hides it.
+    ...hiddenTitleBarOptions(process.platform, nativeTheme.shouldUseDarkColors),
     webPreferences: {
       contextIsolation: true,
       sandbox: true,
