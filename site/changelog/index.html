@@ -42,6 +42,12 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.6</h2>
+  <ul>
+    <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24; no native rebuilds needed.</li>
+    <li>Adds the Windows NSIS upgrade-residue analysis with a manual verification matrix.</li>
+  </ul>
+
   <h2>v0.1.5-rc.2.shell.5</h2>
   <ul>
     <li>The floating desktop-tools panel gains a Maintenance group (check for updates, open logs, export diagnostics), completing tool parity across surfaces.</li>
@@ -92,14 +98,6 @@
   <ul>
     <li><strong>内核升级</strong>：随包 Harness 从 0.1.5-alpha.1 升至 0.1.5-rc.1，同步全部 31 个直接 peer 契约、锁文件与供应链豁免清单（241 条）。</li>
     <li><strong>移动接力探测说明</strong>：rc.1 的 Web 界面启动时会探测移动接力通道（<code>api/remote.mux</code>）；未开启&quot;连接移动设备&quot;共享时该探测会在开发者控制台留下一条连接拒绝消息，页面功能不受影响。</li>
-    <li><strong>边界说明</strong>：局域网配对密钥、设备登记、插件恢复、桌面垃圾桶和诊断仍只保存在本机，不上传用户数据。</li>
-  </ul>
-
-  <h2>v0.1.5-alpha.1.shell.1 <small>（内核 0.1.5-alpha.1）</small></h2>
-  <ul>
-    <li><strong>内核升级</strong>：随包 Harness 从 0.1.3-alpha.2 升至 0.1.5-alpha.1，同步全部 31 个直接 peer 契约、锁文件与供应链豁免清单。内核本版重构了会话持久化与终端子系统（新增 dsh-terminal、dsh-fs-local、dsh-session-projection 等子包）。</li>
-    <li><strong>会话锁原生化简化</strong>：新内核改用预编译的 <code>@deepseek-ai/node-addon-system</code>（稳定 Node-API，跨 ABI 兼容）承担文件锁，不再依赖需要按 Node ABI 重编译的 <code>fs-ext</code>。桌面壳的原生重建门禁改为按锁文件判定：内核仍携带 fs-ext 时照旧重编译并执行独占锁探针；内核不再携带时自动跳过；锁文件仍要求而闭包缺失时照旧报错拦截。</li>
-    <li><strong>依赖安全地板</strong>：修复两条新发布的高危通告（GHSA-rgj7-g3m4-5g8c、GHSA-2883-xcg3-v3hh）——构建链 sharp ≥0.35.4、内核图像附件链 sharp 0.35.4、插件/配置解析链 js-yaml 4.3.2、本地服务链 hono 4.13.5；根依赖树与 Harness 生产依赖树安全审计均回到 0 已知漏洞。</li>
     <li><strong>边界说明</strong>：局域网配对密钥、设备登记、插件恢复、桌面垃圾桶和诊断仍只保存在本机，不上传用户数据。</li>
   </ul>
   <!-- changelog:auto:end -->
