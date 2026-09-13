@@ -9,12 +9,12 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.5-rc.2.shell.4`（2026-09-12 已发布并完成 GitCode/官网收口；内核 `0.1.5-rc.2`） |
-| 已发布 | ✅ `0.1.5-rc.2.shell.4`（三端 dmg/exe/deb；桌面垃圾桶与删除拦截修复） |
-| 本地门禁 | ✅ 265 项单测、类型检查、runtime/site、安全审计（双树 0 已知漏洞）、构建全绿；dev E2E 16/16、打包 smoke、真实 Harness UI、Safe Mode、offline + real market、LAN QR、Android 15 AVD 真实 Chrome 全链通过 |
-| 核心发布 | ✅ `v0.1.5-rc.2.shell.4` Release run `34688428708` 全绿（含三平台 Safe Mode 两阶段冒烟）：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode、故障注入与插件恢复 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.4`（dmg/exe/deb + 3×sha256 共 6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.5-rc.2.shell.4` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `cf7b663`） |
+| 最新代码基线 | ✅ `0.1.5-rc.2.shell.7`（2026-09-13 已发布并完成 GitCode/官网收口；内核 `0.1.5-rc.2`；Electron 44.3.0 + Node 24.21.0） |
+| 已发布 | ✅ `0.1.5-rc.2.shell.7`（三端 dmg/exe/deb；可靠壳加固 + Electron 44/Node 24 运行时升级 + 原子写修复；shell.6 失败 tag 保留审计） |
+| 本地门禁 | ✅ 272 项单测（Node 24 类型）、类型检查、runtime/site、安全审计、构建全绿；dev E2E 16/16、打包 smoke、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
+| 核心发布 | ✅ `v0.1.5-rc.2.shell.7` Release run `34741005199` 全绿：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode 故障注入与插件恢复 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.7`（6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.5-rc.2.shell.7` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `be5143e`） |
 | 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1566（48 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -1581,3 +1581,15 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 6. **Notes**: `docs/release-notes/v0.1.5-rc.2.shell.4.md` passed the release-notes gate; README/CONTEXT/ARCHITECTURE and FAQ now describe the actual trash scope and shell revision 4.
 
 _更新于 2026-09-12_
+
+## 54. rc.2.shell.5/.7 可靠壳加固 + 运行时升级（2026-09-13）
+
+本轮迭代（除签名外全部计划项）跨三个 tag 完成：shell.5（加固）、shell.6（运行时升级，失败保留）、shell.7（修复后重发，全绿）。
+
+1. **shell.5（tag `v0.1.5-rc.2.shell.5` → `e2bbd50`）**：Release run `34734974885` 全绿，8 资产契约 + attestation。内容：`version.mjs bump dsh` 自动同步全部 `@deepseek-ai/dsh-*` peer pins（#31 类）；launchd 镜像守护自解析 node 路径；插件内核兼容咨询（`plugin-compat.ts`，#33 类可见化）；Safe Mode 崩溃嫌疑持久化 + overlay 兜底（#35/#40）；`spawn EFTYPE/ENOENT` 重装指引（#39）；LAN 配对窗口 Windows/Linux 隐藏菜单栏 + 桌面工具浮层补齐维护组（检查更新/打开日志/导出诊断，用户直接反馈两项）。GitCode 镜像 6/6（SOCKS 代理挂掉后改直连，约 15 分钟）；Site Data Refresh run `34737630244` 手动补触发后 6/6 `gitcode_ok=true`。
+2. **shell.6（tag `v0.1.5-rc.2.shell.6` → `4a85d1c`，失败保留审计）**：Electron 43→44.3.0、内置 Node 22.23.2→24.21.0 LTS、CI 全工作流 node 24、`fetch-node`/`check-runtime-boundary` 改 24 系。Release run `34739729730`（错误 commit 上的首跑）已取消；重对齐后的 run `34739787941` ubuntu 安全模式注入冒烟失败（`readProfileManifest` 读到空清单 → SyntaxError），mac/win/publish 通过，publish 被 skip，无 release 产物。tag 双远端保留。
+3. **根因（重大）**：壳侧 `writeProfileManifest`（自动隔离/错误页禁用）与 Safe Mode overlay/suspects 写入全部是非原子 truncate+write；写窗口内的崩溃/退出/内核并发读会留下 0 字节 profile manifest，下一次 boot 被 fail-loud 的 `readProfileManifest` 击落。这是 #40/#41 一族的确定性机制，Node 24 时序在 ubuntu CI 上暴露。shell.7 的 562b7f0 日志尾诊断直接给出内核侧堆栈定位。
+4. **shell.7 修复（tag `v0.1.5-rc.2.shell.7` → `be5143e`）**：`plugin-recovery.writeProfileManifest` 与 safe-mode 三处写入改走 `config-file.ts atomicWriteFile`（同目录临时文件 + rename；trash-hook 原本已是原子）；冒烟脚本在 safe boot 失败时倾倒 manifest 字节状态；新增原子写契约单测。本地门禁全绿（272 单测、dev E2E 16/16、dist:dir、双冒烟 + `DSH_DESKTOP_SAFE_BREAK=1`、market offline+real）。Release run `34741005199` verify + 三平台 build + publish 全绿；GitCode 镜像 6/6（backfill 先落 sha256，本机补齐安装包），Site Data Refresh run `34741638143` 后官网 6/6 `gitcode_ok=true`。
+5. **pnpm ≥10 新坑（§49 家族加重）**：根目录全量 `pnpm install`（非 lockfile-only）在 pnpm 11.11 解析完成后挂死（0 socket、0 CPU、`--network-concurrency` 无效）。绕过：移开 `pnpm-workspace.yaml` → `CI=true npx -y pnpm@9.15.9 install --no-frozen-lockfile`（pnpm 9 不写锁文件 overrides 头，需手工按 workspace 语义补 `overrides:` 块）→ `CI=true pnpm install --frozen-lockfile` 验证通过。已录入 release skill 故障表。
+6. **P2 GitCode 测试 release 清理：未完成转下轮**。API 无 release id 字段、无删除路由（405）、tag-ref 删除 404；kimi-webbridge 浏览器扩展未连接无法走 UI。`v0.0.0-mirror-test` 遗留（指向远古 commit，无真实资产，不影响官网数据源）。
+7. **运维**：巡检自动化 prompt 已更新（peer-pin 自动同步、CI=true 兜底、pnpm 双坑指引）；release skill 故障表新增 pnpm 全量安装挂死与 tag 重指向条目；`docs/reliable-shell-iteration-plan.md` §6.10 记录本轮交付。
