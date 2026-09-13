@@ -29,12 +29,14 @@ node scripts/version.mjs bump dsh <version|latest>
 ```
 
 `bump dsh` rewrites `manifest/harness/package.json` pin and
-`package.json` version (shell rev resets to 0). It does NOT touch
-`pnpm-workspace.yaml`, which also carries release-age pins:
+`package.json` version (shell rev resets to 0). Since shell.5 it also
+auto-syncs every `@deepseek-ai/dsh-*` peer range that contained the
+previous kernel (`scripts/kernel-peers.mjs`). What it does NOT touch is
+the release-age exclude list in `manifest/harness/pnpm-workspace.yaml`
+(~190 entries pinned to exact kernel versions) — re-pin it with:
 
 ```sh
-# replace all dsh-* pins (e.g. 192 lines at an rc bump)
-sed -i '' 's/@0\.1\.0-rc\.8/@0.1.1-rc.1/g' manifest/harness/pnpm-workspace.yaml
+node scripts/sync-release-age-excludes.mjs <newVersion>
 ```
 
 Then regenerate the lockfile and verify it resolves:
@@ -265,6 +267,8 @@ GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-desktop \
 | `RangeError [ERR_CHILD_PROCESS_STDIO_MAXBUFFER]` from `dpkg -L` | a 160 MB install lists every file, overflowing the 1 MB cap; `smoke-installed.mjs` passes a 32 MB buffer — and selects the binary by `stat` (**regular executable**, since `dpkg -L` lists the `/opt/<app>` directory before the binary inside it) |
 | NSIS same-version overwrite (`/S` reinstall) hangs indefinitely | electron-builder replaces the install by running the existing uninstaller; on CI it never finishes (150s and 300s timeouts; zero output; the first silent install takes 4s). Deliberately out of CI scope — the deb reinstall smoke covers the overwrite logic; see test-hardening-plan A-3 |
 | `pnpm install --lockfile-only` at the repo root exits 0 but never writes `pnpm-lock.yaml` (pnpm 10/11/12; resolution completes, no error event, no "Done" line) | triggered by resolving `electron-builder@26.15.3` in the root manifest (flattening its direct deps into devDependencies makes it pass; `manifest/harness` is unaffected). Workaround: generate with `CI=true npx -y pnpm@9.15.9 install --lockfile-only` after temporarily adding `packages: ['.']` to `pnpm-workspace.yaml` and duplicating the workspace `overrides` into `package.json` `pnpm.overrides` (pnpm 9 reads neither), then restore both files and validate with `pnpm install --frozen-lockfile` on pnpm 11 (see HANDOFF §49) |
+| full `pnpm install` at the repo root (pnpm 11.11, `--no-frozen-lockfile`) hangs forever after `resolved N, reused M, downloaded 0` with zero open sockets and zero CPU (reproduced on Electron 44 bump; clean `node_modules` and `--network-concurrency=3` do not help) | same electron-builder trigger family as the lockfile-only bug, now blocking the whole install. Workaround (see HANDOFF §54): `mv pnpm-workspace.yaml` aside, keep the overrides duplicated in `package.json`, `CI=true npx -y pnpm@9.15.9 install --no-frozen-lockfile` (fast, stages Electron via postinstall), restore the workspace file, then hand-add the `overrides:` block pnpm 10+ expects to `pnpm-lock.yaml` settings (pnpm 9 never writes it) and validate with `CI=true pnpm install --frozen-lockfile` |
+| a just-pushed release tag needs re-pointing after a rebase | `git tag -f v<version>` locally, then `git push --force origin v<version>`; cancel any release run already started from the old commit first (`gh run cancel <id>`) and force-push the GitCode tag to the same peeled commit (branch is a mirror, force is the established practice) |
 
 ## Exit criteria
 

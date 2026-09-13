@@ -199,6 +199,24 @@
 | P1-2 | 一键运行体检 | 默认只读检查 runtime、目录/磁盘、loopback、Profile/插件/版本；联网检查显式 opt-in | `src/main/health-check.ts`、preload、桌面设置 | 每项正常/警告/失败并给动作；结果本地脱敏、不上传、不自动修复 |
 | P1-3 | 真实 UI 与边界验证 | 单测覆盖状态、隐私与故障分类；Electron stub + 真实 Harness 覆盖本地/联网与 UI | `test/health-check.test.ts`、`e2e/electron-shell.spec.ts` | 中英文入口一致；打包 UI 四步、四项本地体检和显式联网路径均可用 |
 
+### 6.10 rc.2.shell.5/.6：可靠壳加固与运行时升级（2026-09-13 完成）
+
+本轮除签名外的全部计划项已随 `v0.1.5-rc.2.shell.5` 与 `v0.1.5-rc.2.shell.6` 发布：
+
+| 项 | 交付 | 版本 |
+|---|---|---|
+| P0-1 dsh-watch peer pins | `version.mjs bump dsh` 自动同步全部 `@deepseek-ai/dsh-*` peer 范围（`scripts/kernel-peers.mjs` + 测试）；release skill 的 sed 步骤作废 | shell.5 |
+| P0-2 launchd 守护修复 | `gitcode-mirror-daemon.sh` 自解析 node 绝对路径（Homebrew/Volta/nvm 回退），`env -i` 验证 6/6 | shell.5 |
+| P1-2 插件内核兼容咨询 | `src/main/plugin-compat.ts`（npm 语义域含 prerelease 元组规则）；健康检查对 bundle peer 范围不含当前内核给出警告；#33 类从静默失败变可见提示 | shell.5 |
+| Safe Mode 竞态兜底 | 崩溃时持久化嫌疑插件，profile manifest 未合成时兜底写 overlay（#35/#40）；打包冒烟崩溃输出日志尾 | shell.5 |
+| spawn 诊断 | `spawn EFTYPE/ENOENT` 归类 + 错误页/诊断报告给重装指引（#39） | shell.5 |
+| 用户新增① | LAN 配对窗口在 Windows/Linux 隐藏菜单栏（复用 `hiddenTitleBarOptions`） | shell.5 |
+| 用户新增② | 桌面工具浮层补齐"维护"组：检查更新/打开日志/导出诊断；fullscreen 保持窗口职责 | shell.5 |
+| P1-4 运行时升级 | Electron 43→44.3.0、内置 Node 22.23.2→24.21.0 LTS（官方 SHASUMS 六平台 pin）、CI 全工作流 node 24、`fetch-node`/`check-runtime-boundary` 改 24 系；预编译 NAPI 无需 ABI 重建 | shell.6 |
+| P1-3 NSIS 残留分析 | `docs/nsis-upgrade-residue-analysis.md`：机制、残留路径、已交付缓解、候选修复、六例真机测试矩阵（待 Windows 硬件） | shell.6 |
+| P2 GitCode 测试 release 清理 | API 无 release id/删除路由（405）、tag-ref 删除 404，浏览器扩展未连接无法走 UI；已记录诊断，遗留 `v0.0.0-mirror-test`（无真实资产，不影响官网数据） | 未完成，转下轮 |
+| 运维 | 巡检自动化 prompt 更新（peer-pin 自动同步、CI=true 兜底、§49/§54 pnpm 坑）；release skill 故障表新增 pnpm≥10 全量安装挂死与 tag 重指向条目 | — |
+
 ## 7. 延后评估：签名与公证
 
 这不是当前迭代任务，也不阻塞上述功能完成。达到以下任一信号后再重新评估：
