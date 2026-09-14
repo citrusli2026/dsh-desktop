@@ -217,7 +217,7 @@
 | P2 GitCode 测试 release 清理 | API 无 release id/删除路由（405）、tag-ref 删除 404，浏览器扩展未连接无法走 UI；已记录诊断，遗留 `v0.0.0-mirror-test`（无真实资产，不影响官网数据） | 未完成，转下轮 |
 | 运维 | 巡检自动化 prompt 更新（peer-pin 自动同步、CI=true 兜底、§49/§54 pnpm 坑）；release skill 故障表新增 pnpm≥10 全量安装挂死与 tag 重指向条目 | — |
 
-### 6.11 rc.2.shell.8：Windows 安装保真与损坏自愈（本轮，Windows 优先）
+### 6.11 rc.2.shell.8/.9：Windows 安装保真与损坏自愈（本轮，Windows 优先）
 
 > 规划日期：2026-09-14。依据：GitCode 生成时累计 1566 中 win 1125 / mac 253 / linux 188（Windows 约 72%）；#39 暴露的 NSIS 升级残留族已有机制分析但三个候选修复均未实施（`docs/nsis-upgrade-residue-analysis.md` §4）；真机矩阵卡在无 Windows 硬件，本轮把可脚本化场景搬上 CI Windows runner。上游内核 0.1.5-rc.2 仍是最新（`next`），本轮不做内核 bump。签名与公证维持延后（§7），仅在文末列为决策项。
 >

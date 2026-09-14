@@ -31,7 +31,7 @@ const OCCUPIED_EXIT_CODE = 5
 async function findOne(dir, predicate) {
   const files = (await readdir(dir)).filter(predicate)
   if (files.length !== 1) throw new Error(`expected one matching installer under ${dir}, found ${files.length}`)
-  return join(dir, files)
+  return join(dir, files[0])
 }
 
 function silentInstall(installer, installDir) {
