@@ -120,3 +120,25 @@ test('the problem list is bounded while the total count is not', async () => {
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test('packaging artifacts added after the seal are never reported as residue', async () => {
+  const root = await fixture()
+  try {
+    await seal(root)
+    // Windows NSIS and deb targets drop these into the resources root after
+    // afterPack sealed the manifest; they must not fail verification.
+    await writeFile(join(root, 'elevate.exe'), 'MZ fake elevate')
+    await writeFile(join(root, 'apparmor-profile'), '/opt/dsh-desktop/{}')
+    await writeFile(join(root, 'package-type'), 'deb')
+    const result = await verifyClosureManifest(root)
+    assert.equal(result.status, 'ok')
+    assert.equal(result.problemCount, 0)
+    // Tampering a non-artifact file is still detected alongside them.
+    await writeFile(join(root, 'harness', 'package.json'), '{"tampered":true}\n')
+    const damaged = await verifyClosureManifest(root)
+    assert.equal(damaged.status, 'changed')
+    assert.equal(damaged.problemCount, 1)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})

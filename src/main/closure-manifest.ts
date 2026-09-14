@@ -18,6 +18,19 @@ export const CLOSURE_MANIFEST_FILE = 'manifest.json'
 
 export const CLOSURE_INTEGRITY_PROBLEM_LIMIT = 8
 
+/**
+ * Files the platform packaging targets add to the resources root AFTER the
+ * afterPack hook seals the manifest (Windows NSIS: elevate.exe; deb:
+ * apparmor-profile / package-type). They are stock packaging artifacts, not
+ * part of the harness closure threat surface, so they are excluded from the
+ * manifest and never reported as residue.
+ */
+export const CLOSURE_PACKAGING_ARTIFACTS: ReadonlySet<string> = new Set([
+  'elevate.exe',
+  'apparmor-profile',
+  'package-type',
+])
+
 export interface ClosureManifest {
   version: string
   algorithm: 'sha256'
@@ -67,6 +80,10 @@ function toKey(resourcesRoot: string, path: string): string {
   return relative(resourcesRoot, path).split(sep).join('/')
 }
 
+function isPackagingArtifact(key: string): boolean {
+  return CLOSURE_PACKAGING_ARTIFACTS.has(key)
+}
+
 async function sha256File(path: string): Promise<string> {
   // Electron patches fs so any `*.asar` path is served through the archive
   // virtual filesystem; hashing the raw archive bytes requires disabling
@@ -90,7 +107,9 @@ export async function generateClosureManifest(resourcesRoot: string, version: st
   const files: Record<string, string> = {}
   for await (const path of walkFiles(resourcesRoot)) {
     if (path === closureManifestPath(resourcesRoot)) continue
-    files[toKey(resourcesRoot, path)] = await sha256File(path)
+    const key = toKey(resourcesRoot, path)
+    if (isPackagingArtifact(key)) continue
+    files[key] = await sha256File(path)
   }
   const manifest: ClosureManifest = { version, algorithm: 'sha256', files }
   return `${JSON.stringify(manifest)}\n`
@@ -121,7 +140,9 @@ export async function verifyClosureManifest(resourcesRoot: string): Promise<Clos
   const onDisk = new Set<string>()
   for await (const path of walkFiles(resourcesRoot)) {
     if (path === manifestPath) continue
-    onDisk.add(toKey(resourcesRoot, path))
+    const key = toKey(resourcesRoot, path)
+    if (isPackagingArtifact(key)) continue
+    onDisk.add(key)
   }
   for (const key of Object.keys(manifest.files).sort()) {
     const expected = manifest.files[key]!
