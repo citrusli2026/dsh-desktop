@@ -47,3 +47,27 @@ dsh_probe_close:
   System::Call 'kernel32::CloseHandle(p $R0)'
 dsh_probe_done:
 !macroend
+
+; Authoritative occupancy gate inside the install Section, where $INSTDIR is
+; final in every mode (assisted, silent /D, electron-updater). If a holder
+; kept the old node.exe mapped, the file copy above could not replace it —
+; fail explicitly instead of shipping a broken mixed install (#39 family).
+!macro customInstall
+  System::Call 'kernel32::CreateFile(t "$INSTDIR\resources\harness\node\node.exe", i 0x40000000, i 0, p 0, i 3, i 0, p 0) i .R0 ?e'
+  Pop $R1
+  IntCmp $R0 -1 0 dsh_post_close dsh_post_close
+  IntCmp $R1 2 dsh_post_done dsh_post_done 0
+  IntCmp $R1 3 dsh_post_done dsh_post_done 0
+  ${If} ${Silent}
+    SetErrorLevel 5
+    Quit
+  ${EndIf}
+  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION \
+    "The bundled runtime could not be updated: dsh-desktop is still running, or its files are in use.$\n内置运行文件无法更新：dsh-desktop 仍在运行或其文件被占用。$\n$\nClose it and run the installer again." \
+    IDCANCEL dsh_post_done
+  SetErrorLevel 5
+  Quit
+dsh_post_close:
+  System::Call 'kernel32::CloseHandle(p $R0)'
+dsh_post_done:
+!macroend

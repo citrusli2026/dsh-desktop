@@ -96,6 +96,18 @@ const killHolder = child => new Promise(resolveKill => {
   setTimeout(resolveKill, 5_000).unref?.()
 })
 
+/** True when node.exe cannot be opened for writing, i.e. a holder keeps it
+ *  mapped. Opening for write on a running image fails with EBUSY/EPERM. */
+async function isNodeLocked(path) {
+  const handle = await open(path, 'r+').then(
+    handle => handle,
+    () => null,
+  )
+  if (handle === null) return true
+  await handle.close()
+  return false
+}
+
 async function scenario(name, run) {
   const root = await mkdtemp(join(tmpdir(), `dsh-residue-${name}-`))
   try {
@@ -132,13 +144,22 @@ await scenario('S2-readonly-node-replaced', async root => {
 await scenario('S3-locked-node-fails-explicitly', async root => {
   const installDir = join(root, 'installed app')
   await silentInstall(previous, installDir)
-  const holder = await holdNodeExe(nodeExeOf(installDir))
+  let holder = await holdNodeExe(nodeExeOf(installDir))
   try {
-    // The locked file survives the old uninstaller (RMDir /r skips it in
-    // silent mode); the new installer must refuse with the explicit code.
+    // The locked file must survive the old uninstaller (RMDir /r skips it in
+    // silent mode); verify the lock is really held right up to the upgrade.
     await execFileP(uninstallerOf(installDir), ['/S'], { timeout: 300_000 })
-    const locked = await readFile(nodeExeOf(installDir)).then(() => true, () => false)
-    if (!locked) throw new Error('expected the locked node.exe to survive the old uninstaller (matrix precondition)')
+    const exists = await readFile(nodeExeOf(installDir)).then(() => true, () => false)
+    if (!exists) throw new Error('expected the locked node.exe to survive the old uninstaller (matrix precondition)')
+    if (!await isNodeLocked(nodeExeOf(installDir))) {
+      // The holder exited early: respawn once so the scenario tests the
+      // installer instead of dying on a flaky fixture.
+      await killHolder(holder)
+      holder = await holdNodeExe(nodeExeOf(installDir))
+      if (!await isNodeLocked(nodeExeOf(installDir))) {
+        throw new Error('could not hold node.exe locked (holder exited twice)')
+      }
+    }
     const code = await silentInstall(current, installDir)
     if (code !== OCCUPIED_EXIT_CODE) {
       throw new Error(`installer over a locked closure exited ${String(code)}, expected ${OCCUPIED_EXIT_CODE}`)
