@@ -156,3 +156,34 @@ test('formatDiagnosticReport records a runtime spawn failure with the reinstall 
   assert.match(healthy, /runtime_spawn_failure=false/)
   assert.doesNotMatch(healthy, /hint=the bundled Node binary failed to spawn/)
 })
+
+test('formatDiagnosticReport includes the closure integrity verdict and bounded problems', () => {
+  const damaged = formatDiagnosticReport({
+    createdAt: '2026-09-14T00:00:00.000Z',
+    appVersion: '0.1.5-rc.2.shell.8', electronVersion: '44.3.0', chromiumVersion: '142', nodeVersion: '24',
+    platform: 'win32', platformRelease: '10.0.19045', arch: 'x64',
+    harnessState: undefined, logTail: '',
+    harnessVersion: '0.1.5-rc.2', pluginInventory: undefined, safeMode: false,
+    pluginFailureCause: 'unknown',
+    pluginFailures: [],
+    closureIntegrity: {
+      status: 'changed', checked: 42, problems: ['changed harness/node/bin/node.exe'], problemCount: 3,
+    },
+  })
+  assert.match(damaged, /status=changed/)
+  assert.match(damaged, /checked=42/)
+  assert.match(damaged, /problems=3/)
+  assert.match(damaged, /- changed harness\/node\/bin\/node\.exe/)
+  assert.match(damaged, /hint=the install directory no longer matches the packaged manifest/)
+
+  const dev = formatDiagnosticReport({
+    createdAt: '2026-09-14T00:00:00.000Z',
+    appVersion: '0.1.5-rc.2.shell.8', electronVersion: '44.3.0', chromiumVersion: '142', nodeVersion: '24',
+    platform: 'darwin', platformRelease: '25.0.0', arch: 'arm64',
+    harnessState: undefined, logTail: '',
+    harnessVersion: '0.1.5-rc.2', pluginInventory: undefined, safeMode: false,
+    pluginFailureCause: 'unknown',
+    pluginFailures: [],
+  })
+  assert.match(dev, /status=not-run/)
+})

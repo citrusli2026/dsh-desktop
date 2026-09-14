@@ -1,17 +1,20 @@
 /** Local diagnostic export and bounded harness-log retention. */
 import electron from 'electron'
-import { closeSync, existsSync, openSync, readSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { closeSync, existsSync, openSync, readSync, renameSync, rmSync, statSync } from 'node:fs'
 import { appendFile, readFile } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
 import { basename, join } from 'node:path'
+import { atomicWriteFile } from './config-file.ts'
+import { verifyClosureManifest } from './closure-manifest.ts'
 import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
 import { classifyPluginFailureCause, classifyRuntimeSpawnFailure, collectPluginFailures, inspectPluginInventory, type ComposedRow, type PluginInventory } from './safe-mode.ts'
 import { resolveDshHome } from './dsh-home.ts'
-import { harnessRoot } from './paths.ts'
+import { harnessRoot, resourcesRoot } from './paths.ts'
 import { readProfileStatus, type ProfileStatus } from './profile.ts'
 import type { MarketInstallResult } from './market-install.ts'
 import type { LanRuntimeState } from './lan.ts'
+import type { ClosureIntegrityResult } from './closure-manifest.ts'
 
 export const MAX_LOG_BYTES = 5 * 1024 * 1024
 export const KEPT_LOG_FILES = 3
@@ -117,6 +120,8 @@ export interface DiagnosticFacts {
   marketInstall?: MarketInstallResult
   /** Non-secret LAN bridge state captured when the user exports the report. */
   lan?: LanRuntimeState
+  /** Bundled-closure manifest verification result; undefined when skipped. */
+  closureIntegrity?: ClosureIntegrityResult
 }
 
 function stateLine(state: HarnessState | undefined): string {
@@ -185,6 +190,19 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
       ? ['hint=the bundled Node binary failed to spawn (damaged or blocked files); reinstall from the full installer']
       : []),
     '',
+    '# Closure integrity (bundled files vs packaged manifest)',
+    ...(facts.closureIntegrity === undefined
+      ? ['status=not-run']
+      : [
+          `status=${facts.closureIntegrity.status}`,
+          `checked=${facts.closureIntegrity.checked}`,
+          `problems=${facts.closureIntegrity.problemCount}`,
+          ...facts.closureIntegrity.problems.map(problem => `- ${problem}`),
+          ...(facts.closureIntegrity.problemCount > 0
+            ? ['hint=the install directory no longer matches the packaged manifest; reinstall from the full installer']
+            : []),
+        ]),
+    '',
     `# Harness log tail (up to ${DIAGNOSTIC_LOG_BYTES / 1024} KiB; common secrets and home path masked)`,
     redactDiagnosticsLog(facts.logTail).trimEnd(),
     '',
@@ -239,6 +257,8 @@ export async function exportDiagnosticReport(
       pluginInventory = undefined
     }
     const logTail = readLogTail(logPath)
+    const closureIntegrity = await verifyClosureManifest(resourcesRoot())
+      .catch(() => undefined)
     const report = formatDiagnosticReport({
       createdAt: new Date().toISOString(),
       appVersion: api.app.getVersion(),
@@ -258,8 +278,9 @@ export async function exportDiagnosticReport(
       pluginFailureCause: classifyPluginFailureCause(logTail),
       marketInstall,
       lan,
+      closureIntegrity,
     })
-    writeFileSync(result.filePath, report, { mode: 0o600 })
+    await atomicWriteFile(result.filePath, report, 0o600)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     console.warn(`dsh-desktop: diagnostic export failed: ${message}`)

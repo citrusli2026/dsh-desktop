@@ -7,7 +7,7 @@ import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
-import { dshBin, harnessRoot, mobileShellRoot, nodeBin } from './paths.ts'
+import { dshBin, harnessRoot, mobileShellRoot, nodeBin, resourcesRoot } from './paths.ts'
 import { readProfileStatus } from './profile.ts'
 import { readProfileManifest, writeProfileManifest, withoutBundle, withoutBundles, pickQuarantinable } from './plugin-recovery.ts'
 import { supportIssueUrl, type SupportContext } from './support.ts'
@@ -42,8 +42,8 @@ import {
 import { createTray, destroyTray, refreshTray, type TrayActions } from './tray.ts'
 import { statusLabelWithMode } from './tray-status.ts'
 import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } from './update-prompt.ts'
-import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, verifySmokeFailureRecovery } from './smoke.ts'
-import { DEV_WEB_URL_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
+import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, smokeVerifyClosure, verifySmokeFailureRecovery } from './smoke.ts'
+import { DEV_WEB_URL_ENV, SMOKE_CLOSURE_FLAG, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport, redactDiagnosticsLog } from './diagnostics.ts'
 import { clearPersistedPluginSuspects, loadPersistedPluginSuspects, persistPluginSuspects, updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, OFFICIAL_BUNDLES, classifyPluginFailureCause, type ComposedRow } from './safe-mode.ts'
 import { listTrash, moveToTrash, purgeExpiredTrash, purgeFromTrash, restoreFromTrash } from './trash.ts'
@@ -824,6 +824,7 @@ ipcMain.handle('desktop:health-check', async (event, raw: unknown) => {
   return runDesktopHealthCheck({
     harnessRoot: harnessRoot(),
     mobileShellRoot: mobileShellRoot(),
+    resourcesRoot: resourcesRoot(),
     dshHome: desktopDshHome(),
     userData: app.getPath('userData'),
     harnessState: shellApp.state,
@@ -1223,6 +1224,14 @@ if (!gotLock) {
     // The harness (and the market installs it spawns) needs the bundled-pnpm
     // PATH and the translated system proxy before its first boot.
     harnessChildEnv = await installChildEnv()
+
+    // Closure smoke: verify the packaged tree against its integrity manifest
+    // (decision 0032) without booting the harness; the tamper injection turns
+    // this into the damaged-closure assertion.
+    if (process.argv.includes(SMOKE_CLOSURE_FLAG)) {
+      await smokeVerifyClosure(resourcesRoot())
+      return
+    }
 
     createMainWindow(windowContext)
     installAppMenu(currentLocale, menuActions, false, false, false, false, desktopPreferencesController?.snapshot.shortcut)

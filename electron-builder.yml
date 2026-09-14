@@ -46,6 +46,13 @@ extraResources:
 asar: true
 npmRebuild: false
 
+# Seal the unpacked resources tree into a sha256 manifest (decision 0032) so
+# upgrade residue / AV rewrites are detectable at runtime. Windows/Linux seal
+# in afterPack (before NSIS/deb); macOS seals in afterSign because codesign
+# rewrites the Mach-O binaries after afterPack.
+afterPack: scripts/after-pack.cjs
+afterSign: scripts/after-sign.cjs
+
 # Windows electron-updater reads latest.yml and the NSIS blockmap from the
 # GitHub release. macOS remains check-only because the build is unsigned.
 publish:

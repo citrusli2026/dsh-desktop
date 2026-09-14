@@ -7,9 +7,10 @@
  * bundled kernel automatically — the bundled closure is always the floor.
  * @module main/kernel-manager
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { spawn } from 'node:child_process'
 import { join } from 'node:path'
+import { atomicWriteFileSync } from './config-file.ts'
 import { dshBin } from './paths.ts'
 
 export const KERNEL_PACKAGE = '@deepseek-ai/dsh'
@@ -88,12 +89,14 @@ export function writeActiveOverlay(dir: string, version: string | undefined): vo
     rmSync(pointerPath(dir), { force: true })
     return
   }
-  writeFileSync(pointerPath(dir), `${JSON.stringify({ version } satisfies OverlayPointer, null, 2)}\n`)
+  // The pointer is re-read on every boot; a crash mid-write must never leave
+  // a torn file (the #40/#41 family), so it goes through the atomic writer.
+  atomicWriteFileSync(pointerPath(dir), `${JSON.stringify({ version } satisfies OverlayPointer, null, 2)}\n`)
 }
 
 export function markKernelFailed(dir: string, version: string): void {
   mkdirSync(dir, { recursive: true })
-  writeFileSync(failedMarkerPath(dir, version), `${JSON.stringify({ version, failedAt: new Date().toISOString() }, null, 2)}\n`)
+  atomicWriteFileSync(failedMarkerPath(dir, version), `${JSON.stringify({ version, failedAt: new Date().toISOString() }, null, 2)}\n`)
 }
 
 export function clearKernelFailed(dir: string, version: string): void {
@@ -244,7 +247,7 @@ export async function installKernel(options: InstallKernelOptions): Promise<Inst
   mkdirSync(target, { recursive: true })
   const manifest = join(target, 'package.json')
   if (!existsSync(manifest)) {
-    writeFileSync(manifest, `${JSON.stringify({ name: 'dsh-kernel-overlay', private: true, version: '0.0.0' }, null, 2)}\n`)
+    atomicWriteFileSync(manifest, `${JSON.stringify({ name: 'dsh-kernel-overlay', private: true, version: '0.0.0' }, null, 2)}\n`)
   }
   return new Promise<InstallKernelResult>((resolve) => {
     // node-linker=hoisted mirrors the vendored closure's flat layout

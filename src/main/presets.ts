@@ -8,10 +8,11 @@
  * agent.
  * @module main/presets
  */
-import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, stat } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
 import { join } from 'node:path'
 import { parse as parseYaml } from 'yaml'
+import { atomicWriteFile } from './config-file.ts'
 import { moveToTrash } from './trash.ts'
 
 export const PRESET_FORMAT = 'dsh-preset/v1'
@@ -142,10 +143,13 @@ export async function importPresetPackage(
   const targetDir = join(root, targetId)
   try {
     await mkdir(targetDir, { recursive: true })
-    await writeFile(join(targetDir, COMPOSITION_FILE), `${pkg.composition.trim()}\n`, { encoding: 'utf8', mode: 0o600 })
+    // Preset files are mounted by the kernel's preset selector; write them
+    // atomically so a crash never leaves a torn composition file (the
+    // #40/#41 family).
+    await atomicWriteFile(join(targetDir, COMPOSITION_FILE), `${pkg.composition.trim()}\n`)
     const metadata = { ...(pkg.metadata ?? {}) }
     if (mode === 'clone' && typeof metadata.name === 'string') metadata.name = `${metadata.name} (copy)`
-    await writeFile(join(targetDir, METADATA_FILE), JSON.stringify(metadata) + '\n', { encoding: 'utf8', mode: 0o600 })
+    await atomicWriteFile(join(targetDir, METADATA_FILE), JSON.stringify(metadata) + '\n')
   } catch {
     return { ok: false, reason: 'write-failed' }
   }

@@ -1,9 +1,10 @@
 /** Headless smoke assertions used by CI and local release verification. */
 import { app, type BrowserWindow, net } from 'electron'
-import { writeFile } from 'node:fs/promises'
+import { appendFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { shellText, type ShellLocale } from './locale.ts'
+import { verifyClosureManifest } from './closure-manifest.ts'
 import {
   SMOKE_EXIT_FAIL,
   SMOKE_EXIT_OK,
@@ -12,6 +13,7 @@ import {
   SMOKE_UI_FLAG,
   TEST_FAIL_HARNESS_ENV,
   TEST_RETRY_FAIL_ENV,
+  TEST_TAMPER_CLOSURE_ENV,
 } from './smoke-protocol.ts'
 
 export const SMOKE_TEST = process.argv.includes(SMOKE_FLAG)
@@ -33,6 +35,31 @@ export async function smokeVerify(url: string): Promise<void> {
   const body = await response.text()
   const ok = response.ok && body.includes('__DSH_BOOT__')
   console.error(`smoke: ${ok ? 'OK' : 'FAIL'} ${url} status=${response.status} body=${body.length}B boot=${body.includes('__DSH_BOOT__')}`)
+  quitGracefully(ok ? SMOKE_EXIT_OK : SMOKE_EXIT_FAIL)
+}
+
+/**
+ * Verify the packaged closure against its integrity manifest. With the tamper
+ * injection set, one closure file is corrupted first (upgrade residue / AV
+ * rewrite simulation) and the verification must report `changed`; without it,
+ * the packaged tree must verify `ok`. Exits with the smoke verdict.
+ */
+export async function smokeVerifyClosure(resourcesRoot: string): Promise<void> {
+  const tamper = process.env[TEST_TAMPER_CLOSURE_ENV] === '1'
+  if (tamper) {
+    const target = join(resourcesRoot, 'harness', 'package.json')
+    try {
+      await appendFile(target, '{"tampered-by-smoke":true}\n')
+    } catch (error) {
+      console.error(`smoke-closure: FAIL — could not tamper ${target}: ${error instanceof Error ? error.message : String(error)}`)
+      quitGracefully(SMOKE_EXIT_FAIL)
+      return
+    }
+  }
+  const result = await verifyClosureManifest(resourcesRoot)
+  const ok = tamper ? result.status === 'changed' : result.status === 'ok'
+  const detail = result.problems.slice(0, 3).join('; ')
+  console.error(`smoke-closure: ${ok ? 'OK' : 'FAIL'} tamper=${tamper ? '1' : '0'} status=${result.status} checked=${result.checked} problems=${result.problemCount}${detail === '' ? '' : ` (${detail})`}`)
   quitGracefully(ok ? SMOKE_EXIT_OK : SMOKE_EXIT_FAIL)
 }
 

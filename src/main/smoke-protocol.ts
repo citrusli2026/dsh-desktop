@@ -13,6 +13,13 @@ export const SMOKE_FLAG = '--smoke-test'
 /** Smoke-mode variant: additionally verify the real Harness UI renders. */
 export const SMOKE_UI_FLAG = '--smoke-ui'
 
+/**
+ * Smoke variant: verify the packaged closure against its integrity manifest
+ * (decision 0032) instead of booting the harness. Combine with
+ * {@link TEST_TAMPER_CLOSURE_ENV} to assert the damaged-closure outcome.
+ */
+export const SMOKE_CLOSURE_FLAG = '--smoke-closure'
+
 /** Exit code when smoke assertions pass. */
 export const SMOKE_EXIT_OK = 0
 
@@ -30,3 +37,7 @@ export const DEV_WEB_URL_ENV = 'DSH_DESKTOP_DEV_WEB_URL'
 
 /** Smoke variant: additionally assert the Safe Mode banner rests in the DOM. */
 export const SMOKE_SAFE_ENV = 'DSH_DESKTOP_SMOKE_SAFE'
+
+/** Test injection: corrupt one bundled closure file so the closure smoke
+ *  observes a changed manifest (upgrade residue / AV rewrite simulation). */
+export const TEST_TAMPER_CLOSURE_ENV = 'DSH_DESKTOP_TEST_TAMPER_CLOSURE'

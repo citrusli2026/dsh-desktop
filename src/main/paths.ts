@@ -27,6 +27,18 @@ export function mobileShellRoot(): string {
 }
 
 /**
+ * Root of the packaged resources directory (the closure manifest's home).
+ * Dev builds map this to the repository's `resources/` checkout, which has
+ * no manifest — integrity verification reports `missing-manifest` there.
+ */
+export function resourcesRoot(): string {
+  if (electron.app === undefined) throw new Error('Electron app is unavailable; provide a resources root')
+  return electron.app.isPackaged
+    ? process.resourcesPath
+    : join(electron.app.getAppPath(), 'resources')
+}
+
+/**
  * Absolute path of the bundled Node executable inside the closure.
  * @param root - harness root, defaulting to {@link harnessRoot}.
  * @returns the platform Node binary path.

@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { locatePackagedExecutable, packagedResourcesDir } from './packaged-locator.mjs'
 // Shared with the app's built-in smoke mode (src/main/smoke.ts) so the flag,
 // exit codes, and injection env vars cannot drift between the two sides.
-import { SMOKE_EXIT_OK, SMOKE_FLAG, SMOKE_SAFE_ENV, SMOKE_UI_FLAG } from '../src/main/smoke-protocol.ts'
+import { SMOKE_CLOSURE_FLAG, SMOKE_EXIT_FAIL, SMOKE_EXIT_OK, SMOKE_FLAG, SMOKE_SAFE_ENV, SMOKE_UI_FLAG, TEST_TAMPER_CLOSURE_ENV } from '../src/main/smoke-protocol.ts'
 
 const distRoot = process.argv[2] ?? 'dist'
 const executable = await locatePackagedExecutable(distRoot)
@@ -21,6 +21,10 @@ const smokeUi = process.env.DSH_SMOKE_UI === '1'
 // must fail the ordinary boot, then the same profile in Safe Mode recovers
 // and the Safe Mode banner renders (decision 0021).
 const safeBreak = process.env.DSH_DESKTOP_SAFE_BREAK === '1'
+// DSH_SMOKE_CLOSURE adds the closure-integrity variant (decision 0032): the
+// packaged tree must verify against its manifest, and a tampered tree must
+// be reported as changed.
+const smokeClosure = process.env.DSH_SMOKE_CLOSURE === '1'
 
 const dshHome = await mkdtemp(join(tmpdir(), 'dsh-packaged-smoke-'))
 const userData = join(dshHome, 'electron-user-data')
@@ -93,7 +97,20 @@ async function installBrokenPlugin() {
 }
 
 try {
-  if (safeBreak) {
+  if (smokeClosure) {
+    // Stage 1 (positive): the freshly packaged tree must verify against its
+    // own manifest. Stage 2 (negative): a corrupted closure file must be
+    // reported as changed — the #39 upgrade-residue simulation. Both stages
+    // exit OK when their assertion holds; the app's smoke-closure log line
+    // records which integrity status each run observed.
+    const clean = await runSmoke({ flags: [SMOKE_CLOSURE_FLAG] })
+    if (clean.code !== SMOKE_EXIT_OK) throw new Error(`closure smoke: clean tree failed verification (code ${String(clean.code)})`)
+    if (!/status=ok /.test(clean.output)) throw new Error('closure smoke: clean tree did not report status=ok')
+    const tampered = await runSmoke({ flags: [SMOKE_CLOSURE_FLAG], env: { [TEST_TAMPER_CLOSURE_ENV]: '1' } })
+    if (tampered.code !== SMOKE_EXIT_OK) throw new Error(`closure smoke: tamper-detection run failed (code ${String(tampered.code)})`)
+    if (!/status=changed /.test(tampered.output)) throw new Error('closure smoke: tampered tree was not reported as changed')
+    console.log(`packaged smoke: closure OK ${executable} (clean verified, tamper detected)`)
+  } else if (safeBreak) {
     await installBrokenPlugin()
     // Stage 1 (negative): the broken plugin must fail the ordinary boot.
     const broken = await runSmoke({ flags: [SMOKE_UI_FLAG] })

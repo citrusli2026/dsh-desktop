@@ -9,8 +9,9 @@
  * resolution) is translated into the env vars npm-family tools honor.
  * @module main/install-env
  */
-import { chmodSync, mkdirSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { atomicWriteFileSync } from './config-file.ts'
 
 /** Directory holding the pnpm/node launchers, inside the shell userData. */
 export function installShimsDir(userData: string): string {
@@ -27,12 +28,12 @@ export function ensureInstallShims(
   const dir = installShimsDir(userData)
   mkdirSync(dir, { recursive: true })
   if (platform === 'win32') {
-    writeFileSync(join(dir, 'pnpm.cmd'), `@echo off\r\n"${tools.nodeBin}" "${tools.pnpmBin}" %*\r\n`)
-    writeFileSync(join(dir, 'node.cmd'), `@echo off\r\n"${tools.nodeBin}" %*\r\n`)
+    atomicWriteFileSync(join(dir, 'pnpm.cmd'), `@echo off\r\n"${tools.nodeBin}" "${tools.pnpmBin}" %*\r\n`)
+    atomicWriteFileSync(join(dir, 'node.cmd'), `@echo off\r\n"${tools.nodeBin}" %*\r\n`)
   } else {
     // Absolute paths, quoted: userData may contain spaces.
-    writeFileSync(join(dir, 'pnpm'), `#!/bin/sh\nexec "${tools.nodeBin}" "${tools.pnpmBin}" "$@"\n`)
-    writeFileSync(join(dir, 'node'), `#!/bin/sh\nexec "${tools.nodeBin}" "$@"\n`)
+    atomicWriteFileSync(join(dir, 'pnpm'), `#!/bin/sh\nexec "${tools.nodeBin}" "${tools.pnpmBin}" "$@"\n`)
+    atomicWriteFileSync(join(dir, 'node'), `#!/bin/sh\nexec "${tools.nodeBin}" "$@"\n`)
     chmodSync(join(dir, 'pnpm'), 0o755)
     chmodSync(join(dir, 'node'), 0o755)
   }

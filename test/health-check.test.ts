@@ -3,10 +3,12 @@ import assert from 'node:assert/strict'
 import { chmod, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { closureManifestPath, generateClosureManifest } from '../src/main/closure-manifest.ts'
 import { bundledNodeHeaderLooksValid, runDesktopHealthCheck, sampleNodeHeader } from '../src/main/health-check.ts'
 
 async function runtimeFixture(): Promise<{
   root: string
+  resourcesRoot: string
   harnessRoot: string
   mobileShellRoot: string
   dshHome: string
@@ -41,7 +43,7 @@ async function runtimeFixture(): Promise<{
     writeFile(join(dshHome, 'profiles', 'web', 'node_modules', 'example-plugin', 'cordis.patch.yml'), '- insert:\n    - id: example\n'),
   ])
   await chmod(join(harnessRoot, 'node', 'bin', process.platform === 'win32' ? 'node.exe' : 'node'), 0o755)
-  return { root, harnessRoot, mobileShellRoot, dshHome, userData }
+  return { root, resourcesRoot: root, harnessRoot, mobileShellRoot, dshHome, userData }
 }
 
 test('health check reports local runtime, storage, loopback, and optional market as healthy without leaking paths', async () => {
@@ -137,6 +139,64 @@ test('health check flags a damaged bundled Node binary instead of calling the ru
     assert.equal(runtime?.status, 'failed')
     assert.match(runtime?.detail ?? '', /损坏|不可执行/)
     assert.match(runtime?.action ?? '', /重装|重新下载/)
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true })
+  }
+})
+
+test('health check falls back to the cheap checks when no closure manifest exists (dev checkout)', async () => {
+  const fixture = await runtimeFixture()
+  try {
+    const report = await runDesktopHealthCheck({
+      ...fixture,
+      harnessState: { phase: 'ready', url: 'http://127.0.0.1:3210/' },
+      safeMode: false,
+      locale: 'en',
+      includeNetwork: false,
+      fetch: async () => new Response('ok'),
+      resolveProxy: async () => 'DIRECT',
+    })
+    const runtime = report.results.find(result => result.id === 'runtime')
+    assert.equal(runtime?.status, 'ok')
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true })
+  }
+})
+
+test('health check reports a sealed tree as ok and catches a manifest mismatch', async () => {
+  const fixture = await runtimeFixture()
+  try {
+    const manifest = await generateClosureManifest(fixture.resourcesRoot, '0.0.0-test')
+    await writeFile(closureManifestPath(fixture.resourcesRoot), manifest)
+    const clean = await runDesktopHealthCheck({
+      ...fixture,
+      harnessState: undefined,
+      safeMode: false,
+      locale: 'en',
+      includeNetwork: false,
+      fetch: async () => new Response('ok'),
+      resolveProxy: async () => 'DIRECT',
+    })
+    assert.equal(clean.results.find(result => result.id === 'runtime')?.status, 'ok')
+
+    // Antivirus-style rewrite: content changes but the file stays readable.
+    await writeFile(join(fixture.harnessRoot, 'node_modules', '@deepseek-ai', 'dsh', 'package.json'), '{"version":"0.0.0-rewritten"}')
+    const damaged = await runDesktopHealthCheck({
+      ...fixture,
+      harnessState: undefined,
+      safeMode: false,
+      locale: 'en',
+      includeNetwork: false,
+      fetch: async () => new Response('ok'),
+      resolveProxy: async () => 'DIRECT',
+    })
+    const runtime = damaged.results.find(result => result.id === 'runtime')
+    assert.equal(runtime?.status, 'failed')
+    assert.match(runtime?.detail ?? '', /modified, missing, or unexpected/)
+    assert.match(runtime?.detail ?? '', /package\.json/)
+    assert.match(runtime?.action ?? '', /Reinstall|whitelist|full installer/)
+    // No absolute fixture path may leak into the user-facing detail.
+    assert.doesNotMatch(JSON.stringify(damaged), new RegExp(fixture.root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   } finally {
     await rm(fixture.root, { recursive: true, force: true })
   }
