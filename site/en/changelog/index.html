@@ -42,7 +42,7 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
-  <h2>v0.1.5-rc.2.shell.8 <small>（kernel 0.1.5-rc.2）</small></h2>
+  <h2>v0.1.5-rc.2.shell.9 <small>（kernel 0.1.5-rc.2）</small></h2>
   <ul>
     <li>Windows upgrades now fail explicitly with a bilingual dialog when the bundled <code>node.exe</code> is still in use, instead of silently producing a broken install; read-only/hidden leftovers from the old install are cleared so upgrades replace every bundled file.</li>
     <li>Installers embed a SHA-256 manifest of the whole bundled closure. The health check compares every file and names exactly which files were modified, went missing, or are unexpected (upgrade residue / antivirus rewrites); the diagnostics export includes the verdict.</li>
