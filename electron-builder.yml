@@ -90,9 +90,10 @@ linux:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
-  # Occupancy pre-check + attribute clear for clean-slate upgrades (#39):
-  # runs in the new installer's .onInit; silent installs exit 5 when held.
-  include: build/installer.nsh
+  # build/installer.nsh is picked up by electron-builder's default convention
+  # (do NOT set nsis.include — it resolves relative to buildResources and a
+  # "build/installer.nsh" value silently matches nothing). The include clears
+  # R/H/S attributes and probes the old node.exe for occupancy (#39 family).
 
 # LZMA-family dmg image: markedly smaller than the default zlib image at the
 # cost of one-time compression time in the release workflow.
