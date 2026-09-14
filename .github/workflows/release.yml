@@ -4,6 +4,13 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      platforms:
+        description: "Restrict the build matrix (validation shortcut; ignored on tag pushes)"
+        required: false
+        default: "all"
+        type: choice
+        options: ["all", "windows-only"]
 
 permissions:
   contents: write
@@ -75,6 +82,7 @@ jobs:
               dist/*.deb
               dist/*.sha256
     runs-on: ${{ matrix.os }}
+    if: ${{ github.ref_type == 'tag' || inputs.platforms != 'windows-only' || matrix.os == 'windows-2022' }}
     env:
       DSH_MOBILE_SHELL_WEB_ROOT: ${{ github.workspace }}/dsh-mobile-shell/dist/web
     steps:
