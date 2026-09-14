@@ -107,7 +107,6 @@ jobs:
           # itself; the publish job below owns release creation.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Download and verify previous release installer
-        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/download-previous-release.mjs test-results/previous-release
@@ -121,7 +120,7 @@ jobs:
       # node.exe must not silently survive a silent upgrade; a lock must fail
       # the installer explicitly (exit 5).
       - name: "NSIS upgrade residue matrix: corrupt, readonly, lock (S2)"
-        if: github.ref_type == 'tag' && matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-2022'
         run: node scripts/smoke-nsis-residue.mjs dist test-results/previous-release
       - name: Cross-version upgrade preserves user state (Linux, real sandbox)
         if: github.ref_type == 'tag' && matrix.os == 'ubuntu-24.04'

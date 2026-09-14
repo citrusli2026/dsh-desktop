@@ -51,6 +51,19 @@ function silentInstall(installer, installDir) {
 const uninstallerOf = installDir => join(installDir, 'Uninstall dsh-desktop.exe')
 const nodeExeOf = installDir => join(installDir, 'resources', 'harness', 'node', 'bin', 'node.exe')
 const manifestOf = installDir => join(installDir, 'resources', 'manifest.json')
+const probeLog = join(tmpdir(), 'dsh-nsis-probe.log')
+
+/** The installer hooks append one line per probe to this log; print it so a
+ *  failing scenario shows exactly what the installer saw ($INSTDIR, handle,
+ *  last-error). */
+async function dumpProbeLog(tag) {
+  const text = await readFile(probeLog, 'utf8').catch(() => '<no probe log>')
+  console.error(`residue matrix: probe log ${tag}:\n${text.trimEnd()}`)
+}
+
+async function clearProbeLog() {
+  await rm(probeLog, { force: true })
+}
 
 async function sha256(path) {
   return createHash('sha256').update(await readFile(path)).digest('hex')
@@ -143,6 +156,7 @@ await scenario('S2-readonly-node-replaced', async root => {
 
 await scenario('S3-locked-node-fails-explicitly', async root => {
   const installDir = join(root, 'installed app')
+  await clearProbeLog()
   await silentInstall(previous, installDir)
   let holder = await holdNodeExe(nodeExeOf(installDir))
   try {
@@ -161,6 +175,7 @@ await scenario('S3-locked-node-fails-explicitly', async root => {
       }
     }
     const code = await silentInstall(current, installDir)
+    await dumpProbeLog('after upgrade attempt over the lock')
     if (code !== OCCUPIED_EXIT_CODE) {
       throw new Error(`installer over a locked closure exited ${String(code)}, expected ${OCCUPIED_EXIT_CODE}`)
     }
