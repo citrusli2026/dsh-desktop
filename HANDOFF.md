@@ -9,10 +9,10 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.5-rc.2.shell.7`（2026-09-13 已发布并完成 GitCode/官网收口；内核 `0.1.5-rc.2`；Electron 44.3.0 + Node 24.21.0） |
-| 已发布 | ✅ `0.1.5-rc.2.shell.7`（三端 dmg/exe/deb；可靠壳加固 + Electron 44/Node 24 运行时升级 + 原子写修复；shell.6 失败 tag 保留审计） |
-| 本地门禁 | ✅ 272 项单测（Node 24 类型）、类型检查、runtime/site、安全审计、构建全绿；dev E2E 16/16、打包 smoke、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
-| 核心发布 | ✅ `v0.1.5-rc.2.shell.7` Release run `34741005199` 全绿：严格 8 文件门禁、attestation、三平台跨版本数据保留、packaged smoke、Harness 真渲染、Safe Mode 故障注入与插件恢复 |
+| 最新代码基线 | ✅ `0.1.5-rc.2.shell.11`（2026-09-14 已发布；内核 `0.1.5-rc.2`；Electron 44.3.0 + Node 24.21.0 + pnpm 10.33.2） |
+| 已发布 | ✅ `0.1.5-rc.2.shell.11`（三端 dmg/exe/deb；Windows 安装保真 + 闭包完整性清单 + NSIS 残留矩阵；shell.8/.9/.10 失败 tag 保留审计） |
+| 本地门禁 | ✅ 281 项单测、类型检查、runtime/site、安全审计、构建全绿；dev E2E 16/16（Playwright 1.63）、闭包 smoke（干净+篡改）、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
+| 核心发布 | ✅ `v0.1.5-rc.2.shell.11` Release run `34870003031` 全绿：8 文件契约、attestation、三平台跨版本数据保留、闭包清单 smoke、NSIS 残留矩阵（损坏/只读/占用）、Harness 真渲染、Safe Mode 故障注入 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.7`（6 个用户资产 `gitcode_ok=true`） |
 | 国内镜像 | ✅ `v0.1.5-rc.2.shell.7` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `be5143e`） |
 | 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1566（48 个版本） |
@@ -1593,3 +1593,22 @@ _更新于 2026-09-12_
 5. **pnpm ≥10 新坑（§49 家族加重）**：根目录全量 `pnpm install`（非 lockfile-only）在 pnpm 11.11 解析完成后挂死（0 socket、0 CPU、`--network-concurrency` 无效）。绕过：移开 `pnpm-workspace.yaml` → `CI=true npx -y pnpm@9.15.9 install --no-frozen-lockfile`（pnpm 9 不写锁文件 overrides 头，需手工按 workspace 语义补 `overrides:` 块）→ `CI=true pnpm install --frozen-lockfile` 验证通过。已录入 release skill 故障表。
 6. **P2 GitCode 测试 release 清理：未完成转下轮**。API 无 release id 字段、无删除路由（405）、tag-ref 删除 404；kimi-webbridge 浏览器扩展未连接无法走 UI。`v0.0.0-mirror-test` 遗留（指向远古 commit，无真实资产，不影响官网数据源）。
 7. **运维**：巡检自动化 prompt 已更新（peer-pin 自动同步、CI=true 兜底、pnpm 双坑指引）；release skill 故障表新增 pnpm 全量安装挂死与 tag 重指向条目；`docs/reliable-shell-iteration-plan.md` §6.10 记录本轮交付。
+
+
+## 55. rc.2.shell.11 Windows 安装保真轮：闭包清单 + NSIS 残留矩阵 + pnpm 根因（2026-09-14）
+
+本轮按 `docs/reliable-shell-iteration-plan.md` §6.11（Windows 优先）全量交付，跨 shell.8/.9/.10 三个失败 tag（均保留审计，无发布产物流出）后由 `v0.1.5-rc.2.shell.11` 收口。
+
+1. **W2 闭包完整性清单（decision 0032）**：新增 `src/main/closure-manifest.ts`——electron-builder `afterPack`（win/linux）/`afterSign`（macOS，签名改写全部 Mach-O，必须在签名后封存）钩子对解包后 resources 全树（18,847 文件）生成 sha256 清单；运行期 `verifyClosureManifest` 报告 changed/missing/residue（有界 8 条 + 总数）。健康检查 runtime 项升级为清单全量校验（dev 无清单回退魔数检查）；诊断报告新增 Closure integrity 小节；smoke 协议新增 `--smoke-closure` + `DSH_DESKTOP_TEST_TAMPER_CLOSURE`，打包冒烟 `DSH_SMOKE_CLOSURE=1`（干净 ok + 篡改 changed）三平台门禁。坑：Electron 的 fs 补丁拦截 `*.asar` 路径，应用内哈希 app.asar 必须用 `process.noAsar`；deb/NSIS 在 afterPack 之后追加 `apparmor-profile`/`package-type`/`elevate.exe`，清单以打包工件白名单排除（验证 dispatch 抓出并修复）。
+2. **W1/W3 NSIS 清空式升级 + 残留矩阵**：`build/installer.nsh`（UTF-8 BOM）——customInit 属性清理（R/H/S）+ customInstall 独占打开 node.exe 占用探针（辅助安装双语重试弹窗；静默 exit 5）。新脚本 `scripts/smoke-nsis-residue.mjs` 三场景（损坏+未来 mtime / 只读 / 占用）进入 release.yml Windows 门禁；本地与分析文档 `docs/nsis-upgrade-residue-analysis.md` §4/§5 回填（T1/T2/T3/T4/T5 全部 CI 化，T6 第三方 AV 保持硬件绑定人工项）。electron-builder 26 模板事实：auto-update（`--updated`）路径本就有原子整目录改名+失败还原；手动双击升级才是逐文件静默跳过主战场。
+3. **S3 两轮失败的根因链（重要运维教训，已录 release skill 故障表）**：① `nsis.include: build/installer.nsh` 经 `getResource` 对 buildResources 文件列表匹配，相对路径多了一层 → **静默跳过、无任何报错**，钩子从未生效；省略该 key 走默认约定即命中 `build/installer.nsh`。② `System::Call` 传 `i 0x40000000` 十六进制疑似按 0 解析（query-only 打开正在运行的 exe 成功 → 探针恒通过）；换十进制 `1073741824` 后探针生效。诊断手段：钩子追加探针日志到 `$TEMP/dsh-nsis-probe.log`，残留脚本失败时转储。最终验证 run `34868114661`（dispatch）S1/S2/S3 全绿后恢复 tag 门禁。
+4. **W5a pnpm §49/§54 根因（重大）**：最小复现矩阵（/tmp 对照 8 组）钉死——`packageManager: pnpm@11.11.0` 使 pnpm ≥10 `manage-package-manager-versions` 自切换到 11.11，而 pnpm 11.11 对含 `electron-builder` 的依赖树 `install --lockfile-only` 解析完成后**静默不写锁文件**（全量安装挂死同族）。修复：`packageManager` 与全部工作流 pin `pnpm@10.33.2`，锁文件由 pnpm 10.33 原生重生成（overrides 头不再手工补），electron-builder 升至 ^26.16.1；frozen 与全量安装均绿（5.6s）。pnpm 9 手工绕过指引全部作废。
+5. **W5b/W5c**：Playwright 1.62.1 → 1.63.0——1.62+Electron worker teardown 挂起不再复现（无 guarded runner 三连跑 16/16 干净退出，~22s）；guarded runner 本轮保留于 CI，退役待后续 CI 证据。dependabot #37 关闭（`@types/node` 保持 24 系对齐随包 Node，major ignore 规则已存在）；#38 以直接升级取代。
+6. **W4 其余原子写**：kernel-manager（overlay pointer/failed-marker/overlay package.json）、install-env shims、diagnostics 报告、presets 导入写盘全部改 `atomicWriteFile(Sync)`，#40/#41 同族审计清零。
+7. **W6 GitCode 测试 release 清理：接受残留**。三路尝试均受阻：kimi-webbridge 扩展未连接；AppleScript 对 Edge 超时（-1712）；computer-use AX 键盘路由页面跳转不可验证——不再抢占用户前台，`v0.0.0-mirror-test` 维持书面接受。
+8. **发布链**：shell.8（run `34853296391`，残留矩阵 findOne 传数组给 path.join）、shell.9（run `34855655841`，S3 exit 0：include 未加载 + hex 常量）、shell.10（run `34862012607`，S3 仍 exit 0：include 加载但 0x 参数按 0）三次失败 tag 保留审计；发布门禁迭代在 main dispatch（`34849800252`/`34850954867`/`34865234690` cancelled by user/`34868114661` 全绿）完成，未烧 tag。`v0.1.5-rc.2.shell.11`（`04c3371` 后由并行会话补发布提交 `ede3942`）Release run `34870003031` **verify + 三平台 build + publish 全绿**，8 资产契约 + attestation；其中 Windows job 含 S1/S2/S3 残留矩阵首秀全绿。
+9. **本地门禁（shell.11 内容）**：281 单测、verify 全绿、dev E2E 16/16 ×3（Playwright 1.63）、LAN QR 2/2、offline + real market 2/2+1/1、closure smoke（干净+篡改）、smoke-ui、SAFE_BREAK 两阶段、FAIL_HARNESS、RETRY_FAIL、双树审计 0 已知漏洞。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.11>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.11>；
+官网：<https://dsh-desktop.com>。
