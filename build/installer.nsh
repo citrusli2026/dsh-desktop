@@ -28,7 +28,7 @@
 
   ; --- occupancy probe (INSTDIR may be unfinal for silent /D here: log only) ---
 dsh_init_probe:
-  System::Call 'kernel32::CreateFile(t "$INSTDIR\resources\harness\node\node.exe", i 1073741824, i 0, p 0, i 3, i 0, p 0) i .R0 ?e'
+  System::Call 'kernel32::CreateFile(t "$INSTDIR\resources\harness\node\bin\node.exe", i 1073741824, i 0, p 0, i 3, i 0, p 0) i .R0 ?e'
   Pop $R1
   FileOpen $R8 "$TEMP\dsh-nsis-probe.log" a
   ${If} $R8 != -1
@@ -55,7 +55,7 @@ dsh_init_done:
 
 !macro customInstall
 dsh_post_probe:
-  System::Call 'kernel32::CreateFile(t "$INSTDIR\resources\harness\node\node.exe", i 1073741824, i 0, p 0, i 3, i 0, p 0) i .R0 ?e'
+  System::Call 'kernel32::CreateFile(t "$INSTDIR\resources\harness\node\bin\node.exe", i 1073741824, i 0, p 0, i 3, i 0, p 0) i .R0 ?e'
   Pop $R1
   FileOpen $R8 "$TEMP\dsh-nsis-probe.log" a
   ${If} $R8 != -1
