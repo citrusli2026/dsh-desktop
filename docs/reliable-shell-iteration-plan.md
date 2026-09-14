@@ -217,22 +217,22 @@
 | P2 GitCode 测试 release 清理 | API 无 release id/删除路由（405）、tag-ref 删除 404，浏览器扩展未连接无法走 UI；已记录诊断，遗留 `v0.0.0-mirror-test`（无真实资产，不影响官网数据） | 未完成，转下轮 |
 | 运维 | 巡检自动化 prompt 更新（peer-pin 自动同步、CI=true 兜底、§49/§54 pnpm 坑）；release skill 故障表新增 pnpm≥10 全量安装挂死与 tag 重指向条目 | — |
 
-### 6.11 rc.2.shell.8/.9：Windows 安装保真与损坏自愈（本轮，Windows 优先）
+### 6.11 rc.2.shell.11：Windows 安装保真与损坏自愈（本轮，Windows 优先）
 
 > 规划日期：2026-09-14。依据：GitCode 生成时累计 1566 中 win 1125 / mac 253 / linux 188（Windows 约 72%）；#39 暴露的 NSIS 升级残留族已有机制分析但三个候选修复均未实施（`docs/nsis-upgrade-residue-analysis.md` §4）；真机矩阵卡在无 Windows 硬件，本轮把可脚本化场景搬上 CI Windows runner。上游内核 0.1.5-rc.2 仍是最新（`next`），本轮不做内核 bump。签名与公证维持延后（§7），仅在文末列为决策项。
 >
-> **交付状态（2026-09-14，随 v0.1.5-rc.2.shell.8 发布）**：W1–W5 全部落地；W6 三路尝试仍受阻（扩展未连接/AppleScript 超时/AX 路由不可验证），不抢占用户前台，维持接受残留。W2 在验证 dispatch 中暴露并修复了打包器 afterPack 之后追加文件的问题（`elevate.exe`/`apparmor-profile`/`package-type` 白名单）。W5a 有重大超出：pnpm §49/§54 缺陷**根因定位**——`packageManager` 字段版本委托到有缺陷的 pnpm 11.11（含 electron-builder 的树 lockfile-only 静默不写盘、全量安装挂死），修复为全局 pin `pnpm@10.33.2` 并重生成锁文件，pnpm 9 手工绕过指引全部作废。W5b 结论：Playwright 1.63 下 worker teardown 挂起消失（三连跑干净退出），guarded runner 本轮保留、下轮依 CI 证据决定退役。
+> **交付状态（2026-09-14，随 v0.1.5-rc.2.shell.11 发布；shell.8/.9/.10 三个失败 tag 保留审计，根因链见 HANDOFF §55）**：W1–W5 全部落地；W6 三路尝试仍受阻（扩展未连接/AppleScript 超时/AX 路由不可验证），不抢占用户前台，维持接受残留。W2 在验证 dispatch 中暴露并修复了打包器 afterPack 之后追加文件的问题（`elevate.exe`/`apparmor-profile`/`package-type` 白名单）。W5a 有重大超出：pnpm §49/§54 缺陷**根因定位**——`packageManager` 字段版本委托到有缺陷的 pnpm 11.11（含 electron-builder 的树 lockfile-only 静默不写盘、全量安装挂死），修复为全局 pin `pnpm@10.33.2` 并重生成锁文件，pnpm 9 手工绕过指引全部作废。W5b 结论：Playwright 1.63 下 worker teardown 挂起消失（三连跑干净退出），guarded runner 本轮保留、下轮依 CI 证据决定退役。
 
 | ID | 功能点 | 修改方式 | 主要文件 | 验收 |
 |---|---|---|---|---|
-| W1 | 清空式升级 + 占用预检 | 自定义 NSIS include：复制前以独占方式探测 `$INSTDIR\resources\harness\node\node.exe`，被占用即显式提示"关闭 dsh-desktop/终端后重试"（把"忽略"式静默损坏变成显式失败，分析 §4.3）；随后 `RMDir /r` 清空 harness 目录再落新文件，一次性消除半写/占用/旧清单三类残留面（分析 §4.1） | `build/installer.nsh`（新）、`electron-builder.yml`（`nsis.include`） | CI 升级冒烟：预置损坏或只读 node.exe 后升级得到干净闭包（sha256 与 pin 一致）；占用场景得到显式失败而非静默跳过 |
+| W1 | 清空式升级 + 占用预检 | 自定义 NSIS include：复制前以独占方式探测 `$INSTDIR\resources\harness\node\node.exe`，被占用即显式提示"关闭 dsh-desktop/终端后重试"（把"忽略"式静默损坏变成显式失败，分析 §4.3）；随后 `RMDir /r` 清空 harness 目录再落新文件，一次性消除半写/占用/旧清单三类残留面（分析 §4.1） | `build/installer.nsh`（新；经默认约定拾取——`nsis.include` 显式路径会被 getResource 静默跳过） | CI 升级冒烟：预置损坏或只读 node.exe 后升级得到干净闭包（sha256 与 pin 一致）；占用场景得到显式失败而非静默跳过 |
 | W2 | 闭包完整性清单 | 打包期生成 `resources/harness/manifest.json`（相对路径→sha256，electron-builder `afterPack` 钩子）；健康检查从魔数校验升级为清单全量校验，清单缺失时回退既有魔数校验；失败项带具体文件路径并复用既有重装指引；不自动改写用户文件（决策 0031 边界不变） | `scripts/`（afterPack 钩子）、`src/main/health-check.ts`、`src/main/diagnostics.ts`、`test/health-check.test.ts` | 闭包内任一文件损坏（含 #39 的 node.exe）→ 体检判"失败"+文件路径+重装指引；诊断报告含清单校验小节；打包冒烟覆盖篡改场景 |
 | W3 | 残留矩阵 CI 化 | 把分析 §5 矩阵中可脚本化的 T1/T2/T4/T5 搬上 GitHub Windows runner（扩展 `smoke-upgrade.mjs` 或新脚本）：基线升级 sha256 断言、预置损坏后升级、只读属性升级、卸载重装且 userData 保留；T3 由 W1 预检逻辑在静默安装下断言显式失败；结果回填分析文档矩阵表 | `scripts/smoke-upgrade.mjs`（或新脚本）、`.github/workflows/release.yml`、`docs/nsis-upgrade-residue-analysis.md` | 矩阵进发布门禁可重复执行；T6（第三方 AV 干扰）与 Windows 真机托盘点击仍记为硬件绑定人工项，明确不阻塞本轮 |
 | W4 | 内核写入面收口（跨平台小项） | `kernel-manager` overlay pointer/failed-marker/overlay package.json、`install-env` shims、`diagnostics` 报告写盘改走 `atomicWriteFileSync`；#40/#41 同族审计清零并记录结论 | `src/main/kernel-manager.ts`、`src/main/install-env.ts`、`src/main/diagnostics.ts` | kernel-shared 与自恢复关键面无 truncate 窗口；原子写契约单测全绿 |
 | W5 | 依赖分诊与工具链减负 | ①关闭 #37：`@types/node` 保持 24 系与随包 Node 24 对齐（dependabot ignore 规则已补 major，PR 早于规则）；②#38 Playwright 1.63 分支 spike：若 1.62.1+Electron worker teardown 挂起消失则升级并评估退役 guarded runner，否则关闭 PR 并注明；③electron-builder 26.15.3→26.16.1 重试 pnpm 11 lockfile + 全量安装（§49/§54 挂死族），通过则移除 pnpm 9 绕过指引，仍挂则报 upstream | `package.json`、`scripts/run-e2e-guarded.mjs`、`.agents/skills/release-dsh-desktop/SKILL.md`、`docs/` | 两个 dependabot PR 均有结论；pnpm 挂死有落地结论（升级生效或 upstream issue 链接）；结论记入 HANDOFF |
 | W6 | GitCode 测试 release 清理（§6.10 转结） | 走浏览器 UI 路径删除 `v0.0.0-mirror-test`（kimi-webbridge 扩展已连接则用之，否则 computer-use）；仍不可行则书面接受残留并关闭该项 | — | GitCode release 列表无测试残留，或该项以书面结论关闭 |
 
-发布载体：shell.8（W1–W4 为代码与打包变更，W2 需三平台闭包清单同步生效）。按 §8 每轮完成标准执行：单测 + dev E2E + 打包冒烟 + `pnpm run verify` + release runbook；W1/W3 的 Windows 结论随发布 run 回填本节与分析文档。
+发布载体：shell.11（W1–W4 为代码与打包变更，W2 需三平台闭包清单同步生效）；发布 run 34870003031 全绿，GitCode 镜像 6/6、官网数据已同步。按 §8 每轮完成标准执行：单测 + dev E2E + 打包冒烟 + `pnpm run verify` + release runbook；W1/W3 的 Windows 结论随发布 run 回填本节与分析文档。
 
 决策项（不在本轮范围，需用户拍板）：签名与公证重评估。Windows 占比 72% 后 SmartScreen 已是最大首装摩擦，§7 触发条件中"下载量"可论证已接近阈值（win 1125）；已有成本对比文档（`docs/windows-signing-cost-comparison.md` 等）。若决定启动，按 §7 要求单独建立发布基础设施计划，不混入本轮功能迭代。
 
