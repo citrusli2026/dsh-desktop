@@ -4,7 +4,7 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-09-13 · 当前代码基线 `0.1.5-rc.2.shell.7`
+最后更新: 2026-09-14 · 当前代码基线 `0.1.5-rc.2.shell.8`（未发布）
 （主界面提供一次性首次成功引导；桌面设置提供本地优先、只读且脱敏的运行体检；
 发布门禁覆盖真实 Harness、插件市场、安全模式、移动设备连接和跨版本升级；内核 `0.1.5-rc.2`）
 
@@ -42,6 +42,7 @@ src/main/global-shortcut.ts  桌面全局快捷键注册、校验与平台文案
 src/main/desktop-preferences.ts  快捷键、启动/通知与首次成功引导状态及原生副作用
 src/main/desktop-notifications.ts  公开会话/任务状态归一化、通知与首次成功边沿纯函数
 src/main/health-check.ts        本地运行时/目录/loopback/profile 检查与 opt-in 连通性探测
+src/main/closure-manifest.ts    随包闭包完整性清单(0032):打包期 sha256 封存、运行期全量校验
 src/main/balance.ts         DeepSeek 余额读数(0025):凭证读取、缓存与托盘行
 src/main/lan.ts             局域网 Web 代理、私有设备状态与配对二维码
 src/main/diagnostics.ts     日志轮转、遮罩、报告格式与导出版

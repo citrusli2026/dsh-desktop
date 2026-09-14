@@ -17,7 +17,7 @@ are all part of the release, not afterthoughts.
 2. Working tree clean; `main` fetched. Remote bot commits are common
    (`dsh-shell-bot` site syncs) — always `git pull --rebase` right
    before tagging and re-create the tag if it was made pre-rebase.
-3. Local gates runnable: pnpm 11.8, Node 22, network to npm registry.
+3. Local gates runnable: pnpm 10.33.2 (the repo's `packageManager` pin; see the pnpm fault-table entry for why 11.x is banned), Node 24, network to npm registry.
 
 ## Workflow
 
@@ -46,7 +46,7 @@ pnpm -C manifest/harness install --lockfile-only
 pnpm -C manifest/harness install --frozen-lockfile
 ```
 
-pnpm 11 may auto-add new packages to `minimumReleaseAgeExclude`
+pnpm may auto-add new packages to `minimumReleaseAgeExclude`
 (supply-chain policy) — that is expected, keep it.
 
 ### 2. Bootstrap the closure and fix peer gaps
@@ -266,8 +266,7 @@ GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-desktop \
 | deb install step: `dpkg: dependency problems prevent configuration of dsh-desktop` | `dpkg -i` never resolves Depends and the bare runner lacks libnotify4/libsecret-1-0; install with `sudo apt-get install -y ./dist/<deb>` instead |
 | `RangeError [ERR_CHILD_PROCESS_STDIO_MAXBUFFER]` from `dpkg -L` | a 160 MB install lists every file, overflowing the 1 MB cap; `smoke-installed.mjs` passes a 32 MB buffer — and selects the binary by `stat` (**regular executable**, since `dpkg -L` lists the `/opt/<app>` directory before the binary inside it) |
 | NSIS same-version overwrite (`/S` reinstall) hangs indefinitely | electron-builder replaces the install by running the existing uninstaller; on CI it never finishes (150s and 300s timeouts; zero output; the first silent install takes 4s). Deliberately out of CI scope — the deb reinstall smoke covers the overwrite logic; see test-hardening-plan A-3 |
-| `pnpm install --lockfile-only` at the repo root exits 0 but never writes `pnpm-lock.yaml` (pnpm 10/11/12; resolution completes, no error event, no "Done" line) | triggered by resolving `electron-builder@26.15.3` in the root manifest (flattening its direct deps into devDependencies makes it pass; `manifest/harness` is unaffected). Workaround: generate with `CI=true npx -y pnpm@9.15.9 install --lockfile-only` after temporarily adding `packages: ['.']` to `pnpm-workspace.yaml` and duplicating the workspace `overrides` into `package.json` `pnpm.overrides` (pnpm 9 reads neither), then restore both files and validate with `pnpm install --frozen-lockfile` on pnpm 11 (see HANDOFF §49) |
-| full `pnpm install` at the repo root (pnpm 11.11, `--no-frozen-lockfile`) hangs forever after `resolved N, reused M, downloaded 0` with zero open sockets and zero CPU (reproduced on Electron 44 bump; clean `node_modules` and `--network-concurrency=3` do not help) | same electron-builder trigger family as the lockfile-only bug, now blocking the whole install. Workaround (see HANDOFF §54): `mv pnpm-workspace.yaml` aside, keep the overrides duplicated in `package.json`, `CI=true npx -y pnpm@9.15.9 install --no-frozen-lockfile` (fast, stages Electron via postinstall), restore the workspace file, then hand-add the `overrides:` block pnpm 10+ expects to `pnpm-lock.yaml` settings (pnpm 9 never writes it) and validate with `CI=true pnpm install --frozen-lockfile` |
+| `pnpm install --lockfile-only` at the repo root exits 0 but never writes `pnpm-lock.yaml`, and full `pnpm install` hangs after `resolved N, reused M, downloaded 0` (§49/§54) | **ROOT-CAUSED 2026-09-14 (HANDOFF §55)**: pnpm 11.11.0 silently writes no lockfile for trees containing `electron-builder`, and the root `packageManager: pnpm@…` field makes every pnpm >= 10 self-switch (`manage-package-manager-versions`) to the pinned 11.11 before running — so even `npx pnpm@10.33.2` executed 11.11. Fix shipped: `packageManager` pinned to `pnpm@10.33.2` (workflows too); lockfile regenerated natively. Never raise the pin past 10.x until the upstream pnpm 11 defect is fixed; if a one-shot modules-purge prompt appears after a pin change, rerun with `CI=true` |
 | a just-pushed release tag needs re-pointing after a rebase | `git tag -f v<version>` locally, then `git push --force origin v<version>`; cancel any release run already started from the old commit first (`gh run cancel <id>`) and force-push the GitCode tag to the same peeled commit (branch is a mirror, force is the established practice) |
 
 ## Exit criteria

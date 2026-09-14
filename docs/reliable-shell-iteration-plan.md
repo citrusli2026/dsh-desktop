@@ -220,6 +220,8 @@
 ### 6.11 rc.2.shell.8：Windows 安装保真与损坏自愈（本轮，Windows 优先）
 
 > 规划日期：2026-09-14。依据：GitCode 生成时累计 1566 中 win 1125 / mac 253 / linux 188（Windows 约 72%）；#39 暴露的 NSIS 升级残留族已有机制分析但三个候选修复均未实施（`docs/nsis-upgrade-residue-analysis.md` §4）；真机矩阵卡在无 Windows 硬件，本轮把可脚本化场景搬上 CI Windows runner。上游内核 0.1.5-rc.2 仍是最新（`next`），本轮不做内核 bump。签名与公证维持延后（§7），仅在文末列为决策项。
+>
+> **交付状态（2026-09-14，随 v0.1.5-rc.2.shell.8 发布）**：W1–W5 全部落地；W6 三路尝试仍受阻（扩展未连接/AppleScript 超时/AX 路由不可验证），不抢占用户前台，维持接受残留。W2 在验证 dispatch 中暴露并修复了打包器 afterPack 之后追加文件的问题（`elevate.exe`/`apparmor-profile`/`package-type` 白名单）。W5a 有重大超出：pnpm §49/§54 缺陷**根因定位**——`packageManager` 字段版本委托到有缺陷的 pnpm 11.11（含 electron-builder 的树 lockfile-only 静默不写盘、全量安装挂死），修复为全局 pin `pnpm@10.33.2` 并重生成锁文件，pnpm 9 手工绕过指引全部作废。W5b 结论：Playwright 1.63 下 worker teardown 挂起消失（三连跑干净退出），guarded runner 本轮保留、下轮依 CI 证据决定退役。
 
 | ID | 功能点 | 修改方式 | 主要文件 | 验收 |
 |---|---|---|---|---|
