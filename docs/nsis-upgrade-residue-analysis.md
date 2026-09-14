@@ -1,6 +1,6 @@
 # NSIS 升级残留分析（Windows 安装器）
 
-最后更新: 2026-09-13 · 背景: Issue #39（升级后内置 `node.exe` 损坏 → `spawn EFTYPE`）
+最后更新: 2026-09-14（shell.8 实施矩阵与安装器加固）· 背景: Issue #39（升级后内置 `node.exe` 损坏 → `spawn EFTYPE`）
 
 ## 1. 问题回顾
 
@@ -48,27 +48,42 @@ asar 内的 `lib/**` 由安装器整体替换，风险最低；deb 升级由 dpk
   诊断报告追加 `# Runtime spawn` 小节。
 - 打包冒烟崩溃时输出 harness 日志尾部（SMOKE_TEST），为下一次复现留现场。
 
-## 4. 候选修复（未实施，按收益排序）
+## 4. 修复实施状态（2026-09-14，shell.8）
 
-1. **安装前清空 Harness 目录**：自定义 NSIS include（`nsisInclude`）在复制前执行
-   `RMDir /r "$INSTDIR\resources\harness"`。一次性消除 1/2/4 的残留面；
-   需要处理"清空后复制中途失败"的窗口（先删后拷比原地覆盖更糟的时长约数秒）。
-2. **启动时清单校验 + 自修复**：打包时生成 `resources/harness/manifest.json`
-   （路径→sha256），启动校验失败时从安装器内嵌副本恢复或引导重装。
-   已有健康检查魔数校验是该方案的弱化版，升级为全量哈希成本可控。
-3. **升级前检测 node 占用**：安装器启动时尝试以独占方式打开 `node.exe`，
-   占用即提示"关闭 Harness/终端后重试"，把"忽略"式静默损坏变成显式失败。
+先核对 electron-builder 26.15.3 模板事实（`templates/nsis/`）：
 
-## 5. 真机测试矩阵（待执行；当前无 Windows 真机/VM 在环）
+- **auto-update 路径**（electron-updater 带 `--updated` 旗标）：卸载器先把整个
+  `$INSTDIR` 原子改名到 `$PLUGINSDIR\old-install`（busy 时还原并中止），
+  已天然免疫按文件残留。
+- **手动双击升级**（无 `--updated`）：走逐文件 `RMDir /r`，readonly/hidden/
+  system/locked 文件被**静默跳过**——残留主战场。
+- 安装路径没有 pre-copy 用户钩子（`customInstall` 在复制之后）；
+  `customRemoveFiles` 属于卸载器，定义它会替换掉上述原子逻辑，故不使用。
 
-| 编号 | 场景 | 步骤 | 期望 |
+据此交付（全部在 `build/installer.nsh`，随新安装器生效，任何旧基线升级即受益）：
+
+1. **属性清理**（`customInit`，对应候选 §4.1 的安全变体）：安装一开始以
+   `attrib -R -H -S ... /S /D` 清除旧安装 `resources\*` 的只读/隐藏/系统位，
+   让旧卸载器的 `RMDir /r` 能真正删净；改动可取消（用户中止只丢只读位）。
+2. **占用预检**（`customInit`，对应候选 §4.3）：独占打开旧
+   `resources\harness\node\node.exe`，被占用即弹双语「关闭后重试」；
+   **静默安装退出码 5**（CI 与 electron-updater 得到显式失败而非静默坏升级）。
+3. **清单校验**（候选 §4.2 检测半）：`resources/manifest.json`（sha256）随包
+   生成（macOS 在签名后 seal），健康检查/诊断/启动闭包冒烟比对全量文件；
+   残留由「不可见」变为「带具体文件路径的失败 + 重装指引」。
+   自修复不做：与决策 0031（不自动改写文件）一致，指引重装。
+
+## 5. 测试矩阵状态
+
+| 编号 | 场景 | 状态 | 自动化 |
 | --- | --- | --- | --- |
-| T1 | 基线升级 | 旧版安装 → 官网新版安装器升级 | 升级后 `node.exe` sha256 与发布 pin 一致，应用可启动 |
-| T2 | 预置损坏 | 安装后手写 16B 垃圾进 `node.exe` → 关闭应用 → 升级 | 新文件覆盖损坏文件；健康检查 ok |
-| T3 | 句柄占用 | 从安装目录启动一个 node 进程保持运行 → 升级 | 安装器应报占用/重试；若点忽略，健康检查应报"失败 + 重装指引" |
-| T4 | 只读属性 | 将 `node.exe` 设为只读 → 升级 | NSIS 复制成功或显式失败；不得静默留旧 |
-| T5 | 卸载重装 | 卸载（保留 AppData）→ 重装 | userData 保留；健康检查全绿 |
-| T6 | AV 干扰 | 开启 Defender 实时扫描 + 第三方 AV → 反复升级 3 次 | 无损坏；若复现 `EFTYPE`，记录 AV 名称与行为 |
+| T1 | 基线升级 | ✅ CI 既有 `smoke-upgrade.mjs nsis`（含 7 用户文件断言） | release.yml Windows |
+| T2 | 预置损坏（+未来 mtime）后升级 | ✅ CI `smoke-nsis-residue.mjs` S1：升级后 node.exe sha256 必须等于包内清单 | release.yml Windows |
+| T3 | 句柄占用 | ✅ CI S3：锁定的 node.exe 在静默升级中**显式退出码 5**；释放后重装成功且清单一致 | release.yml Windows |
+| T4 | 只读属性 | ✅ CI S2：属性清理 + 升级后 node.exe 与清单一致（静默不残留） | release.yml Windows |
+| T5 | 卸载重装保留 userData | ✅ CI `smoke-upgrade.mjs`（卸载→重装，userData 逐文件断言） | release.yml 三平台 |
+| T6 | 第三方 AV 干扰反复升级 | ⏸ 人工项（无 Windows 真机/可控第三方 AV）；GitHub runner 只有 Defender | 待 Windows 硬件 |
 
-执行环境要求：Windows 10/11 x64 实机或快照 VM；执行后把结果回填本表并在
-HANDOFF 记录。若 T3/T4/T6 出现静默残留，优先实施 §4.1（清空式升级）。
+执行环境要求：T6 需 Windows 10/11 x64 实机或快照 VM + 可控第三方 AV；执行后把
+结果回填本表并在 HANDOFF 记录。闭包清单的篡改检测另有三平台打包冒烟
+（`DSH_SMOKE_CLOSURE=1`：干净树 status=ok + 篡改后 status=changed）。
