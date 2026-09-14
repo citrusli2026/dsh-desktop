@@ -42,6 +42,14 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.5-rc.2.shell.8 <small>（kernel 0.1.5-rc.2）</small></h2>
+  <ul>
+    <li>Windows upgrades now fail explicitly with a bilingual dialog when the bundled <code>node.exe</code> is still in use, instead of silently producing a broken install; read-only/hidden leftovers from the old install are cleared so upgrades replace every bundled file.</li>
+    <li>Installers embed a SHA-256 manifest of the whole bundled closure. The health check compares every file and names exactly which files were modified, went missing, or are unexpected (upgrade residue / antivirus rewrites); the diagnostics export includes the verdict.</li>
+    <li>New CI residue matrix (corrupted / read-only / locked <code>node.exe</code>) and a closure-verify + tamper packaged smoke run on all three platforms for every release.</li>
+    <li>Toolchain: pnpm pinned to 10.33.2 (root-causes the silent lockfile no-op and install hang), electron-builder 26.16.1, Playwright 1.63.0. Bundled kernel unchanged at 0.1.5-rc.2; no new permissions; the health check stays read-only and local.</li>
+  </ul>
+
   <h2>v0.1.5-rc.2.shell.7</h2>
   <ul>
     <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24.</li>
@@ -90,12 +98,6 @@
     <li>Classifies plugin-vs-kernel API crashes (runtime type errors inside loader failures) so the error page gives the right guidance instead of a bare error.</li>
     <li>The one-click health check now validates the bundled Node executable's integrity, catching upgrade-residue and antivirus damage that previously read as healthy.</li>
     <li>The error page explains runtime spawn failures and calls for a clean reinstall; the diagnostics report records the state for support.</li>
-  </ul>
-
-  <h2>v0.1.5-rc.2.shell.0 <small>（kernel 0.1.5-rc.2）</small></h2>
-  <ul>
-    <li>Upgraded the bundled Harness kernel to 0.1.5-rc.2 and realigned all 31 direct peer contracts, the lockfile, and the supply-chain allowlist.</li>
-    <li>Revalidated the full local gate battery, both dependency audit trees (zero known vulnerabilities), and the Android emulator pairing journey.</li>
   </ul>
   <!-- changelog:auto:end -->
 
