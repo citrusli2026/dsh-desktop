@@ -13,8 +13,8 @@
 | 已发布 | ✅ `0.1.5-rc.2.shell.11`（三端 dmg/exe/deb；Windows 安装保真 + 闭包完整性清单 + NSIS 残留矩阵；shell.8/.9/.10 失败 tag 保留审计） |
 | 本地门禁 | ✅ 281 项单测、类型检查、runtime/site、安全审计、构建全绿；dev E2E 16/16（Playwright 1.63）、闭包 smoke（干净+篡改）、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
 | 核心发布 | ✅ `v0.1.5-rc.2.shell.11` Release run `34870003031` 全绿：8 文件契约、attestation、三平台跨版本数据保留、闭包清单 smoke、NSIS 残留矩阵（损坏/只读/占用）、Harness 真渲染、Safe Mode 故障注入 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.7`（6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.5-rc.2.shell.7` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `be5143e`） |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.11`（6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.5-rc.2.shell.11` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `ede3942`） |
 | 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1566（48 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -1612,3 +1612,12 @@ _更新于 2026-09-12_
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.11>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.11>；
 官网：<https://dsh-desktop.com>。
+
+## 55. rc.2.shell.8-11 Windows 安装保真轮：NSIS 残留矩阵收口（2026-09-14）
+
+另一会话自 shell.8 起推进 #39 家族的安装器级修复（占用拦截、残留清理、闭包完整性清单、CI 残留矩阵、pnpm 10.33.2 固定），三连败后由巡检接手收口为 shell.11。
+
+1. **失败链与根因**：shell.8（脚本缺陷）/ shell.9（`findOne` 数组误传 `path.join`）/ shell.10（include 改默认约定后 S3 仍退出 0）。S3 根因实锤：NSIS 占用探测的路径写的是 `resources\harness\node\node.exe`，而壳的运行时契约（paths.ts）是 `harness/node/bin/node.exe`——探测永远命中 ERROR_FILE_NOT_FOUND(2) 被当作"无文件可占用"放行，门从未触发。S1/S2 不依赖门故始终通过。#44-47 已回复诊断并随 shell.11 关闭。
+2. **修复与验证**：`be5c54d` 修正两处探测路径；main dispatch `34867393144` 三场景矩阵全绿（S3 首次以退出码 5 显式失败 + 释放后重装成功）；本地门禁 282 单测、dev E2E 16/16、双冒烟 + Safe Mode 注入、market offline+real、LAN QR 全绿。
+3. **发布**：tag `v0.1.5-rc.2.shell.11` → `ede3942`（peeled 双端一致）；Release run `34870003031` verify + 三平台 build + publish 全绿，8 资产 + attestation；GitCode 镜像 6/6（backfill 先落 sha256，本机补齐安装包，冗余 backfill `34873874135` 已取消）；Site Data Refresh `34873594392` 后官网 6/6 `gitcode_ok=true`。失败 tag shell.8/9/10 双远端保留审计。
+4. **运维提示**：electron-builder 对 `build/installer.nsh` 的默认约定加载是生效路径（显式 `nsis.include` 会被 getResource 静默跳过）；NSIS `IntCmp a b eq jt jg` 第三参数才是相等跳转——占位 0 表示直落，排查门逻辑时勿按 if/else 直觉读。
