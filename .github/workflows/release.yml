@@ -30,7 +30,7 @@ jobs:
           path: dsh-mobile-shell
       - uses: pnpm/action-setup@v6
         with:
-          version: 11.11.0
+          version: 10.33.2
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -86,7 +86,7 @@ jobs:
           path: dsh-mobile-shell
       - uses: pnpm/action-setup@v6
         with:
-          version: 11.11.0
+          version: 10.33.2
       - uses: actions/setup-node@v7
         with:
           node-version: 24

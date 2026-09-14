@@ -10,7 +10,7 @@
     "url": "git+https://github.com/citrusli2026/dsh-desktop.git"
   },
   "type": "module",
-  "packageManager": "pnpm@11.11.0",
+  "packageManager": "pnpm@10.33.2",
   "main": "lib/main/index.cjs",
   "dependencies": {
     "yaml": "^2.9.0"
@@ -57,7 +57,7 @@
     "@playwright/test": "^1.62.1",
     "@types/node": "^24.0.0",
     "electron": "^44.3.0",
-    "electron-builder": "^26.0.0",
+    "electron-builder": "^26.16.1",
     "electron-updater": "^6.8.9",
     "esbuild": "^0.25.0",
     "sharp": "^0.35.4",
