@@ -67,3 +67,17 @@ test('kernelCompatAdvisory only speaks up when kernel peers are declared and unc
   assert.deepEqual(kernelCompatAdvisory({ '@deepseek-ai/cordis': '^4.0.1' }, '0.1.5-rc.2'), { declared: false, covers: true })
   assert.deepEqual(kernelCompatAdvisory(undefined, '0.1.5-rc.2'), { declared: false, covers: true })
 })
+
+test('syncKernelPeerPins mutates the object it returns (version.mjs persists on value comparison)', () => {
+  const dependencies = {
+    '@deepseek-ai/dsh': '0.1.5-rc.2',
+    '@deepseek-ai/dsh-attachment': '^0.1.5-rc.2',
+    'cordis-plugin-group': '^1.0.0',
+  }
+  const returned = syncKernelPeerPins(dependencies, '0.1.5-rc.2', '0.1.6-alpha.1')
+  // The version tool relies on this aliasing: it compares JSON before/after
+  // the call because the reference is always identical.
+  assert.equal(returned, dependencies)
+  assert.equal(dependencies['@deepseek-ai/dsh-attachment'], '^0.1.6-alpha.1')
+  assert.equal(dependencies['@deepseek-ai/dsh'], '0.1.5-rc.2')
+})

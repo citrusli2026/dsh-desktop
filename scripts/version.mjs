@@ -1,6 +1,6 @@
 /**
  * Composite versioning (docs/decisions/0009): the app version and git tag are
- * `<dsh version>.shell.<shell revision>` — e.g. `0.1.5-rc.2.shell.11` bundles
+ * `<dsh version>.shell.<shell revision>` — e.g. `0.1.6-alpha.1.shell.0` bundles
  * @deepseek-ai/dsh 0.1.5-rc.2 at shell revision 4. This tool is the single
  * writer of package.json's `version` field and the manifest's dsh pin.
  *
@@ -14,11 +14,12 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { compareSemver, isSemver, parseCompositeVersion } from './release-shape.mjs'
-import { syncKernelPeerPins } from './kernel-peers.mjs'
+import { fetchPublishedVersion, resolvedVersionsFromLockfile, syncKernelPeerPins } from './kernel-peers.mjs'
 
 const ROOT = process.cwd()
 const PKG_PATH = join(ROOT, 'package.json')
 const MANIFEST_PATH = join(ROOT, 'manifest', 'harness', 'package.json')
+const LOCKFILE_PATH = new URL('./manifest/harness/pnpm-lock.yaml', import.meta.url)
 const REGISTRIES = [
   process.env.NPM_CONFIG_REGISTRY ?? 'https://registry.npmmirror.com',
   'https://registry.npmjs.org',
@@ -135,9 +136,25 @@ async function main() {
     // names the old version, so callers (dsh-watch included) cannot produce a
     // mixed-version closure by bumping the main pin alone (issue #34's PR).
     const manifest = await readJson(MANIFEST_PATH)
-    const synced = syncKernelPeerPins(manifest.dependencies ?? {}, previous, dsh)
-    if (synced !== (manifest.dependencies ?? {})) await writeJson(MANIFEST_PATH, manifest)
-    const moved = Object.values(synced).filter(range => typeof range === 'string' && range.includes(dsh)).length
+    // syncKernelPeerPins mutates and returns the SAME object, so a reference
+    // comparison can never detect the change — persist on a value comparison
+    // or the synced pins stay in memory only (found bundling 0.1.6-alpha.1:
+    // every smoke crashed on a hoisted stale @deepseek-ai/dsh-attachment).
+    const dependenciesBefore = JSON.stringify(manifest.dependencies ?? {})
+    const dependencies = manifest.dependencies ?? {}
+    // Not every dsh-* package publishes every kernel release; a range bumped
+    // to a version the registry never served breaks lockfile resolution. For
+    // those, pin the exact version the previous closure resolved instead.
+    const resolvedOld = resolvedVersionsFromLockfile(await readFile(LOCKFILE_PATH, 'utf8').catch(() => ''))
+    for (const [name, range] of Object.entries(dependencies)) {
+      if (name === '@deepseek-ai/dsh' || typeof range !== 'string' || !range.includes(previous)) continue
+      const published = await fetchPublishedVersion(name, dsh)
+      dependencies[name] = published === true
+        ? range.replaceAll(previous, dsh)
+        : resolvedOld.get(name) ?? range
+    }
+    if (JSON.stringify(dependencies) !== dependenciesBefore) await writeJson(MANIFEST_PATH, manifest)
+    const moved = Object.values(dependencies).filter(range => typeof range === 'string' && range.includes(dsh)).length
     console.log(`version: synced ${moved} dsh-* peer pins to ${dsh}`)
     console.log('version: next steps — pnpm -C manifest/harness install --lockfile-only && node scripts/sync-release-age-excludes.mjs && pnpm -C manifest/harness install --frozen-lockfile && pnpm run bootstrap && pnpm run smoke')
     return

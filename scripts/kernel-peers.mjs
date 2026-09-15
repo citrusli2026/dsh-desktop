@@ -21,3 +21,35 @@ export function syncKernelPeerPins(dependencies, fromVersion, toVersion) {
   }
   return dependencies
 }
+
+/**
+ * Does the npm registry serve `version` of `pkg`? Not every dsh-* package
+ * publishes every kernel release, so a blind range bump can name a version
+ * that does not exist (found bundling 0.1.6-alpha.1). Null on any network
+ * failure — callers must treat null as "unknown" and keep the old range.
+ */
+export async function fetchPublishedVersion(pkg, version) {
+  try {
+    const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(pkg)}`, {
+      signal: AbortSignal.timeout(20_000),
+      headers: { accept: 'application/json' },
+    })
+    if (!response.ok) return null
+    const body = await response.json()
+    return body.versions?.[version] != null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Map of `@deepseek-ai/<pkg>` → the version the current lockfile resolved.
+ * Pure helper shared by the version tool and the release-age exclude sync.
+ */
+export function resolvedVersionsFromLockfile(lockfileSource) {
+  const resolved = new Map()
+  for (const match of lockfileSource.matchAll(/^  '?(@deepseek-ai\/[^'\s:]+)@([^'(:\s]+)/gm)) {
+    if (!resolved.has(match[1])) resolved.set(match[1], match[2])
+  }
+  return resolved
+}
