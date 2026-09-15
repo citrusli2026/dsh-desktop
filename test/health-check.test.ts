@@ -198,9 +198,15 @@ test('health check reports a sealed tree as ok and catches a manifest mismatch',
     assert.match(runtime?.detail ?? '', /package\.json/)
     assert.match(runtime?.action ?? '', /Reinstall|whitelist|full installer/)
     // The repair loop: direct installer downloads, GitHub primary for the en
-    // locale, GitCode as the alternate line, plus the localized steps.
+    // locale, GitCode as the alternate line, plus the localized steps. The
+    // asset follows the RUNNING platform (the 8-asset contract names).
+    const expectedAsset = process.platform === 'win32'
+      ? `dsh-desktop-setup-${fixture.appVersion}.exe`
+      : process.platform === 'darwin'
+        ? `dsh-desktop-${fixture.appVersion}-arm64-mac.dmg`
+        : `dsh-desktop-${fixture.appVersion}-amd64.deb`
     assert.match(runtime?.repairUrl ?? '', /https:\/\/github\.com\/citrusli2026\/dsh-desktop\/releases\/download\/v0\.1\.5-rc\.2\.shell\.12\//)
-    assert.match(runtime?.repairUrl ?? '', /arm64-mac\.dmg$/)
+    assert.ok(runtime?.repairUrl?.endsWith(expectedAsset), runtime?.repairUrl)
     assert.match(runtime?.repairUrlAlt ?? '', /https:\/\/gitcode\.com\//)
     assert.match(runtime?.repairSteps ?? '', /health check again/)
     // No absolute fixture path may leak into the user-facing detail.

@@ -241,7 +241,7 @@
 
 > 规划日期：2026-09-15。依据：win 下载占比升至 74%（1521/2066）；shell.11 已交付占用拦截/属性清理/闭包清单/残留矩阵 S1–S3，但 **#39 类损坏的修复闭环仍靠用户手动重装**；Windows job 因残留矩阵涨到 ~29.5 分钟（mac ~10、ubuntu ~8）；T6 的 Defender 半边可能在 runner 上可自动化。上游 0.1.6-alpha.1 因漏发子包暂不可捆绑（#48/#49，巡检自动重试，不占本轮窗口；内核 bump 先行则随新基线带走过本轮改动）。签名仍为独立决策项。
 >
-> **交付状态（2026-09-15，随 v0.1.5-rc.2.shell.12 发布）**：X1–X4 全部落地——体检修复闭环（repairUrl 双线路 + 三步指引 + 诊断直链）、残留矩阵共享基线（robocopy）+ Defender 探测与 S4 条件轮、CI E2E 去护卫（观察轮，脚本保留）。门禁：282 单测、dev E2E 16/16、LAN 2/2、offline+real market、closure smoke、SAFE_BREAK 本地全绿。
+> **交付状态（2026-09-15，随 v0.1.5-rc.2.shell.13 发布）**：X1–X4 全部落地——体检修复闭环（repairUrl 双线路 + 三步指引 + 诊断直链）、残留矩阵共享基线（robocopy）+ Defender 探测与 S4 条件轮、CI E2E 去护卫（观察轮，脚本保留）。门禁：282 单测、dev E2E 16/16、LAN 2/2、offline+real market、closure smoke、SAFE_BREAK 本地全绿。
 
 | ID | 功能点 | 修改方式 | 主要文件 | 验收 |
 |---|---|---|---|---|
