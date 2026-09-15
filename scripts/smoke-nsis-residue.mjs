@@ -3,19 +3,23 @@
  * #39 family): proves that a deliberately damaged, read-only, or locked
  * bundled node.exe cannot silently survive an upgrade.
  *
- * Scenarios (each on a fresh silent install of the previous release):
+ * Scenarios (each on a copy of one shared silent install of the previous
+ * release — a ~10s robocopy instead of a ~2min reinstall per scenario):
  *  S1 corrupted + future-mtime node.exe must be replaced (hash == manifest).
  *  S2 read-only node.exe must be removed by the upgrade (the new installer's
  *     attribute clear in .onInit unblocks the old uninstaller's RMDir /r).
  *  S3 locked node.exe must fail the new installer explicitly (exit code 5
  *     from the occupancy probe) instead of copying around it; after the
  *     holder exits, the upgrade must succeed cleanly.
+ *  S4 (only when Defender real-time protection is ON, see T6 in
+ *     docs/nsis-upgrade-residue-analysis.md): one more corrupted→upgraded
+ *     cycle as a repeat-under-AV pass.
  *
  * Usage: node scripts/smoke-nsis-residue.mjs <current-dist> <previous-dir>
  */
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { chmod, mkdtemp, open, readFile, readdir, rm, utimes } from 'node:fs/promises'
+import { chmod, cp, mkdtemp, open, readFile, readdir, rm, utimes } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -46,6 +50,38 @@ function silentInstall(installer, installDir) {
     child.once('error', error => { clearTimeout(timer); reject(error) })
     child.once('exit', code => { clearTimeout(timer); resolveCode(code ?? -1) })
   })
+}
+
+/** Copy one installed tree to a fresh baseline. robocopy parallelises and is
+ *  ~10s for the ~400MB tree; plain cp is the portable fallback. robocopy
+ *  exit codes 0-7 are success grades, >=8 is a failure. */
+async function cloneTree(from, to) {
+  if (process.platform === 'win32') {
+    await execFileP('robocopy', [from, to, '/E', '/NFL', '/NDL', '/NJH', '/NJS', '/NP'], { timeout: 300_000 })
+      .catch(error => {
+        // execFile rejects on non-zero exit; robocopy uses 0-7 for success.
+        if ((error.code ?? 8) >= 8) throw error
+      })
+    return
+  }
+  await cp(from, to, { recursive: true })
+}
+
+/** Defender real-time protection state for the T6 record: true / false /
+ *  'unknown' (PowerShell or the Mp module unavailable). */
+async function defenderRealTimeProtection() {
+  try {
+    const { stdout } = await execFileP('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-Command',
+      '(Get-MpComputerStatus).RealTimeProtectionEnabled',
+    ], { timeout: 60_000 })
+    const value = stdout.trim().toLowerCase()
+    if (value === 'true') return true
+    if (value === 'false') return false
+  } catch {
+    // fall through to unknown
+  }
+  return 'unknown'
 }
 
 const uninstallerOf = installDir => join(installDir, 'Uninstall dsh-desktop.exe')
@@ -121,60 +157,60 @@ async function isNodeLocked(path) {
   return false
 }
 
-async function scenario(name, run) {
-  const root = await mkdtemp(join(tmpdir(), `dsh-residue-${name}-`))
-  try {
-    await run(root)
-    console.log(`residue matrix: ${name} OK`)
-  } finally {
-    await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 250 }).catch(() => undefined)
-  }
+/** S1/S2 shape: tamper the baseline copy, upgrade, expect a clean closure. */
+async function tamperAndUpgrade(baselineDir, tamper) {
+  await tamper(nodeExeOf(baselineDir))
+  await execFileP(uninstallerOf(baselineDir), ['/S'], { timeout: 300_000 })
+  const code = await silentInstall(currentInstaller, baselineDir)
+  if (code !== 0) throw new Error(`current installer exited ${String(code)}`)
+  await assertNodeMatchesManifest(baselineDir)
 }
 
+const root = await mkdtemp(join(tmpdir(), 'dsh-residue-matrix-'))
 const previous = await findOne(previousDir, name => name.endsWith('.exe'))
-const current = await findOne(currentDir, name => isCurrentInstaller(name, currentVersion, 'win32'))
+const currentInstaller = await findOne(currentDir, name => isCurrentInstaller(name, currentVersion, 'win32'))
+const golden = join(root, 'golden previous install')
+const scenariosRun = []
 
-await scenario('S1-corrupted-node-replaced', async root => {
-  const installDir = join(root, 'installed app')
-  await silentInstall(previous, installDir)
-  await corruptNodeExe(nodeExeOf(installDir))
-  await execFileP(uninstallerOf(installDir), ['/S'], { timeout: 300_000 })
-  const code = await silentInstall(current, installDir)
-  if (code !== 0) throw new Error(`current installer exited ${String(code)}`)
-  await assertNodeMatchesManifest(installDir)
-})
+try {
+  // One shared silent install of the previous release: every scenario works
+  // on a robocopy of this tree instead of reinstalling (~10s vs ~2min).
+  await silentInstall(previous, golden)
+  const defender = await defenderRealTimeProtection()
+  console.log(`residue matrix: Defender real-time protection: ${defender}`)
 
-await scenario('S2-readonly-node-replaced', async root => {
-  const installDir = join(root, 'installed app')
-  await silentInstall(previous, installDir)
-  await chmod(nodeExeOf(installDir), 0o444)
-  await execFileP(uninstallerOf(installDir), ['/S'], { timeout: 300_000 })
-  const code = await silentInstall(current, installDir)
-  if (code !== 0) throw new Error(`current installer exited ${String(code)}`)
-  await assertNodeMatchesManifest(installDir)
-})
+  let baseline = join(root, 'S1 baseline')
+  await cloneTree(golden, baseline)
+  await tamperAndUpgrade(baseline, corruptNodeExe)
+  scenariosRun.push('S1-corrupted-node-replaced')
+  console.log('residue matrix: S1-corrupted-node-replaced OK')
 
-await scenario('S3-locked-node-fails-explicitly', async root => {
-  const installDir = join(root, 'installed app')
+  baseline = join(root, 'S2 baseline')
+  await cloneTree(golden, baseline)
+  await tamperAndUpgrade(baseline, path => chmod(path, 0o444))
+  scenariosRun.push('S2-readonly-node-replaced')
+  console.log('residue matrix: S2-readonly-node-replaced OK')
+
+  baseline = join(root, 'S3 baseline')
+  await cloneTree(golden, baseline)
   await clearProbeLog()
-  await silentInstall(previous, installDir)
-  let holder = await holdNodeExe(nodeExeOf(installDir))
+  let holder = await holdNodeExe(nodeExeOf(baseline))
   try {
     // The locked file must survive the old uninstaller (RMDir /r skips it in
     // silent mode); verify the lock is really held right up to the upgrade.
-    await execFileP(uninstallerOf(installDir), ['/S'], { timeout: 300_000 })
-    const exists = await readFile(nodeExeOf(installDir)).then(() => true, () => false)
+    await execFileP(uninstallerOf(baseline), ['/S'], { timeout: 300_000 })
+    const exists = await readFile(nodeExeOf(baseline)).then(() => true, () => false)
     if (!exists) throw new Error('expected the locked node.exe to survive the old uninstaller (matrix precondition)')
-    if (!await isNodeLocked(nodeExeOf(installDir))) {
+    if (!await isNodeLocked(nodeExeOf(baseline))) {
       // The holder exited early: respawn once so the scenario tests the
       // installer instead of dying on a flaky fixture.
       await killHolder(holder)
-      holder = await holdNodeExe(nodeExeOf(installDir))
-      if (!await isNodeLocked(nodeExeOf(installDir))) {
+      holder = await holdNodeExe(nodeExeOf(baseline))
+      if (!await isNodeLocked(nodeExeOf(baseline))) {
         throw new Error('could not hold node.exe locked (holder exited twice)')
       }
     }
-    const code = await silentInstall(current, installDir)
+    const code = await silentInstall(currentInstaller, baseline)
     await dumpProbeLog('after upgrade attempt over the lock')
     if (code !== OCCUPIED_EXIT_CODE) {
       throw new Error(`installer over a locked closure exited ${String(code)}, expected ${OCCUPIED_EXIT_CODE}`)
@@ -182,9 +218,25 @@ await scenario('S3-locked-node-fails-explicitly', async root => {
   } finally {
     await killHolder(holder)
   }
-  const code = await silentInstall(current, installDir)
+  const code = await silentInstall(currentInstaller, baseline)
   if (code !== 0) throw new Error(`installer after releasing the holder exited ${String(code)}`)
-  await assertNodeMatchesManifest(installDir)
-})
+  await assertNodeMatchesManifest(baseline)
+  scenariosRun.push('S3-locked-node-fails-explicitly')
+  console.log('residue matrix: S3-locked-node-fails-explicitly OK')
 
-console.log('nsis residue matrix: OK (corrupted replaced, readonly replaced, lock fails explicitly)')
+  // S4: one more corrupted→upgraded cycle, meaningful as a repeat-under-AV
+  // pass when Defender real-time protection is active on the runner (T6).
+  if (defender === true) {
+    baseline = join(root, 'S4 baseline')
+    await cloneTree(golden, baseline)
+    await tamperAndUpgrade(baseline, corruptNodeExe)
+    scenariosRun.push('S4-second-pass-under-defender')
+    console.log('residue matrix: S4-second-pass-under-defender OK (Defender RT on)')
+  }
+} finally {
+  await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 250 }).catch(error => {
+    console.warn(`residue matrix: temporary cleanup skipped (${error?.code ?? 'unknown error'})`)
+  })
+}
+
+console.log(`nsis residue matrix: OK (${scenariosRun.join(', ')})`)

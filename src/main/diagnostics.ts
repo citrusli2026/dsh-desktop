@@ -5,7 +5,7 @@ import { appendFile, readFile } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
 import { basename, join } from 'node:path'
 import { atomicWriteFile } from './config-file.ts'
-import { verifyClosureManifest } from './closure-manifest.ts'
+import { closureRepairUrls, verifyClosureManifest } from './closure-manifest.ts'
 import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
 import { classifyPluginFailureCause, classifyRuntimeSpawnFailure, collectPluginFailures, inspectPluginInventory, type ComposedRow, type PluginInventory } from './safe-mode.ts'
@@ -142,6 +142,7 @@ function inventoryLines(inventory: PluginInventory | undefined): string[] {
 }
 
 export function formatDiagnosticReport(facts: DiagnosticFacts): string {
+  const repairLinks = closureRepairUrls(facts.appVersion, facts.platform, 'en')
   const lines = [
     '# dsh-desktop diagnostic report',
     `created_at=${facts.createdAt}`,
@@ -199,7 +200,10 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
           `problems=${facts.closureIntegrity.problemCount}`,
           ...facts.closureIntegrity.problems.map(problem => `- ${problem}`),
           ...(facts.closureIntegrity.problemCount > 0
-            ? ['hint=the install directory no longer matches the packaged manifest; reinstall from the full installer']
+            ? [
+                'hint=the install directory no longer matches the packaged manifest; reinstall from the full installer',
+                `repair=${repairLinks.primary} (${repairLinks.alt})`,
+              ]
             : []),
         ]),
     '',

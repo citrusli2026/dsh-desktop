@@ -12,6 +12,7 @@
 import { createHash } from 'node:crypto'
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
+import type { ShellLocale } from './locale.ts'
 
 /** The single manifest document, always at the resources dir root. */
 export const CLOSURE_MANIFEST_FILE = 'manifest.json'
@@ -168,4 +169,28 @@ export async function verifyClosureManifest(resourcesRoot: string): Promise<Clos
     problems,
     problemCount,
   }
+}
+
+/**
+ * Direct downloads of the installer matching the running app version and
+ * platform (the 8-asset contract names): GitHub internationally, GitCode for
+ * mainland China. The primary follows the UI locale so the default button is
+ * the fast path for the user at hand; both stay just one click away.
+ */
+export function closureRepairUrls(
+  appVersion: string,
+  platform: NodeJS.Platform,
+  locale: ShellLocale,
+): { primary: string; alt: string; asset: string } {
+  const asset = platform === 'win32'
+    ? `dsh-desktop-setup-${appVersion}.exe`
+    : platform === 'darwin'
+      ? `dsh-desktop-${appVersion}-arm64-mac.dmg`
+      : `dsh-desktop-${appVersion}-amd64.deb`
+  const tag = `v${appVersion}`
+  const github = `https://github.com/citrusli2026/dsh-desktop/releases/download/${tag}/${asset}`
+  const gitcode = `https://gitcode.com/citrusli2026/dsh-desktop/releases/download/${tag}/${asset}`
+  return locale === 'zh'
+    ? { primary: gitcode, alt: github, asset }
+    : { primary: github, alt: gitcode, asset }
 }

@@ -825,6 +825,7 @@ ipcMain.handle('desktop:health-check', async (event, raw: unknown) => {
     harnessRoot: harnessRoot(),
     mobileShellRoot: mobileShellRoot(),
     resourcesRoot: resourcesRoot(),
+    appVersion: app.getVersion(),
     dshHome: desktopDshHome(),
     userData: app.getPath('userData'),
     harnessState: shellApp.state,

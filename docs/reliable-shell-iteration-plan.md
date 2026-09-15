@@ -79,7 +79,7 @@
 
 | 能力 | 当前实现 |
 |---|---|
-| 开箱运行时 | bundled Node 22、固定 `@deepseek-ai/dsh` 闭包、无需 CLI/Node；默认独立 `~/.dsh-desktop` |
+| 开箱运行时 | bundled Node 24 LTS、固定 `@deepseek-ai/dsh` 闭包、无需 CLI/Node；默认独立 `~/.dsh-desktop` |
 | 基础桌面壳 | 原生窗口、托盘、菜单、单实例、关闭收托盘、窗口几何恢复、开机启动和启动后隐藏 |
 | 快速进入 | 可配置全局唤起快捷键、冲突不阻断启动、托盘/右键回退 |
 | 守护与恢复 | 进程监督、退避重启、错误页重试、Safe Mode、恢复中心、插件嫌疑提示、诊断导出 |
@@ -235,6 +235,22 @@
 发布载体：shell.11（W1–W4 为代码与打包变更，W2 需三平台闭包清单同步生效）；发布 run 34870003031 全绿，GitCode 镜像 6/6、官网数据已同步。按 §8 每轮完成标准执行：单测 + dev E2E + 打包冒烟 + `pnpm run verify` + release runbook；W1/W3 的 Windows 结论随发布 run 回填本节与分析文档。
 
 决策项（不在本轮范围，需用户拍板）：签名与公证重评估。Windows 占比 72% 后 SmartScreen 已是最大首装摩擦，§7 触发条件中"下载量"可论证已接近阈值（win 1125）；已有成本对比文档（`docs/windows-signing-cost-comparison.md` 等）。若决定启动，按 §7 要求单独建立发布基础设施计划，不混入本轮功能迭代。
+
+
+### 6.12 rc.2.shell.12+：Windows 修复闭环与门禁降本（下一轮，Windows 优先）
+
+> 规划日期：2026-09-15。依据：win 下载占比升至 74%（1521/2066）；shell.11 已交付占用拦截/属性清理/闭包清单/残留矩阵 S1–S3，但 **#39 类损坏的修复闭环仍靠用户手动重装**；Windows job 因残留矩阵涨到 ~29.5 分钟（mac ~10、ubuntu ~8）；T6 的 Defender 半边可能在 runner 上可自动化。上游 0.1.6-alpha.1 因漏发子包暂不可捆绑（#48/#49，巡检自动重试，不占本轮窗口；内核 bump 先行则随新基线带走过本轮改动）。签名仍为独立决策项。
+>
+> **交付状态（2026-09-15，随 v0.1.5-rc.2.shell.12 发布）**：X1–X4 全部落地——体检修复闭环（repairUrl 双线路 + 三步指引 + 诊断直链）、残留矩阵共享基线（robocopy）+ Defender 探测与 S4 条件轮、CI E2E 去护卫（观察轮，脚本保留）。门禁：282 单测、dev E2E 16/16、LAN 2/2、offline+real market、closure smoke、SAFE_BREAK 本地全绿。
+
+| ID | 功能点 | 修改方式 | 主要文件 | 验收 |
+|---|---|---|---|---|
+| X1 | 修复闭环：体检 → 一键重装引导 | 体检 runtime-integrity 失败时，动作从纯文案升级为可点击"获取重装包"：按平台与区域（GitCode 国内 / GitHub 国际）打开**当前版本安装包**直链，并展示三步重装浮层（关闭应用 → 覆盖安装 → 重新体检）；诊断报告追加直链与校验说明；仍不自动改写文件（决策 0031） | `src/main/health-check.ts`（结果结构加 `repairUrl`）、`plugins/dsh-desktop-controls/lib/client.js`、`src/main/diagnostics.ts`、site 文档 | 篡改场景下用户 ≤3 步到达正确安装包；中英文一致；链接不写死版本（读 site data） |
+| X2 | T6-lite：Defender 自动化 spike | 在 windows runner 探测 `Get-MpComputerStatus` 实时保护状态：开启 → 残留矩阵加 S4（同一环境连续 3 次升级循环，每轮清单校验）；关闭 → 书面确认 runner 镜像状态，T6 维持硬件绑定人工项 | `scripts/smoke-nsis-residue.mjs`、`docs/nsis-upgrade-residue-analysis.md` | S4 场景落地或书面结论二选一，分析文档 T6 行回填 |
+| X3 | guarded runner 退役观察 | verify job 的 dev E2E 与 packaged E2E 步骤改为直接 `playwright test`（去掉 `run-e2e-guarded.mjs` 包装），保留 Playwright 自身退出码判定；观察一个发布轮 | `.github/workflows/release.yml`、`.github/workflows/ci.yml` | shell.12 CI 全绿且无 teardown 挂起记录；下轮删脚本与 HANDOFF 二十节 workaround |
+| X4 | 残留矩阵降本 | S1/S2/S3 共享一次 previous 基线安装（目录树复制 ~10s 代替每次重装 ~4min），S3 保留独立锁序；目标 Windows job 回落 ≥8 分钟且场景覆盖不减 | `scripts/smoke-nsis-residue.mjs` | shell.12 Windows job ≤22 分钟，三场景仍全绿 |
+
+运维项（随轮次走，不单独立项）：#39/#33 巡检闭环继续；签名决策待用户启动（§7）。
 
 ## 7. 延后评估：签名与公证
 

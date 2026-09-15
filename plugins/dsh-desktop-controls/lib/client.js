@@ -564,6 +564,14 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-settings] [data-dsh-health-detail],
       [data-dsh-desktop-settings] [data-dsh-health-action] { color: var(--dsh-controls-muted); font-size: 11px; line-height: 1.45; }
       [data-dsh-desktop-settings] [data-dsh-health-action] { color: var(--dsh-controls-text); grid-column: 2; }
+      [data-dsh-desktop-settings] [data-dsh-health-repair] { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+      [data-dsh-desktop-settings] [data-dsh-health-repair] a {
+        color: var(--dsh-controls-accent, #4d6bfe); font-size: 12px; font-weight: 650;
+        text-decoration: none; padding: 4px 10px; border-radius: 999px;
+        border: 1px solid var(--dsh-controls-border); background: var(--dsh-controls-panel-muted);
+      }
+      [data-dsh-desktop-settings] [data-dsh-health-repair] a[data-dsh-health-repair-alt] { font-weight: 500; opacity: .85; }
+      [data-dsh-desktop-settings] [data-dsh-health-repair] small { color: var(--dsh-controls-muted); font-size: 11px; line-height: 1.45; width: 100%; }
       [data-dsh-desktop-settings] [data-dsh-desktop-advanced] {
         background: var(--dsh-controls-panel-muted);
         border: 1px solid var(--dsh-controls-border);
@@ -680,7 +688,7 @@ window.__ModuleLoader__.load({
         settingsTitle: "桌面设置", settingsCopy: "连接设备、调整桌面习惯；需要时可从这里体检、恢复或维护 Harness。",
         guideEyebrow: "第一次使用", guideTitle: "从这里开始", guideClose: "关闭首次使用引导", guideIntro: "无需先安装插件，完成下面四步即可开始。",
         guideRuntime: "运行环境就绪", guideWorkspace: "选择工作区", guideModel: "配置模型", guideTask: "完成第一条任务", guideDone: "完成", guidePending: "待完成", guideMarketOptional: "插件市场是可选项，不影响你先完成第一条任务。",
-        healthTitle: "运行体检", healthCopy: "检查运行环境、数据目录、Harness、本地连接、Profile 和插件状态。结果仅保留在本机并已脱敏，不上传，也不会自动修复文件。", healthRun: "开始体检", healthAgain: "重新体检", healthRunning: "检查中…", healthNetwork: "额外检查代理、registry 和更新源连通性（会发起网络请求）", healthOk: "正常", healthWarning: "警告", healthFailed: "失败",
+        healthTitle: "运行体检", healthCopy: "检查运行环境、数据目录、Harness、本地连接、Profile 和插件状态。结果仅保留在本机并已脱敏，不上传，也不会自动修复文件。", healthRun: "开始体检", healthAgain: "重新体检", healthRunning: "检查中…", healthNetwork: "额外检查代理、registry 和更新源连通性（会发起网络请求）", healthOk: "正常", healthWarning: "警告", healthFailed: "失败", healthRepairGet: "获取重装包", healthRepairAlt: "备用线路", healthRepairSteps: "① 完全退出 dsh-desktop（含托盘）→ ② 运行下载的安装包覆盖安装 → ③ 完成后重新体检",
         groupHabits: "桌面习惯", groupServices: "账户与插件", groupRecovery: "恢复", groupPlugins: "插件", groupOptional: "维护与迁移",
         lanSettings: "连接移动设备", lanSettingsDetail: "手机与电脑连接同一局域网，扫码即可进入 Harness Web 界面。",
         lanStart: "开始配对", lanShowQr: "显示二维码", lanStop: "停止共享", lanPanelDetail: "同一局域网 · 扫码进入 Harness", lanActiveDetail: "局域网入口已开启", lanStopDetail: "关闭当前局域网入口",
@@ -733,7 +741,7 @@ window.__ModuleLoader__.load({
         settingsTitle: "Desktop settings", settingsCopy: "Connect devices and tune desktop habits; inspect, recover, or maintain Harness when needed.",
         guideEyebrow: "FIRST RUN", guideTitle: "Start here", guideClose: "Dismiss first-run guide", guideIntro: "No plugin is required. Complete these four steps to get started.",
         guideRuntime: "Runtime ready", guideWorkspace: "Choose a workspace", guideModel: "Configure a model", guideTask: "Complete your first task", guideDone: "Done", guidePending: "To do", guideMarketOptional: "The plugin market is optional and never blocks your first task.",
-        healthTitle: "Run health check", healthCopy: "Checks the runtime, data folders, Harness, loopback, profile, and plugin state. Results stay local and sanitized; nothing is uploaded or repaired automatically.", healthRun: "Run check", healthAgain: "Run again", healthRunning: "Checking…", healthNetwork: "Also check proxy, registry, and update-source connectivity (sends network requests)", healthOk: "OK", healthWarning: "Warning", healthFailed: "Failed",
+        healthTitle: "Run health check", healthCopy: "Checks the runtime, data folders, Harness, loopback, profile, and plugin state. Results stay local and sanitized; nothing is uploaded or repaired automatically.", healthRun: "Run check", healthAgain: "Run again", healthRunning: "Checking…", healthNetwork: "Also check proxy, registry, and update-source connectivity (sends network requests)", healthOk: "OK", healthWarning: "Warning", healthFailed: "Failed", healthRepairGet: "Get the installer", healthRepairAlt: "Mirror link", healthRepairSteps: "① Quit dsh-desktop (also from the tray) → ② Run the downloaded installer over the existing install → ③ Run the health check again",
         groupHabits: "Desktop habits", groupServices: "Account & plugins", groupRecovery: "Recovery", groupPlugins: "Plugins", groupOptional: "Maintenance & migration",
         lanSettings: "Connect a mobile device", lanSettingsDetail: "Same LAN as the computer; scan the QR code to enter the Harness Web UI.",
         lanStart: "Start pairing", lanShowQr: "Show QR code", lanStop: "Stop sharing", lanPanelDetail: "Same LAN · scan to enter Harness", lanActiveDetail: "LAN access is active", lanStopDetail: "Close the current LAN entry point",
@@ -1222,6 +1230,11 @@ window.__ModuleLoader__.load({
               react_jsx_runtime.jsx("strong", { "data-dsh-health-label": true, children: result.label }),
               react_jsx_runtime.jsx("span", { "data-dsh-health-detail": true, children: result.detail }),
               result.action ? react_jsx_runtime.jsx("span", { "data-dsh-health-action": true, children: result.action }) : null,
+              result.repairUrl ? react_jsx_runtime.jsxs("span", { "data-dsh-health-repair": true, children: [
+                react_jsx_runtime.jsx("a", { "data-dsh-health-repair-link": true, href: result.repairUrl, target: "_blank", rel: "noreferrer", children: copy.healthRepairGet }),
+                result.repairUrlAlt ? react_jsx_runtime.jsx("a", { "data-dsh-health-repair-alt": true, href: result.repairUrlAlt, target: "_blank", rel: "noreferrer", children: copy.healthRepairAlt }) : null,
+                react_jsx_runtime.jsx("small", { children: result.repairSteps ?? copy.healthRepairSteps }),
+              ] }) : null,
             ] }, result.id)) }),
           ] }) : null,
           react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, "data-dsh-desktop-group": "habits", children: [

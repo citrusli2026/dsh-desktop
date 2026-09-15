@@ -9,6 +9,7 @@ import { bundledNodeHeaderLooksValid, runDesktopHealthCheck, sampleNodeHeader } 
 async function runtimeFixture(): Promise<{
   root: string
   resourcesRoot: string
+  appVersion: string
   harnessRoot: string
   mobileShellRoot: string
   dshHome: string
@@ -43,7 +44,7 @@ async function runtimeFixture(): Promise<{
     writeFile(join(dshHome, 'profiles', 'web', 'node_modules', 'example-plugin', 'cordis.patch.yml'), '- insert:\n    - id: example\n'),
   ])
   await chmod(join(harnessRoot, 'node', 'bin', process.platform === 'win32' ? 'node.exe' : 'node'), 0o755)
-  return { root, resourcesRoot: root, harnessRoot, mobileShellRoot, dshHome, userData }
+  return { root, resourcesRoot: root, appVersion: '0.1.5-rc.2.shell.12', harnessRoot, mobileShellRoot, dshHome, userData }
 }
 
 test('health check reports local runtime, storage, loopback, and optional market as healthy without leaking paths', async () => {
@@ -158,6 +159,7 @@ test('health check falls back to the cheap checks when no closure manifest exist
     })
     const runtime = report.results.find(result => result.id === 'runtime')
     assert.equal(runtime?.status, 'ok')
+    assert.equal(runtime?.repairUrl, undefined)
   } finally {
     await rm(fixture.root, { recursive: true, force: true })
   }
@@ -195,6 +197,12 @@ test('health check reports a sealed tree as ok and catches a manifest mismatch',
     assert.match(runtime?.detail ?? '', /modified, missing, or unexpected/)
     assert.match(runtime?.detail ?? '', /package\.json/)
     assert.match(runtime?.action ?? '', /Reinstall|whitelist|full installer/)
+    // The repair loop: direct installer downloads, GitHub primary for the en
+    // locale, GitCode as the alternate line, plus the localized steps.
+    assert.match(runtime?.repairUrl ?? '', /https:\/\/github\.com\/citrusli2026\/dsh-desktop\/releases\/download\/v0\.1\.5-rc\.2\.shell\.12\//)
+    assert.match(runtime?.repairUrl ?? '', /arm64-mac\.dmg$/)
+    assert.match(runtime?.repairUrlAlt ?? '', /https:\/\/gitcode\.com\//)
+    assert.match(runtime?.repairSteps ?? '', /health check again/)
     // No absolute fixture path may leak into the user-facing detail.
     assert.doesNotMatch(JSON.stringify(damaged), new RegExp(fixture.root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   } finally {

@@ -175,6 +175,7 @@ test('formatDiagnosticReport includes the closure integrity verdict and bounded 
   assert.match(damaged, /problems=3/)
   assert.match(damaged, /- changed harness\/node\/bin\/node\.exe/)
   assert.match(damaged, /hint=the install directory no longer matches the packaged manifest/)
+  assert.match(damaged, /repair=https:\/\/github\.com\/citrusli2026\/dsh-desktop\/releases\/download\/v0\.1\.5-rc\.2\.shell\.8\/dsh-desktop-setup-0\.1\.5-rc\.2\.shell\.8\.exe \(/)
 
   const dev = formatDiagnosticReport({
     createdAt: '2026-09-14T00:00:00.000Z',

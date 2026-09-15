@@ -2,7 +2,7 @@
 import { constants } from 'node:fs'
 import { access, open, readFile, stat, statfs } from 'node:fs/promises'
 import { join } from 'node:path'
-import { verifyClosureManifest, type ClosureIntegrityResult } from './closure-manifest.ts'
+import { verifyClosureManifest, closureRepairUrls, type ClosureIntegrityResult } from './closure-manifest.ts'
 import { dshBin, nodeBin } from './paths.ts'
 import { readProfileStatus } from './profile.ts'
 import { collectKernelCompatAdvisories, inspectPluginInventory, WEB_PROFILE } from './safe-mode.ts'
@@ -18,6 +18,12 @@ export interface DesktopHealthResult {
   label: string
   detail: string
   action?: string
+  /** Direct download of the matching installer for a broken install. */
+  repairUrl?: string
+  /** The other region's direct download (GitCode vs GitHub). */
+  repairUrlAlt?: string
+  /** Localized three-step reinstall overlay text. */
+  repairSteps?: string
 }
 
 export interface DesktopHealthReport {
@@ -37,6 +43,8 @@ export interface DesktopHealthCheckOptions {
   mobileShellRoot: string
   /** Packaged resources dir holding the closure integrity manifest. */
   resourcesRoot: string
+  /** Composite app version, used to deep-link the matching installer. */
+  appVersion: string
   dshHome: string
   userData: string
   harnessState: HarnessState | undefined
@@ -62,6 +70,7 @@ const COPY = {
     runtimeAction: '重新下载安装包完整重装；不要手动补写运行文件。',
     runtimeIntegrityFailed: (count: number, names: string) => `检测到 ${count} 个安装文件被改动、缺失或多余（如 ${names}），常见于升级残留或杀毒软件改写。`,
     runtimeIntegrityAction: '重新下载安装包完整重装；不要手动补写运行文件。若反复出现，请把安装目录加入杀毒软件白名单。',
+    repairSteps: '① 退出 dsh-desktop（含托盘）→ ② 运行下载的安装包覆盖安装 → ③ 完成后重新体检',
     storageOk: (free: string) => `两个数据目录可写 · 可用空间 ${free}`,
     storageWarn: (free: string) => `数据目录可写，但可用空间仅 ${free}。`,
     storageFailed: '数据目录不可写、不是目录，或磁盘空间严重不足。',
@@ -93,6 +102,7 @@ const COPY = {
     runtimeAction: 'Reinstall from the full installer; do not patch runtime files by hand.',
     runtimeIntegrityFailed: (count: number, names: string) => `${count} bundled file(s) were modified, missing, or unexpected (e.g. ${names}) — typically upgrade residue or antivirus rewrites.`,
     runtimeIntegrityAction: 'Reinstall from the full installer; do not patch runtime files by hand. If this repeats, whitelist the install folder in your antivirus.',
+    repairSteps: '① Quit dsh-desktop (also from the tray) → ② Run the downloaded installer over the existing install → ③ Run the health check again',
     storageOk: (free: string) => `Both data folders are writable · ${free} available`,
     storageWarn: (free: string) => `Data folders are writable, but only ${free} is available.`,
     storageFailed: 'A data path is not a writable directory, or disk space is critically low.',
@@ -255,10 +265,14 @@ export async function runDesktopHealthCheck(options: DesktopHealthCheckOptions):
   if (!runtimeReady) {
     results.push({ id: 'runtime', status: 'failed', label: copy.runtime, detail: copy.runtimeFailed, action: copy.runtimeAction })
   } else if (integrity.status !== 'ok' && integrity.status !== 'missing-manifest') {
+    const urls = closureRepairUrls(options.appVersion, process.platform, options.locale)
     results.push({
       id: 'runtime', status: 'failed', label: copy.runtime,
       detail: copy.runtimeIntegrityFailed(integrity.problemCount, summarizeIntegrityProblems(integrity)),
       action: copy.runtimeIntegrityAction,
+      repairUrl: urls.primary,
+      repairUrlAlt: urls.alt,
+      repairSteps: copy.repairSteps,
     })
   } else {
     results.push({ id: 'runtime', status: 'ok', label: copy.runtime, detail: copy.runtimeOk(harnessVersion) })

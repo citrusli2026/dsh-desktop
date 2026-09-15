@@ -121,6 +121,9 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /includeNetwork: healthNetwork/)
   assert.match(client, /data-dsh-health-network/)
   assert.match(client, /data-dsh-health-result/)
+  assert.match(client, /data-dsh-health-repair/)
+  assert.match(client, /result\.repairUrl/)
+  assert.match(client, /healthRepairGet/)
   assert.match(client, /nothing is uploaded or repaired automatically/)
 
   const preload = await readFile(resolve('src/preload/index.ts'), 'utf8')
