@@ -42,7 +42,7 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
-  <h2>v0.1.5-rc.2.shell.12 <small>（内核 0.1.5-rc.2）</small></h2>
+  <h2>v0.1.5-rc.2.shell.13 <small>（内核 0.1.5-rc.2）</small></h2>
   <ul>
     <li><strong>修复闭环</strong>：运行体检检出安装损坏时，结果直接附「获取重装包」按钮——按平台与线路（国内 GitCode / 国际 GitHub）一键直达<strong>与你当前版本完全一致</strong>的安装包下载，并附三步重装指引（退出应用 → 覆盖安装 → 重新体检）；另一条线路作为备用链接并列展示。「导出诊断报告」同步附上直链，贴到 issue 即可定位。</li>
     <li><strong>升级矩阵更严也更快</strong>：残留矩阵三个场景改为共享一次基线安装（目录复制代替重复安装），Windows 构建时间明显回落；当检测到构建环境开启 Defender 实时保护时，自动追加一轮&quot;杀软干扰下损坏→升级&quot;重复验证（S4）。</li>
