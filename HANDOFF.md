@@ -1633,7 +1633,7 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 4. **X4 共享基线（结论：回退，重要发现）**：三场景共享一次基线安装（robocopy 复制 ~10s 替代 ~2min 重装）在 S2 失败——**NSIS 卸载器编译期内嵌安装目录**，复制树里的 `Uninstall dsh-desktop.exe` 删除的是源目录（golden 被清空 → 后续克隆残缺）。安装树不可克隆用于卸载器类测试；`/_?=` 重定向有引号解析风险不采用。已回退逐场景真实安装，Windows job 回落至 ~23.6 分钟（29.5→23.6，含 Defender 探测与矩阵）；发现录入 `docs/nsis-upgrade-residue-analysis.md`。
 5. **发布链（审计）**：shell.12（verify 挂：repair-URL 测试在 linux runner 断言 mac 资产名——按运行平台断言修复）；shell.13（verify 挂：X3 观察轮 CI teardown 挂起——回退护卫）；shell.14 首推（X4 共享基线 S2 ENOENT——回退共享）；误触发的 `v0.1.5-rc.2.shell.15` tag（链条错误，无 run、无版本污染）已从双远端删除。最终 `v0.1.5-rc.2.shell.14` → `202dd16`（peeled 对齐），经 workflow_dispatch 于 tag ref 触发，run `34981999577` **verify + 三平台 build + publish 全绿**：8 资产契约、attestation、残留矩阵 S1–S3 全绿、Defender 探测记录。
 6. **本地门禁**：282 单测、verify 全绿、dev E2E 16/16、LAN 2/2、offline+real market（real 首轮遇 registry 网络瞬断，复跑 2/2）、closure smoke（干净+篡改）、SAFE_BREAK 两阶段。
-7. **镜像与官网**：<待镜像完成后回填>
+7. **镜像与官网**：GitCode 镜像 sha256×3 由 backfill 自动先落；三个安装包经 backfill run `34985034876`（约 100 分钟跨境传输）完成后 6/6 Range GET 在线；官网 `site/data/release.json` 指向 shell.14（生成器对 GitHub 统计请求两次连接超时后写盘，gitcode_ok 6/6 以本机 Range GET 实测补齐），`site:check` 与 `check-api-downloads` ALL PASS。生成时累计 2233（win 1653 / mac 321 / linux 259，52 个版本）。
 
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.14>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.14>；
