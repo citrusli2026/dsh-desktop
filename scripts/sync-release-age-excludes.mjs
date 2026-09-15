@@ -19,9 +19,49 @@ if (!NEW) {
 const file = 'manifest/harness/pnpm-workspace.yaml'
 const src = readFileSync(file, 'utf8')
 const dshPin = /^  - '(@deepseek-ai\/dsh(?:-[^@']+)?)@[^']+'$/
+
+// A pin must reference a version the registry actually serves: not every
+// dsh-* package publishes every kernel release (e.g.
+// dsh-client-ui-sidebar-documentpreview skipped 0.1.6-alpha.1), and an
+// exclude pointing at a nonexistent version breaks `pnpm install
+// --lockfile-only` outright. Rewrite only packages whose registry metadata
+// contains the new version; leave the rest at their resolved old pin.
+async function publishedVersion(pkg) {
+  try {
+    const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(pkg)}`, {
+      signal: AbortSignal.timeout(20_000),
+      headers: { accept: 'application/json' },
+    })
+    if (!response.ok) return undefined
+    const body = await response.json()
+    return typeof body.versions?.[NEW] === 'string' || body.versions?.[NEW] != null ? NEW : undefined
+  } catch {
+    return undefined
+  }
+}
+
+const globalDshPin = new RegExp(dshPin.source, 'gm')
+const packages = [...new Set([...src.matchAll(globalDshPin)].map((match) => match[1]))]
+const availability = new Map()
+for (const pkg of packages) availability.set(pkg, await publishedVersion(pkg))
+const rewritten = new Set([...availability].filter(([, has]) => has === NEW).map(([pkg]) => pkg))
+
+// For packages that did NOT publish NEW, the pin must carry the version the
+// closure actually resolves — taken from the current lockfile, not from the
+// workspace file (a previous blind run may have corrupted the line to a
+// version the registry never served).
+const lockfileSrc = readFileSync('manifest/harness/pnpm-lock.yaml', 'utf8')
+const resolved = new Map()
+for (const match of lockfileSrc.matchAll(/^  '?(@deepseek-ai\/[^'\s:]+)@([^'(:\s]+)/gm)) {
+  if (!resolved.has(match[1])) resolved.set(match[1], match[2])
+}
+
 const replacedLines = src.split('\n').map((line) => {
   const match = dshPin.exec(line)
-  return match === null ? line : `  - '${match[1]}@${NEW}'`
+  if (match === null) return line
+  if (rewritten.has(match[1])) return `  - '${match[1]}@${NEW}'`
+  const resolvedVersion = resolved.get(match[1])
+  return resolvedVersion === undefined ? line : `  - '${match[1]}@${resolvedVersion}'`
 })
 const replaced = replacedLines.join('\n')
 
@@ -44,4 +84,5 @@ writeFileSync(file, out.join('\n'))
 
 const before = src.split('\n').filter(line => dshPin.test(line)).length
 const after = replaced.split('\n').filter(line => line.endsWith(`@${NEW}'`) && dshPin.test(line)).length
-console.log(`sync-release-age-excludes: dsh pins -> @${NEW} (${before} -> ${after} pinned entries)`)
+const kept = packages.length - rewritten.size
+console.log(`sync-release-age-excludes: dsh pins -> @${NEW} (${before} -> ${after} pinned entries; ${kept} kept at their resolved version from the lockfile)`)
