@@ -45,7 +45,7 @@
   <h2>v0.1.5-rc.2.shell.14 <small>（kernel 0.1.5-rc.2）</small></h2>
   <ul>
     <li>Repair loop: when the health check detects a damaged install, the result now ships a &quot;Get the installer&quot; button that deep-links the exact-version installer for your platform (GitCode for mainland China, GitHub internationally) plus a three-step reinstall guide; the diagnostics export carries the same links.</li>
-    <li>The NSIS residue matrix shares one baseline install (robocopy instead of repeated installs), cutting Windows build time; when Defender real-time protection is detected, an extra corrupted→upgraded repeat pass (S4) runs automatically.</li>
+    <li>The NSIS residue matrix now records the build environment's Defender real-time-protection state and runs an extra corrupted→upgraded pass (S4) only when protection is on. (A baseline-sharing optimization was reverted: NSIS uninstallers embed their install directory, so install trees cannot be cloned for uninstaller-based tests.)</li>
     <li>CI keeps the guarded E2E runner: a worker-teardown hang reproduced once more on the Linux runner under Playwright 1.63, so the retirement is postponed (local macOS runs stay clean). Bundled kernel unchanged at 0.1.5-rc.2; no new permissions; the health check stays read-only and local.</li>
   </ul>
 
