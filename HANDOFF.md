@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.5-rc.2.shell.14`（2026-09-15 已发布；内核 `0.1.5-rc.2`；Electron 44.3.0 + Node 24.21.0 + pnpm 10.33.2） |
-| 已发布 | ✅ `0.1.5-rc.2.shell.14`（三端 dmg/exe/deb；Windows 修复闭环 + Defender 感知矩阵；shell.12/.13 失败 tag 保留审计，shell.15 误触 tag 已删除） |
-| 本地门禁 | ✅ 282 项单测、类型检查、runtime/site、安全审计、构建全绿；dev E2E 16/16、闭包 smoke（干净+篡改）、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
-| 核心发布 | ✅ `v0.1.5-rc.2.shell.14` Release run `34981999577` 全绿：8 文件契约、attestation、三平台跨版本数据保留、闭包清单 smoke、NSIS 残留矩阵（损坏/只读/占用 + Defender 探测）、Harness 真渲染、Safe Mode 故障注入 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.11`（6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.5-rc.2.shell.11` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `ede3942`） |
-| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1566（48 个版本） |
+| 最新代码基线 | ✅ `0.1.6-alpha.1.shell.0`（2026-09-15 已发布；内核 `0.1.6-alpha.1`；Electron 44.3.0 + Node 24.21.0 + pnpm 10.33.2） |
+| 已发布 | ✅ `0.1.6-alpha.1.shell.0`（三端 dmg/exe/deb；内核升级；shell.12/.13 失败 tag 保留审计，shell.15 误触 tag 已删除） |
+| 本地门禁 | ✅ 283 项单测、类型检查、runtime/site、安全审计（双树 0 漏洞）、构建全绿；dev E2E 16/16、闭包 smoke（干净+篡改）、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
+| 核心发布 | ✅ `v0.1.6-alpha.1.shell.0` Release run `34995792261` 全绿：8 文件契约、attestation、三平台跨版本数据保留、闭包清单 smoke、NSIS 残留矩阵、Harness 真渲染、Safe Mode 故障注入 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.6-alpha.1.shell.0`（6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.6-alpha.1.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `9783275`；shell.14 镜像已补齐） |
+| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1566+（49 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1638,3 +1638,17 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.14>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.14>；
 官网：<https://dsh-desktop.com>。
+
+## 57. v0.1.6-alpha.1.shell.0 内核升级发布（2026-09-15 巡检）
+
+#48 断链解除（上游补发 documentpreview@0.1.6-alpha.1）后,巡检路径完成本机第二次内核升级发布。
+
+1. **发版阻断与修复（两个壳工具缺陷,均由本轮首次真实内核升级暴露）**:
+   - `version.mjs bump dsh` 的 31 个 peer pin 同步**只发生在内存、从未写盘**——`synced !== manifest.dependencies` 恒为 false（同步函数返回同一对象引用）。后果:manifest 里 `dsh-attachment` 停在 `^0.1.5-rc.2`,顶层提升旧副本,新内核包加载时 `longEdgeDimensions` 导出缺失,三冒烟全挂。修复:按 JSON 值比较判定写盘 + 别名契约回归测试。
+   - 盲改范围会为未随内核发版的包(`dsh-code-runtime` 等 10 个)写出注册表不存在的版本,直接炸 lockfile 解析。修复:peer 同步注册表感知(kernel-peers 新增 `fetchPublishedVersion`/`resolvedVersionsFromLockfile`),未发新版的包钉在解析版本。
+2. **闭包**:新 peer `@deepseek-ai/dsh-ptc-runtime@^0.1.6-alpha.1` 加入 manifest(audit-harness-peers 指认);attachment 解析 0.1.6-alpha.1、code-runtime 等保持 0.1.5-rc.2,无版本倾斜。
+3. **本地门禁**:283 单测、双树审计归零、dev E2E 16/16、dist:dir(闭包探针确认 attachment 0.1.6-alpha.1)、三冒烟(含 SAFE_BREAK)、market offline+real、LAN QR 2/2。AVD:模拟器不在环,跳过(记录)。
+4. **发布**:tag `v0.1.6-alpha.1.shell.0` → `9783275`;Release run `34995792261` verify + 三平台 build + publish 全绿,8 资产 + attestation;GitCode 镜像 6/6(冗余 backfill `34998304620` 已取消)。
+5. **官网**:site-refresh bot 提交遇 push 竞态失败(run `34998312212`,rebase 冲突);按 runbook 本地 gen-site-data 重新生成并推送(`f347948`),线上 6/6 `gitcode_ok=true`。
+6. **杂项**:补完 shell.14 的 GitCode 镜像(初时 3/6 → 6/6);#48-52 已回复并关闭;#33/#39 继续等待外部反馈。
+
