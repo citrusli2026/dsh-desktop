@@ -84,6 +84,13 @@ asar 内的 `lib/**` 由安装器整体替换，风险最低；deb 升级由 dpk
 | T5 | 卸载重装保留 userData | ✅ CI `smoke-upgrade.mjs`（卸载→重装，userData 逐文件断言） | release.yml 三平台 |
 | T6 | 第三方 AV 干扰反复升级 | ⏸ 人工项（无 Windows 真机/可控第三方 AV）；GitHub runner 只有 Defender | 待 Windows 硬件 |
 
+
+矩阵实现注记（2026-09-15，shell.15）：曾尝试三场景共享一次基线安装（robocopy
+复制安装树，~10s 替代 ~2min 重装），失败——**NSIS 卸载器在编译期内嵌安装目录**，
+复制树里的 `Uninstall dsh-desktop.exe` 删除的是源目录（golden 被清空，后续克隆
+残缺）。安装树因此不可克隆用于卸载器类测试；`/_?=` 重定向有引号解析风险，不再
+尝试。另：GitHub windows runner 的 Defender 实时保护为 **false**（脚本探测，
+S4 仅在检测到 RT=true 时运行），T6 的 AV 半边维持硬件绑定人工项。
 执行环境要求：T6 需 Windows 10/11 x64 实机或快照 VM + 可控第三方 AV；执行后把
 结果回填本表并在 HANDOFF 记录。闭包清单的篡改检测另有三平台打包冒烟
 （`DSH_SMOKE_CLOSURE=1`：干净树 status=ok + 篡改后 status=changed）。
