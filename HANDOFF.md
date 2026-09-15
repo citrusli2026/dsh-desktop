@@ -9,10 +9,10 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.5-rc.2.shell.11`（2026-09-14 已发布；内核 `0.1.5-rc.2`；Electron 44.3.0 + Node 24.21.0 + pnpm 10.33.2） |
-| 已发布 | ✅ `0.1.5-rc.2.shell.11`（三端 dmg/exe/deb；Windows 安装保真 + 闭包完整性清单 + NSIS 残留矩阵；shell.8/.9/.10 失败 tag 保留审计） |
-| 本地门禁 | ✅ 281 项单测、类型检查、runtime/site、安全审计、构建全绿；dev E2E 16/16（Playwright 1.63）、闭包 smoke（干净+篡改）、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
-| 核心发布 | ✅ `v0.1.5-rc.2.shell.11` Release run `34870003031` 全绿：8 文件契约、attestation、三平台跨版本数据保留、闭包清单 smoke、NSIS 残留矩阵（损坏/只读/占用）、Harness 真渲染、Safe Mode 故障注入 |
+| 最新代码基线 | ✅ `0.1.5-rc.2.shell.14`（2026-09-15 已发布；内核 `0.1.5-rc.2`；Electron 44.3.0 + Node 24.21.0 + pnpm 10.33.2） |
+| 已发布 | ✅ `0.1.5-rc.2.shell.14`（三端 dmg/exe/deb；Windows 修复闭环 + Defender 感知矩阵；shell.12/.13 失败 tag 保留审计，shell.15 误触 tag 已删除） |
+| 本地门禁 | ✅ 282 项单测、类型检查、runtime/site、安全审计、构建全绿；dev E2E 16/16、闭包 smoke（干净+篡改）、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
+| 核心发布 | ✅ `v0.1.5-rc.2.shell.14` Release run `34981999577` 全绿：8 文件契约、attestation、三平台跨版本数据保留、闭包清单 smoke、NSIS 残留矩阵（损坏/只读/占用 + Defender 探测）、Harness 真渲染、Safe Mode 故障注入 |
 | 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.5-rc.2.shell.11`（6 个用户资产 `gitcode_ok=true`） |
 | 国内镜像 | ✅ `v0.1.5-rc.2.shell.11` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `ede3942`） |
 | 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1566（48 个版本） |
@@ -1621,3 +1621,20 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 2. **修复与验证**：`be5c54d` 修正两处探测路径；main dispatch `34867393144` 三场景矩阵全绿（S3 首次以退出码 5 显式失败 + 释放后重装成功）；本地门禁 282 单测、dev E2E 16/16、双冒烟 + Safe Mode 注入、market offline+real、LAN QR 全绿。
 3. **发布**：tag `v0.1.5-rc.2.shell.11` → `ede3942`（peeled 双端一致）；Release run `34870003031` verify + 三平台 build + publish 全绿，8 资产 + attestation；GitCode 镜像 6/6（backfill 先落 sha256，本机补齐安装包，冗余 backfill `34873874135` 已取消）；Site Data Refresh `34873594392` 后官网 6/6 `gitcode_ok=true`。失败 tag shell.8/9/10 双远端保留审计。
 4. **运维提示**：electron-builder 对 `build/installer.nsh` 的默认约定加载是生效路径（显式 `nsis.include` 会被 getResource 静默跳过）；NSIS `IntCmp a b eq jt jg` 第三参数才是相等跳转——占位 0 表示直落，排查门逻辑时勿按 if/else 直觉读。
+
+
+## 56. rc.2.shell.14 Windows 修复闭环 + 门禁观察轮（2026-09-15）
+
+按 `docs/reliable-shell-iteration-plan.md` §6.12 交付。上游 0.1.6-alpha.1 因漏发 `dsh-client-ui-sidebar-documentpreview` 暂不可捆绑（#48/#49，巡检自动重试，`sync-release-age-excludes.mjs` 盲改缺陷已由巡检侧修复），内核维持 0.1.5-rc.2。
+
+1. **X1 修复闭环**：体检 runtime-integrity 失败时结果携带 `repairUrl/repairUrlAlt/repairSteps`——按平台与线路直链**当前版本**安装包（zh 主 GitCode、en 主 GitHub），桌面控件插件渲染「获取重装包/备用线路」按钮与三步重装指引（外链经 setWindowOpenHandler 走系统浏览器）；诊断报告 Closure integrity 小节附 `repair=` 直链。`closureRepairUrls` 落在 `closure-manifest.ts`（健康检查与诊断共用）。
+2. **X2 Defender 探测**：残留矩阵运行时探测 `Get-MpComputerStatus().RealTimeProtectionEnabled` 并记录；仅当 RT=true 时追加 S4 二次"损坏→升级"验证。实测 GitHub windows runner **RT=false**，S4 在 CI 不触发；T6 的 AV 半边维持硬件绑定人工项（分析文档已回填）。
+3. **X3 去护卫观察（结论：回退）**：CI E2E 一度改为直接 Playwright——本地 macOS 1.63 三连跑干净，但 **CI Linux worker teardown 挂起复现**（45s 超时，shell.13 verify 实测）。三处 CI 步骤已回退 guarded runner；退役搁置至根因消除或 Playwright 后续版本，脚本保留。
+4. **X4 共享基线（结论：回退，重要发现）**：三场景共享一次基线安装（robocopy 复制 ~10s 替代 ~2min 重装）在 S2 失败——**NSIS 卸载器编译期内嵌安装目录**，复制树里的 `Uninstall dsh-desktop.exe` 删除的是源目录（golden 被清空 → 后续克隆残缺）。安装树不可克隆用于卸载器类测试；`/_?=` 重定向有引号解析风险不采用。已回退逐场景真实安装，Windows job 回落至 ~23.6 分钟（29.5→23.6，含 Defender 探测与矩阵）；发现录入 `docs/nsis-upgrade-residue-analysis.md`。
+5. **发布链（审计）**：shell.12（verify 挂：repair-URL 测试在 linux runner 断言 mac 资产名——按运行平台断言修复）；shell.13（verify 挂：X3 观察轮 CI teardown 挂起——回退护卫）；shell.14 首推（X4 共享基线 S2 ENOENT——回退共享）；误触发的 `v0.1.5-rc.2.shell.15` tag（链条错误，无 run、无版本污染）已从双远端删除。最终 `v0.1.5-rc.2.shell.14` → `202dd16`（peeled 对齐），经 workflow_dispatch 于 tag ref 触发，run `34981999577` **verify + 三平台 build + publish 全绿**：8 资产契约、attestation、残留矩阵 S1–S3 全绿、Defender 探测记录。
+6. **本地门禁**：282 单测、verify 全绿、dev E2E 16/16、LAN 2/2、offline+real market（real 首轮遇 registry 网络瞬断，复跑 2/2）、closure smoke（干净+篡改）、SAFE_BREAK 两阶段。
+7. **镜像与官网**：<待镜像完成后回填>
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.14>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2.shell.14>；
+官网：<https://dsh-desktop.com>。
