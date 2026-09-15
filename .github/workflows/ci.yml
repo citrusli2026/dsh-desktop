@@ -39,10 +39,7 @@ jobs:
         env:
           ELECTRON_DISABLE_SANDBOX: "1"
       - name: Electron shell E2E (native menu, locale sync, close-to-tray)
-        # Guarded runner retired on an observation basis since shell.12:
-        # Playwright 1.63 no longer hangs at worker teardown (HANDOFF §55);
-        # the script stays for a quick revert if a hang ever reappears.
-        run: xvfb-run -a pnpm exec playwright test
+        run: xvfb-run -a node scripts/run-e2e-guarded.mjs
         env:
           ELECTRON_DISABLE_SANDBOX: "1"
       - name: Upload Electron E2E diagnostics
