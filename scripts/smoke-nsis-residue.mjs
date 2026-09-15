@@ -3,8 +3,10 @@
  * #39 family): proves that a deliberately damaged, read-only, or locked
  * bundled node.exe cannot silently survive an upgrade.
  *
- * Scenarios (each on a copy of one shared silent install of the previous
- * release — a ~10s robocopy instead of a ~2min reinstall per scenario):
+ * Scenarios (each on its own real silent install of the previous release:
+ * NSIS uninstallers embed their install directory at compile time, so a
+ * copied tree's uninstaller deletes the SOURCE directory — install trees
+ * cannot be cloned for uninstaller-based tests):
  *  S1 corrupted + future-mtime node.exe must be replaced (hash == manifest).
  *  S2 read-only node.exe must be removed by the upgrade (the new installer's
  *     attribute clear in .onInit unblocks the old uninstaller's RMDir /r).
@@ -19,7 +21,7 @@
  */
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { chmod, cp, mkdtemp, open, readFile, readdir, rm, utimes } from 'node:fs/promises'
+import { chmod, mkdtemp, open, readFile, readdir, rm, utimes } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -50,21 +52,6 @@ function silentInstall(installer, installDir) {
     child.once('error', error => { clearTimeout(timer); reject(error) })
     child.once('exit', code => { clearTimeout(timer); resolveCode(code ?? -1) })
   })
-}
-
-/** Copy one installed tree to a fresh baseline. robocopy parallelises and is
- *  ~10s for the ~400MB tree; plain cp is the portable fallback. robocopy
- *  exit codes 0-7 are success grades, >=8 is a failure. */
-async function cloneTree(from, to) {
-  if (process.platform === 'win32') {
-    await execFileP('robocopy', [from, to, '/E', '/NFL', '/NDL', '/NJH', '/NJS', '/NP'], { timeout: 300_000 })
-      .catch(error => {
-        // execFile rejects on non-zero exit; robocopy uses 0-7 for success.
-        if ((error.code ?? 8) >= 8) throw error
-      })
-    return
-  }
-  await cp(from, to, { recursive: true })
 }
 
 /** Defender real-time protection state for the T6 record: true / false /
@@ -157,7 +144,9 @@ async function isNodeLocked(path) {
   return false
 }
 
-/** S1/S2 shape: tamper the baseline copy, upgrade, expect a clean closure. */
+/** S1/S2 shape: tamper the freshly installed tree, upgrade, expect a clean
+ *  closure. `baselineDir` must hold a REAL previous install (see the header:
+ *  copies would aim the embedded-path uninstaller at the source). */
 async function tamperAndUpgrade(baselineDir, tamper) {
   await tamper(nodeExeOf(baselineDir))
   await execFileP(uninstallerOf(baselineDir), ['/S'], { timeout: 300_000 })
@@ -169,31 +158,27 @@ async function tamperAndUpgrade(baselineDir, tamper) {
 const root = await mkdtemp(join(tmpdir(), 'dsh-residue-matrix-'))
 const previous = await findOne(previousDir, name => name.endsWith('.exe'))
 const currentInstaller = await findOne(currentDir, name => isCurrentInstaller(name, currentVersion, 'win32'))
-const golden = join(root, 'golden previous install')
 const scenariosRun = []
 
 try {
-  // One shared silent install of the previous release: every scenario works
-  // on a robocopy of this tree instead of reinstalling (~10s vs ~2min).
-  await silentInstall(previous, golden)
   const defender = await defenderRealTimeProtection()
   console.log(`residue matrix: Defender real-time protection: ${defender}`)
 
   let baseline = join(root, 'S1 baseline')
-  await cloneTree(golden, baseline)
+  await silentInstall(previous, baseline)
   await tamperAndUpgrade(baseline, corruptNodeExe)
   scenariosRun.push('S1-corrupted-node-replaced')
   console.log('residue matrix: S1-corrupted-node-replaced OK')
 
   baseline = join(root, 'S2 baseline')
-  await cloneTree(golden, baseline)
+  await silentInstall(previous, baseline)
   await tamperAndUpgrade(baseline, path => chmod(path, 0o444))
   scenariosRun.push('S2-readonly-node-replaced')
   console.log('residue matrix: S2-readonly-node-replaced OK')
 
   baseline = join(root, 'S3 baseline')
-  await cloneTree(golden, baseline)
   await clearProbeLog()
+  await silentInstall(previous, baseline)
   let holder = await holdNodeExe(nodeExeOf(baseline))
   try {
     // The locked file must survive the old uninstaller (RMDir /r skips it in
@@ -228,7 +213,7 @@ try {
   // pass when Defender real-time protection is active on the runner (T6).
   if (defender === true) {
     baseline = join(root, 'S4 baseline')
-    await cloneTree(golden, baseline)
+    await silentInstall(previous, baseline)
     await tamperAndUpgrade(baseline, corruptNodeExe)
     scenariosRun.push('S4-second-pass-under-defender')
     console.log('residue matrix: S4-second-pass-under-defender OK (Defender RT on)')
