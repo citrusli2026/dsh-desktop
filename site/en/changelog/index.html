@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.6-alpha.1.shell.0 <small>（kernel 0.1.6-alpha.1）</small></h2>
+  <ul>
+    <li>Kernel bump: bundled <code>@deepseek-ai/dsh</code> locked to <code>0.1.6-alpha.1</code> (previous 0.1.5-rc.2); shell revision reset to 0. See the <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">official upstream release notes</a> for kernel changes.</li>
+    <li>Upstream completed the missing <code>dsh-client-ui-sidebar-documentpreview@0.1.6-alpha.1</code> publish (issue #48); the new <code>dsh-ptc-runtime</code> peer joined the closure, and packages that did not ship a 0.1.6-alpha.1 build stay at their resolved versions to prevent version skew. A shell tooling fix now persists kernel peer-pin syncs (they previously lived only in memory) and checks registry availability before rewriting ranges.</li>
+    <li>Desktop shell unchanged. If a community plugin is incompatible with the new kernel, the error page offers one-click Update / Disable recovery.</li>
+  </ul>
+
   <h2>v0.1.5-rc.2.shell.14 <small>（kernel 0.1.5-rc.2）</small></h2>
   <ul>
     <li>Repair loop: when the health check detects a damaged install, the result now ships a &quot;Get the installer&quot; button that deep-links the exact-version installer for your platform (GitCode for mainland China, GitHub internationally) plus a three-step reinstall guide; the diagnostics export carries the same links.</li>
@@ -91,13 +98,6 @@
     <li>Deletion interception is user-controllable from Desktop settings; toggling it restarts Harness so the hook patch is applied or removed.</li>
     <li>Supervisor spawn errors after readiness enter the normal restart budget instead of silently stopping.</li>
     <li>Trash index parsing rejects unsafe ids/paths, and public docs now match the actual trash scope.</li>
-  </ul>
-
-  <h2>v0.1.5-rc.2.shell.2 <small>（kernel 0.1.5-rc.2）</small></h2>
-  <ul>
-    <li>Makes Safe Mode recovery deterministic: crash-time plugin suspects are persisted and drive the disable patch even when the harness crashed before writing the profile manifest.</li>
-    <li>Classifies plugin-vs-kernel API crashes so the error page gives the right guidance instead of a bare error.</li>
-    <li>The one-click health check now validates the bundled Node executable's integrity, and runtime spawn failures get an explicit reinstall hint on the error page and in the diagnostics report.</li>
   </ul>
   <!-- changelog:auto:end -->
 
