@@ -157,8 +157,11 @@ test('desktop controls mount links the complete package into the profile lookup 
     await writeFile(join(packageDir, 'lib', 'client.js'), '/* client */\n')
     const patch = prepareDesktopControlsMount(home, harness)
     assert.equal(patch, desktopControlsPatchPath(harness))
+    // Both anchors are linked: the profile-dir anchor serves the 0.1.6-alpha.2+
+    // resolution generation, the profiles-level anchor serves older kernels.
+    assert.equal(await lstat(join(home, 'profiles', 'web', 'node_modules', 'dsh-desktop-controls')).then(stat => stat.isSymbolicLink()), true)
     assert.equal(await lstat(join(home, 'profiles', 'node_modules', 'dsh-desktop-controls')).then(stat => stat.isSymbolicLink()), true)
-    assert.equal(await readFile(join(home, 'profiles', 'node_modules', 'dsh-desktop-controls', 'lib', 'client.js'), 'utf8'), '/* client */\n')
+    assert.equal(await readFile(join(home, 'profiles', 'web', 'node_modules', 'dsh-desktop-controls', 'lib', 'client.js'), 'utf8'), '/* client */\n')
   } finally {
     await rm(home, { recursive: true, force: true })
     await rm(harness, { recursive: true, force: true })

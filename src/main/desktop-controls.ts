@@ -16,30 +16,40 @@ export function desktopControlsPatchPath(harnessDir: string): string {
 /**
  * Make the bundled package resolvable from the profile-local loader lookup.
  * A user-managed real package always wins; only a missing or stale symlink is
- * repaired. This mirrors dsh's profile resolution without modifying the
- * user's installed plugin configuration.
+ * repaired. Two anchors are maintained: the profile directory itself
+ * (`profiles/<name>/node_modules`, resolved by the 0.1.6-alpha.2+ profile
+ * resolution generation and by plain walk-up) and the legacy profiles-level
+ * link (`profiles/node_modules`, still used by older kernels reachable via
+ * kernel-restore). This mirrors dsh's profile resolution without modifying
+ * the user's installed plugin configuration.
  */
-function ensureProfileModuleLink(dshHome: string, harnessDir: string): void {
+function ensureProfileModuleLinks(dshHome: string, harnessDir: string): void {
   const target = packagePath(harnessDir)
-  const link = join(dshHome, 'profiles', 'node_modules', PACKAGE_NAME)
-  mkdirSync(dirname(link), { recursive: true })
-  try {
-    if (lstatSync(link).isSymbolicLink()) {
-      let current: string | undefined
-      try {
-        current = readlinkSync(link)
-      } catch {
-        current = undefined
+  const profilesRoot = join(dshHome, 'profiles')
+  const links = [
+    join(profilesRoot, 'node_modules', PACKAGE_NAME),
+    join(profilesRoot, 'web', 'node_modules', PACKAGE_NAME),
+  ]
+  for (const link of links) {
+    mkdirSync(dirname(link), { recursive: true })
+    try {
+      if (lstatSync(link).isSymbolicLink()) {
+        let current: string | undefined
+        try {
+          current = readlinkSync(link)
+        } catch {
+          current = undefined
+        }
+        if (current === target) continue
+        rmSync(link)
+      } else {
+        continue
       }
-      if (current === target) return
-      rmSync(link)
-    } else {
-      return
+    } catch {
+      // Missing link: create it below.
     }
-  } catch {
-    // Missing link: create it below.
+    symlinkSync(target, link, process.platform === 'win32' ? 'junction' : 'dir')
   }
-  symlinkSync(target, link, process.platform === 'win32' ? 'junction' : 'dir')
 }
 
 /**
@@ -52,11 +62,12 @@ export function prepareDesktopControlsMount(dshHome: string, harnessDir: string)
   const host = packagePath(harnessDir, 'lib', 'index.js')
   if (!existsSync(patch) || !existsSync(client) || !existsSync(host)) return undefined
   try {
-    ensureProfileModuleLink(dshHome, harnessDir)
+    ensureProfileModuleLinks(dshHome, harnessDir)
   } catch {
     // A read-only home can still have a profile-managed package already.
   }
-  return existsSync(join(dshHome, 'profiles', 'node_modules', PACKAGE_NAME, 'lib', 'index.js'))
+  return existsSync(join(dshHome, 'profiles', 'web', 'node_modules', PACKAGE_NAME, 'lib', 'index.js'))
+    || existsSync(join(dshHome, 'profiles', 'node_modules', PACKAGE_NAME, 'lib', 'index.js'))
     ? patch
     : undefined
 }
