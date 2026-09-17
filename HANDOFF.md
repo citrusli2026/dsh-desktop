@@ -9,12 +9,12 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.6-alpha.1.shell.0`（2026-09-15 已发布；内核 `0.1.6-alpha.1`；Electron 44.3.0 + Node 24.21.0 + pnpm 10.33.2） |
-| 已发布 | ✅ `0.1.6-alpha.1.shell.0`（三端 dmg/exe/deb；内核升级；shell.12/.13 失败 tag 保留审计，shell.15 误触 tag 已删除） |
+| 最新代码基线 | ✅ `0.1.6-alpha.2.shell.0`（2026-09-17 已发布；内核 `0.1.6-alpha.2`；Electron 44.3.0 + Node 24.21.0 + pnpm 10.33.2） |
+| 已发布 | ✅ `0.1.6-alpha.2.shell.0`（三端 dmg/exe/deb；内核升级 + 桌面控件双锚点挂载适配 + fflate 安全地板） |
 | 本地门禁 | ✅ 283 项单测、类型检查、runtime/site、安全审计（双树 0 漏洞）、构建全绿；dev E2E 16/16、闭包 smoke（干净+篡改）、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
 | 核心发布 | ✅ `v0.1.6-alpha.1.shell.0` Release run `34995792261` 全绿：8 文件契约、attestation、三平台跨版本数据保留、闭包清单 smoke、NSIS 残留矩阵、Harness 真渲染、Safe Mode 故障注入 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.6-alpha.1.shell.0`（6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.6-alpha.1.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `9783275`；shell.14 镜像已补齐） |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.6-alpha.2.shell.0`（6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.6-alpha.2.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `0492aab`） |
 | 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1566+（49 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -1652,3 +1652,13 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 5. **官网**:site-refresh bot 提交遇 push 竞态失败(run `34998312212`,rebase 冲突);按 runbook 本地 gen-site-data 重新生成并推送(`f347948`),线上 6/6 `gitcode_ok=true`。
 6. **杂项**:补完 shell.14 的 GitCode 镜像(初时 3/6 → 6/6);#48-52 已回复并关闭;#33/#39 继续等待外部反馈。
 
+
+## 58. v0.1.6-alpha.2.shell.0 内核升级发布（2026-09-17 巡检）
+
+1. **升级**：内核 0.1.6-alpha.1 → 0.1.6-alpha.2（shell 修订归零）。bump 工具链（§57 修复后的注册表感知 peer 同步）一次通过：30 pin 升级、10 个未发版包正确保留、`dsh-ptc-runtime` 等新 peer 均已解析。
+2. **闭包安全地板**：上游 `dsh-office-to-pdf` 传递依赖 fflate 命中 GHSA-px8p-9vwx-vf98（恶意 ZIP64 无限循环，moderate）；按既有地板模式 `fflate@^0.8.0: 0.8.3` 加入 manifest overrides，双树审计归零。
+3. **重大适配——新内核 profile 解析代**：0.1.6-alpha.2 的 `dsh-app-boot` 引入 profile resolution generation（`healProfilesModuleFallback`/ResolutionRouter）：profile 范围内的裸包导入只从注册的解析代解析，不再走文件系统逐级回退（`profiles/node_modules` 层的链接失效）。桌面控件包挂载三冒烟全挂（`Cannot find package 'dsh-desktop-controls'`）。定位（对照内核源码 + 双锚点链接实验）后修复：`ensureProfileModuleLinks` 同时落两个锚点——`profiles/web/node_modules/`（新内核解析代 + 原生回退都命中）与 `profiles/node_modules/`（内核 overlay 回滚到旧内核时仍可用）；契约测试同步断言双锚点。
+4. **本地门禁**：283 单测、双树审计归零、dev E2E 16/16、三冒烟（含 SAFE_BREAK）、market offline 1/1 + real 2/2、LAN QR 2/2。
+5. **发布**：tag `v0.1.6-alpha.2.shell.0` → `0492aab`（peeled 双端一致）；Release run `35235290964` verify + 三平台 build + publish 全绿，8 资产 + attestation。
+6. **GitCode 镜像与官网**：本机 mirror 首轮遇 GitHub 出口中断（直连与 SOCKS 均不通，deb + 3×sha256 先落），改按 runbook 兜底 dispatch backfill（run `35243867667`，约 100 分钟补齐三安装包），Range GET 6/6；官网数据 bot 首探 `gitcode_ok=false` 后由 Site Data Refresh（run `35254360110`）重探为 6/6 `gitcode_ok=true`。
+7. **同轮分析**：垃圾桶专题分析完成（见 docs/reliable-shell-iteration-plan.md 下一轮 §6.13；结论：主进程逻辑 28 测试全绿、UI 零测试且未接设置页设计体系，迭代计划待批准后实施）。
