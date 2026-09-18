@@ -95,6 +95,19 @@ ADR 0030 把签名押后到"使用量足以覆盖成本"。三个触发条件现
 - [ ] 首个签名版本发布后:连续两个版本 electron-updater 升级冒烟通过(签名链上差分更新不受影响);GitHub 与 GitCode 资产逐字节一致(镜像校验已有)。
 - [ ] README/FAQ 更新签名状态与首装提示。
 
+## 7b. 补充问答(2026-09-18,应用户问)
+
+**免费路线(SignPath Foundation)现有哪些项目?小项目能行吗?**
+名录共 **332 个项目**(signpath.org/fdn-website 数据源,2026-09-18 抓取):知名的有 Vim、Stellarium、Flameshot、Git Extensions、Mumble、Tiled、Zero Install、Bloxstrap、Starward;同时有大量单人小工具(如 OpenModScan——单人维护的 Modbus 扫描器)。**Electron 应用有直接先例**(irDashies、Motrix Next、PoE Overlay Community Fork、Sokuji 等 5 个)。许可证分布 GPL 160 / MIT 97 / Apache 27——MIT 是主流之一,我们的 MIT 毫无违和。条款要求的"活跃维护 + 已发布 + 有文档"我们(55 个发布、2,691 下载)超过名录里相当一部分项目。真正的两个未知数仍是:捆绑第三方 MIT 内核的认定、单人三角色——申请时书面问。
+
+**Certum 是一年有效期吗?**
+是。CA/B 论坛 CSC-31 新规(2026-02-27 起)单张代码签名证书最长 459 天,Certum 按 1 年卖;多年期付款改为期内免费重发,但**每年要重新走一次签发流程**(要不要重交身份材料未核实)。已列入巡检年度提醒。
+
+**有频次限制吗?反复打包反复签行不行?**
+- Certum SimplySign 云签:官方上限 **5,000 签名/月**。我们每个 Windows 版本签 1–2 个文件,一个月发 20 版也才 40 次,差两个数量级;超限后果是"可能当月封禁"(官方原文)。反复打包、反复发版,都能签。
+- 但注意:**签名发生在 CI 的发布流程里**,本地 `pnpm run dist:dir` 的构建默认不签(凭据只在 GitHub secrets)。Certum 理论上可装 SimplySign Desktop 在本地签,但每次要手机 App 生成访问码人工登录——自动化的只有 CI。
+- SignPath Foundation:调研未记录签名次数上限(未核实),但它要求**每次发布人工点一次 Approve**。对我们一周数发的节奏,这个人工环节是比签名次数更实际的约束——**如果在意"反复发版全自动",Certum(€49/年)路线反而更顺**;SignPath 的价值纯粹是省这 ¥391/年。
+
 ## 8. 给维护者的三个动作(现在就可以做)
 
 1. **发 SignPath 申请**(10 分钟):signpath.org/apply;两句话说明项目 + 附仓库链接;单独问两点——捆绑第三方 MIT 内核的认定、单人兼任三角色。
