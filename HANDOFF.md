@@ -9,12 +9,12 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.6-alpha.2.shell.0`（2026-09-17 已发布；内核 `0.1.6-alpha.2`；Electron 44.3.0 + Node 24.21.0 + pnpm 10.33.2） |
-| 已发布 | ✅ `0.1.6-alpha.2.shell.0`（三端 dmg/exe/deb；内核升级 + 桌面控件双锚点挂载适配 + fflate 安全地板） |
-| 本地门禁 | ✅ 283 项单测、类型检查、runtime/site、安全审计（双树 0 漏洞）、构建全绿；dev E2E 16/16、闭包 smoke（干净+篡改）、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
+| 最新代码基线 | ✅ `0.1.6-alpha.2.shell.1`（2026-09-18 已发布；内核 `0.1.6-alpha.2`；垃圾桶完善轮交付） |
+| 已发布 | ✅ `0.1.6-alpha.2.shell.1`（三端 dmg/exe/deb；垃圾桶设计体系统一 + 两步确认 + 内核入桶 + 归档互操作修复） |
+| 本地门禁 | ✅ 288 项单测、类型检查、runtime/site、安全审计（双树 0 漏洞）、构建全绿；dev E2E 16/16、垃圾桶 UI 打包 E2E、闭包 smoke、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
 | 核心发布 | ✅ `v0.1.6-alpha.1.shell.0` Release run `34995792261` 全绿：8 文件契约、attestation、三平台跨版本数据保留、闭包清单 smoke、NSIS 残留矩阵、Harness 真渲染、Safe Mode 故障注入 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.6-alpha.2.shell.0`（6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.6-alpha.2.shell.0` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `0492aab`） |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.6-alpha.2.shell.1`（6 个用户资产 `gitcode_ok=true`） |
+| 国内镜像 | ✅ `v0.1.6-alpha.2.shell.1` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `431ba98`） |
 | 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1566+（49 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -1671,4 +1671,4 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 2. **P1 会话页签语义 + 两个真缺陷**：页签分组「已归档 / 未归档」并说明模型。E2E 夹具暴露两个此前无测试覆盖的缺陷：① 归档判定失效——内核 workspace 注册表把 archivedSessionIds 嵌在 `global` 下，壳只读顶层，归档会话永远显示未归档；现兼容双结构且取消归档写回保持 unit 头。② 「恢复内置内核」后 overlay 版本目录永久滞留磁盘；新增 `retireKernelOverlay` 移入垃圾桶（30 天窗口），失败保持原装。kind 'plugin' 保持保留——壳不拥有插件卸载（内核 WebUI 负责），不强行造生产者。
 3. **P2 测试网**：新增 `e2e/trash-ui.spec.ts`（打包构建全链 UI：种子还原 → 启动期过期清理断言 → 两步确认清除 → 会话入桶，`DSH_E2E_TRASH=1` 或打包套件 `@smoke` 运行）+ 契约断言（设计体系 class/确认交互/页签语义/内核入桶接线）；283→288 单测。
 4. **门禁**：verify 288 全绿、dev E2E 16/16、三打包冒烟、垃圾桶 E2E 1/1、market offline 1/1 + real 2/2、LAN QR 2/2、双树审计归零。
-5. **发布**：tag `v0.1.6-alpha.2.shell.1` → `431ba98`；Release run `35292230846`。
+5. **发布**：tag `v0.1.6-alpha.2.shell.1` → `431ba98`（peeled 双端一致）；Release run `35292230846` verify + 三平台 build + publish 全绿；GitCode 镜像 6/6（backfill 先落 sha256，本机补齐安装包，冗余 backfill `35294081203` 已取消）；Site Data Refresh run `35294086819` 后官网 6/6 `gitcode_ok=true`。
