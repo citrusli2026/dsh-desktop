@@ -115,3 +115,61 @@ ADR 0030 把签名押后到"使用量足以覆盖成本"。三个触发条件现
 3. **决定支付通道**:PayPal 或国际卡是否可用(两家的支付下限)。
 
 这三步的结果直接决定走哪条路线;技术集成在证书到手后由代理一天内完成。
+
+---
+
+## 9. Certum 全流程 runbook(分工版,2026-09-18)
+
+标记:🧑 = 必须人工(法律身份/资金/手机绑定/凭据),🤖 = 代理可完成,🧑🤖 = 人工提供值、代理执行或给逐条命令。
+
+### 阶段 0:下单前确认(当天)
+
+| # | 谁 | 动作 |
+|---|---|---|
+| 0.1 | 🧑 | 向 Certum support 提交预售问题(模板见下),确认大陆证件可办。这是唯一可能否决整条路线的未知数。 |
+| 0.2 | 🤖 | 探测 shop.certum.eu / certum.store 的 "Open Source Code Signing on SimplySign"(€49)库存状态(美元店曾缺货,认准欧元店)。 |
+| 0.3 | 🧑 | 确认支付通道:PayPal 或双币卡(eCard 通道支持卡/PayPal/Google Pay/Blik)。 |
+
+预售问题模板(提交到 support.certum.eu,粘即用):
+> I am a software developer residing in mainland China (citizenship: PRC, ID card and passport available; a utility bill in my name is available). I would like to purchase the "Open Source Code Signing on SimplySign" certificate. Can the (automated) remote identity validation accept PRC documents and a Chinese phone number for the callback/app verification? If automated validation is unavailable for PRC documents, which manual option would apply and what additional documents do you require?
+
+### 阶段 1:购买与验证(签发 1–3 个工作日,全部人工)
+
+| # | 谁 | 动作 |
+|---|---|---|
+| 1.1 | 🧑 | 注册 shop.certum.eu 账户(邮箱)。 |
+| 1.2 | 🧑 | 下单 **Open Source Code Signing on SimplySign**(€49,无硬件)。订单要求提供"在维护的开源项目网址"——填 `https://github.com/citrusli2026/dsh-desktop`,你的提交历史即关联证明。 |
+| 1.3 | 🧑 | 支付。 |
+| 1.4 | 🧑 | 身份验证:证件照(护照/身份证正反面)+ 名下账单(不早于 13 个月)+ 可能的手持照;远程完成,1–3 天签发。 |
+| 1.5 | 🧑 | 激活 SimplySign:手机 App + 云账户;在 App/账户设置里找到 **TOTP 认证器 URI(otpauth://…)**——CI 自动登录靠它。 |
+
+### 阶段 2:交付物收集(10 分钟)
+
+签发后你手里会有四个值:
+
+1. 证书主体 CN(SimplySign 面板/证书详情,形如 `Open Source Developer <你的姓名>`);
+2. SimplySign 用户名;
+3. TOTP URI(otpauth:// 开头);
+4. 证书 key id(SHA1 指纹)。
+
+🧑 **安全约定:这四个值不要发进聊天/issue。** 在你自己的终端执行我给出的逐条 `gh secret set` 命令(值走你本机),或在 GitHub 网页 Settings → Secrets and variables → Actions 手工添加。secret 名:`CERTUM_USERNAME` / `CERTUM_OTP_URI` / `CERTUM_KEY_ID` /(`CERTUM_SUBJECT` 不是机密,可直接告诉我用于配置)。
+
+### 阶段 3:CI 集成(纯 🤖,约半天)
+
+1. `release.yml` Windows job:缓存并安装官方 SimplySign Desktop MSI(files.certum.eu,SHA-256 固定)→ `dismine/windows-app-signing-setup-action` 用三个 secret 自动登录 → 证书进系统证书库。
+2. `electron-builder.yml`:`win.signtoolOptions.certificateSubjectName` 与 `publisherName` 设为你的真实主体(**一次性钉死,之后永不变更**);时间戳 `http://timestamp.digicert.com`(RFC 3161,electron-builder 默认)。
+3. 回退设计:secrets 不存在时构建保持未签名(存在性判断),无证书环境/兜底路径不炸。
+4. Windows 冒烟新增 `Get-AuthenticodeSignature` 断言:签名有效 + 主体匹配;未配置环境跳过。
+5. 文档:README/FAQ 加"已签名 + 发行者显示 + 首装可能仍有一次 SmartScreen 提示(声誉积累期)";发布说明模板同。
+
+### 阶段 4:验证与首签发布(纯 🤖,约一天)
+
+1. main dispatch 全量验证(含 Windows 残留矩阵 + 新签名断言)。
+2. `bump shell` → 首个签名版 tag;盯 release.yml 全绿;镜像/官网/HANDOFF 照常。
+3. 巡检自动化追加年度项:证书 459 天到期前 30 天提醒重签。
+
+### 时间线与限制
+
+- 日历时间约 **3–5 天**(大部分在等 Certum 签发);代理工作量 ≈ 1.5 天。
+- 硬性人工项(无法替代):支付、证件与人脸、手机 App 绑定(TOTP 种子只在你手机)、secrets 值的录入。
+- 主体字符串 = 智能合约:上线后改主体 = electron-updater 拒装 + SmartScreen 声誉清零,下发前我会和你核对两次。
