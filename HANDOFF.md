@@ -1662,3 +1662,13 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 5. **发布**：tag `v0.1.6-alpha.2.shell.0` → `0492aab`（peeled 双端一致）；Release run `35235290964` verify + 三平台 build + publish 全绿，8 资产 + attestation。
 6. **GitCode 镜像与官网**：本机 mirror 首轮遇 GitHub 出口中断（直连与 SOCKS 均不通，deb + 3×sha256 先落），改按 runbook 兜底 dispatch backfill（run `35243867667`，约 100 分钟补齐三安装包），Range GET 6/6；官网数据 bot 首探 `gitcode_ok=false` 后由 Site Data Refresh（run `35254360110`）重探为 6/6 `gitcode_ok=true`。
 7. **同轮分析**：垃圾桶专题分析完成（见 docs/reliable-shell-iteration-plan.md 下一轮 §6.13；结论：主进程逻辑 28 测试全绿、UI 零测试且未接设置页设计体系，迭代计划待批准后实施）。
+
+## 59. rc.2.shell.1 垃圾桶完善轮（2026-09-18）
+
+用户反馈垃圾桶 UI 风格不统一后立项（分析见 §58 第 7 点），P0→P1→P2 一次交付：
+
+1. **P0 设计体系 + 危险动作**：TrashSection 重写为设置页同款组件（分组卡片、真 tablist、类型徽标、保留期倒计时、引导空态）；「彻底删除」与「清除已过期」改为行内两步确认；会话删除按钮正名「删除（入桶）」——其实现本就是可还原的 moveToTrash，旧文案「彻底删除」是误导。
+2. **P1 会话页签语义 + 两个真缺陷**：页签分组「已归档 / 未归档」并说明模型。E2E 夹具暴露两个此前无测试覆盖的缺陷：① 归档判定失效——内核 workspace 注册表把 archivedSessionIds 嵌在 `global` 下，壳只读顶层，归档会话永远显示未归档；现兼容双结构且取消归档写回保持 unit 头。② 「恢复内置内核」后 overlay 版本目录永久滞留磁盘；新增 `retireKernelOverlay` 移入垃圾桶（30 天窗口），失败保持原装。kind 'plugin' 保持保留——壳不拥有插件卸载（内核 WebUI 负责），不强行造生产者。
+3. **P2 测试网**：新增 `e2e/trash-ui.spec.ts`（打包构建全链 UI：种子还原 → 启动期过期清理断言 → 两步确认清除 → 会话入桶，`DSH_E2E_TRASH=1` 或打包套件 `@smoke` 运行）+ 契约断言（设计体系 class/确认交互/页签语义/内核入桶接线）；283→288 单测。
+4. **门禁**：verify 288 全绿、dev E2E 16/16、三打包冒烟、垃圾桶 E2E 1/1、market offline 1/1 + real 2/2、LAN QR 2/2、双树审计归零。
+5. **发布**：tag `v0.1.6-alpha.2.shell.1` → `431ba98`；Release run `35292230846`。
