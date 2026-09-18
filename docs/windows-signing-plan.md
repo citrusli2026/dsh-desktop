@@ -97,6 +97,14 @@ ADR 0030 把签名押后到"使用量足以覆盖成本"。三个触发条件现
 
 ## 7b. 补充问答(2026-09-18,应用户问)
 
+**Certum 对中国大陆个人的可行性(2026-09-18 网络核实)**
+
+- ✅ 官方自动身份验证[support.certum.eu](https://support.certum.eu)支持 **180+ 国家证件**,实时核验证件真伪与人脸。
+- ✅ 证件硬要求是**拉丁字符**:中国**护照**(姓名为拼音)满足;纯中文的身份证大概率不满足 → 准备护照。
+- ✅ 中国开发者成功先例充分:V2EX 一手帖(2024-01,含 SimplySign Desktop 签名实操)、[blog.irain.in](https://blog.irain.in) 全流程、CSDN"开源代码签名证书 2024 申请实战";Certum 有官方中文站([certum.cn](https://www.certum.cn))与中文教程——中文服务本身即对大陆用户敞开的信号。
+- ✅ 库存与渠道(当日实测):**欧元店 shop.certum.eu "Open Source Code Signing in the Cloud" €49 在售**;美元店 certum.store 缺货——只走欧元店。
+- ⚠️ 残余未知(不影响"能办",只影响"顺不顺"):App 自动验证对 +86 手机号的接受度、护照自动通过率(180+ 国家≠逐国自动通过,可能回落到远程人工核验,同样可办)。发一句 support 问题确认即可,模板保留在 §9 阶段 0。
+
 **免费路线(SignPath Foundation)现有哪些项目?小项目能行吗?**
 名录共 **332 个项目**(signpath.org/fdn-website 数据源,2026-09-18 抓取):知名的有 Vim、Stellarium、Flameshot、Git Extensions、Mumble、Tiled、Zero Install、Bloxstrap、Starward;同时有大量单人小工具(如 OpenModScan——单人维护的 Modbus 扫描器)。**Electron 应用有直接先例**(irDashies、Motrix Next、PoE Overlay Community Fork、Sokuji 等 5 个)。许可证分布 GPL 160 / MIT 97 / Apache 27——MIT 是主流之一,我们的 MIT 毫无违和。条款要求的"活跃维护 + 已发布 + 有文档"我们(55 个发布、2,691 下载)超过名录里相当一部分项目。真正的两个未知数仍是:捆绑第三方 MIT 内核的认定、单人三角色——申请时书面问。
 
@@ -126,7 +134,7 @@ ADR 0030 把签名押后到"使用量足以覆盖成本"。三个触发条件现
 
 | # | 谁 | 动作 |
 |---|---|---|
-| 0.1 | 🧑 | 向 Certum support 提交预售问题(模板见下),确认大陆证件可办。这是唯一可能否决整条路线的未知数。 |
+| 0.1 | 🧑 | ~~确认大陆证件可办~~ **已于 2026-09-18 网络核实(见 §7b)**:路线成立;仍建议花 5 分钟向 support 发一句确认护照自动验证,模板见下。 |
 | 0.2 | 🤖 | 探测 shop.certum.eu / certum.store 的 "Open Source Code Signing on SimplySign"(€49)库存状态(美元店曾缺货,认准欧元店)。 |
 | 0.3 | 🧑 | 确认支付通道:PayPal 或双币卡(eCard 通道支持卡/PayPal/Google Pay/Blik)。 |
 
