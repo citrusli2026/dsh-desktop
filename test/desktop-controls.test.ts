@@ -175,3 +175,27 @@ test('desktop controls expose the agent deletion interception preference', async
   assert.match(client, /agentDeletionInterception/)
   assert.match(main, /candidate\.agentDeletionInterception/)
 })
+
+test('trash section uses the settings design system with guarded destructive actions', async () => {
+  const client = await readFile(join(pluginRoot, 'lib/client.js'), 'utf8')
+  const main = await readFile(resolve('src/main/index.ts'), 'utf8')
+  // Same group card as every other settings section, not a bare-HTML island.
+  assert.match(client, /"data-dsh-desktop-settings-group": true, "data-dsh-trash-section": true/)
+  assert.match(client, /data-dsh-desktop-setting-row": true, "data-dsh-trash-row": true/)
+  // Real tab semantics and the kind badges / retention countdown.
+  assert.match(client, /role: "tablist"/)
+  assert.match(client, /data-dsh-trash-badge/)
+  assert.match(client, /天后自动清除/)
+  assert.match(client, /auto-clears in \$\{n\}d/)
+  // Purge is a two-step inline confirm; "clear expired" too.
+  assert.match(client, /purgeConfirm/)
+  assert.match(client, /confirmExpired/)
+  // The sessions tab states its model (delete-to-trash is recoverable) and
+  // groups archived vs live sessions instead of one flat list.
+  assert.match(client, /sessionsNote/)
+  assert.match(client, /archivedGroup/)
+  assert.match(client, /sessionDelete/)
+  // The kernel producer: restoring the bundled kernel retires the overlay
+  // into the trash instead of leaking the version directory on disk.
+  assert.match(main, /retireKernelOverlay\(kernelDir\(\), previous, moveToTrash/)
+})

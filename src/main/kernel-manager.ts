@@ -275,3 +275,27 @@ export async function installKernel(options: InstallKernelOptions): Promise<Inst
     child.on('error', () => { clearTimeout(timer); resolve({ ok: false, reason: 'spawn-failed' }) })
   })
 }
+
+/**
+ * Retire a switched-away overlay kernel into the desktop trash (kind
+ * 'kernel'): the version directory moves under `<DSH_HOME>/trash/items/`
+ * with a 30-day restore window instead of leaking on disk forever. A trash
+ * failure (e.g. cross-device rename) keeps the directory in place — the
+ * restore itself must never degrade.
+ */
+export async function retireKernelOverlay(
+  dir: string,
+  version: string,
+  moveToTrash: (dshHome: string, originPath: string, options: { kind: 'kernel'; name: string; source: string }) => Promise<unknown>,
+  dshHome: string,
+): Promise<boolean> {
+  const overlayDir = join(dir, version)
+  if (!existsSync(overlayDir)) return false
+  try {
+    await moveToTrash(dshHome, overlayDir, { kind: 'kernel', name: version, source: 'restored the bundled kernel' })
+    return true
+  } catch (error) {
+    console.warn(`dsh-desktop: kernel overlay ${version} stays installed; trash move failed: ${error instanceof Error ? error.message : String(error)}`)
+    return false
+  }
+}

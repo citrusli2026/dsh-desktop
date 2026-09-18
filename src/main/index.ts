@@ -22,6 +22,7 @@ import {
   kernelsDir,
   markKernelFailed,
   readActiveOverlay,
+  retireKernelOverlay,
   type KernelOperationResult,
   type KernelLaunchGuard,
   writeActiveOverlay,
@@ -717,6 +718,11 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     const previous = readActiveOverlay(kernelDir())?.version
     writeActiveOverlay(kernelDir(), undefined)
     const restarted = await shellApp.runHarnessRestart()
+    if (restarted && previous !== undefined) {
+      // The switched-away overlay moves to the trash (30-day restore window)
+      // instead of lingering on disk; a failed move keeps it installed.
+      await retireKernelOverlay(kernelDir(), previous, moveToTrash, desktopDshHome())
+    }
     lastKernelOperation = restarted
       ? { status: 'restored', ...(previous === undefined ? {} : { version: previous }) }
       : { status: 'restore-failed', ...(previous === undefined ? {} : { version: previous }), reason: 'restart-failed' }

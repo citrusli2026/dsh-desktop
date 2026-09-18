@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { spawn } from 'node:child_process'
@@ -18,7 +18,7 @@ import {
   overlayBinPath,
   readActiveOverlay,
   REGISTRY_URL,
-  writeActiveOverlay,
+  writeActiveOverlay,  retireKernelOverlay,
 } from '../src/main/kernel-manager.ts'
 
 async function makeClosure(version: string): Promise<string> {
@@ -228,5 +228,58 @@ test('installKernel surfaces invalid versions and child failures', async () => {
     assert.deepEqual(await installKernel({ dir, version: '0.2.0', nodeBin: 'node', pnpmBin: 'pnpm', spawnImpl: fakeSpawn }), { ok: false, reason: 'spawn-failed' })
   } finally {
     await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('retireKernelOverlay moves a switched-away overlay into the trash', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'dsh-kernel-retire-'))
+  const home = await mkdtemp(join(tmpdir(), 'dsh-kernel-retire-home-'))
+  try {
+    await mkdir(join(dir, '0.1.6-alpha.2', 'node_modules'), { recursive: true })
+    await writeFile(join(dir, '0.1.6-alpha.2', 'node_modules', 'marker'), 'x')
+    const moves: Array<Record<string, unknown>> = []
+    const moved = await retireKernelOverlay(dir, '0.1.6-alpha.2', async (_home, originPath, options) => {
+      moves.push({ _home, originPath, ...options })
+    }, home)
+    assert.equal(moved, true)
+    assert.equal(moves.length, 1)
+    assert.equal(moves[0]?.kind, 'kernel')
+    assert.equal(moves[0]?.name, '0.1.6-alpha.2')
+    assert.equal(moves[0]?.originPath, join(dir, '0.1.6-alpha.2'))
+    assert.equal(moves[0]?._home, home)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+    await rm(home, { recursive: true, force: true })
+  }
+})
+
+test('retireKernelOverlay keeps the overlay installed when the trash move fails', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'dsh-kernel-retire-'))
+  const home = await mkdtemp(join(tmpdir(), 'dsh-kernel-retire-home-'))
+  try {
+    await mkdir(join(dir, '0.1.6-alpha.2'), { recursive: true })
+    const moved = await retireKernelOverlay(dir, '0.1.6-alpha.2', async () => {
+      throw new Error('cross-device rename')
+    }, home)
+    assert.equal(moved, false)
+    // The overlay directory must stay on disk (never degrade the restore).
+    assert.equal(await readdir(dir).then(names => names.includes('0.1.6-alpha.2')), true)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+    await rm(home, { recursive: true, force: true })
+  }
+})
+
+test('retireKernelOverlay reports false for an unknown version without calling trash', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'dsh-kernel-retire-'))
+  const home = await mkdtemp(join(tmpdir(), 'dsh-kernel-retire-home-'))
+  try {
+    let called = 0
+    const moved = await retireKernelOverlay(dir, '9.9.9', async () => { called += 1 }, home)
+    assert.equal(moved, false)
+    assert.equal(called, 0)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+    await rm(home, { recursive: true, force: true })
   }
 })

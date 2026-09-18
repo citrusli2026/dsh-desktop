@@ -650,6 +650,72 @@ window.__ModuleLoader__.load({
       }
       [data-dsh-safe-mode-banner] button:hover { background: rgba(255, 255, 255, .26); }
       [data-dsh-safe-mode-banner] button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+      /* 垃圾桶：与设置页同款排版（分组卡片 → 行 → 行内按钮），补页签/徽标/空态。 */
+      [data-dsh-trash-section] { grid-column: 1 / -1; }
+      [data-dsh-trash-tabs] { align-items: center; display: flex; gap: 6px; margin: 2px 0 10px; }
+      [data-dsh-trash-tab] {
+        background: transparent;
+        border: 1px solid var(--dsh-controls-border);
+        border-radius: 999px;
+        color: var(--dsh-controls-muted);
+        cursor: pointer;
+        font-size: 12px;
+        padding: 5px 12px;
+      }
+      [data-dsh-trash-tab]:hover { border-color: color-mix(in srgb, var(--dsh-controls-accent) 40%, var(--dsh-controls-border)); color: var(--dsh-controls-text); }
+      [data-dsh-trash-tab][data-active] {
+        background: var(--dsh-controls-accent-soft);
+        border-color: color-mix(in srgb, var(--dsh-controls-accent) 30%, transparent);
+        color: var(--dsh-controls-accent);
+        font-weight: 650;
+      }
+      [data-dsh-trash-tab]:focus-visible { outline: 2px solid var(--dsh-controls-accent); outline-offset: 2px; }
+      [data-dsh-trash-spacer] { flex: 1; }
+      [data-dsh-trash-badge] {
+        background: var(--dsh-controls-panel-muted);
+        border: 1px solid var(--dsh-controls-border);
+        border-radius: 999px;
+        color: var(--dsh-controls-muted);
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1;
+        margin-left: 6px;
+        padding: 4px 7px;
+        vertical-align: 1px;
+      }
+      [data-dsh-trash-detail] {
+        color: var(--dsh-controls-muted);
+        display: block;
+        font-size: 11px;
+        line-height: 1.45;
+        margin-top: 2px;
+        overflow-wrap: anywhere;
+      }
+      [data-dsh-trash-origin] { display: block; max-width: 460px; opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      [data-dsh-trash-empty] {
+        border: 1px dashed var(--dsh-controls-border);
+        border-radius: 12px;
+        color: var(--dsh-controls-muted);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        justify-content: center;
+        padding: 26px 14px;
+        text-align: center;
+      }
+      [data-dsh-trash-empty] strong { color: var(--dsh-controls-text); font-size: 13px; }
+      [data-dsh-trash-confirm] {
+        align-items: center;
+        color: var(--dsw-alias-state-warning-primary, #9a6700);
+        display: inline-flex;
+        flex-wrap: wrap;
+        font-size: 12px;
+        gap: 6px;
+        justify-content: flex-end;
+      }
+      [data-dsh-trash-message] { color: var(--dsh-controls-muted); font-size: 12px; line-height: 1.5; margin: 8px 0 0; }
+      [data-dsh-trash-group-label] { color: var(--dsh-controls-muted); font-size: 11px; font-weight: 700; letter-spacing: .04em; margin: 12px 0 2px; }
       @media (max-width: 680px) {
         [data-dsh-desktop-controls] { top: 12px; right: 12px; }
         [data-dsh-desktop-controls] [data-dsh-controls-label] { display: none; }
@@ -852,27 +918,43 @@ window.__ModuleLoader__.load({
       return Math.min(Math.max(value, min), Math.max(min, max));
     }
 
-    /* 桌面垃圾桶：查看 / 还原 / 清除（资源 + 会话两页）。 */
+    /* 桌面垃圾桶：与设置页同款设计体系；还原 / 确认后清除 / 保留期倒计时。 */
     function TrashSection() {
       const zh = useChinese();
       const bridge = typeof window !== "undefined" ? window.dshDesktop : undefined;
       const [tab, setTab] = react.useState("items");
-      const [entries, setEntries] = react.useState([]);
-      const [sessions, setSessions] = react.useState([]);
+      const [entries, setEntries] = react.useState(null);
+      const [sessions, setSessions] = react.useState(null);
       const [busy, setBusy] = react.useState(false);
       const [message, setMessage] = react.useState("");
+      const [confirmId, setConfirmId] = react.useState(null);
+      const [confirmExpired, setConfirmExpired] = react.useState(false);
       const t = zh ? {
-        title: "桌面垃圾桶", empty: "垃圾桶是空的。",
+        title: "桌面垃圾桶",
+        copy: "删除的预设与会话先进入垃圾桶，保留 30 天后自动清除；还原遇到重名会另存副本，不会覆盖新数据。",
         items: "资源", sessions: "会话", restore: "还原", purge: "彻底删除",
+        purgeConfirm: "确认永久删除？此操作不可恢复。", confirm: "确认", cancel: "取消",
         purgeExpired: "清除已过期", refresh: "刷新", deletedAt: "删除于",
-        origin: "原位置", active: "会话正在运行,不能删除", unarchive: "取消归档",
-        done: "已完成", archived: "已归档",
+        origin: "原位置", active: "会话正在运行，不能删除", unarchive: "取消归档",
+        done: "已完成", failed: "操作失败", archived: "已归档",
+        emptyTitle: "垃圾桶是空的", emptyHint: "删除的预设与会话会出现在这里，30 天内可还原。",
+        daysLeft: (n) => n > 0 ? `${n} 天后自动清除` : "今日自动清除",
+        expiredBadge: "已过期",
+        sessionsNote: "此处列出本机全部会话：删除会话先移入垃圾桶（30 天内可还原），归档仅在列表中隐藏。",
+        archivedGroup: "已归档", liveGroup: "未归档", sessionDelete: "删除（入桶）",
       } : {
-        title: "Desktop trash", empty: "The trash is empty.",
+        title: "Desktop trash",
+        copy: "Deleted presets and sessions move to the trash first and clear automatically after 30 days; restoring never overwrites newer data — conflicts get a numbered copy.",
         items: "Resources", sessions: "Sessions", restore: "Restore", purge: "Delete forever",
+        purgeConfirm: "Permanently delete? This cannot be undone.", confirm: "Confirm", cancel: "Cancel",
         purgeExpired: "Clear expired", refresh: "Refresh", deletedAt: "Deleted",
         origin: "From", active: "Session is running and cannot be deleted", unarchive: "Unarchive",
-        done: "Done", archived: "Archived",
+        done: "Done", failed: "Action failed", archived: "Archived",
+        emptyTitle: "The trash is empty", emptyHint: "Deleted presets and sessions appear here and stay recoverable for 30 days.",
+        daysLeft: (n) => n > 0 ? `auto-clears in ${n}d` : "clears today",
+        expiredBadge: "Expired",
+        sessionsNote: "This lists every session on disk: deleting moves one to the trash (recoverable for 30 days); archiving only hides it from the list.",
+        archivedGroup: "Archived", liveGroup: "Not archived", sessionDelete: "Delete to trash",
       };
       const refresh = async () => {
         if (typeof bridge?.listTrash !== "function") return;
@@ -882,41 +964,108 @@ window.__ModuleLoader__.load({
       react.useEffect(() => { void refresh(); }, [bridge]);
       const act = async (action) => {
         setBusy(true);
-        try { await action(); await refresh(); setMessage(t.done); }
-        catch { setMessage(zh ? "操作失败" : "Action failed"); }
+        try {
+          const outcome = await action();
+          await refresh();
+          setMessage(outcome === false ? t.failed : t.done);
+        }
+        catch { setMessage(t.failed); }
         finally { setBusy(false); }
       };
       const fmt = (ms) => new Date(ms).toLocaleString();
+      const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+      const daysLeftOf = (deletedAt) => Math.max(0, Math.ceil((deletedAt + RETENTION_MS - Date.now()) / (24 * 60 * 60 * 1000)));
       const kindLabel = { preset: zh ? "预设" : "Preset", plugin: zh ? "插件" : "Plugin", kernel: zh ? "内核" : "Kernel", session: zh ? "会话" : "Session", file: zh ? "文件" : "File" };
-      return react_jsx_runtime.jsxs("div", { "data-dsh-trash-section": true, children: [
-        react_jsx_runtime.jsxs("div", { style: { display: "flex", gap: "8px", alignItems: "center" }, children: [
-          react_jsx_runtime.jsx("h3", { children: t.title }),
-          react_jsx_runtime.jsx("button", { type: "button", onClick: () => setTab("items"), disabled: tab === "items", children: t.items }),
-          react_jsx_runtime.jsx("button", { type: "button", onClick: () => setTab("sessions"), disabled: tab === "sessions", children: t.sessions }),
-          react_jsx_runtime.jsx("button", { type: "button", onClick: () => void act(() => bridge.purgeExpiredTrash()), disabled: busy, children: t.purgeExpired }),
-          react_jsx_runtime.jsx("button", { type: "button", onClick: () => void refresh(), children: t.refresh }),
+      const expiredCount = (entries ?? []).filter((entry) => entry.deletedAt + RETENTION_MS <= Date.now()).length;
+      const shortId = (id) => id.length > 12 ? `${id.slice(0, 12)}…` : id;
+      const rowActions = (confirming, children) => confirming
+        ? react_jsx_runtime.jsxs("span", { "data-dsh-trash-confirm": true, children: [
+          react_jsx_runtime.jsx("span", { children: t.purgeConfirm }),
+          react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: children.onConfirm, children: t.confirm }),
+          react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: children.onCancel, children: t.cancel }),
+        ] })
+        : children.plain;
+      const itemRow = (entry) => {
+        const daysLeft = daysLeftOf(entry.deletedAt);
+        return react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, "data-dsh-trash-row": true, children: [
+          react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [
+            react_jsx_runtime.jsx("span", { children: [
+              entry.name,
+              react_jsx_runtime.jsx("span", { "data-dsh-trash-badge": true, children: kindLabel[entry.kind] ?? entry.kind }),
+            ] }),
+            react_jsx_runtime.jsxs("small", { "data-dsh-trash-detail": true, children: [
+              `${t.deletedAt} ${fmt(entry.deletedAt)} · ${t.daysLeft(daysLeft)}`,
+              daysLeft <= 0 ? react_jsx_runtime.jsx("span", { "data-dsh-trash-badge": true, children: t.expiredBadge }) : null,
+              entry.source ? ` · ${entry.source}` : "",
+              react_jsx_runtime.jsx("span", { "data-dsh-trash-origin": true, title: entry.originPath, children: `${t.origin}: ${entry.originPath}` }),
+            ] }),
+          ] }),
+          react_jsx_runtime.jsx("span", { "data-dsh-desktop-lan-actions": true, children: rowActions(confirmId === entry.id, {
+            onConfirm: () => { setConfirmId(null); void act(() => bridge.purgeTrash(entry.id)); },
+            onCancel: () => setConfirmId(null),
+            plain: react_jsx_runtime.jsxs(react.Fragment, { children: [
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => void act(() => bridge.restoreTrash(entry.id)), children: t.restore }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => setConfirmId(entry.id), children: t.purge }),
+            ] }),
+          }) }),
+        ] }, entry.id);
+      };
+      const sessionRow = (session) => react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, "data-dsh-trash-row": true, children: [
+        react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [
+          react_jsx_runtime.jsxs("span", { children: [
+            shortId(session.sessionId),
+            session.archived ? react_jsx_runtime.jsx("span", { "data-dsh-trash-badge": true, children: t.archived }) : null,
+          ] }),
+          react_jsx_runtime.jsx("small", { "data-dsh-trash-detail": true, children: `${session.projectKey} · ${fmt(session.modifiedAt)}` }),
         ] }),
-        message ? react_jsx_runtime.jsx("p", { children: message }) : null,
-        tab === "items" && entries.length === 0 ? react_jsx_runtime.jsx("p", { children: t.empty }) : null,
-        tab === "items" ? entries.map((entry) => react_jsx_runtime.jsxs("div", { style: { display: "flex", gap: "8px", alignItems: "baseline", padding: "4px 0" }, children: [
-          react_jsx_runtime.jsx("code", { children: entry.name }),
-          react_jsx_runtime.jsx("small", { children: kindLabel[entry.kind] ?? entry.kind }),
-          react_jsx_runtime.jsx("small", { children: `${t.deletedAt} ${fmt(entry.deletedAt)}` }),
-          react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => void act(() => bridge.restoreTrash(entry.id)), children: t.restore }),
-          react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => void act(() => bridge.purgeTrash(entry.id)), children: t.purge }),
-          react_jsx_runtime.jsx("small", { children: `${t.origin}: ${entry.originPath}` }),
-        ] }, entry.id)) : null,
-        tab === "sessions" && sessions.length === 0 ? react_jsx_runtime.jsx("p", { children: t.empty }) : null,
-        tab === "sessions" ? sessions.map((session) => react_jsx_runtime.jsxs("div", { style: { display: "flex", gap: "8px", alignItems: "baseline", padding: "4px 0" }, children: [
-          react_jsx_runtime.jsx("code", { children: session.sessionId }),
-          session.archived ? react_jsx_runtime.jsx("small", { children: t.archived }) : null,
-          session.archived && typeof bridge.unarchiveSession === "function" ? react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => void act(() => bridge.unarchiveSession(session.sessionId)), children: t.unarchive }) : null,
-          react_jsx_runtime.jsx("button", { type: "button", disabled: busy, onClick: () => void act(async () => {
+        react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+          session.archived && typeof bridge.unarchiveSession === "function" ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => void act(() => bridge.unarchiveSession(session.sessionId)), children: t.unarchive }) : null,
+          react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => void act(async () => {
             const outcome = await bridge.deleteTrashSession(session.projectKey, session.sessionId);
             if (outcome === "active") setMessage(t.active);
-          }), children: t.purge }),
-          react_jsx_runtime.jsx("small", { children: fmt(session.modifiedAt) }),
-        ] }, session.sessionId + session.projectKey)) : null,
+          }), children: t.sessionDelete }),
+        ] }),
+      ] }, session.sessionId + session.projectKey);
+      const archivedSessions = (sessions ?? []).filter((session) => session.archived === true);
+      const liveSessions = (sessions ?? []).filter((session) => session.archived !== true);
+      const tabButton = (key, label, count) => react_jsx_runtime.jsx("button", {
+        type: "button", role: "tab", "aria-selected": tab === key,
+        "data-dsh-trash-tab": true, "data-active": tab === key || null,
+        onClick: () => { setTab(key); setMessage(""); },
+        children: `${label} (${count})`,
+      }, key);
+      const loaded = entries !== null;
+      return react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, "data-dsh-trash-section": true, children: [
+        react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: t.title }),
+        react_jsx_runtime.jsx("small", { "data-dsh-health-copy": true, children: t.copy }),
+        react_jsx_runtime.jsxs("div", { role: "tablist", "data-dsh-trash-tabs": true, children: [
+          tabButton("items", t.items, (entries ?? []).length),
+          tabButton("sessions", t.sessions, (sessions ?? []).length),
+          react_jsx_runtime.jsx("span", { "data-dsh-trash-spacer": true }),
+          react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, onClick: () => void refresh(), children: t.refresh }),
+        ] }),
+        tab === "items" ? react_jsx_runtime.jsxs(react.Fragment, { children: [
+          loaded && (entries ?? []).length === 0 ? react_jsx_runtime.jsxs("div", { "data-dsh-trash-empty": true, children: [
+            react_jsx_runtime.jsx("strong", { children: t.emptyTitle }),
+            react_jsx_runtime.jsx("small", { children: t.emptyHint }),
+          ] }) : null,
+          (entries ?? []).map(itemRow),
+          loaded && (entries ?? []).length > 0 && expiredCount > 0 ? react_jsx_runtime.jsx("div", { "data-dsh-desktop-lan-actions": true, style: { justifyContent: "flex-end", marginTop: "8px" }, children: rowActions(confirmExpired, {
+            onConfirm: () => { setConfirmExpired(false); void act(() => bridge.purgeExpiredTrash()); },
+            onCancel: () => setConfirmExpired(false),
+            plain: react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => setConfirmExpired(true), children: `${t.purgeExpired} (${expiredCount})` }),
+          }) }) : null,
+        ] }) : react_jsx_runtime.jsxs(react.Fragment, { children: [
+          react_jsx_runtime.jsx("p", { "data-dsh-trash-message": true, children: t.sessionsNote }),
+          loaded && (sessions ?? []).length === 0 ? react_jsx_runtime.jsxs("div", { "data-dsh-trash-empty": true, children: [
+            react_jsx_runtime.jsx("strong", { children: t.emptyTitle }),
+          ] }) : null,
+          archivedSessions.length > 0 ? react_jsx_runtime.jsx("p", { "data-dsh-trash-group-label": true, children: `${t.archivedGroup} (${archivedSessions.length})` }) : null,
+          archivedSessions.map(sessionRow),
+          liveSessions.length > 0 ? react_jsx_runtime.jsx("p", { "data-dsh-trash-group-label": true, children: `${t.liveGroup} (${liveSessions.length})` }) : null,
+          liveSessions.map(sessionRow),
+        ] }),
+        message ? react_jsx_runtime.jsx("p", { "data-dsh-trash-message": true, role: "status", children: message }) : null,
       ] });
     }
 

@@ -26,18 +26,27 @@ function workspacePath(dshHome: string): string {
   return join(dshHome, 'storages', 'workspace.json')
 }
 
-/** Tolerant read of the workspace registry's archived id list. */
+/** Tolerant read of the workspace registry's archived id list. The kernel's
+ *  workspace service nests the list under `global` (unit-header document);
+ *  older flat files keep top-level. */
 export async function readArchivedSessionIds(dshHome: string): Promise<Set<string>> {
   try {
-    const parsed = JSON.parse(await readFile(workspacePath(dshHome), 'utf8')) as { archivedSessionIds?: unknown }
-    const raw = Array.isArray(parsed.archivedSessionIds) ? parsed.archivedSessionIds : []
+    const parsed = JSON.parse(await readFile(workspacePath(dshHome), 'utf8')) as {
+      archivedSessionIds?: unknown
+      global?: { archivedSessionIds?: unknown }
+    }
+    const nested = typeof parsed.global === 'object' && parsed.global !== null ? parsed.global.archivedSessionIds : undefined
+    const raw = Array.isArray(nested) ? nested : Array.isArray(parsed.archivedSessionIds) ? parsed.archivedSessionIds : []
     return new Set(raw.filter((id): id is string => typeof id === 'string'))
   } catch {
     return new Set()
   }
 }
 
-/** Remove one id from the workspace archive set; returns true when changed. */
+/** Remove one id from the workspace archive set; returns true when changed.
+ *  Writes preserve the kernel's unit-header shape (the list goes back under
+ *  `global` when the document has one), so the workspace service keeps
+ *  accepting the file. */
 export async function unarchiveSession(dshHome: string, sessionId: string): Promise<boolean> {
   const archived = await readArchivedSessionIds(dshHome)
   if (!archived.delete(sessionId)) return false
@@ -47,7 +56,11 @@ export async function unarchiveSession(dshHome: string, sessionId: string): Prom
   } catch {
     return false
   }
-  document.archivedSessionIds = [...archived]
+  const global = typeof document.global === 'object' && document.global !== null
+    ? document.global as Record<string, unknown>
+    : undefined
+  if (global !== undefined) global.archivedSessionIds = [...archived]
+  else document.archivedSessionIds = [...archived]
   await atomicWriteFile(workspacePath(dshHome), `${JSON.stringify(document, null, 2)}\n`)
   return true
 }

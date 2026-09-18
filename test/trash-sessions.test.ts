@@ -6,7 +6,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, rm, stat, utimes, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -112,6 +112,27 @@ test('unarchiveSession removes exactly one id and reports no-op honestly', async
     assert.equal(await unarchiveSession(home, 'a'), true)
     assert.deepEqual([...await readArchivedSessionIds(home)], ['b'])
     assert.equal(await unarchiveSession(home, 'a'), false)
+  } finally {
+    await rm(home, { recursive: true, force: true })
+  }
+})
+
+test('archived ids read from the kernel unit-header shape and unarchive preserves it', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-trash-sessions-'))
+  try {
+    await mkdir(join(home, 'storages'), { recursive: true })
+    await writeFile(join(home, 'storages', 'workspace.json'), JSON.stringify({
+      unit: { name: 'workspace', version: 2 },
+      global: { initialized: true, workspaceIds: [], archivedSessionIds: ['kernel-shaped'] },
+      tables: { workspaces: {} },
+    }))
+    assert.deepEqual([...await readArchivedSessionIds(home)], ['kernel-shaped'])
+    // Removing one id rewrites the file with the unit header intact.
+    assert.equal(await unarchiveSession(home, 'kernel-shaped'), true)
+    const saved = JSON.parse(await readFile(join(home, 'storages', 'workspace.json'), 'utf8'))
+    assert.deepEqual(saved.unit, { name: 'workspace', version: 2 })
+    assert.deepEqual(saved.global.archivedSessionIds, [])
+    assert.deepEqual([...await readArchivedSessionIds(home)], [])
   } finally {
     await rm(home, { recursive: true, force: true })
   }
