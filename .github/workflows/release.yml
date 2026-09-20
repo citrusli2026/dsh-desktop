@@ -110,6 +110,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/download-previous-release.mjs test-results/previous-release
+      # Installer content gate (#39/#56 families): the packaged NSIS must carry
+      # the bundled node.exe, the sharp native chain, and the closure manifest —
+      # hashed against the manifest the in-app health check will enforce.
+      - name: Verify installer content (Windows)
+        if: matrix.os == 'windows-2022'
+        run: node scripts/verify-windows-installer.mjs dist
       - name: Cross-version upgrade preserves user state (macOS)
         if: github.ref_type == 'tag' && matrix.os == 'macos-14'
         run: node scripts/smoke-upgrade.mjs macos dist test-results/previous-release
