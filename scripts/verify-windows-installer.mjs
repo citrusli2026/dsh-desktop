@@ -66,9 +66,11 @@ try {
   const inner = join(work, '$PLUGINSDIR', 'app-64.7z')
   if (!existsSync(inner)) fail('extracting app-64.7z failed')
 
-  // 2. Presence assertions against the inner archive listing. Paths inside
-  //    the payload are relative to the install root (resources/...).
-  const innerListing = run7z(['l', inner]).stdout
+  // 2. Presence assertions against the inner archive listing. Windows 7z
+  //    lists NSIS entries with backslashes; normalize to forward slashes so
+  //    the gate behaves identically on every platform. Paths inside the
+  //    payload are relative to the install root (resources/...).
+  const innerListing = run7z(['l', inner]).stdout.replaceAll('\\', '/')
   const critical = [
     { label: 'app executable', path: 'dsh-desktop.exe' },
     { label: 'closure integrity manifest', path: 'resources/manifest.json' },
