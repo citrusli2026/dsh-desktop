@@ -42,6 +42,13 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.6-alpha.2.shell.2 <small>（内核 0.1.6-alpha.2）</small></h2>
+  <ul>
+    <li><strong>Windows 安装器内容门禁（新增发布 gate）</strong>:每个 Windows 安装器在发布前都会被解包核验——内置 <code>node.exe</code>、sharp 原生链(<code>.node</code> + libvips DLL)、闭包完整性清单、mobile-shell、agent-trash-hook 九个关键文件必须存在,其中最高风险的两个二进制(node.exe、sharp <code>.node</code>、libvips DLL)还会对照闭包 SHA-256 清单逐一校验哈希。这把 #39(运行时损坏)与 #56(原生模块加载失败)两类问题的验证从&quot;用户机上发现&quot;提前到&quot;发布流水线拦截&quot;。</li>
+    <li><strong>诊断经验沉淀</strong>:#56 的排查方法(NSIS → 内层 app-64.7z → 逐文件核对哈希)已固化为 <code>scripts/verify-windows-installer.mjs</code>,本地也可运行(<code>node scripts/verify-windows-installer.mjs +安装器路径或 dist 目录</code>),配合 7-Zip 即可复现发布级校验。</li>
+    <li><strong>内核与边界不变</strong>:内置内核仍为 0.1.6-alpha.2;不新增权限、不改变插件安装与数据目录边界。</li>
+  </ul>
+
   <h2>v0.1.6-alpha.2.shell.1 <small>（内核 0.1.6-alpha.2）</small></h2>
   <ul>
     <li><strong>设计体系统一</strong>：垃圾桶区块改用与「桌面设置」相同的设计组件——分组卡片、行排版、统一按钮与徽标、真页签（tablist）；条目显示类型徽标、删除时间与「N 天后自动清除」倒计时；空状态为引导卡片，不再是裸 HTML。</li>
@@ -99,13 +106,6 @@
   <ul>
     <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24; no native rebuilds needed.</li>
     <li>Adds the Windows NSIS upgrade-residue analysis with a manual verification matrix.</li>
-  </ul>
-
-  <h2>v0.1.5-rc.2.shell.5</h2>
-  <ul>
-    <li>The floating desktop-tools panel gains a Maintenance group (check for updates, open logs, export diagnostics), completing tool parity across surfaces.</li>
-    <li>The LAN pairing window no longer shows a Windows/Linux menu bar.</li>
-    <li>Kernel bump PRs auto-sync plugin peer pins; the health check reports plugin/kernel compat mismatches; Safe Mode writes its overlay even when the profile crashed before composing; spawn failures explain the reinstall path.</li>
   </ul>
   <!-- changelog:auto:end -->
 

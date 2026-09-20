@@ -42,6 +42,12 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.6-alpha.2.shell.2 <small>（kernel 0.1.6-alpha.2）</small></h2>
+  <ul>
+    <li>New release gate: every Windows installer is unpacked and verified before publish — bundled node.exe, the sharp native chain (.node + libvips DLLs), the closure integrity manifest, mobile-shell, and agent-trash-hook must be present, with the highest-risk binaries hashed against the packaged closure manifest. Moves #39/#56-class verification from &quot;discovered on user machines&quot; to &quot;blocked in the release pipeline&quot;.</li>
+    <li>The verification method is packaged as scripts/verify-windows-installer.mjs (runnable locally with 7-Zip). Bundled kernel unchanged at 0.1.6-alpha.2.</li>
+  </ul>
+
   <h2>v0.1.6-alpha.2.shell.1 <small>（kernel 0.1.6-alpha.2）</small></h2>
   <ul>
     <li>The trash settings section is rewritten on the shared settings design system: group cards, real tabs, kind badges, retention countdown, guided empty states.</li>
@@ -90,13 +96,6 @@
   <ul>
     <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24; no native rebuilds needed.</li>
     <li>Adds the Windows NSIS upgrade-residue analysis with a manual verification matrix.</li>
-  </ul>
-
-  <h2>v0.1.5-rc.2.shell.5</h2>
-  <ul>
-    <li>The floating desktop-tools panel gains a Maintenance group (check for updates, open logs, export diagnostics), completing tool parity across surfaces.</li>
-    <li>The LAN pairing window no longer shows a Windows/Linux menu bar.</li>
-    <li>Kernel bump PRs auto-sync plugin peer pins; the health check reports plugin/kernel compat mismatches; Safe Mode writes its overlay even when the profile crashed before composing; spawn failures explain the reinstall path.</li>
   </ul>
   <!-- changelog:auto:end -->
 
