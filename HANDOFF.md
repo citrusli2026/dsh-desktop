@@ -1672,3 +1672,13 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 3. **P2 测试网**：新增 `e2e/trash-ui.spec.ts`（打包构建全链 UI：种子还原 → 启动期过期清理断言 → 两步确认清除 → 会话入桶，`DSH_E2E_TRASH=1` 或打包套件 `@smoke` 运行）+ 契约断言（设计体系 class/确认交互/页签语义/内核入桶接线）；283→288 单测。
 4. **门禁**：verify 288 全绿、dev E2E 16/16、三打包冒烟、垃圾桶 E2E 1/1、market offline 1/1 + real 2/2、LAN QR 2/2、双树审计归零。
 5. **发布**：tag `v0.1.6-alpha.2.shell.1` → `431ba98`（peeled 双端一致）；Release run `35292230846` verify + 三平台 build + publish 全绿；GitCode 镜像 6/6（backfill 先落 sha256，本机补齐安装包，冗余 backfill `35294081203` 已取消）；Site Data Refresh run `35294086819` 后官网 6/6 `gitcode_ok=true`。
+
+## 60. v0.1.6-alpha.2.shell.2 Windows 发布验证强化轮（2026-09-20）
+
+#56(sharp ERR_DLOPEN_FAILED)+ #39(运行时损坏)的排查方法固化为发布 gate,并在真实流水线首跑通过。
+
+1. **新 gate:`scripts/verify-windows-installer.mjs`**——解包 NSIS(→ 内层 app-64.7z)断言九个关键文件存在(内置 node.exe、闭包清单、sharp JS + win32 `.node` + libvips 双 DLL、mobile-shell、agent-trash-hook、主程序),并对 node.exe/sharp/libvips 按闭包 SHA-256 清单逐一校验。接在 release.yml Windows job 的打包之后、上传之前;支持本地运行(7z/7zz,装器或 dist 目录两种入参)。方法论来自 #56 排查(对已发布安装器逐文件解剖)。
+2. **gate 的首跑自证**:第一版在 CI 立即失败——Windows 7z 列表用反斜杠路径而本地 7zz 用正斜杠,归一化后双端通过。这正好证明该 gate 真的在拦截差异,而不是摆设。
+3. **发布**:tag `v0.1.6-alpha.2.shell.2` → `85af29c`(peeled 双端一致;期间 notes 占位符警告触发过一次 tag 重对齐,失败 tag 无产物不留痕)。Release run `35515502208` verify + 三平台 build + publish 全绿,8 资产 + attestation;新 gate 输出 "9 critical files present, 3 sha256 verified"。
+4. **镜像(GitCode 侧事件,巡检继续跟进)**:本机 mirror 上传 API 成功但匿名探测 0/6;dispatch backfill(run `35522593069`)后 runner 端确认 **8 文件全部上传成功**(exe 256M/deb 199M/dmg 275M),GitCode release API 也已列出全部资产——但公开下载 URL 持续 404 超过 40 分钟,判定为 GitCode 附件处理/CDN 延迟的服务端问题(当日 GitCode API 多次抖动)。GitHub 主渠道完整健康;每日 17:11 UTC 的 Site Data Refresh 会自动重探,镜像生效后官网 `gitcode_ok` 将自动转 true;若次日巡检仍 404,升级为向 GitCode 工单反馈。
+5. **同轮杂项**:#56 已回复证据级诊断(发布包 sharp 全链完整)+ 分步解决指引,@报告人;#33/#39 继续等待外部反馈。
