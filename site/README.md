@@ -53,7 +53,7 @@ cd site && python3 -m http.server 8080
 
 正式域名 <https://dsh-desktop.com>(www 308 跳转主域),阿里云 DNS:
 A `@` → `216.198.79.1` / `64.29.17.1`,CNAME `www` → Vercel 专属解析值。
-HTTPS 证书由 Vercel 自动签发续期;`dsh-electron-shell.vercel.app` 作为备用域名保留。
+HTTPS 证书由 Vercel 自动签发续期;`dsh-electron-shell.vercel.app` 备用域名在国内被阻断(2026-09-21 实测),不再作为用户引导,用户兜底走 GitHub/GitCode Releases;正式域名 `dsh-desktop.com` 已在阿里云解析钉到可达的 Vercel 段 `64.29.17.x`(巡检监控)。
 
 ## 下载引导计数(可选,激活即可统计 GitCode)
 

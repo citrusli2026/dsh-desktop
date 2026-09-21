@@ -7,7 +7,7 @@
 
 | 项 | 状态 |
 |---|---|
-| 官网 | ✅ <https://dsh-desktop.com>（备用 <https://dsh-electron-shell.vercel.app>） |
+| 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
 | 最新代码基线 | ✅ `0.1.6-alpha.2.shell.1`（2026-09-18 已发布；内核 `0.1.6-alpha.2`；垃圾桶完善轮交付） |
 | 已发布 | ✅ `0.1.6-alpha.2.shell.1`（三端 dmg/exe/deb；垃圾桶设计体系统一 + 两步确认 + 内核入桶 + 归档互操作修复） |
@@ -129,7 +129,7 @@ fallback 依次为 gitcode-backfill workflow 与
   后续仍要在发版后核对 tag peeled
   commit，不能只检查"同名 tag 已存在"。
 - macOS 仍未签名/公证；首次运行需右键打开，应用只检查更新并引导下载。
-- `*.vercel.app` 在国内可能受 DNS 影响；正式域名使用 `dsh-desktop.com`。
+- `*.vercel.app`（含备用域名）在国内被整体阻断不可达（2026-09-21 实测）；`dsh-desktop.com` 的 Vercel 任播段 `216.198.79.0/24` 同样被阻断，解析已钉在健康段 `64.29.17.x`（巡检每日监控，见 §60）。
 
 ## 七、shell.14（已发布 2026-08-17）
 

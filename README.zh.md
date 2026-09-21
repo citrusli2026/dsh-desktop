@@ -62,8 +62,10 @@ DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打�
 | Windows | `dsh-desktop-setup-<版本>.exe`(NSIS) |
 | Linux | `dsh-desktop-<版本>-amd64.deb`(Debian/Ubuntu/UOS/Deepin/麒麟) |
 
-从[官网](https://dsh-desktop.com)(按可用性展示 GitHub 与 GitCode 镜像)或
-[GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases)下载。
+从[官网](https://dsh-desktop.com)(按可用性展示 GitHub 与 GitCode 镜像)、
+[GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases)或
+[GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)下载;
+官网若在你的网络无法访问(个别网络对托管边缘不稳定),直接用后两个渠道即可。
 校验:核对旁侧的 `.sha256`,或 `gh attestation verify <文件> -R citrusli2026/dsh-desktop`
 验证来源证明,各平台完整步骤见[官网 FAQ](https://dsh-desktop.com/#faq)。
 

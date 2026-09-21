@@ -56,7 +56,7 @@ Installers per platform (plus `latest.yml` and `.exe.blockmap` in the release fo
 | Windows | `dsh-desktop-setup-<version>.exe` (NSIS) |
 | Linux | `dsh-desktop-<version>-amd64.deb` (Debian/Ubuntu/UOS/Deepin/麒麟) |
 
-Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the GitCode mirror) or [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases). Verify what you downloaded with the sibling `.sha256`, or `gh attestation verify <file> -R citrusli2026/dsh-desktop` for provenance — full steps per platform in the [website FAQ](https://dsh-desktop.com/#faq).
+Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the GitCode mirror), [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases), or the [GitCode mirror releases](https://gitcode.com/citrusli2026/dsh-desktop/releases). If the website is unreachable from your network (some networks have unstable routes to the hosting edge), use the release pages directly. Verify what you downloaded with the sibling `.sha256`, or `gh attestation verify <file> -R citrusli2026/dsh-desktop` for provenance — full steps per platform in the [website FAQ](https://dsh-desktop.com/#faq).
 
 ## FAQ
 
