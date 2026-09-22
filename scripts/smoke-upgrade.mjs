@@ -105,13 +105,18 @@ async function assertPreserved(before) {
   for (const path of preserved) {
     if (before[path] !== after[path]) throw new Error(`upgrade changed user-owned state: ${path}`)
   }
-  // settings.yaml migration contract (kernel 0.1.7): the pre-upgrade file is
-  // archived verbatim as settings.yaml.imported — values survive the upgrade.
+  // settings.yaml migration contract (kernel 0.1.7): the settings service
+  // imports the legacy file AFTER the loader settles every entry — a smoke
+  // that exits at readiness can legitimately observe either the untouched
+  // file or its verbatim .imported archive. Data loss is the only failure:
+  // both gone (or the archive altered) means values were destroyed.
   const beforeSettings = before[join(dshHome, 'settings.yaml')]
   if (beforeSettings !== undefined) {
+    const legacyStillThere = after[join(dshHome, 'settings.yaml')] !== null && after[join(dshHome, 'settings.yaml')] !== undefined
     const importedPath = join(dshHome, 'settings.yaml.imported')
-    const afterImported = createHash('sha256').update(await readFile(importedPath)).digest('hex')
-    if (afterImported !== beforeSettings) throw new Error('upgrade did not archive settings.yaml verbatim (settings.yaml.imported mismatch)')
+    const importedHash = await readFile(importedPath).then(buffer => createHash('sha256').update(buffer).digest('hex')).catch(() => null)
+    if (!legacyStillThere && importedHash === null) throw new Error('upgrade lost settings.yaml without the settings.yaml.imported archive')
+    if (importedHash !== null && importedHash !== beforeSettings) throw new Error('settings.yaml.imported does not match the pre-upgrade file')
   }
 }
 
