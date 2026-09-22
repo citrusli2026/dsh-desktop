@@ -1704,3 +1704,7 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 4. **门禁**:296 单测、双树审计归零、dev E2E 16/16、三冒烟(新契约)、垃圾桶 E2E、market offline 1/1 + real 2/2、LAN QR 2/2。
 5. **发布**:tag `v0.1.7-alpha.1.shell.0` → `1e7db47`;Release run `35761646851`。
 6. **镜像/官网**:GitCode 平台附件故障(§60/§61)持续,shell.2/.3 仍 404;本版镜像后同法验证,官网数据由调度重探。
+
+### §62 补记(同日):0.1.7 发版中止,main 回滚 0.1.6-alpha.2(shell.4)
+
+CI 三跑三种新表现,未收敛,按"宁停不发"中止本版:①升级冒烟 settings.yaml 严格保留断言撞上 0.1.7 设置迁移(已适配两态:未迁移存续 / 逐字节 .imported 归档,只拦真实丢失);②notice E2E 固定 4 行断言(已平台感知);③无头 Linux 打包 E2E 的设置入口导航(0.1.7 新 UI 把 Settings 挪进左下角账号弹层)在 xvfb 下超时,本地 macOS 通过、无头 Linux 未收敛。main 回滚到 0.1.6-alpha.2 线并 bump shell.4;失败 tag `v0.1.7-alpha.1.shell.0` 双远端保留。内核 0.1.7 升级要点备忘:设置文件迁移(无损)、loader 隔离损坏插件、设置入口移至账号弹层——重启发版前需完成无头 Linux 弹层导航适配。
