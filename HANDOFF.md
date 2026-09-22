@@ -1692,5 +1692,6 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 2. **ERR_DLOPEN_FAILED 精确归因**:`classifyNativeModuleFailure`(safe-mode)单独归类原生模块加载失败;错误页显示专用提示(区分于 spawn EFTYPE 的运行文件指引),诊断报告新增 `native_module_failure` 行 + VC++ 直链 hint。#56 用户报"缺依赖"与实际"文件被环境破坏/运行库缺失"从此在日志层可分。
 3. **安装器中英双语**:`nsis.installerLanguages: [zh_CN, en_US]`,安装界面按系统语言自动匹配。
 4. **门禁**:296 单测(+8:win-runtime 检测/门控/标记、dlopen 归类、错误页提示、诊断行)、dev E2E 16/16、三打包冒烟、垃圾桶 E2E、market offline 1/1 + real 2/2、LAN QR 2/2、双树审计归零。
-5. **发布**:tag `v0.1.6-alpha.2.shell.3` → `c7dc464`;Release run `35670997043`。
+5. **发布**:tag `v0.1.6-alpha.2.shell.3` → `4752fdb` → **`a1f666c`**(peeled 双端一致)。CI 三跑:首跑暴露体检 E2E 的 Windows 固定 id 列表断言(新 win-runtime 项),次跑暴露 notice E2E 的固定 4 行断言——两处均改为平台感知后第三跑全绿(run `35674525525`,verify + 三平台 + 新安装器门禁 + publish)。这两个断言修正本身是对本轮新功能的适配,非产品缺陷。
+6. **镜像(GitCode 平台故障确认扩大)**:shell.3 与 shell.2 同症——上传 API 全部成功、release API 列出全部附件、匿名下载 404。两个连续版本同症,确认为 **GitCode 平台级附件故障**(2026-09-20 起影响所有新 release),非本侧可修。**工单升级为紧急**:需 GitCode 修复附件存储/CDN;期间所有版本的国内镜像下载不可用,GitHub 主渠道正常。
 6. **遗留**:shell.2 的 GitCode 附件 404(GitCode 服务端存储不一致,§60)次巡检仍未恢复,工单待维护者提交;shell.3 镜像后同法验证,若同样 404 则确认平台级问题。
