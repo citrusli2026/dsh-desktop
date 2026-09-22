@@ -1683,3 +1683,14 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 4. **镜像(GitCode 侧事件,巡检继续跟进)**:本机 mirror 上传 API 成功但匿名探测 0/6;dispatch backfill(run `35522593069`)后 runner 端确认 **8 文件全部上传成功**(exe 256M/deb 199M/dmg 275M),GitCode release API 也已列出全部资产——但公开下载 URL 持续 404 超过 40 分钟,判定为 GitCode 附件处理/CDN 延迟的服务端问题(当日 GitCode API 多次抖动)。GitHub 主渠道完整健康;每日 17:11 UTC 的 Site Data Refresh 会自动重探。
    **次日巡检(2026-09-21)仍 404,升级确认**:对照 shell.1 资产 Range GET 206 正常,shell.2 为 GitCode 返回 "路径不存在"(NOT_PATH)——服务端存储未持久化该 release 的附件,非本侧可修复。**待维护者向 GitCode 提工单**(内容:release API 列出全部附件但下载 URL 404,trace_id 8578d8a030e3d8f6b901fae08a3467fc 样例,疑似附件上传与 tag force-push 重对齐相互作用的存储孤儿;请后台修复或重建该 release 附件)。期间官网该版本 gitcode_ok=false 属实,GitHub 主渠道可用;#57/#58 过程建档已回复关闭。
 5. **同轮杂项**:#56 已回复证据级诊断(发布包 sharp 全链完整)+ 分步解决指引,@报告人;#33/#39 继续等待外部反馈。
+
+## 61. v0.1.6-alpha.2.shell.3 Windows 体验专项（2026-09-22）
+
+#56 暴露的"原生组件加载失败"从被动报错转为主动检测与精确指引;Windows 下载占 75%,本轮全部面向 Windows。
+
+1. **VC++ 运行库主动检测(`src/main/win-runtime.ts`)**:Windows 首启检测 System32 的 msvcp140/vcruntime140/vcruntime140_1 三件套(sharp 预编译二进制的 dlopen 依赖),缺失时一次性弹窗直达微软官方安装器;「运行体检」新增 Windows 运行库 项(含官方直链 repairUrl)。关闭与提示均写入 userData 标记,不再打扰。
+2. **ERR_DLOPEN_FAILED 精确归因**:`classifyNativeModuleFailure`(safe-mode)单独归类原生模块加载失败;错误页显示专用提示(区分于 spawn EFTYPE 的运行文件指引),诊断报告新增 `native_module_failure` 行 + VC++ 直链 hint。#56 用户报"缺依赖"与实际"文件被环境破坏/运行库缺失"从此在日志层可分。
+3. **安装器中英双语**:`nsis.installerLanguages: [zh_CN, en_US]`,安装界面按系统语言自动匹配。
+4. **门禁**:296 单测(+8:win-runtime 检测/门控/标记、dlopen 归类、错误页提示、诊断行)、dev E2E 16/16、三打包冒烟、垃圾桶 E2E、market offline 1/1 + real 2/2、LAN QR 2/2、双树审计归零。
+5. **发布**:tag `v0.1.6-alpha.2.shell.3` → `c7dc464`;Release run `35670997043`。
+6. **遗留**:shell.2 的 GitCode 附件 404(GitCode 服务端存储不一致,§60)次巡检仍未恢复,工单待维护者提交;shell.3 镜像后同法验证,若同样 404 则确认平台级问题。

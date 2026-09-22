@@ -416,15 +416,22 @@ shellTest('health check is local by default and adds advisory connectivity check
   const run = (includeNetwork: boolean) => window.evaluate(value => (window as unknown as {
     dshDesktop?: { runHealthCheck(options: { includeNetwork: boolean }): Promise<{ networkIncluded: boolean; results: Array<{ id: string; status: string }> } | null> }
   }).dshDesktop?.runHealthCheck({ includeNetwork: value }), includeNetwork)
+  // Windows adds a runtime-library item right after storage (issue #56 family).
+  const localIds = ['runtime', 'storage', 'harness', 'profile']
+  const connectedIds = ['runtime', 'storage', 'harness', 'profile', 'proxy', 'registry', 'updates']
+  if (process.platform === 'win32') {
+    localIds.splice(2, 0, 'win-runtime')
+    connectedIds.splice(2, 0, 'win-runtime')
+  }
   const local = await run(false)
   expect(local?.networkIncluded).toBe(false)
-  expect(local?.results.map(result => result.id)).toEqual(['runtime', 'storage', 'harness', 'profile'])
+  expect(local?.results.map(result => result.id)).toEqual(localIds)
   expect(JSON.stringify(local)).not.toContain(dshHome)
   expect(JSON.stringify(local)).not.toContain(userData)
 
   const connected = await run(true)
   expect(connected?.networkIncluded).toBe(true)
-  expect(connected?.results.map(result => result.id)).toEqual(['runtime', 'storage', 'harness', 'profile', 'proxy', 'registry', 'updates'])
+  expect(connected?.results.map(result => result.id)).toEqual(connectedIds)
   expect(connected?.results.filter(result => ['proxy', 'registry', 'updates'].includes(result.id)).every(result => ['ok', 'warning'].includes(result.status))).toBe(true)
 })
 
