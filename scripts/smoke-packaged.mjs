@@ -112,18 +112,21 @@ try {
     console.log(`packaged smoke: closure OK ${executable} (clean verified, tamper detected)`)
   } else if (safeBreak) {
     await installBrokenPlugin()
-    // Stage 1 (negative): the broken plugin must fail the ordinary boot.
+    // Stage 1 (kernel 0.1.7+ contract): the loader isolates a broken bundle
+    // and the boot SUCCEEDS — the failure signature must still land in the
+    // harness log, and readiness must be reached. (On older kernels the boot
+    // crashed here; that contract died with the allSettled loader.)
     const broken = await runSmoke({ flags: [SMOKE_UI_FLAG] })
-    if (broken.code === SMOKE_EXIT_OK) {
-      throw new Error('safe-mode smoke: broken plugin unexpectedly reached readiness')
+    if (broken.code !== SMOKE_EXIT_OK) {
+      throw new Error(`safe-mode smoke: ordinary boot with a broken plugin failed (code ${String(broken.code)}); kernel 0.1.7 isolates broken entries instead`)
     }
     // The supervisor writes harness output to userData/logs/harness.log, so
     // the plugin-failure signature lives there rather than on stderr.
     const harnessLog = await readFile(join(userData, 'logs', 'harness.log'), 'utf8').catch(() => '')
-    if (!harnessLog.includes('failed to apply loader entry smoke-broken')) {
+    if (!harnessLog.includes('dsh-smoke-broken-plugin') || !harnessLog.includes('SMOKE_BROKEN_PLUGIN')) {
       throw new Error('safe-mode smoke: broken plugin failure signature missing from harness.log')
     }
-    console.error('safe-mode smoke: broken plugin confirmed (boot failed as expected)')
+    console.error('safe-mode smoke: broken plugin isolated by the kernel, boot reached readiness (as expected on 0.1.7+)')
     // Stage 2: Safe Mode quarantines the plugin, renders, and shows the banner.
     await writeFile(join(userData, 'shell-preferences.json'), JSON.stringify({ safeMode: true, closeToTrayExplained: true }))
     const safe = await runSmoke({ flags: [SMOKE_UI_FLAG], env: { [SMOKE_SAFE_ENV]: '1' } })
@@ -135,7 +138,7 @@ try {
       console.error(`safe-mode smoke: profile manifest ${manifestPath} (${typeof raw === 'string' ? `${Buffer.byteLength(raw)}B` : raw}): ${typeof raw === 'string' ? raw.slice(0, 400) : ''}`)
       throw new Error(`safe-mode smoke: safe boot failed with code ${String(safe.code)}`)
     }
-    console.error('safe-mode smoke: OK — broken plugin quarantined, banner rendered')
+    console.error('safe-mode smoke: OK — safe boot renders with the banner')
   } else {
     const flags = smokeUi ? [SMOKE_UI_FLAG] : []
     const result = await runSmoke({ flags })

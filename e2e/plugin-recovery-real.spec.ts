@@ -1,11 +1,9 @@
 /**
- * Real-registry plugin-recovery E2E (packaged, @market-real): an on-disk
- * dshmarket bundle throws during composition, the shell auto-quarantines it
- * and boots, then the recovery bridge pulls the real latest version from npm,
- * re-enables it, and boots the harness for real.
- *
- * The recovery IPC accepts only the main window, so this flow exercises the
- * same update-and-restart path exposed by the recovery banner.
+ * Real-registry plugin E2E (packaged, @market-real): an on-disk dshmarket
+ * bundle throws during composition. Kernel 0.1.7+ isolates the broken entry
+ * and boots anyway — the shell stays usable and the market row stays
+ * actionable for a clean reinstall. (The crash-based auto-quarantine banner
+ * remains for older kernels and non-loader crash classes.)
  */
 import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
 import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
@@ -19,6 +17,7 @@ interface RecoveryFixture {
   electronApp: ElectronApplication
   window: Page
   dshHome: string
+  userData: string
 }
 
 const recoveryTest = test.extend<RecoveryFixture>({
@@ -98,45 +97,31 @@ const recoveryTest = test.extend<RecoveryFixture>({
   dshHome: async ({ electronApp }, use) => {
     await use(await electronApp.evaluate(() => process.env.DSH_HOME ?? ''))
   },
+  userData: async ({ electronApp }, use) => {
+    await use(await electronApp.evaluate(({ app }) => app.getPath('userData')))
+  },
 })
 
 recoveryTest.skip(MODE !== 'real', 'run through pnpm test:e2e:market:real')
 
-recoveryTest('auto-quarantine Update pulls the real latest plugin and boots @market-real', async ({ window, dshHome }) => {
-  // The broken bundle is removed from the boot list and Harness comes back;
-  // its suspect remains actionable through the recovery bridge.
+recoveryTest('kernel 0.1.7 isolates a broken market plugin and the shell stays usable @market-real', async ({ window, dshHome, userData }) => {
+  // Kernel 0.1.7+ isolates a broken bundle instead of crashing: the boot
+  // reaches readiness with the real UI, the failure stays visible in
+  // harness.log, and the plugin remains on the boot list for a clean
+  // reinstall from the market row.
   await expect(window.locator('[data-dsh-boot]')).toHaveCount(0, { timeout: 300_000 })
-  await expect.poll(() => window.evaluate(() => (window as unknown as {
-    dshDesktop?: { getRecoverySuspects(): Promise<Array<{ id: string; name?: string }> | null> }
-  }).dshDesktop?.getRecoverySuspects().then(rows => (rows ?? []).map(row => row.name ?? row.id))).catch(() => []), { timeout: 60_000 })
-    .toContain('dshmarket')
-  const quarantined = JSON.parse(await import('node:fs/promises').then(fs => fs.readFile(join(dshHome, 'profiles', 'web', 'package.json'), 'utf8'))) as {
+  await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-controls]') !== null).catch(() => false), { timeout: 120_000 }).toBe(true)
+
+  const harnessLog = await readFile(join(userData, 'logs', 'harness.log'), 'utf8').catch(() => '')
+  expect(harnessLog).toContain('BROKEN_DSHMARKET_E2E')
+
+  const manifest = JSON.parse(await readFile(join(dshHome, 'profiles', 'web', 'package.json'), 'utf8')) as {
     dsh?: { profile?: { bundles?: string[] } }
   }
-  expect(quarantined.dsh?.profile?.bundles).not.toContain('dshmarket')
+  expect(manifest.dsh?.profile?.bundles).toContain('dshmarket')
 
-  await window.getByRole('button', { name: '继续', exact: true }).click({ timeout: 30_000 })
-  await window.getByRole('button', { name: '稍后配置', exact: true }).click({ timeout: 30_000 })
-  const recoveryBanner = window.locator('[data-dsh-safe-mode-banner]')
-  await expect(recoveryBanner).toContainText('问题插件已自动隔离')
-  await recoveryBanner.getByRole('button', { name: '升级并重新启用', exact: true }).click()
-  await expect.poll(() => window.evaluate(() => (window as unknown as {
-    dshDesktop?: { getBundledPlugins(): Promise<{ dshMarket: { state: string; version?: string } } | null> }
-  }).dshDesktop?.getBundledPlugins().then(value => value?.dshMarket)).catch(() => undefined), { timeout: 60_000 })
-    .toEqual(expect.objectContaining({ state: 'installed' }))
-
-  // The installed version must be a real published release. It is not pinned
-  // to the dist-tag: pnpm's registry metadata can trail a just-published
-  // version, which is acceptable for a recovery update.
-  const published = await fetch('https://registry.npmjs.org/dshmarket', { signal: AbortSignal.timeout(15_000) })
-    .then(response => response.json() as Promise<{ versions?: Record<string, unknown> }>)
-  expect(typeof published.versions).toBe('object')
-  await expect.poll(async () => {
-    const version = await window.evaluate(() => (window as unknown as {
-      dshDesktop?: { getBundledPlugins(): Promise<{ dshMarket: { version?: string } } | null> }
-    }).dshDesktop?.getBundledPlugins().then(value => value?.dshMarket.version)).catch(() => undefined)
-    return version !== undefined && Object.hasOwn(published.versions ?? {}, version)
-  }, { timeout: 60_000 }).toBe(true)
-  const manifest = await import('node:fs/promises').then(fs => fs.readFile(join(dshHome, 'profiles', 'web', 'package.json'), 'utf8'))
-  expect(manifest).toContain('dshmarket')
+  const market = await window.evaluate(() => (window as unknown as {
+    dshDesktop?: { getBundledPlugins(): Promise<{ dshMarket: { state?: string; version?: string } } | null> }
+  }).dshDesktop?.getBundledPlugins().then(value => value?.dshMarket)).catch(() => undefined)
+  expect(market).toEqual(expect.objectContaining({ state: 'installed' }))
 })

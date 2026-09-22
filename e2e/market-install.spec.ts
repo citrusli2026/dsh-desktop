@@ -102,11 +102,41 @@ async function openExtensionSettings(window: Page): Promise<ReturnType<Page['loc
   if (await settings.isVisible().catch(() => false)) return settings
   const settingsDialog = window.getByRole('dialog', { name: /^(Settings|设置)$/ }).first()
   if (!await settingsDialog.isVisible().catch(() => false)) {
-    const expandSidebar = window.getByRole('button', { name: /^(Open sidebar|打开侧边栏)$/ }).first()
-    if (await expandSidebar.isVisible().catch(() => false)) await expandSidebar.click()
-    const settingsButton = window.getByRole('button', { name: /^(Settings|设置)$/ }).first()
-    await expect(settingsButton).toBeVisible({ timeout: 15_000 })
-    await settingsButton.click()
+    // Kernel 0.1.7+: the Settings entry lives in the bottom-left account
+    // popover (avatar row → Settings / Feedback / Sign in). A market install
+    // restarts the harness, so wait for the real UI before touching it.
+    await expect.poll(() => window.evaluate(() => document.querySelector('[data-dsh-desktop-controls]') !== null).catch(() => false), { timeout: 120_000 }).toBe(true)
+    const guideClose = window.locator('[data-dsh-guide-close]')
+    // The account row's accessible name is stable across locales/states (aria snapshot).
+    const account = window.getByRole('button', { name: /账号菜单|Account menu/ }).first()
+    let opened = false
+    for (let attempt = 0; attempt < 2 && !opened; attempt++) {
+      try {
+        // The first-run guide remounts after a restart and mounts a
+        // full-window mask (it also closes open popovers) — dismiss it
+        // inside every attempt before opening the popover.
+        const close = await guideClose.isVisible().catch(() => false)
+        if (close) await guideClose.click().catch(() => undefined)
+        await expect(account).toBeVisible({ timeout: 60_000 })
+        await account.click()
+        await window.waitForTimeout(1_200)
+        await window.screenshot({ path: `test-results/popover-attempt-${attempt}.png` })
+        const entry = window.getByText(/^(Settings|设置)$/, { exact: true }).first()
+        await expect(entry).toBeVisible({ timeout: 8_000 })
+        await entry.click()
+        opened = true
+      } catch {
+        await window.waitForTimeout(1_500)
+      }
+    }
+    if (!opened) {
+      // Fallback: older layouts exposed a sidebar Settings button.
+      const expandSidebar = window.getByRole('button', { name: /^(Open sidebar|打开侧边栏)$/ }).first()
+      if (await expandSidebar.isVisible().catch(() => false)) await expandSidebar.click()
+      const settingsButton = window.getByRole('button', { name: /^(Settings|设置)$/ }).first()
+      await expect(settingsButton).toBeVisible({ timeout: 15_000 })
+      await settingsButton.click()
+    }
   }
   await expect(settingsDialog).toBeVisible({ timeout: 15_000 })
   const extensionNav = settingsDialog.getByRole('button', { name: /^(Desktop settings|桌面设置)$/ }).first()
