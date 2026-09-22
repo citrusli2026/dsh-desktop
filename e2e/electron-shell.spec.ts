@@ -632,7 +632,9 @@ shellTest('packaged app shows a desktop notice for a real state edge and restore
   const healthNetwork = settings.getByRole('checkbox', { name: /Also check proxy/ })
   await expect(healthNetwork).not.toBeChecked()
   await settings.getByRole('button', { name: 'Run check' }).click()
-  await expect(settings.locator('[data-dsh-health-result]')).toHaveCount(4, { timeout: 15_000 })
+  // Windows renders one extra row: the runtime-library check (#56 family).
+  const expectedHealthRows = process.platform === 'win32' ? 5 : 4
+  await expect(settings.locator('[data-dsh-health-result]')).toHaveCount(expectedHealthRows, { timeout: 15_000 })
   await expect(settings).toContainText('Results stay local and sanitized')
   await settings.screenshot({ path: testInfo.outputPath('02-desktop-preferences.png') })
   await advancedSettings.locator('summary').click()
