@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.6-alpha.2.shell.3 <small>（kernel 0.1.6-alpha.2）</small></h2>
+  <ul>
+    <li>Windows-first iteration: the shell now proactively detects a missing Microsoft VC++ 2015-2022 redistributable (the dependency behind issue #56's ERR_DLOPEN_FAILED failures), shows a one-time first-run dialog linking the official installer, and reports a dedicated &quot;Windows runtime library&quot; item in the health check.</li>
+    <li>dlopen failures are classified separately on error pages and in exported diagnostics — users see &quot;missing VC++ runtime or antivirus quarantine&quot; with concrete steps instead of a raw log.</li>
+    <li>The Windows installer UI now follows the system language (Chinese/English). Bundled kernel unchanged at 0.1.6-alpha.2; all detection is local, nothing is uploaded.</li>
+  </ul>
+
   <h2>v0.1.6-alpha.2.shell.2 <small>（kernel 0.1.6-alpha.2）</small></h2>
   <ul>
     <li>New release gate: every Windows installer is unpacked and verified before publish — bundled node.exe, the sharp native chain (.node + libvips DLLs), the closure integrity manifest, mobile-shell, and agent-trash-hook must be present, with the highest-risk binaries hashed against the packaged closure manifest. Moves #39/#56-class verification from &quot;discovered on user machines&quot; to &quot;blocked in the release pipeline&quot;.</li>
@@ -89,12 +96,6 @@
   <ul>
     <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24.</li>
     <li>The shell now writes kernel-shared files (profile manifest, Safe Mode overlay and suspects) atomically, eliminating the torn-manifest boot failure behind the Ubuntu Safe Mode smoke family.</li>
-    <li>Adds the Windows NSIS upgrade-residue analysis with a manual verification matrix.</li>
-  </ul>
-
-  <h2>v0.1.5-rc.2.shell.6</h2>
-  <ul>
-    <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24; no native rebuilds needed.</li>
     <li>Adds the Windows NSIS upgrade-residue analysis with a manual verification matrix.</li>
   </ul>
   <!-- changelog:auto:end -->

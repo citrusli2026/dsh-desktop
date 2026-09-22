@@ -42,6 +42,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.6-alpha.2.shell.3 <small>（内核 0.1.6-alpha.2）</small></h2>
+  <ul>
+    <li><strong>VC++ 运行库主动检测</strong>：Windows 首次启动时检测 Microsoft VC++ 2015-2022 运行库（sharp 等原生组件的依赖），缺失时弹出一次性提示，一键打开微软官方下载页；选择&quot;稍后再说&quot;后本次安装不再打扰。「运行体检」同步新增 <strong>Windows 运行库</strong> 项，随时可查。</li>
+    <li><strong>加载失败精确归因</strong>：安装或启动报 <code>ERR_DLOPEN_FAILED</code> 时，错误页与导出的诊断报告不再只有原始日志——现在明确指出&quot;缺少 VC++ 运行库或杀毒软件隔离了文件&quot;，并给出官方运行库直链与杀软白名单指引。</li>
+    <li><strong>安装器中英双语</strong>：Windows 安装界面按系统语言自动显示中文或英文（此前默认英文）。</li>
+    <li><strong>内核与边界不变</strong>：内置内核仍为 0.1.6-alpha.2；不新增权限、不改变插件安装与数据目录边界；检测全部在本机完成，不上传任何信息。</li>
+  </ul>
+
   <h2>v0.1.6-alpha.2.shell.2 <small>（内核 0.1.6-alpha.2）</small></h2>
   <ul>
     <li><strong>Windows 安装器内容门禁（新增发布 gate）</strong>:每个 Windows 安装器在发布前都会被解包核验——内置 <code>node.exe</code>、sharp 原生链(<code>.node</code> + libvips DLL)、闭包完整性清单、mobile-shell、agent-trash-hook 九个关键文件必须存在,其中最高风险的两个二进制(node.exe、sharp <code>.node</code>、libvips DLL)还会对照闭包 SHA-256 清单逐一校验哈希。这把 #39(运行时损坏)与 #56(原生模块加载失败)两类问题的验证从&quot;用户机上发现&quot;提前到&quot;发布流水线拦截&quot;。</li>
@@ -99,12 +107,6 @@
   <ul>
     <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24.</li>
     <li>The shell now writes kernel-shared files (profile manifest, Safe Mode overlay and suspects) atomically, eliminating the torn-manifest boot failure behind the Ubuntu Safe Mode smoke family.</li>
-    <li>Adds the Windows NSIS upgrade-residue analysis with a manual verification matrix.</li>
-  </ul>
-
-  <h2>v0.1.5-rc.2.shell.6</h2>
-  <ul>
-    <li>Electron 44.3.0 + bundled Node 24.21.0 LTS, CI on Node 24; no native rebuilds needed.</li>
     <li>Adds the Windows NSIS upgrade-residue analysis with a manual verification matrix.</li>
   </ul>
   <!-- changelog:auto:end -->
