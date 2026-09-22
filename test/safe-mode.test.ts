@@ -307,3 +307,12 @@ test('persisted suspects tolerate a damaged record', async () => {
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+test('classifyNativeModuleFailure flags dlopen failures for the actionable hint', async () => {
+  const { classifyNativeModuleFailure, classifyRuntimeSpawnFailure } = await import('../src/main/safe-mode.ts')
+  const dlopenTail = 'Error: failed to apply loader entry workspace: The specified module could not be found.\nERR_DLOPEN_FAILED at process.dlopen'
+  assert.equal(classifyNativeModuleFailure(dlopenTail), true)
+  assert.equal(classifyNativeModuleFailure('spawn EFTYPE'), false, 'spawn failures are the runtime classifier')
+  assert.equal(classifyNativeModuleFailure('SMOKE_BROKEN_PLUGIN'), false)
+  assert.equal(classifyRuntimeSpawnFailure(dlopenTail), false, 'dlopen is not a spawn failure')
+})

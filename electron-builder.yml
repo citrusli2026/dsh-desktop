@@ -90,6 +90,10 @@ linux:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  # Windows 是用户最多的平台(下载占 75%):安装器界面按系统语言自动匹配中/英。
+  installerLanguages:
+    - zh_CN
+    - en_US
   # build/installer.nsh is picked up by electron-builder's default convention
   # (do NOT set nsis.include — it resolves relative to buildResources and a
   # "build/installer.nsh" value silently matches nothing). The include clears

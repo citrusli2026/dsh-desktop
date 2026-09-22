@@ -8,7 +8,7 @@ import { atomicWriteFile } from './config-file.ts'
 import { closureRepairUrls, verifyClosureManifest } from './closure-manifest.ts'
 import type { HarnessState } from './supervisor.ts'
 import { shellText, type ShellLocale } from './locale.ts'
-import { classifyPluginFailureCause, classifyRuntimeSpawnFailure, collectPluginFailures, inspectPluginInventory, type ComposedRow, type PluginInventory } from './safe-mode.ts'
+import { classifyNativeModuleFailure, classifyPluginFailureCause, classifyRuntimeSpawnFailure, collectPluginFailures, inspectPluginInventory, type ComposedRow, type PluginInventory } from './safe-mode.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { harnessRoot, resourcesRoot } from './paths.ts'
 import { readProfileStatus, type ProfileStatus } from './profile.ts'
@@ -189,6 +189,10 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
     `runtime_spawn_failure=${classifyRuntimeSpawnFailure(facts.logTail)}`,
     ...(classifyRuntimeSpawnFailure(facts.logTail)
       ? ['hint=the bundled Node binary failed to spawn (damaged or blocked files); reinstall from the full installer']
+      : []),
+    `native_module_failure=${classifyNativeModuleFailure(facts.logTail)}`,
+    ...(classifyNativeModuleFailure(facts.logTail)
+      ? ['hint=a native module failed to dlopen (ERR_DLOPEN_FAILED): install the Microsoft VC++ 2015-2022 redistributable (x64, https://aka.ms/vs/17/release/vc_redist.x64.exe) or check antivirus quarantine of DLLs under resources\\harness']
       : []),
     '',
     '# Closure integrity (bundled files vs packaged manifest)',

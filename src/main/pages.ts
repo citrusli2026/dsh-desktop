@@ -6,7 +6,7 @@
 
 import { shellText, type ShellLocale } from './locale.ts'
 import { asDataUrl, escapeHtml } from './shell-html.ts'
-import { classifyRuntimeSpawnFailure, type ComposedRow } from './safe-mode.ts'
+import { classifyNativeModuleFailure, classifyRuntimeSpawnFailure, type ComposedRow } from './safe-mode.ts'
 import type { HarnessStartupStage } from './supervisor.ts'
 
 const STYLE = `
@@ -116,10 +116,14 @@ export function errorPageHtml(
   const retryFailed = shellText(locale, 'page.retryFailed')
   // A spawn-phase failure of the bundled Node runtime means damaged/missing
   // runtime files, not a plugin problem — say so instead of leaving the raw
-  // `spawn EFTYPE` line as the only clue.
+  // `spawn EFTYPE` line as the only clue. A native-module dlopen failure
+  // (#56) gets its own hint: VC++ redistributable missing or antivirus
+  // quarantine, with the concrete fix.
   const runtimeHint = classifyRuntimeSpawnFailure(logTail)
     ? `<p class="suspects">${escapeHtml(shellText(locale, 'page.runtimeHint'))}</p>`
-    : ''
+    : classifyNativeModuleFailure(logTail)
+      ? `<p class="suspects">${escapeHtml(shellText(locale, 'page.nativeModuleHint'))}</p>`
+      : ''
   const safeModeLabel = safeMode ? shellText(locale, 'page.safeModeExit') : shellText(locale, 'page.safeModeStart')
   const suspect = suspects[0]
   const suspectLine = suspect === undefined

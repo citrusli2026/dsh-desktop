@@ -188,3 +188,26 @@ test('formatDiagnosticReport includes the closure integrity verdict and bounded 
   })
   assert.match(dev, /status=not-run/)
 })
+
+test('formatDiagnosticReport flags native module dlopen failures with the VC++ hint', () => {
+  const report = formatDiagnosticReport({
+    createdAt: '2026-09-21T00:00:00.000Z',
+    appVersion: '1.0.0.shell.3', electronVersion: '44.3.0', chromiumVersion: '142', nodeVersion: '24',
+    platform: 'win32', platformRelease: '10.0.26200', arch: 'x64',
+    harnessState: { phase: 'crashed', attempts: 3, logTail: 'ignored' },
+    logTail: 'ERR_DLOPEN_FAILED, The specified module could not be found.',
+    harnessVersion: '0.1.6-alpha.2', safeMode: false,
+    pluginInventory: undefined, pluginFailures: [], pluginFailureCause: 'unknown',
+  })
+  assert.match(report, /native_module_failure=true/)
+  assert.match(report, /vc_redist\.x64\.exe/)
+  const healthy = formatDiagnosticReport({
+    createdAt: '2026-09-21T00:00:00.000Z',
+    appVersion: '1.0.0.shell.3', electronVersion: '44.3.0', chromiumVersion: '142', nodeVersion: '24',
+    platform: 'win32', platformRelease: '10.0.26200', arch: 'x64',
+    harnessState: undefined, logTail: 'boot ok',
+    harnessVersion: '0.1.6-alpha.2', safeMode: false,
+    pluginInventory: undefined, pluginFailures: [], pluginFailureCause: 'unknown',
+  })
+  assert.match(healthy, /native_module_failure=false/)
+})

@@ -110,3 +110,13 @@ test('errorPageHtml explains a damaged bundled runtime when the harness failed t
   const unrelated = decodeURIComponent(errorPageHtml(0, 'harness exited before ready (code 1)'))
   assert.ok(!unrelated.includes('failed to start'), 'an ordinary crash keeps the plain page')
 })
+
+test('error page renders the native-module hint for dlopen failures', async () => {
+  const { errorPageHtml } = await import('../src/main/pages.ts')
+  const tail = 'Error: failed to apply loader entry workspace\nERR_DLOPEN_FAILED, The specified module could not be found.'
+  const html = decodeURIComponent(errorPageHtml(1, tail, false, [], 'zh').replace(/^data:text\/html;charset=utf-8,/, ''))
+  assert.match(html, /原生组件加载失败/)
+  assert.match(html, /VC\+\+ 2015-2022/)
+  // The spawn-failure hint must NOT appear for a dlopen failure.
+  assert.doesNotMatch(html, /spawn EFTYPE 的唯一线索|运行文件.*缺失、损坏/)
+})

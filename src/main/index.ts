@@ -1,6 +1,6 @@
 /** Electron lifecycle assembly for the bundled DeepSeek Harness runtime. */
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, net, Notification, session, shell, systemPreferences, type MessageBoxOptions } from 'electron'
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { homedir } from 'node:os'
@@ -27,6 +27,7 @@ import {
   type KernelLaunchGuard,
   writeActiveOverlay,
 } from './kernel-manager.ts'
+import { missingVcRuntimeDlls, vcRuntimeDismissedPath, VC_REDIST_URL } from './win-runtime.ts'
 import { ensureInstallShims, prependPath, proxyEnvFromResolveProxy } from './install-env.ts'
 import { installAppMenu, showAboutDialog, type AboutMaintenanceActions } from './menu.ts'
 import { denyUnexpectedPermissions } from './permissions.ts'
@@ -476,6 +477,36 @@ async function explainCloseToTray(): Promise<void> {
     detail: shellText(currentLocale, 'window.closeNoticeDetail'),
     buttons: [shellText(currentLocale, 'window.closeNoticeAcknowledge')],
   })
+}
+
+/** One-time Windows prompt for the VC++ redistributable (#56): sharp's
+ * prebuilt binaries fail dlopen on machines without it, which surfaces as a
+ * confusing startup failure later. Detecting the DLLs proactively and
+ * pointing at the official installer turns that into a two-click fix.
+ * Dismissal is remembered for the install lifetime. */
+let vcRuntimePromptClaimed = false
+async function maybePromptVcRuntime(): Promise<void> {
+  if (vcRuntimePromptClaimed || process.platform !== 'win32') return
+  const missing = missingVcRuntimeDlls()
+  if (missing.length === 0) return
+  if (existsSync(vcRuntimeDismissedPath(app.getPath('userData')))) return
+  vcRuntimePromptClaimed = true
+  const window = windowContext.mainWindow
+  const options: MessageBoxOptions = {
+    type: 'warning',
+    title: shellText(currentLocale, 'window.vcRuntimeTitle'),
+    message: shellText(currentLocale, 'window.vcRuntimeMessage'),
+    detail: shellText(currentLocale, 'window.vcRuntimeDetail', { dlls: missing.join(', ') }),
+    buttons: [shellText(currentLocale, 'window.vcRuntimeDownload'), shellText(currentLocale, 'window.vcRuntimeDismiss')],
+    defaultId: 0,
+    noLink: true,
+  }
+  const { response } = window === undefined || window.isDestroyed()
+    ? await dialog.showMessageBox(options)
+    : await dialog.showMessageBox(window, options)
+  // Either button counts as "informed"; never nag again this install.
+  writeFileSync(vcRuntimeDismissedPath(app.getPath('userData')), '')
+  if (response === 0) void shell.openExternal(VC_REDIST_URL)
 }
 
 async function openLogsFolder(): Promise<void> {
@@ -1241,6 +1272,7 @@ if (!gotLock) {
     }
 
     createMainWindow(windowContext)
+    void maybePromptVcRuntime().catch(error => console.warn(`dsh-desktop: VC runtime prompt failed: ${error instanceof Error ? error.message : String(error)}`))
     installAppMenu(currentLocale, menuActions, false, false, false, false, desktopPreferencesController?.snapshot.shortcut)
     if (!SMOKE_TEST) {
       try {

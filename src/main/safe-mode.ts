@@ -101,6 +101,18 @@ const KERNEL_API_TYPE_ERRORS = [/is not a function/i, /is not a constructor/i]
  * ENOENT = it is missing entirely. Both remediate to a clean reinstall. */
 const RUNTIME_SPAWN_EVIDENCE = /\bspawn (EFTYPE|ENOENT)\b/
 
+/** Native-module load failures after the runtime started (#56): sharp's
+ * prebuilt `.node` (and any other native bundle code) fails to dlopen. On
+ * Windows the two causes are a missing VC++ redistributable or antivirus
+ * quarantine of the DLL — both get a targeted, actionable hint instead of a
+ * generic "startup failed". */
+const NATIVE_MODULE_EVIDENCE = /\bERR_DLOPEN_FAILED\b/
+
+/** True when the log tail shows a native module failed to load. */
+export function classifyNativeModuleFailure(logTail: string): boolean {
+  return NATIVE_MODULE_EVIDENCE.test(logTail)
+}
+
 /** True when the log tail shows the bundled Node binary failed to spawn. */
 export function classifyRuntimeSpawnFailure(logTail: string): boolean {
   return RUNTIME_SPAWN_EVIDENCE.test(logTail)

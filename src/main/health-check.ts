@@ -3,6 +3,7 @@ import { constants } from 'node:fs'
 import { access, open, readFile, stat, statfs } from 'node:fs/promises'
 import { join } from 'node:path'
 import { verifyClosureManifest, closureRepairUrls, type ClosureIntegrityResult } from './closure-manifest.ts'
+import { missingVcRuntimeDlls, VC_REDIST_URL } from './win-runtime.ts'
 import { dshBin, nodeBin } from './paths.ts'
 import { readProfileStatus } from './profile.ts'
 import { collectKernelCompatAdvisories, inspectPluginInventory, WEB_PROFILE } from './safe-mode.ts'
@@ -10,7 +11,7 @@ import type { HarnessState } from './supervisor.ts'
 import type { ShellLocale } from './locale.ts'
 
 export type DesktopHealthStatus = 'ok' | 'warning' | 'failed'
-export type DesktopHealthCheckId = 'runtime' | 'storage' | 'harness' | 'profile' | 'proxy' | 'registry' | 'updates'
+export type DesktopHealthCheckId = 'runtime' | 'storage' | 'harness' | 'profile' | 'proxy' | 'registry' | 'updates' | 'win-runtime'
 
 export interface DesktopHealthResult {
   id: DesktopHealthCheckId
@@ -68,6 +69,10 @@ const COPY = {
     runtimeOk: (version: string) => `Node、Harness 与桌面组件完整 · 内核 ${version}`,
     runtimeFailed: '安装包内的关键运行文件缺失、损坏或不可执行。',
     runtimeAction: '重新下载安装包完整重装；不要手动补写运行文件。',
+    winRuntime: 'Windows 运行库',
+    winRuntimeOk: 'VC++ 2015-2022 运行库完整，原生组件（如图像处理）可正常加载。',
+    winRuntimeWarn: (names: string) => `缺少 Microsoft VC++ 2015-2022 运行库组件（${names}），原生组件将无法加载（安装/启动报 ERR_DLOPEN_FAILED 的常见原因）。`,
+    winRuntimeAction: '从微软官网安装 VC++ 运行库（x64）后重启应用。',
     runtimeIntegrityFailed: (count: number, names: string) => `检测到 ${count} 个安装文件被改动、缺失或多余（如 ${names}），常见于升级残留或杀毒软件改写。`,
     runtimeIntegrityAction: '重新下载安装包完整重装；不要手动补写运行文件。若反复出现，请把安装目录加入杀毒软件白名单。',
     repairSteps: '① 退出 dsh-desktop（含托盘）→ ② 运行下载的安装包覆盖安装 → ③ 完成后重新体检',
@@ -100,6 +105,10 @@ const COPY = {
     runtimeOk: (version: string) => `Node, Harness, and desktop components are intact · kernel ${version}`,
     runtimeFailed: 'A required bundled runtime file is missing, damaged, or not executable.',
     runtimeAction: 'Reinstall from the full installer; do not patch runtime files by hand.',
+    winRuntime: 'Windows runtime library',
+    winRuntimeOk: 'The VC++ 2015-2022 redistributable is present; native components (e.g. image processing) load fine.',
+    winRuntimeWarn: (names: string) => `Microsoft VC++ 2015-2022 redistributable components are missing (${names}); native components will fail to load — the usual cause of ERR_DLOPEN_FAILED at install or startup.`,
+    winRuntimeAction: 'Install the VC++ redistributable (x64) from Microsoft, then restart the app.',
     runtimeIntegrityFailed: (count: number, names: string) => `${count} bundled file(s) were modified, missing, or unexpected (e.g. ${names}) — typically upgrade residue or antivirus rewrites.`,
     runtimeIntegrityAction: 'Reinstall from the full installer; do not patch runtime files by hand. If this repeats, whitelist the install folder in your antivirus.',
     repairSteps: '① Quit dsh-desktop (also from the tray) → ② Run the downloaded installer over the existing install → ③ Run the health check again',
@@ -296,6 +305,15 @@ export async function runDesktopHealthCheck(options: DesktopHealthCheckOptions):
     : storageWarning
       ? { id: 'storage', status: 'warning', label: copy.storage, detail: copy.storageWarn(formatFree(freeBytes)), action: copy.storageAction }
       : { id: 'storage', status: 'ok', label: copy.storage, detail: copy.storageOk(formatFree(freeBytes)) })
+  // Windows runtime library (#56): sharp's prebuilt binaries need the VC++
+  // redistributable; a machine without it fails dlopen even though every
+  // shipped file is intact. Not pushed on macOS/Linux builds.
+  if (process.platform === 'win32') {
+    const missingDlls = missingVcRuntimeDlls()
+    results.push(missingDlls.length > 0
+      ? { id: 'win-runtime', status: 'warning', label: copy.winRuntime, detail: copy.winRuntimeWarn(missingDlls.join(', ')), action: copy.winRuntimeAction, repairUrl: VC_REDIST_URL }
+      : { id: 'win-runtime', status: 'ok', label: copy.winRuntime, detail: copy.winRuntimeOk })
+  }
 
   const stateUrl = options.harnessState?.phase === 'ready' ? options.harnessState.url : undefined
   const harnessReady = stateUrl !== undefined && loopbackUrl(stateUrl) && await probe(stateUrl, options.fetch)
