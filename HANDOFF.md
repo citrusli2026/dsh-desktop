@@ -1695,3 +1695,12 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 5. **发布**:tag `v0.1.6-alpha.2.shell.3` → `4752fdb` → **`a1f666c`**(peeled 双端一致)。CI 三跑:首跑暴露体检 E2E 的 Windows 固定 id 列表断言(新 win-runtime 项),次跑暴露 notice E2E 的固定 4 行断言——两处均改为平台感知后第三跑全绿(run `35674525525`,verify + 三平台 + 新安装器门禁 + publish)。这两个断言修正本身是对本轮新功能的适配,非产品缺陷。
 6. **镜像(GitCode 平台故障确认扩大)**:shell.3 与 shell.2 同症——上传 API 全部成功、release API 列出全部附件、匿名下载 404。两个连续版本同症,确认为 **GitCode 平台级附件故障**(2026-09-20 起影响所有新 release),非本侧可修。**工单升级为紧急**:需 GitCode 修复附件存储/CDN;期间所有版本的国内镜像下载不可用,GitHub 主渠道正常。
 6. **遗留**:shell.2 的 GitCode 附件 404(GitCode 服务端存储不一致,§60)次巡检仍未恢复,工单待维护者提交;shell.3 镜像后同法验证,若同样 404 则确认平台级问题。
+
+## 62. v0.1.7-alpha.1.shell.0 内核升级发布（2026-09-23 巡检）
+
+1. **dsh-watch 首跑失败(#61)**:npmmirror 对 `dsh-terminal@0.1.7-alpha.2` 滞后(主包已同步、子包 404),巡检按 §51 轮询约 7 分钟后镜像补齐,确认非 #48 类上游缺发。
+2. **闭包**:新 peer `dsh-client-store`/`dsh-deepseek-account` 按 audit 门指认入清单;12 个未发新版的包钉解析版本;fflate 地板维持。
+3. **内核行为变化**:0.1.7 loader 以 allSettled 隔离损坏 bundle,不再拖垮启动——SAFE_BREAK 冒烟的"必须崩溃"契约改为"隔离 + 就绪 + 日志签名",plugin-recovery-real E2E 同步改为隔离契约(0.1.6 的崩溃式自动隔离流程仅适用于旧内核/非 loader 崩溃类)。
+4. **门禁**:296 单测、双树审计归零、dev E2E 16/16、三冒烟(新契约)、垃圾桶 E2E、market offline 1/1 + real 2/2、LAN QR 2/2。
+5. **发布**:tag `v0.1.7-alpha.1.shell.0` → `1e7db47`;Release run `35761646851`。
+6. **镜像/官网**:GitCode 平台附件故障(§60/§61)持续,shell.2/.3 仍 404;本版镜像后同法验证,官网数据由调度重探。

@@ -83,8 +83,10 @@ async function seedUserState() {
   await writeFile(join(market, 'index.js'), "export default class { constructor() { throw new Error('UPGRADE_FIXTURE_MUST_BE_QUARANTINED') } }\n")
 }
 
+// Kernel 0.1.7 migrates the legacy flat settings file into the new settings
+// service and archives the original verbatim as settings.yaml.imported — the
+// file leaving dshHome is a migration, not data loss (asserted separately).
 const preserved = [
-  join(dshHome, 'settings.yaml'),
   join(dshHome, 'upgrade-user-marker.txt'),
   join(userData, 'shell-preferences.json'),
   join(dshHome, 'profiles', 'web', 'package.json'),
@@ -94,13 +96,22 @@ const preserved = [
 ]
 
 async function snapshot() {
-  return Object.fromEntries(await Promise.all(preserved.map(async path => [path, createHash('sha256').update(await readFile(path)).digest('hex')])))
+  const paths = [...preserved, join(dshHome, 'settings.yaml')]
+  return Object.fromEntries(await Promise.all(paths.map(async path => [path, await readFile(path).then(buffer => createHash('sha256').update(buffer).digest('hex')).catch(() => null)])))
 }
 
 async function assertPreserved(before) {
   const after = await snapshot()
   for (const path of preserved) {
     if (before[path] !== after[path]) throw new Error(`upgrade changed user-owned state: ${path}`)
+  }
+  // settings.yaml migration contract (kernel 0.1.7): the pre-upgrade file is
+  // archived verbatim as settings.yaml.imported — values survive the upgrade.
+  const beforeSettings = before[join(dshHome, 'settings.yaml')]
+  if (beforeSettings !== undefined) {
+    const importedPath = join(dshHome, 'settings.yaml.imported')
+    const afterImported = createHash('sha256').update(await readFile(importedPath)).digest('hex')
+    if (afterImported !== beforeSettings) throw new Error('upgrade did not archive settings.yaml verbatim (settings.yaml.imported mismatch)')
   }
 }
 
