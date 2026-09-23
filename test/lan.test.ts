@@ -232,3 +232,21 @@ server.listen(port, host)
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test('CGNAT 100.64.0.0/10 (Tailscale/ZeroTier) counts as a private LAN address', async () => {
+  const { isPrivateLanIPv4, listPrivateLanIPv4 } = await import('../src/main/lan.ts')
+  assert.equal(isPrivateLanIPv4('100.64.250.1'), true)
+  assert.equal(isPrivateLanIPv4('100.127.255.254'), true)
+  assert.equal(isPrivateLanIPv4('100.64.0.0'), true)
+  assert.equal(isPrivateLanIPv4('100.128.0.1'), false, 'above the /10')
+  assert.equal(isPrivateLanIPv4('100.63.255.255'), false, 'below the /10')
+  // Auto-discovery surfaces a VPN-only machine's virtual adapter…
+  const vpnOnly = listPrivateLanIPv4({ utun0: [{ address: '100.64.250.1', netmask: '255.192.0.0', family: 'IPv4', mac: '', internal: false, cidr: '100.64.250.1/10' }] })
+  assert.deepEqual(vpnOnly, ['100.64.250.1'])
+  // …while a physical NIC still wins on dual-NIC machines (no regression).
+  const dual = listPrivateLanIPv4({
+    wlan0: [{ address: '192.168.1.126', netmask: '255.255.255.0', family: 'IPv4', mac: '', internal: false, cidr: '192.168.1.126/24' }],
+    utun0: [{ address: '100.64.250.1', netmask: '255.192.0.0', family: 'IPv4', mac: '', internal: false, cidr: '100.64.250.1/10' }],
+  })
+  assert.deepEqual(dual, ['192.168.1.126', '100.64.250.1'])
+})

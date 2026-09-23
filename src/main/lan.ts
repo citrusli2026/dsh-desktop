@@ -81,6 +81,9 @@ export function isPrivateLanIPv4(address: string): boolean {
   return first === 10
     || (first === 172 && second !== undefined && second >= 16 && second <= 31)
     || (first === 192 && second === 168)
+    // CGNAT 100.64.0.0/10 (RFC 6598): Tailscale/ZeroTier-style virtual nets
+    // (#63) — a phone on the same virtual net reaches these like any LAN.
+    || (first === 100 && second !== undefined && second >= 64 && second <= 127)
 }
 
 export function isLanPairingExpired(pairing: Pick<LanPairing, 'expiresAt'>, now = Date.now()): boolean {
@@ -89,8 +92,11 @@ export function isLanPairingExpired(pairing: Pick<LanPairing, 'expiresAt'>, now 
 
 function interfaceRank(name: string): number {
   if (/^(en|eth|wl|wlan)/i.test(name) || /wi-?fi|ethernet/i.test(name)) return 0
-  if (/^(utun|tun|tap|tailscale|docker|bridge|veth)/i.test(name)) return 2
-  return 1
+  // Known VPN virtual adapters outrank unrecognized names (#63): with no
+  // physical NIC on the phone's network they are the reachable entry.
+  if (/^(utun|tun|tap|tailscale|zerotier)/i.test(name)) return 1
+  if (/^(docker|bridge|veth)/i.test(name)) return 2
+  return 2
 }
 
 /** Return stable private IPv4 candidates, excluding loopback and public IPs. */
