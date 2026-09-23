@@ -96,7 +96,19 @@ async function openTrashSection(window: Page): Promise<ReturnType<Page['locator'
       exact: true,
     }).first()
     if (await button.isVisible().catch(() => false)) {
-      await button.click()
+      // Kernel 0.1.7 boots with the welcome modal's Continue disabled while
+      // its settings read/save waits out the boot-time legacy-settings
+      // import lock; on slow CI disks that takes ~30 s, and the imported
+      // locale remounts the modal mid-wait. Wait for any ENABLED match (the
+      // DOM-order-first one may be the disabled node about to be replaced)
+      // with a generous bound instead of letting click() burn its whole
+      // timeout on a disabled button.
+      const clickable = window.getByRole('button', {
+        name: /^(Continue|Configure later|继续|稍后配置|继续使用|稍后设置)$/,
+        exact: true,
+      }).and(window.locator('button:enabled')).first()
+      await expect(clickable).toBeVisible({ timeout: 90_000 })
+      await clickable.click()
       quietChecks = 0
     } else {
       quietChecks += 1
