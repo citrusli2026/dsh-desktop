@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.6-alpha.2.shell.1`（2026-09-18 已发布；内核 `0.1.6-alpha.2`；垃圾桶完善轮交付） |
-| 已发布 | ✅ `0.1.6-alpha.2.shell.1`（三端 dmg/exe/deb；垃圾桶设计体系统一 + 两步确认 + 内核入桶 + 归档互操作修复） |
-| 本地门禁 | ✅ 288 项单测、类型检查、runtime/site、安全审计（双树 0 漏洞）、构建全绿；dev E2E 16/16、垃圾桶 UI 打包 E2E、闭包 smoke、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
-| 核心发布 | ✅ `v0.1.6-alpha.1.shell.0` Release run `34995792261` 全绿：8 文件契约、attestation、三平台跨版本数据保留、闭包清单 smoke、NSIS 残留矩阵、Harness 真渲染、Safe Mode 故障注入 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.6-alpha.2.shell.1`（6 个用户资产 `gitcode_ok=true`） |
-| 国内镜像 | ✅ `v0.1.6-alpha.2.shell.1` GitCode 镜像：dmg/exe/deb + 3×sha256（6/6 资产在线验证；tag 对齐 `431ba98`） |
-| 实时下载统计 | ✅ `site/data/release.json` 生成时累计 1566+（49 个版本） |
+| 最新代码基线 | ✅ `0.1.7-rc.1.shell.0`（2026-09-23 已发布；内核 `0.1.7-rc.1`；0.1.7 线 E2E 适配轮,§63） |
+| 已发布 | ✅ `0.1.7-rc.1.shell.0`（三端 dmg/exe/deb；内核 0.1.7-rc.1 + 账号弹层导航/welcome 种子等 E2E 适配） |
+| 本地门禁 | ✅ 297 项单测、类型检查、runtime/site、安全审计（双树 0 漏洞）、构建全绿；dev E2E 16/16、垃圾桶 UI 打包 E2E、闭包 smoke、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
+| 核心发布 | ✅ `v0.1.7-rc.1.shell.0` Release run `35871714648` 全绿：8 文件契约、attestation、三平台跨版本数据保留（含 0.1.7 设置迁移两态断言）、闭包清单 smoke、NSIS 残留矩阵、Harness 真渲染、Safe Mode 故障注入 |
+| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.7-rc.1.shell.0`（`gitcode_ok=false`——GitCode 平台附件故障持续,§60-63,非镜像缺失） |
+| 国内镜像 | ⚠️ `v0.1.7-rc.1.shell.0` GitCode:6/6 资产本机直连上传成功、匿名下载 404（平台级附件故障连续第 4 版,紧急工单挂起;tag 对齐 `458df11`） |
+| 实时下载统计 | ✅ `/api/downloads` 实时可用（2026-09-23 累计 4194+,59 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1712,3 +1712,22 @@ CI 三跑三种新表现,未收敛,按"宁停不发"中止本版:①升级冒烟
 ### §62 补记二(2026-09-23):shell.4 局域网虚拟网卡支持发布
 
 巡检发现 #63(高质量功能建议,报告人自带根因分析):LAN 探测排除 CGNAT 段且虚拟网卡排名垫底,Tailscale/ZeroTier 用户的手机无法配对。实施:CGNAT 100.64.0.0/10 计入私有段;VPN 虚拟网卡(utun/tun/tap/tailscale/zerotier)排名提至未知网卡之前、物理网卡仍优先(双网卡不回归,+1 平台感知单测)。发布 tag `v0.1.6-alpha.2.shell.4` → `74cdea4`,Release run `35818010127` 全绿。同轮完成 0.1.7 升级暂缓的 E2E 铺垫(设置弹层导航/迁移契约/平台感知断言,已入库待内核重发)。GitCode 附件故障持续(本版上传成功后下载 404 同症),官网数据以调度重探为准。
+
+## 63. v0.1.7-rc.1.shell.0 内核升级发布（2026-09-23,重启发版）
+
+§62 暂缓的 0.1.7 升级重启并完成:阻塞清单核实——迁移契约(smoke-upgrade 两态断言)确已入库,但"设置弹层导航"只在 trash-ui/market-install 落地,electron-shell 的 notice E2E 并未适配(§62 补记二表述与仓库实况不符,以本节为准)。
+
+1. **内核路径**:0.1.6-alpha.2 → 先 bump 0.1.7-alpha.2;发版中途上游全量发布 **0.1.7-rc.1**,`^0.1.7-alpha.2` 语义上包含 rc.1,非冻结安装把部分子包解析到 rc.1 造成混合闭包(audit 门指认 `dsh-subagent` peer 分裂:多数包要 alpha.2、`dsh-sdk-protocol`/`dsh-subagent-in-process-driver` 要 rc.1)→ 整体重 bump 到 0.1.7-rc.1(npmmirror 无滞后,welcome 版本号与账号弹层文案同 alpha.2,适配直接沿用)。新 peer `dsh-client-store`/`dsh-deepseek-account` 入清单;12 个未发 rc.1 的子包钉解析版本。
+2. **0.1.7 E2E 适配(本轮主要工作,五次 CI 迭代)**:
+   - **账号弹层导航**:notice E2E 直点 `getByText('Settings')` 超时——0.1.7 把设置入口收进左下角账号弹层(`button "Account menu"`),修复为"开弹层→点 Settings";这也解释了 §62 无头 Linux 超时(窄窗/无头下侧栏入口根本不渲染)。
+   - **welcome 弹窗停顿(根因)**:0.1.7 新增"内测声明"弹窗,Continue 在确认状态保存期间禁用,而该保存排在与 legacy 设置导入相同的启动锁后面——CI 慢盘上停顿 30s~90s+ 且 locale 导入落地会 zh→en 重挂弹窗;弹窗 `onClose: ignoreImplicitDismiss` 无旁路。**治本**:利用内核自己的 legacy 导入映射(`ui-onboarding` → `ui-settings-general`),fixture 预置 `welcomeNoticeVersion: "2026-08-13.1"`,导入落地即自动卸载弹窗(40s 探测实证:无任何引导弹窗)。**兜底**:共享 `e2e/onboarding.ts`(三份重复 dismiss 循环统一),等待任意 enabled 匹配按钮(90s 界)。
+   - **五跑失败谱系**:run1 三平台 notice 导航超时;run2 ubuntu/win trash 撞停顿;run3 ubuntu market 撞停顿(同型拷贝);run4 macOS 停顿 >90s(90s 界过短,暴露上限)暴露根因;run5 上游 rc.1 中途发布致 peer 分裂。run6 全绿。
+   - **已知行为变化(#68)**:内核迁移把 `settings.yaml` 改名 `.imported` 后,壳原生界面语言(菜单/托盘/通知)回退系统语言,应用内语言选择不跨重启;CI en-US 不受影响,zh 系统上 notice 文案断言与 locale 测试初始英文断言会环境性失败(非产品崩溃)。后续 shell 应读内核新 profile 存储。
+3. **发布**:tag `v0.1.7-rc.1.shell.0` → `458df11`(GitCode tag 对齐);Release run `35871714648` 全绿(verify + 三平台构建 + publish),8 文件契约齐全、attestation 通过。失败 tag `v0.1.7-alpha.2.shell.0`(经 5 次强推重指后弃用)与 §62 的 `v0.1.7-alpha.1.shell.0` 均双远端保留审计,无 release 对象。
+4. **GitCode 镜像(平台附件故障持续,连续第 4 版)**:本机直连上传 6/6 成功(deb 209M/exe 264M/dmg 270M + 3×sha256,一次过);匿名下载验证 0/6——404 同症(§60-62),资产已落库待平台修复,紧急工单仍挂起。自动 backfill run `35875745453` 跨境带宽不足失败后由本机接管。
+5. **网站数据**:site-refresh run `35875766208` 重探 6×5min 后提交 `554daee`(`gitcode_ok=false` 为平台故障下的真实状态);线上 `/data/release.json` 已指 rc.1、`/api/downloads` 实时可用(累计 4194,59 版本)。
+
+发布元数据:
+- Release run `35871714648`(成功);Site Data Refresh run `35875766208`(成功);backfill `35875745453`(失败,已由本机镜像接管)。
+- 本地门禁:verify 297 单测全绿、LAN QR 2/2、打包套件 trash/market-offline/notice 导航通过(zh 系统的环境性断言差异见 #68)。
+- 后续:#68(shell 读内核 profile 存储,恢复语言偏好持久化)、盯上游 rc→stable、GitCode 附件工单、welcome 版本号变更时同步 `e2e/onboarding.ts` 种子。
