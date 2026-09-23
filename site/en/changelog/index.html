@@ -48,6 +48,7 @@
     <li>Kernel 0.1.7 behavior changes: a broken community plugin is now isolated instead of crashing the boot; settings migrate losslessly (old file archived byte-exact as <code>.imported</code>); the settings entry moved into the account popup. The shell's startup smoke, upgrade-retention assertions and settings-navigation E2E follow the new contract (landed with v0.1.6-alpha.2.shell.4, first exercised on a kernel release here).</li>
     <li>New-kernel peer gaps (dsh-client-store, dsh-deepseek-account) joined the closure; 12 sub-packages without a 0.1.7-alpha.2 release stay at their resolved versions. Zero known vulnerabilities in both npm trees.</li>
     <li>Desktop shell unchanged. If a community plugin is incompatible with the new kernel, the error page offers one-click Update / Disable recovery.</li>
+    <li>Known behavior change: after the kernel's lossless settings.yaml migration (archived as <code>.imported</code>), the shell's native surfaces (menu/tray/notifications) follow the OS language; the in-app language choice no longer survives a restart until the shell reads the kernel's new settings store (#68).</li>
   </ul>
 
   <h2>v0.1.7-alpha.1.shell.0 <small>（kernel 0.1.7-alpha.1）</small></h2>
