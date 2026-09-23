@@ -7,6 +7,7 @@ import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
+import { dismissOnboardingModals } from './onboarding.ts'
 
 // Packaged mode runs the real bundled Harness (the dev web-URL override is
 // dev-only, src/main/index.ts boot()), so stub-only page assertions are
@@ -560,12 +561,7 @@ shellTest('packaged app shows a desktop notice for a real state edge and restore
   // Fresh harness installs show onboarding modals (internal-testing notice,
   // API-key prompt); dismiss each as it appears before driving the UI.
   const dismissOnboarding = async () => {
-    for (;;) {
-      const blocker = window.getByRole('button', { name: /^(Continue|Configure later)$/, exact: true }).first()
-      if (await blocker.count() === 0) break
-      await blocker.click().catch(() => undefined)
-      await window.waitForTimeout(300)
-    }
+    await dismissOnboardingModals(window)
   }
   await dismissOnboarding()
 

@@ -3,6 +3,7 @@ import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
+import { dismissOnboardingModals } from './onboarding.ts'
 
 type MarketMode = 'offline' | 'real'
 const MODE = process.env.DSH_E2E_MARKET_MODE as MarketMode | undefined
@@ -80,20 +81,7 @@ const marketTest = test.extend<MarketFixture>({
 marketTest.skip(MODE === undefined, 'run through a dedicated market E2E script')
 
 async function dismissOnboarding(window: Page): Promise<void> {
-  let quietChecks = 0
-  while (quietChecks < 4) {
-    const button = window.getByRole('button', {
-      name: /^(Continue|Configure later|继续|稍后配置|继续使用|稍后设置)$/,
-      exact: true,
-    }).first()
-    if (await button.isVisible().catch(() => false)) {
-      await button.click()
-      quietChecks = 0
-    } else {
-      quietChecks += 1
-    }
-    await window.waitForTimeout(500)
-  }
+  await dismissOnboardingModals(window)
 }
 
 async function openExtensionSettings(window: Page): Promise<ReturnType<Page['locator']>> {
