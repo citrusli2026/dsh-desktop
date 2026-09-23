@@ -49,6 +49,12 @@
     <li>Desktop shell unchanged. If a community plugin is incompatible with the new kernel, the error page offers one-click Update / Disable recovery.</li>
   </ul>
 
+  <h2>v0.1.6-alpha.2.shell.4 <small>（kernel 0.1.6-alpha.2）</small></h2>
+  <ul>
+    <li>LAN mobile access now supports VPN virtual adapters (#63): CGNAT 100.64.0.0/10 addresses (Tailscale/ZeroTier) are accepted as private LAN IPs. Auto-discovery keeps physical NICs first and falls back to VPN adapters; a phone on the same virtual network can pair via the QR code. <code>DSH_LAN_IP</code> also accepts CGNAT addresses.</li>
+    <li>Packaging E2E hardened across kernel UI versions; the upgrade smoke follows kernel 0.1.7's settings-file migration contract ahead of the next kernel bump. Bundled kernel unchanged at 0.1.6-alpha.2.</li>
+  </ul>
+
   <h2>v0.1.6-alpha.2.shell.3 <small>（kernel 0.1.6-alpha.2）</small></h2>
   <ul>
     <li>Windows-first iteration: the shell now proactively detects a missing Microsoft VC++ 2015-2022 redistributable (the dependency behind issue #56's ERR_DLOPEN_FAILED failures), shows a one-time first-run dialog linking the official installer, and reports a dedicated &quot;Windows runtime library&quot; item in the health check.</li>
@@ -89,14 +95,6 @@
     <li>Repair loop: when the health check detects a damaged install, the result now ships a &quot;Get the installer&quot; button that deep-links the exact-version installer for your platform (GitCode for mainland China, GitHub internationally) plus a three-step reinstall guide; the diagnostics export carries the same links.</li>
     <li>The NSIS residue matrix now records the build environment's Defender real-time-protection state and runs an extra corrupted→upgraded pass (S4) only when protection is on. (A baseline-sharing optimization was reverted: NSIS uninstallers embed their install directory, so install trees cannot be cloned for uninstaller-based tests.)</li>
     <li>CI keeps the guarded E2E runner: a worker-teardown hang reproduced once more on the Linux runner under Playwright 1.63, so the retirement is postponed (local macOS runs stay clean). Bundled kernel unchanged at 0.1.5-rc.2; no new permissions; the health check stays read-only and local.</li>
-  </ul>
-
-  <h2>v0.1.5-rc.2.shell.10 <small>（kernel 0.1.5-rc.2）</small></h2>
-  <ul>
-    <li>Windows upgrades now fail explicitly with a bilingual dialog when the bundled <code>node.exe</code> is still in use, instead of silently producing a broken install; read-only/hidden leftovers from the old install are cleared so upgrades replace every bundled file.</li>
-    <li>Installers embed a SHA-256 manifest of the whole bundled closure. The health check compares every file and names exactly which files were modified, went missing, or are unexpected (upgrade residue / antivirus rewrites); the diagnostics export includes the verdict.</li>
-    <li>New CI residue matrix (corrupted / read-only / locked <code>node.exe</code>) and a closure-verify + tamper packaged smoke run on all three platforms for every release.</li>
-    <li>Toolchain: pnpm pinned to 10.33.2 (root-causes the silent lockfile no-op and install hang), electron-builder 26.16.1, Playwright 1.63.0. Bundled kernel unchanged at 0.1.5-rc.2; no new permissions; the health check stays read-only and local.</li>
   </ul>
   <!-- changelog:auto:end -->
 

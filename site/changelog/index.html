@@ -52,6 +52,13 @@
     <li><strong>边界说明</strong>：桌面壳无功能变更；社区插件仍不进入安装包。若插件与新内核不兼容，启动失败时错误页提供一键「升级 / 禁用」恢复。</li>
   </ul>
 
+  <h2>v0.1.6-alpha.2.shell.4 <small>（内核 0.1.6-alpha.2）</small></h2>
+  <ul>
+    <li><strong>局域网入口支持 VPN 虚拟网卡（Tailscale / ZeroTier 等）</strong>：CGNAT 段 <code>100.64.0.0/10</code> 现在被视为合法局域网地址——此前即使通过 <code>DSH_LAN_IP</code> 显式指定也会被拒绝。自动探测顺序保持物理网卡（Wi-Fi/以太网）优先，没有物理网卡可达时自动使用 Tailscale/ZeroTier 等 VPN 虚拟网卡；同一虚拟网内的手机扫码即可进入 Harness。</li>
+    <li><strong>测试健壮性</strong>：打包 E2E 的设置页导航适配多版内核 UI（含 0.1.7 的账号弹层入口），升级冒烟接受 0.1.7 的设置文件迁移契约（<code>settings.yaml</code> → <code>.imported</code> 逐字节归档），为下一版内核升级铺路。</li>
+    <li><strong>内核与边界不变</strong>：内置内核仍为 0.1.6-alpha.2；不新增权限、不改变数据目录边界。</li>
+  </ul>
+
   <h2>v0.1.6-alpha.2.shell.3 <small>（内核 0.1.6-alpha.2）</small></h2>
   <ul>
     <li><strong>VC++ 运行库主动检测</strong>：Windows 首次启动时检测 Microsoft VC++ 2015-2022 运行库（sharp 等原生组件的依赖），缺失时弹出一次性提示，一键打开微软官方下载页；选择&quot;稍后再说&quot;后本次安装不再打扰。「运行体检」同步新增 <strong>Windows 运行库</strong> 项，随时可查。</li>
@@ -101,16 +108,6 @@
     <li><strong>修复闭环</strong>：运行体检检出安装损坏时，结果直接附「获取重装包」按钮——按平台与线路（国内 GitCode / 国际 GitHub）一键直达<strong>与你当前版本完全一致</strong>的安装包下载，并附三步重装指引（退出应用 → 覆盖安装 → 重新体检）；另一条线路作为备用链接并列展示。「导出诊断报告」同步附上直链，贴到 issue 即可定位。</li>
     <li><strong>升级矩阵环境感知</strong>：残留矩阵在运行时探测构建环境的 Defender 实时保护并记录到输出；仅当保护开启时追加一轮&quot;杀软干扰下损坏→升级&quot;重复验证（S4）。实现中确认 NSIS 卸载器内嵌安装目录（安装树不可克隆），维持逐场景真实安装的正确性优先策略。</li>
     <li><strong>内核与边界不变</strong>：内置内核仍为 0.1.5-rc.2；不新增权限、不改变插件安装与数据目录边界；体检保持只读、不上传、不自动改写文件。</li>
-  </ul>
-
-  <h2>v0.1.5-rc.2.shell.10 <small>（内核 0.1.5-rc.2）</small></h2>
-  <ul>
-    <li><strong>Windows 升级占用拦截</strong>：升级安装器启动时检测旧的内置 <code>node.exe</code> 是否仍被占用（正在运行的 Harness、终端等），被占用即弹出中英双语提示&quot;关闭后重试&quot;，不再让复制失败被&quot;忽略&quot;成静默损坏；静默/自动更新场景以明确的退出码失败，而不是装出一个坏升级。</li>
-    <li><strong>Windows 升级残留清理</strong>：升级前清除旧安装运行目录的只读/隐藏/系统属性，旧卸载器可以真正删净全部随包文件；只读或被杀毒软件改写过的旧文件不再残留到新版本。</li>
-    <li><strong>闭包完整性清单</strong>：安装包内置全部随包文件的 SHA-256 清单。「运行体检」在原有快速检查之上做全量比对，发现被改动、缺失或多余的文件时直接给出具体文件路径与重装指引；「导出诊断报告」同步收录校验结论，方便贴到 issue 定位。</li>
-    <li><strong>覆盖场景回归门禁</strong>：新增 CI 残留矩阵——预置损坏、只读、占用三类 <code>node.exe</code> 后执行静默升级，断言损坏与只读文件必被替换、占用必须显式失败；闭包校验与篡改检测进入三平台打包冒烟。</li>
-    <li><strong>工具链修复</strong>：根因定位并修复 pnpm ≥10 在本仓库&quot;lockfile 静默不落盘/安装挂死&quot;的问题（版本委托到有缺陷的 pnpm 11.11 所致），包管理器固定为 pnpm 10.33.2；electron-builder 升至 26.16.1；Playwright 升至 1.63.0。</li>
-    <li><strong>内核与边界不变</strong>：内置内核仍为 0.1.5-rc.2；不新增权限、不改变插件安装与数据目录边界；体检保持只读、不上传、不自动修复。</li>
   </ul>
   <!-- changelog:auto:end -->
 
