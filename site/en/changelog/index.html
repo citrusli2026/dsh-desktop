@@ -42,6 +42,15 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.7-rc.1.shell.0 <small>（kernel 0.1.7-rc.1）</small></h2>
+  <ul>
+    <li>Kernel bump: bundled <code>@deepseek-ai/dsh</code> locked to <code>0.1.7-rc.1</code> (previous 0.1.6-alpha.2, jumping straight to the rc line); shell revision reset to 0. See the <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">official upstream release notes</a> for kernel changes.</li>
+    <li>Kernel 0.1.7 behavior changes: a broken community plugin is now isolated instead of crashing the boot; settings migrate losslessly (old file archived byte-exact as <code>.imported</code>); the settings entry moved into the account popup. The shell's startup smoke, upgrade-retention assertions and settings-navigation E2E follow the new contract (landed with v0.1.6-alpha.2.shell.4, first exercised on a kernel release here).</li>
+    <li>New-kernel peer gaps (dsh-client-store, dsh-deepseek-account) joined the closure; sub-packages without an rc.1 release stay at their resolved versions. Zero known vulnerabilities in both npm trees.</li>
+    <li>Desktop shell unchanged. If a community plugin is incompatible with the new kernel, the error page offers one-click Update / Disable recovery.</li>
+    <li>Known behavior change: after the kernel's lossless settings.yaml migration (archived as <code>.imported</code>), the shell's native surfaces (menu/tray/notifications) follow the OS language; the in-app language choice no longer survives a restart until the shell reads the kernel's new settings store (#68).</li>
+  </ul>
+
   <h2>v0.1.7-alpha.2.shell.0 <small>（kernel 0.1.7-alpha.2）</small></h2>
   <ul>
     <li>Kernel bump: bundled <code>@deepseek-ai/dsh</code> locked to <code>0.1.7-alpha.2</code> (previous 0.1.6-alpha.2); shell revision reset to 0. See the <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">official upstream release notes</a> for kernel changes.</li>
@@ -89,13 +98,6 @@
   <ul>
     <li>Kernel bump: bundled <code>@deepseek-ai/dsh</code> locked to <code>0.1.6-alpha.2</code> (previous 0.1.6-alpha.1); shell revision reset to 0. See the <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">official upstream release notes</a> for kernel changes.</li>
     <li>The upstream fflate transitive (GHSA-px8p-9vwx-vf98) is pinned to 0.8.3 via the security-floor override; zero known vulnerabilities in both npm trees. The desktop-controls plugin mount now links into the profile-directory anchor used by the 0.1.6-alpha.2 resolution generation, keeping the legacy anchor for kernel restores.</li>
-    <li>Desktop shell unchanged. If a community plugin is incompatible with the new kernel, the error page offers one-click Update / Disable recovery.</li>
-  </ul>
-
-  <h2>v0.1.6-alpha.1.shell.0 <small>（kernel 0.1.6-alpha.1）</small></h2>
-  <ul>
-    <li>Kernel bump: bundled <code>@deepseek-ai/dsh</code> locked to <code>0.1.6-alpha.1</code> (previous 0.1.5-rc.2); shell revision reset to 0. See the <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">official upstream release notes</a> for kernel changes.</li>
-    <li>Upstream completed the missing <code>dsh-client-ui-sidebar-documentpreview@0.1.6-alpha.1</code> publish (issue #48); the new <code>dsh-ptc-runtime</code> peer joined the closure, and packages that did not ship a 0.1.6-alpha.1 build stay at their resolved versions to prevent version skew. A shell tooling fix now persists kernel peer-pin syncs (they previously lived only in memory) and checks registry availability before rewriting ranges.</li>
     <li>Desktop shell unchanged. If a community plugin is incompatible with the new kernel, the error page offers one-click Update / Disable recovery.</li>
   </ul>
   <!-- changelog:auto:end -->

@@ -42,6 +42,15 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.7-rc.1.shell.0 <small>（内核 0.1.7-rc.1）</small></h2>
+  <ul>
+    <li><strong>内核升级</strong>：随官方 <code>@deepseek-ai/dsh</code> <code>0.1.7-rc.1</code>（上一内置内核 0.1.6-alpha.2，直接跨到 rc 线）。上游变更内容见 <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">官方发布页</a>。</li>
+    <li><strong>内核行为变化（对用户可见）</strong>：0.1.7 起内核对损坏的社区插件改为「隔离并继续启动」，插件不再拖垮整个 Harness；设置文件无损迁移（旧文件逐字节归档为 <code>.imported</code>）；设置入口移至左下角账号弹层。壳的启动冒烟、升级数据保留断言与设置导航 E2E 均已按新契约更新（随 v0.1.6-alpha.2.shell.4 入库，本轮首次随内核发版验证）。</li>
+    <li><strong>依赖闭包同步</strong>：重新生成 lockfile，同步 supply-chain release-age 豁免清单；官方 npm 安全审计零已知漏洞。新内核 peer 缺口 <code>dsh-client-store</code>、<code>dsh-deepseek-account</code> 已加入闭包清单（audit 门指认）；未随 rc.1 发版的 dsh-* 子包按解析版本保留，无版本倾斜。</li>
+    <li><strong>边界说明</strong>：桌面壳无功能变更；社区插件仍不进入安装包。若插件与新内核不兼容，启动失败时错误页提供一键「升级 / 禁用」恢复。</li>
+    <li><strong>已知行为变化</strong>：内核 0.1.7 将 <code>settings.yaml</code> 无损迁移（归档为 <code>.imported</code>）后，壳的原生界面语言（菜单/托盘/通知）改随操作系统语言，应用内语言选择暂不跨重启保留——后续版本将改为读取内核新设置存储（#68）。</li>
+  </ul>
+
   <h2>v0.1.7-alpha.2.shell.0 <small>（内核 0.1.7-alpha.2）</small></h2>
   <ul>
     <li><strong>内核升级</strong>：随官方 <code>@deepseek-ai/dsh</code> <code>0.1.7-alpha.2</code>（上一内置内核 0.1.6-alpha.2）。上游变更内容见 <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">官方发布页</a>。</li>
@@ -101,15 +110,6 @@
     <li><strong>闭包安全地板</strong>：上游 <code>dsh-office-to-pdf</code> 传递依赖 fflate（GHSA-px8p-9vwx-vf98，恶意 ZIP64 死循环）已按安全地板模式钉到 0.8.3，双树 npm 审计零已知漏洞。</li>
     <li><strong>桌面控件挂载适配</strong>：适配 0.1.6-alpha.2 内核新的 profile 解析代——桌面控件包的链接同时落在新内核解析的 profile 目录锚点与旧内核兼容锚点（内核 overlay 回滚场景仍可用），打包冒烟（含安全模式故障注入）全绿。</li>
     <li><strong>验证</strong>：283 项单测、dev E2E 16/16、打包冒烟（真实 Harness UI 渲染 + 安全模式注入）、离线 + 真实市场 E2E、LAN 扫码全部通过。</li>
-    <li><strong>边界说明</strong>：桌面壳无功能变更；社区插件仍不进入安装包。若插件与新内核不兼容，启动失败时错误页提供一键「升级 / 禁用」恢复。</li>
-  </ul>
-
-  <h2>v0.1.6-alpha.1.shell.0 <small>（内核 0.1.6-alpha.1）</small></h2>
-  <ul>
-    <li><strong>内核升级</strong>：随官方 <code>@deepseek-ai/dsh</code> <code>0.1.6-alpha.1</code>（上一内置内核 0.1.5-rc.2）。上游变更内容见 <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">官方发布页</a>。</li>
-    <li><strong>依赖闭包同步</strong>：上游本轮补齐了 <code>dsh-client-ui-sidebar-documentpreview@0.1.6-alpha.1</code>（此前 #48 记录的断链），新内核 peer 缺口 <code>@deepseek-ai/dsh-ptc-runtime</code> 已加入闭包清单；10 个未随新内核发版的 dsh-* 包按解析版本保留，避免版本倾斜。</li>
-    <li><strong>壳层工具修复</strong>：<code>version.mjs bump dsh</code> 的 peer pin 同步此前只发生在内存、从未写盘（本轮首次真实内核升级暴露），已修复并补注册表可用性检查——未发新版的包不再被改写成不存在的范围。</li>
-    <li><strong>验证</strong>：283 项单测、双树 npm 审计零已知漏洞、dev E2E 16/16、打包冒烟（含真实 Harness UI 渲染与 Safe Mode 故障注入）、离线 + 真实市场 E2E、LAN 扫码全部通过；本发布继续执行三平台构建、attestation 核验与跨版本升级门禁。</li>
     <li><strong>边界说明</strong>：桌面壳无功能变更；社区插件仍不进入安装包。若插件与新内核不兼容，启动失败时错误页提供一键「升级 / 禁用」恢复。</li>
   </ul>
   <!-- changelog:auto:end -->
