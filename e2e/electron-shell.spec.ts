@@ -608,9 +608,15 @@ shellTest('packaged app shows a desktop notice for a real state edge and restore
   await window.keyboard.press('Escape')
   await expect(window.locator('[data-dsh-controls-panel]')).toHaveCount(0)
 
-  // The desktop tools live in their own Settings section now (like
-  // General/Models/Plugins), not embedded in General. Scope to the dialog:
-  // the page also has the overlay trigger called 'Desktop tools'.
+  // Kernel 0.1.7 moved the Settings entry into the bottom-left account
+  // popover: the sidebar itself only labels the account button (a bare
+  // 'Settings' text match times out — on narrow/headless windows the old
+  // sidebar entry never rendered, which is what the aborted alpha.1 run hit
+  // under xvfb). Open the popover first, then its Settings item; the desktop
+  // tools live in their own section of the resulting Settings dialog (like
+  // General/Models/Plugins), and the page also has an overlay trigger called
+  // 'Desktop tools', so the section nav stays scoped to the dialog.
+  await window.getByRole('button', { name: 'Account menu' }).click()
   await window.getByText('Settings', { exact: true }).first().click()
   const desktopSettingsNav = window.locator('[role="dialog"]').getByText('Desktop settings').first()
   await desktopSettingsNav.waitFor({ timeout: 15_000 })
