@@ -7,7 +7,7 @@ import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
-import { dismissOnboardingModals } from './onboarding.ts'
+import { dismissOnboardingModals, WELCOME_ACKNOWLEDGED_YAML } from './onboarding.ts'
 
 // Packaged mode runs the real bundled Harness (the dev web-URL override is
 // dev-only, src/main/index.ts boot()), so stub-only page assertions are
@@ -53,7 +53,7 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle }>({
     const userData = join(root, dataDir)
     await mkdir(dshHome, { recursive: true })
     await mkdir(userData, { recursive: true })
-    await writeFile(join(dshHome, 'settings.yaml'), 'locale:\n  preference: en\nui-theme:\n  preference: system\n')
+    await writeFile(join(dshHome, 'settings.yaml'), 'locale:\n  preference: en\nui-theme:\n  preference: system\n' + WELCOME_ACKNOWLEDGED_YAML)
     await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
     if (pathStyle === 'readonly') await chmod(dshHome, 0o555)
 

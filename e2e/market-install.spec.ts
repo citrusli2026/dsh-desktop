@@ -3,7 +3,7 @@ import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
-import { dismissOnboardingModals } from './onboarding.ts'
+import { dismissOnboardingModals, WELCOME_ACKNOWLEDGED_YAML } from './onboarding.ts'
 
 type MarketMode = 'offline' | 'real'
 const MODE = process.env.DSH_E2E_MARKET_MODE as MarketMode | undefined
@@ -25,7 +25,7 @@ const marketTest = test.extend<MarketFixture>({
     await mkdir(userData, { recursive: true })
     const locale = MODE === 'real' ? 'zh' : 'en'
     const theme = MODE === 'real' ? 'dark' : 'system'
-    await writeFile(join(dshHome, 'settings.yaml'), `locale:\n  preference: ${locale}\nui-theme:\n  preference: ${theme}\n`)
+    await writeFile(join(dshHome, 'settings.yaml'), `locale:\n  preference: ${locale}\nui-theme:\n  preference: ${theme}\n` + WELCOME_ACKNOWLEDGED_YAML)
     await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
     const executablePath = await locatePackagedExecutable()
     const args = [`--user-data-dir=${userData}`]

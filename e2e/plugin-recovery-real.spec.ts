@@ -10,6 +10,7 @@ import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
+import { WELCOME_ACKNOWLEDGED_YAML } from './onboarding.ts'
 
 const MODE = process.env.DSH_E2E_MARKET_MODE
 
@@ -28,7 +29,7 @@ const recoveryTest = test.extend<RecoveryFixture>({
     const userData = join(root, 'Electron data 数据')
     await mkdir(dshHome, { recursive: true })
     await mkdir(userData, { recursive: true })
-    await writeFile(join(dshHome, 'settings.yaml'), 'locale:\n  preference: zh\nui-theme:\n  preference: dark\n')
+    await writeFile(join(dshHome, 'settings.yaml'), 'locale:\n  preference: zh\nui-theme:\n  preference: dark\n' + WELCOME_ACKNOWLEDGED_YAML)
     await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
     // Seed a deterministic broken dshmarket on disk. A missing dependency no
     // longer fails current Harness startup, so it cannot prove quarantine.

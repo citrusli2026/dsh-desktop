@@ -5,7 +5,7 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
-import { dismissOnboardingModals } from './onboarding.ts'
+import { dismissOnboardingModals, WELCOME_ACKNOWLEDGED_YAML } from './onboarding.ts'
 
 /**
  * Trash UI journey on the packaged build (the trash settings section renders
@@ -51,7 +51,7 @@ const trashTest = test.extend<{ electronApp: ElectronApplication; window: Page; 
       global: { initialized: true, workspaceIds: [], archivedSessionIds: ['archivedsess'] },
       tables: { workspaces: {} },
     }))
-    await writeFile(join(dshHome, 'settings.yaml'), 'locale:\n  preference: zh\nui-theme:\n  preference: dark\n')
+    await writeFile(join(dshHome, 'settings.yaml'), 'locale:\n  preference: zh\nui-theme:\n  preference: dark\n' + WELCOME_ACKNOWLEDGED_YAML)
     await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
     const executablePath = await locatePackagedExecutable()
     const args = [`--user-data-dir=${userData}`]

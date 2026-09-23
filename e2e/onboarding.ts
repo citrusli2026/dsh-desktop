@@ -10,6 +10,15 @@ import { expect, type Page } from '@playwright/test'
 // looping until no modal has been visible for four consecutive checks.
 const ONBOARDING_DISMISS = /^(Continue|Configure later|继续|稍后配置|继续使用|稍后设置)$/
 
+// Kernel 0.1.7 imports legacy settings.yaml sections into its profile store
+// (LEGACY_SECTION_ENTRIES maps ui-onboarding → ui-settings-general). Seeding
+// the welcome-notice acknowledgement there makes the fresh-boot welcome modal
+// self-close the moment the import lands — its store watcher unmounts it — so
+// tests never click Continue, whose acknowledgement save can stall for
+// minutes behind that same boot-time import on slow CI disks. Bump the value
+// when the kernel bumps WELCOME_NOTICE_VERSION (dsh-client-ui-settings-models).
+export const WELCOME_ACKNOWLEDGED_YAML = 'ui-onboarding:\n  welcomeNoticeVersion: "2026-08-13.1"\n'
+
 export async function dismissOnboardingModals(window: Page): Promise<void> {
   let quietChecks = 0
   while (quietChecks < 4) {
