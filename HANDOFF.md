@@ -1708,3 +1708,7 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.5-rc.2
 ### §62 补记(同日):0.1.7 发版中止,main 回滚 0.1.6-alpha.2(shell.4)
 
 CI 三跑三种新表现,未收敛,按"宁停不发"中止本版:①升级冒烟 settings.yaml 严格保留断言撞上 0.1.7 设置迁移(已适配两态:未迁移存续 / 逐字节 .imported 归档,只拦真实丢失);②notice E2E 固定 4 行断言(已平台感知);③无头 Linux 打包 E2E 的设置入口导航(0.1.7 新 UI 把 Settings 挪进左下角账号弹层)在 xvfb 下超时,本地 macOS 通过、无头 Linux 未收敛。main 回滚到 0.1.6-alpha.2 线并 bump shell.4;失败 tag `v0.1.7-alpha.1.shell.0` 双远端保留。内核 0.1.7 升级要点备忘:设置文件迁移(无损)、loader 隔离损坏插件、设置入口移至账号弹层——重启发版前需完成无头 Linux 弹层导航适配。
+
+### §62 补记二(2026-09-23):shell.4 局域网虚拟网卡支持发布
+
+巡检发现 #63(高质量功能建议,报告人自带根因分析):LAN 探测排除 CGNAT 段且虚拟网卡排名垫底,Tailscale/ZeroTier 用户的手机无法配对。实施:CGNAT 100.64.0.0/10 计入私有段;VPN 虚拟网卡(utun/tun/tap/tailscale/zerotier)排名提至未知网卡之前、物理网卡仍优先(双网卡不回归,+1 平台感知单测)。发布 tag `v0.1.6-alpha.2.shell.4` → `74cdea4`,Release run `35818010127` 全绿。同轮完成 0.1.7 升级暂缓的 E2E 铺垫(设置弹层导航/迁移契约/平台感知断言,已入库待内核重发)。GitCode 附件故障持续(本版上传成功后下载 404 同症),官网数据以调度重探为准。
