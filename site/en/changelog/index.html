@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.7-rc.2.shell.0 <small>（kernel 0.1.7-rc.2）</small></h2>
+  <ul>
+    <li>Kernel bump to official <code>@deepseek-ai/dsh</code> 0.1.7-rc.2 (previous 0.1.6-alpha.2 line via rc.1).</li>
+    <li>UOS/Deepin desktop adaptation (#73): the Linux main window now carries the app icon (<code>_NET_WM_ICON</code>) so taskbars stop showing a default icon, and Linux restores the full native title bar — the 0.1.7 web UI's top-right actions no longer collide with native window controls. macOS/Windows keep their hidden-title-bar styles.</li>
+    <li>The DeepSeek login auto-open patch was rebuilt against rc.2. Closure peers synced; zero known vulnerabilities.</li>
+  </ul>
+
   <h2>v0.1.7-rc.1.shell.3 <small>（kernel 0.1.7-rc.1）</small></h2>
   <ul>
     <li>Fixed the built-in DeepSeek sign-in entry in the bottom-left account menu. The authorization URL now opens once per attempt in the system browser and keeps the current theme.</li>
@@ -90,13 +97,6 @@
   <ul>
     <li>LAN mobile access now supports VPN virtual adapters (#63): CGNAT 100.64.0.0/10 addresses (Tailscale/ZeroTier) are accepted as private LAN IPs. Auto-discovery keeps physical NICs first and falls back to VPN adapters; a phone on the same virtual network can pair via the QR code. <code>DSH_LAN_IP</code> also accepts CGNAT addresses.</li>
     <li>Packaging E2E hardened across kernel UI versions; the upgrade smoke follows kernel 0.1.7's settings-file migration contract ahead of the next kernel bump. Bundled kernel unchanged at 0.1.6-alpha.2.</li>
-  </ul>
-
-  <h2>v0.1.6-alpha.2.shell.3 <small>（kernel 0.1.6-alpha.2）</small></h2>
-  <ul>
-    <li>Windows-first iteration: the shell now proactively detects a missing Microsoft VC++ 2015-2022 redistributable (the dependency behind issue #56's ERR_DLOPEN_FAILED failures), shows a one-time first-run dialog linking the official installer, and reports a dedicated &quot;Windows runtime library&quot; item in the health check.</li>
-    <li>dlopen failures are classified separately on error pages and in exported diagnostics — users see &quot;missing VC++ runtime or antivirus quarantine&quot; with concrete steps instead of a raw log.</li>
-    <li>The Windows installer UI now follows the system language (Chinese/English). Bundled kernel unchanged at 0.1.6-alpha.2; all detection is local, nothing is uploaded.</li>
   </ul>
   <!-- changelog:auto:end -->
 
