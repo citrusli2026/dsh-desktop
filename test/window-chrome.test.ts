@@ -8,7 +8,7 @@ test('macOS hides the title bar while retaining native traffic lights', () => {
   assert.equal(MACOS_SIDEBAR_COLLAPSED_SAFE_TOP, 25)
 })
 
-test('Windows and Linux use transparent controls overlays with accessible symbols', () => {
+test('Windows hides the title bar behind a transparent controls overlay', () => {
   assert.deepEqual(hiddenTitleBarOptions('win32', false), {
     titleBarStyle: 'hidden',
     titleBarOverlay: {
@@ -17,5 +17,9 @@ test('Windows and Linux use transparent controls overlays with accessible symbol
       height: WINDOW_CONTROLS_OVERLAY_HEIGHT,
     },
   })
-  assert.equal(hiddenTitleBarOptions('linux', true).titleBarOverlay?.symbolColor, '#f4f4f5')
+})
+
+test('Linux keeps the full native title bar (#73): the 0.1.7 overlay controls sit exactly on the web top-right actions', () => {
+  assert.deepEqual(hiddenTitleBarOptions('linux', false), { titleBarStyle: 'default' })
+  assert.deepEqual(hiddenTitleBarOptions('linux', true), { titleBarStyle: 'default' })
 })

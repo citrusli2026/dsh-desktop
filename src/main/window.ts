@@ -90,6 +90,10 @@ export function createMainWindow(context: WindowContext): BrowserWindow {
     show: false,
     title: shellText(context.getLocale(), 'window.title'),
     backgroundColor: dark ? '#0e0f12' : '#f9f8f8',
+    // Linux taskbars read _NET_WM_ICON from the window; without it UOS/Deepin
+    // fall back to a default icon when the icon theme lacks the hicolor
+    // lookup (#73 problem 1). macOS/Windows take the icon from the bundle.
+    ...(process.platform === 'linux' ? { icon: join(app.getAppPath(), 'build', 'icon.png') } : {}),
     ...hiddenTitleBarOptions(process.platform, dark),
     webPreferences: {
       contextIsolation: true,
