@@ -42,6 +42,13 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.7-rc.1.shell.2 <small>（内核 0.1.7-rc.1）</small></h2>
+  <ul>
+    <li>修复内核 0.1.7 迁移 <code>settings.yaml</code> 后，原生菜单、窗口标题、托盘和通知语言回退的问题；优先从本地 <code>web</code> profile 读取语言与主题，并跟随 profile 更新。</li>
+    <li>保留对旧 <code>settings.yaml</code> 和 <code>.imported</code> 归档的兼容，读取归档时不会重建旧文件；偏好只保存在本机。</li>
+    <li>修正跨版本升级门禁：先在旧版首次启动前播种用户设置，再验证旧版迁移和新版安装都保留数据，避免测试夹具制造不真实的混合状态。</li>
+  </ul>
+
   <h2>v0.1.7-rc.1.shell.1 <small>（内核 0.1.7-rc.1）</small></h2>
   <ul>
     <li>修复内核 0.1.7 迁移旧版设置后，原生菜单、窗口标题、托盘等桌面界面语言回退到操作系统语言的问题。壳现在优先读取 <code>web</code> profile 中的语言和主题偏好，并跟随 profile 更新。</li>
@@ -98,16 +105,6 @@
     <li><strong>Windows 安装器内容门禁（新增发布 gate）</strong>:每个 Windows 安装器在发布前都会被解包核验——内置 <code>node.exe</code>、sharp 原生链(<code>.node</code> + libvips DLL)、闭包完整性清单、mobile-shell、agent-trash-hook 九个关键文件必须存在,其中最高风险的两个二进制(node.exe、sharp <code>.node</code>、libvips DLL)还会对照闭包 SHA-256 清单逐一校验哈希。这把 #39(运行时损坏)与 #56(原生模块加载失败)两类问题的验证从&quot;用户机上发现&quot;提前到&quot;发布流水线拦截&quot;。</li>
     <li><strong>诊断经验沉淀</strong>:#56 的排查方法(NSIS → 内层 app-64.7z → 逐文件核对哈希)已固化为 <code>scripts/verify-windows-installer.mjs</code>,本地也可运行(<code>node scripts/verify-windows-installer.mjs +安装器路径或 dist 目录</code>),配合 7-Zip 即可复现发布级校验。</li>
     <li><strong>内核与边界不变</strong>:内置内核仍为 0.1.6-alpha.2;不新增权限、不改变插件安装与数据目录边界。</li>
-  </ul>
-
-  <h2>v0.1.6-alpha.2.shell.1 <small>（内核 0.1.6-alpha.2）</small></h2>
-  <ul>
-    <li><strong>设计体系统一</strong>：垃圾桶区块改用与「桌面设置」相同的设计组件——分组卡片、行排版、统一按钮与徽标、真页签（tablist）；条目显示类型徽标、删除时间与「N 天后自动清除」倒计时；空状态为引导卡片，不再是裸 HTML。</li>
-    <li><strong>不可逆操作加确认</strong>：「彻底删除」改为行内两步确认（确认/取消），「清除已过期」同样确认；会话页签的删除按钮改名为「删除（入桶）」——它本来就可还原，旧文案「彻底删除」是误导。</li>
-    <li><strong>会话页签真实语义</strong>：分组展示「已归档 / 未归档」，并说明模型：删除会话先入垃圾桶（30 天内可还原），归档仅在列表中隐藏。</li>
-    <li><strong>修复：归档会话判定失效</strong>：内核工作区注册表把归档列表嵌在 <code>global</code> 字段下，壳只读顶层导致归档会话永远显示为未归档；现兼容两种结构，取消归档的写回也保持内核的 unit 头格式。</li>
-    <li><strong>修复：内核残留入桶</strong>：「恢复内置内核」后，被切走的 overlay 内核目录现在移入垃圾桶（30 天还原窗口），不再永久占用磁盘；移动失败时保持原样，绝不影响恢复本身。</li>
-    <li><strong>测试网</strong>：新增打包 E2E（种子条目还原 → 启动期过期清理断言 → 两步确认清除 → 会话入桶全链贯穿 UI）与契约测试断言（设计体系 class、确认交互、页签语义），让垃圾桶的风格漂移未来能被 CI 拦住。</li>
   </ul>
   <!-- changelog:auto:end -->
 

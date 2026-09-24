@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.7-rc.1.shell.2 <small>（kernel 0.1.7-rc.1）</small></h2>
+  <ul>
+    <li>Preserve native menu, window, tray, and notification language and theme when Harness 0.1.7 migrates legacy settings by reading preferences from the local web profile.</li>
+    <li>Keep compatibility with legacy settings and imported archives without recreating the old settings file; preferences stay on the device.</li>
+    <li>Correct the cross-version upgrade fixture so user settings exist before the previous release's first launch and verify both migration and upgrade preservation.</li>
+  </ul>
+
   <h2>v0.1.7-rc.1.shell.1 <small>（kernel 0.1.7-rc.1）</small></h2>
   <ul>
     <li>Fix desktop native-surface language fallback after Harness 0.1.7 migrates legacy settings by reading locale and theme preferences from the active web profile and following profile edits.</li>
@@ -90,14 +97,6 @@
   <ul>
     <li>New release gate: every Windows installer is unpacked and verified before publish — bundled node.exe, the sharp native chain (.node + libvips DLLs), the closure integrity manifest, mobile-shell, and agent-trash-hook must be present, with the highest-risk binaries hashed against the packaged closure manifest. Moves #39/#56-class verification from &quot;discovered on user machines&quot; to &quot;blocked in the release pipeline&quot;.</li>
     <li>The verification method is packaged as scripts/verify-windows-installer.mjs (runnable locally with 7-Zip). Bundled kernel unchanged at 0.1.6-alpha.2.</li>
-  </ul>
-
-  <h2>v0.1.6-alpha.2.shell.1 <small>（kernel 0.1.6-alpha.2）</small></h2>
-  <ul>
-    <li>The trash settings section is rewritten on the shared settings design system: group cards, real tabs, kind badges, retention countdown, guided empty states.</li>
-    <li>Irreversible actions (delete-forever, clear-expired) now require an inline two-step confirm; the sessions tab tells the truth — delete moves a session to the trash (recoverable for 30 days) instead of claiming to destroy it.</li>
-    <li>Fixed archived-session detection (the kernel nests the archived list under <code>global</code>; the shell now reads both shapes and preserves the unit header on write) and kernel overlays now retire to the trash when you restore the bundled kernel.</li>
-    <li>New packaged E2E drives the full UI journey (restore, boot-time expiry sweep, confirmed purge, session-to-trash) plus contract assertions guarding the design system.</li>
   </ul>
   <!-- changelog:auto:end -->
 
