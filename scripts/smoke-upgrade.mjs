@@ -146,15 +146,17 @@ async function copyAppFromDmg(dmg, destination) {
 await mkdir(dshHome, { recursive: true })
 await mkdir(userData, { recursive: true })
 try {
+  // Seed real pre-upgrade preferences before the previous release gets its first launch.
   if (method === 'macos') {
     const previous = await findOne(previousDir, name => name.endsWith('.dmg'))
     const current = await findOne(currentDir, name => isCurrentInstaller(name, currentVersion, 'darwin'))
     const installedApp = join(root, 'Applications', 'dsh-desktop.app')
     await mkdir(join(root, 'Applications'), { recursive: true })
     await copyAppFromDmg(previous, installedApp)
-    await smoke(join(installedApp, 'Contents', 'MacOS', 'dsh-desktop'))
     await seedUserState()
     const before = await snapshot()
+    await smoke(join(installedApp, 'Contents', 'MacOS', 'dsh-desktop'))
+    await assertPreserved(before)
     await copyAppFromDmg(current, installedApp)
     await assertPreserved(before)
     await smoke(join(installedApp, 'Contents', 'MacOS', 'dsh-desktop'))
@@ -165,9 +167,10 @@ try {
     const installDir = join(root, 'installed app')
     await execFileP(previous, ['/S', `/D=${installDir}`], { timeout: 300_000 })
     const executable = join(installDir, 'dsh-desktop.exe')
-    await smoke(executable)
     await seedUserState()
     const before = await snapshot()
+    await smoke(executable)
+    await assertPreserved(before)
     // electron-builder's assisted NSIS installer can wait indefinitely when
     // silently launched over an existing install (also reproduced by the
     // same-version installed smoke). Exercise the supported uninstall/install
@@ -185,9 +188,10 @@ try {
     const current = await findOne(currentDir, name => isCurrentInstaller(name, currentVersion, 'linux'))
     await execFileP('sudo', ['apt-get', 'install', '-y', previous], { timeout: 600_000, maxBuffer: 32 * 1024 * 1024 })
     const executable = await installedDpkgExecutable()
-    await smoke(executable)
     await seedUserState()
     const before = await snapshot()
+    await smoke(executable)
+    await assertPreserved(before)
     await execFileP('sudo', ['apt-get', 'install', '-y', current], { timeout: 600_000, maxBuffer: 32 * 1024 * 1024 })
     await assertPreserved(before)
     await smoke(executable)
