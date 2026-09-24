@@ -1,5 +1,5 @@
 diff --git a/lib/client.js b/lib/client.js
-index b839447..0c977a8 100644
+index b839447..bf7909a 100644
 --- a/lib/client.js
 +++ b/lib/client.js
 @@ -990,6 +990,7 @@ window.__ModuleLoader__.load({
@@ -10,15 +10,15 @@ index b839447..0c977a8 100644
  			const attempt = account.view?.attempt;
  			(0, react.useEffect)(() => {
  				setCopyResult(null);
-@@ -1003,6 +1004,11 @@ window.__ModuleLoader__.load({
- 					clearTimeout(timer);
+@@ -1004,6 +1005,11 @@ window.__ModuleLoader__.load({
  				};
  			}, [copyResult]);
+ 			const authorizeUrl = attempt?.authorizeUrl;
 +			(0, react.useEffect)(() => {
 +				if (!authorizeUrl || !attempt || openedAttemptId.current === attempt.id) return;
 +				openedAttemptId.current = attempt.id;
 +				window.open(authorizeUrlWithTheme(authorizeUrl, colorScheme), "_blank", "noopener,noreferrer");
 +			}, [attempt?.id, authorizeUrl, colorScheme]);
- 			const authorizeUrl = attempt?.authorizeUrl;
  			const phase = attempt?.phase;
  			const active = busy || phase === "initializing" || phase === "waiting-browser" || phase === "exchanging" || phase === "committing";
+ 			const expired = phase === "expired";
