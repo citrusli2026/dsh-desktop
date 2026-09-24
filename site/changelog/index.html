@@ -42,6 +42,12 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.7-rc.1.shell.3 <small>（内核 0.1.7-rc.1）</small></h2>
+  <ul>
+    <li>修复左下角 DeepSeek 账号菜单中的内置登录：获取授权地址后自动交由系统浏览器打开，并保留当前主题。</li>
+    <li>每次登录尝试最多自动打开一次授权地址；登录仍由 Harness 账号流程处理。</li>
+  </ul>
+
   <h2>v0.1.7-rc.1.shell.2 <small>（内核 0.1.7-rc.1）</small></h2>
   <ul>
     <li>修复内核 0.1.7 迁移 <code>settings.yaml</code> 后，原生菜单、窗口标题、托盘和通知语言回退的问题；优先从本地 <code>web</code> profile 读取语言与主题，并跟随 profile 更新。</li>
@@ -98,13 +104,6 @@
     <li><strong>加载失败精确归因</strong>：安装或启动报 <code>ERR_DLOPEN_FAILED</code> 时，错误页与导出的诊断报告不再只有原始日志——现在明确指出&quot;缺少 VC++ 运行库或杀毒软件隔离了文件&quot;，并给出官方运行库直链与杀软白名单指引。</li>
     <li><strong>安装器中英双语</strong>：Windows 安装界面按系统语言自动显示中文或英文（此前默认英文）。</li>
     <li><strong>内核与边界不变</strong>：内置内核仍为 0.1.6-alpha.2；不新增权限、不改变插件安装与数据目录边界；检测全部在本机完成，不上传任何信息。</li>
-  </ul>
-
-  <h2>v0.1.6-alpha.2.shell.2 <small>（内核 0.1.6-alpha.2）</small></h2>
-  <ul>
-    <li><strong>Windows 安装器内容门禁（新增发布 gate）</strong>:每个 Windows 安装器在发布前都会被解包核验——内置 <code>node.exe</code>、sharp 原生链(<code>.node</code> + libvips DLL)、闭包完整性清单、mobile-shell、agent-trash-hook 九个关键文件必须存在,其中最高风险的两个二进制(node.exe、sharp <code>.node</code>、libvips DLL)还会对照闭包 SHA-256 清单逐一校验哈希。这把 #39(运行时损坏)与 #56(原生模块加载失败)两类问题的验证从&quot;用户机上发现&quot;提前到&quot;发布流水线拦截&quot;。</li>
-    <li><strong>诊断经验沉淀</strong>:#56 的排查方法(NSIS → 内层 app-64.7z → 逐文件核对哈希)已固化为 <code>scripts/verify-windows-installer.mjs</code>,本地也可运行(<code>node scripts/verify-windows-installer.mjs +安装器路径或 dist 目录</code>),配合 7-Zip 即可复现发布级校验。</li>
-    <li><strong>内核与边界不变</strong>:内置内核仍为 0.1.6-alpha.2;不新增权限、不改变插件安装与数据目录边界。</li>
   </ul>
   <!-- changelog:auto:end -->
 

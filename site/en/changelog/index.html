@@ -42,6 +42,12 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.7-rc.1.shell.3 <small>（kernel 0.1.7-rc.1）</small></h2>
+  <ul>
+    <li>Fixed the built-in DeepSeek sign-in entry in the bottom-left account menu. The authorization URL now opens once per attempt in the system browser and keeps the current theme.</li>
+    <li>Authentication remains in the Harness account flow.</li>
+  </ul>
+
   <h2>v0.1.7-rc.1.shell.2 <small>（kernel 0.1.7-rc.1）</small></h2>
   <ul>
     <li>Preserve native menu, window, tray, and notification language and theme when Harness 0.1.7 migrates legacy settings by reading preferences from the local web profile.</li>
@@ -91,12 +97,6 @@
     <li>Windows-first iteration: the shell now proactively detects a missing Microsoft VC++ 2015-2022 redistributable (the dependency behind issue #56's ERR_DLOPEN_FAILED failures), shows a one-time first-run dialog linking the official installer, and reports a dedicated &quot;Windows runtime library&quot; item in the health check.</li>
     <li>dlopen failures are classified separately on error pages and in exported diagnostics — users see &quot;missing VC++ runtime or antivirus quarantine&quot; with concrete steps instead of a raw log.</li>
     <li>The Windows installer UI now follows the system language (Chinese/English). Bundled kernel unchanged at 0.1.6-alpha.2; all detection is local, nothing is uploaded.</li>
-  </ul>
-
-  <h2>v0.1.6-alpha.2.shell.2 <small>（kernel 0.1.6-alpha.2）</small></h2>
-  <ul>
-    <li>New release gate: every Windows installer is unpacked and verified before publish — bundled node.exe, the sharp native chain (.node + libvips DLLs), the closure integrity manifest, mobile-shell, and agent-trash-hook must be present, with the highest-risk binaries hashed against the packaged closure manifest. Moves #39/#56-class verification from &quot;discovered on user machines&quot; to &quot;blocked in the release pipeline&quot;.</li>
-    <li>The verification method is packaged as scripts/verify-windows-installer.mjs (runnable locally with 7-Zip). Bundled kernel unchanged at 0.1.6-alpha.2.</li>
   </ul>
   <!-- changelog:auto:end -->
 
