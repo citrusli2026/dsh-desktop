@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -78,6 +78,47 @@ test('controller follows a Harness locale edit without restart', async () => {
     assert.equal(await changed, 'zh')
     assert.equal(await themeChanged, 'dark')
     assert.equal(controller.locale, 'zh')
+  } finally {
+    controller.dispose()
+  }
+})
+
+test('profile locale and theme survive legacy settings archival and follow profile edits', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'dsh-locale-profile-'))
+  const settingsPath = join(dir, 'settings.yaml')
+  const profileDir = join(dir, 'profiles', 'web')
+  const profilePatchPath = join(profileDir, 'cordis.patch.yml')
+  await mkdir(profileDir, { recursive: true })
+  await writeFile(`${settingsPath}.imported`, 'locale:\n  preference: zh\nui-theme:\n  preference: light\n')
+  await writeFile(profilePatchPath, [
+    '- id: locale',
+    '  config:',
+    '    preference: en',
+    '- id: ui-theme',
+    '  config:',
+    '    preference: dark',
+    '- id: unrelated',
+    '  config:',
+    '    value: !!js process.platform',
+    '',
+  ].join('\n'))
+
+  const controller = await ShellLocaleController.create(settingsPath, ['zh-CN'], profilePatchPath)
+  try {
+    assert.equal(controller.locale, 'en')
+    assert.equal(controller.theme, 'dark')
+    await assert.rejects(readFile(settingsPath), { code: 'ENOENT' })
+
+    const changed = new Promise<string>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('profile locale watcher timed out')), 2_000)
+      const unsubscribe = controller.subscribe(locale => {
+        clearTimeout(timeout)
+        unsubscribe()
+        resolve(locale)
+      })
+    })
+    await writeFile(profilePatchPath, '- id: locale\n  config:\n    preference: zh\n')
+    assert.equal(await changed, 'zh')
   } finally {
     controller.dispose()
   }

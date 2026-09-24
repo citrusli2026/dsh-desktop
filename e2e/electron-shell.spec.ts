@@ -37,9 +37,10 @@ interface Fixture {
   relaunch: () => Promise<ElectronApplication>
 }
 
-const shellTest = test.extend<Fixture & { pathStyle: PathStyle }>({
+const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettings: boolean }>({
   pathStyle: ['normal', { option: true }],
-  electronApp: async ({ pathStyle }, use, testInfo) => {
+  seedLegacySettings: [false, { option: true }],
+  electronApp: async ({ pathStyle, seedLegacySettings }, use, testInfo) => {
     if (PACKAGED) testInfo.setTimeout(240_000) // 真实 Harness 首次渲染可达 120s
     const root = await mkdtemp(join(tmpdir(), 'dsh-electron-e2e-'))
     // 特殊路径变体:中文/空格目录(真实用户环境)与只读 DSH_HOME。
@@ -53,7 +54,10 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle }>({
     const userData = join(root, dataDir)
     await mkdir(dshHome, { recursive: true })
     await mkdir(userData, { recursive: true })
-    await writeFile(join(dshHome, 'settings.yaml'), 'locale:\n  preference: en\nui-theme:\n  preference: system\n' + WELCOME_ACKNOWLEDGED_YAML)
+    const initialSettings = seedLegacySettings
+      ? 'locale:\n  preference: zh\nui-theme:\n  preference: system\n' + WELCOME_ACKNOWLEDGED_YAML
+      : 'locale:\n  preference: en\nui-theme:\n  preference: system\n' + WELCOME_ACKNOWLEDGED_YAML
+    await writeFile(join(dshHome, 'settings.yaml'), initialSettings)
     await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
     if (pathStyle === 'readonly') await chmod(dshHome, 0o555)
 
@@ -279,7 +283,7 @@ async function captureAndroid(serial: string, path: string): Promise<void> {
   await writeFile(path, result.stdout)
 }
 
-shellTest('native menu and title follow the Harness locale preference @smoke @critical', async ({ electronApp, window, settingsPath }) => {
+shellTest('native menu and title follow the profile locale preference @smoke @critical', async ({ electronApp, window, dshHome }) => {
   await packagedOrStubHeadline(window)
   const dragRegion = window.locator('[data-dsh-window-drag-region]')
   await expect(dragRegion).toHaveCount(1)
@@ -308,10 +312,36 @@ shellTest('native menu and title follow the Harness locale preference @smoke @cr
   expect(english).toContain('DeepSeek Official Website')
   expect(await window.evaluate(() => typeof (window as unknown as { require?: unknown }).require)).toBe('undefined')
 
-  await writeFile(settingsPath, 'locale:\n  preference: zh\nui-theme:\n  preference: system\n')
+  const profileDir = join(dshHome, 'profiles', 'web')
+  await mkdir(profileDir, { recursive: true })
+  await writeFile(join(profileDir, 'cordis.patch.yml'), '- id: locale\n  config:\n    preference: zh\n')
   await expect.poll(() => menuLabels(electronApp)).toContain('帮助')
   await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.getTitle()))
     .toBe('dsh-desktop — DeepSeek Harness（社区版）')
+})
+
+shellTest.describe('legacy settings migration', () => {
+  shellTest.use({ seedLegacySettings: true })
+
+  shellTest('native surfaces retain the profile locale after kernel migration @smoke @critical', async ({ electronApp, window, dshHome, settingsPath }) => {
+    test.skip(!PACKAGED, 'the real Harness performs the legacy settings migration')
+    await packagedOrStubHeadline(window)
+    const profilePatchPath = join(dshHome, 'profiles', 'web', 'cordis.patch.yml')
+    await expect.poll(async () => readFile(`${settingsPath}.imported`, 'utf8').catch(() => ''), { timeout: 120_000 })
+      .toContain('preference: zh')
+    await expect.poll(async () => readFile(settingsPath, 'utf8').catch(() => ''), { timeout: 120_000 })
+      .toBe('')
+    const migratedProfile = await readFile(profilePatchPath, 'utf8')
+    expect(migratedProfile).toMatch(/id: locale[\s\S]*?preference: zh/)
+    await expect.poll(() => menuLabels(electronApp)).toContain('帮助')
+    await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.getTitle()))
+      .toBe('dsh-desktop — DeepSeek Harness（社区版）')
+
+    await writeFile(profilePatchPath, '- id: locale\n  config:\n    preference: en\n')
+    await expect.poll(() => menuLabels(electronApp)).toContain('Project Repository')
+    await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.getTitle()))
+      .toBe('dsh-desktop — DeepSeek Harness (Community)')
+  })
 })
 
 shellTest('desktop shell visual sanity check @visual', async ({ window }, testInfo) => {

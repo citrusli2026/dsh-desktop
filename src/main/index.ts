@@ -1226,8 +1226,10 @@ if (!gotLock) {
     // notifications silently never show.
     if (process.platform === 'win32') app.setAppUserModelId('io.github.citrusli2026.dsh-electron-shell')
     denyUnexpectedPermissions(session.defaultSession)
-    const settingsPath = join(resolveDshHome(process.env, homedir()), 'settings.yaml')
-    localeController = await ShellLocaleController.create(settingsPath, app.getPreferredSystemLanguages())
+    const dshHome = resolveDshHome(process.env, homedir())
+    const settingsPath = join(dshHome, 'settings.yaml')
+    const profilePatchPath = join(dshHome, 'profiles', WEB_PROFILE, 'cordis.patch.yml')
+    localeController = await ShellLocaleController.create(settingsPath, app.getPreferredSystemLanguages(), profilePatchPath)
     currentLocale = localeController.locale
     nativeTheme.themeSource = localeController.theme
     localeController.subscribe((locale) => {

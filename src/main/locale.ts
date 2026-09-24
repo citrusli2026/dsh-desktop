@@ -435,6 +435,70 @@ export async function readThemePreference(settingsPath: string): Promise<ShellTh
   }
 }
 
+interface LocalePreferences {
+  locale?: ShellLocale
+  theme?: ShellTheme
+}
+
+async function readProfilePreferences(profilePatchPath: string): Promise<LocalePreferences> {
+  try {
+    const document = parseDocument(await readFile(profilePatchPath, 'utf8'), {
+      customTags: [{ tag: 'tag:yaml.org,2002:js', resolve: (value: string) => value }],
+    })
+    if (document.errors[0] !== undefined) throw document.errors[0]
+    const patches: unknown = document.toJS()
+    if (!Array.isArray(patches)) throw new Error('profile patch must be a YAML sequence')
+    const preferences: LocalePreferences = {}
+    for (const patch of patches) {
+      if (typeof patch !== 'object' || patch === null || Array.isArray(patch)) continue
+      const row = patch as { id?: unknown; config?: unknown }
+      if (typeof row.config !== 'object' || row.config === null || Array.isArray(row.config)) continue
+      const config = row.config as Record<string, unknown>
+      if (row.id === 'locale' && config.preference !== undefined) {
+        if (!isShellLocale(config.preference)) throw new Error('unsupported profile locale preference')
+        preferences.locale = config.preference
+      }
+      if (row.id === 'ui-theme' && config.preference !== undefined) {
+        if (!isShellTheme(config.preference)) throw new Error('unsupported profile theme preference')
+        preferences.theme = config.preference
+      }
+    }
+    return preferences
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return {}
+    throw error
+  }
+}
+
+async function readOptionalSettings(settingsPath: string): Promise<{ exists: boolean; preferences: LocalePreferences }> {
+  try {
+    const parsed = parseLocaleDocument(await readFile(settingsPath, 'utf8'))
+    return { exists: true, preferences: { locale: parsed.locale, theme: parsed.theme } }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { exists: false, preferences: {} }
+    throw error
+  }
+}
+
+async function readPreferenceSnapshot(
+  settingsPath: string,
+  profilePatchPath: string | undefined,
+): Promise<LocalePreferences & { importedExists: boolean }> {
+  const profilePreferences: Promise<LocalePreferences> = profilePatchPath === undefined
+    ? Promise.resolve({})
+    : readProfilePreferences(profilePatchPath)
+  const [profile, live, imported] = await Promise.all([
+    profilePreferences,
+    readOptionalSettings(settingsPath),
+    readOptionalSettings(`${settingsPath}.imported`),
+  ])
+  return {
+    locale: profile.locale ?? live.preferences.locale ?? imported.preferences.locale,
+    theme: profile.theme ?? live.preferences.theme ?? imported.preferences.theme,
+    importedExists: imported.exists,
+  }
+}
+
 /** Initialize an absent preference once, without overwriting an existing or invalid value. */
 export async function initializeLocalePreference(
   settingsPath: string,
@@ -465,31 +529,45 @@ export class ShellLocaleController {
   private current: ShellLocale
   private currentTheme: ShellTheme
   private readonly settingsPath: string
+  private readonly profilePatchPath: string | undefined
   private readonly systemLocale: ShellLocale
   private readonly listeners = new Set<LocaleListener>()
   private readonly themeListeners = new Set<ThemeListener>()
-  private watcher: FSWatcher | undefined
+  private readonly watchers: FSWatcher[] = []
   private readTimer: NodeJS.Timeout | undefined
   private pollTimer: NodeJS.Timeout | undefined
 
-  private constructor(settingsPath: string, initial: ShellLocale, theme: ShellTheme, systemLocale: ShellLocale) {
+  private constructor(
+    settingsPath: string,
+    profilePatchPath: string | undefined,
+    initial: ShellLocale,
+    theme: ShellTheme,
+    systemLocale: ShellLocale,
+  ) {
     this.settingsPath = settingsPath
+    this.profilePatchPath = profilePatchPath
     this.current = initial
     this.currentTheme = theme
     this.systemLocale = systemLocale
   }
 
-  static async create(settingsPath: string, preferredLanguages: readonly string[]): Promise<ShellLocaleController> {
+  static async create(
+    settingsPath: string,
+    preferredLanguages: readonly string[],
+    profilePatchPath?: string,
+  ): Promise<ShellLocaleController> {
     const systemLocale = resolvePreferredLocale(preferredLanguages)
     let initial: ShellLocale = 'en'
     let theme: ShellTheme = 'system'
     try {
-      initial = await initializeLocalePreference(settingsPath, preferredLanguages)
-      theme = await readThemePreference(settingsPath) ?? 'system'
+      const snapshot = await readPreferenceSnapshot(settingsPath, profilePatchPath)
+      initial = snapshot.locale
+        ?? (snapshot.importedExists ? systemLocale : await initializeLocalePreference(settingsPath, preferredLanguages))
+      theme = snapshot.theme ?? 'system'
     } catch (error) {
       console.warn(`dsh-desktop: locale initialization failed; using English: ${error instanceof Error ? error.message : String(error)}`)
     }
-    const controller = new ShellLocaleController(settingsPath, initial, theme, systemLocale)
+    const controller = new ShellLocaleController(settingsPath, profilePatchPath, initial, theme, systemLocale)
     controller.startWatching()
     controller.startPolling()
     return controller
@@ -516,7 +594,7 @@ export class ShellLocaleController {
   dispose(): void {
     if (this.readTimer !== undefined) clearTimeout(this.readTimer)
     if (this.pollTimer !== undefined) clearInterval(this.pollTimer)
-    this.watcher?.close()
+    for (const watcher of this.watchers) watcher.close()
     this.listeners.clear()
     this.themeListeners.clear()
   }
@@ -532,26 +610,38 @@ export class ShellLocaleController {
   }
 
   private startWatching(): void {
-    try {
-      this.watcher = watch(dirname(this.settingsPath), { persistent: false }, (_event, filename) => {
-        if (filename !== null && filename.toString() !== basename(this.settingsPath)) return
-        if (this.readTimer !== undefined) clearTimeout(this.readTimer)
-        this.readTimer = setTimeout(() => {
-          this.readTimer = undefined
-          void this.refresh()
-        }, 150)
-        this.readTimer.unref()
-      })
-      this.watcher.on('error', error => console.warn(`dsh-desktop: locale watcher failed: ${error.message}`))
-    } catch (error) {
-      console.warn(`dsh-desktop: locale watcher unavailable: ${error instanceof Error ? error.message : String(error)}`)
+    const paths = [this.settingsPath, `${this.settingsPath}.imported`, this.profilePatchPath]
+      .filter((path): path is string => path !== undefined)
+    const pathsByDirectory = new Map<string, Set<string>>()
+    for (const path of paths) {
+      const names = pathsByDirectory.get(dirname(path)) ?? new Set<string>()
+      names.add(basename(path))
+      pathsByDirectory.set(dirname(path), names)
+    }
+    for (const [directory, filenames] of pathsByDirectory) {
+      try {
+        const watcher = watch(directory, { persistent: false }, (_event, filename) => {
+          if (filename !== null && !filenames.has(filename.toString())) return
+          if (this.readTimer !== undefined) clearTimeout(this.readTimer)
+          this.readTimer = setTimeout(() => {
+            this.readTimer = undefined
+            void this.refresh()
+          }, 150)
+          this.readTimer.unref()
+        })
+        watcher.on('error', error => console.warn(`dsh-desktop: locale watcher failed: ${error.message}`))
+        this.watchers.push(watcher)
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+          console.warn(`dsh-desktop: locale watcher unavailable: ${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
     }
   }
 
   private async refresh(): Promise<void> {
     try {
-      const text = await readFile(this.settingsPath, 'utf8')
-      const snapshot = parseLocaleDocument(text)
+      const snapshot = await readPreferenceSnapshot(this.settingsPath, this.profilePatchPath)
       const next = snapshot.locale ?? this.systemLocale
       const nextTheme = snapshot.theme ?? 'system'
       if (next !== this.current) {
@@ -563,17 +653,6 @@ export class ShellLocaleController {
         for (const listener of [...this.themeListeners]) listener(nextTheme)
       }
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        if (this.current !== this.systemLocale) {
-          this.current = this.systemLocale
-          for (const listener of [...this.listeners]) listener(this.current)
-        }
-        if (this.currentTheme !== 'system') {
-          this.currentTheme = 'system'
-          for (const listener of [...this.themeListeners]) listener(this.currentTheme)
-        }
-        return
-      }
       console.warn(`dsh-desktop: ignoring invalid locale update: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
