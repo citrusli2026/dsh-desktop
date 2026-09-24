@@ -37,10 +37,11 @@ interface Fixture {
   relaunch: () => Promise<ElectronApplication>
 }
 
-const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettings: boolean }>({
+const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettings: boolean; mockAccountPlatform: boolean }>({
   pathStyle: ['normal', { option: true }],
   seedLegacySettings: [false, { option: true }],
-  electronApp: async ({ pathStyle, seedLegacySettings }, use, testInfo) => {
+  mockAccountPlatform: [false, { option: true }],
+  electronApp: async ({ pathStyle, seedLegacySettings, mockAccountPlatform }, use, testInfo) => {
     if (PACKAGED) testInfo.setTimeout(240_000) // 真实 Harness 首次渲染可达 120s
     const root = await mkdtemp(join(tmpdir(), 'dsh-electron-e2e-'))
     // 特殊路径变体:中文/空格目录(真实用户环境)与只读 DSH_HOME。
@@ -54,12 +55,46 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettin
     const userData = join(root, dataDir)
     await mkdir(dshHome, { recursive: true })
     await mkdir(userData, { recursive: true })
+    const initialTheme = mockAccountPlatform ? 'dark' : 'system'
     const initialSettings = seedLegacySettings
-      ? 'locale:\n  preference: zh\nui-theme:\n  preference: system\n' + WELCOME_ACKNOWLEDGED_YAML
-      : 'locale:\n  preference: en\nui-theme:\n  preference: system\n' + WELCOME_ACKNOWLEDGED_YAML
+      ? `locale:\n  preference: zh\nui-theme:\n  preference: ${initialTheme}\n` + WELCOME_ACKNOWLEDGED_YAML
+      : `locale:\n  preference: en\nui-theme:\n  preference: ${initialTheme}\n` + WELCOME_ACKNOWLEDGED_YAML
     await writeFile(join(dshHome, 'settings.yaml'), initialSettings)
     await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
     if (pathStyle === 'readonly') await chmod(dshHome, 0o555)
+
+    let accountServer: Server | undefined
+    if (PACKAGED && mockAccountPlatform) {
+      accountServer = createServer((_request, response) => {
+        response.writeHead(200, { 'content-type': 'application/json' })
+        response.end(JSON.stringify({
+          code: 0,
+          data: {
+            biz_code: 0,
+            biz_data: {
+              authorize_url: `http://127.0.0.1:${(accountServer!.address() as { port: number }).port}/dsh/authorize?from=e2e`,
+              authorize_id: 'account-login-e2e',
+              expires_in: 300,
+            },
+          },
+        }))
+      })
+      await new Promise<void>((resolve, reject) => {
+        accountServer!.once('error', reject)
+        accountServer!.listen(0, '127.0.0.1', resolve)
+      })
+      const address = accountServer.address()
+      if (address === null || typeof address === 'string') throw new Error('account mock did not bind a TCP port')
+      const profileDir = join(dshHome, 'profiles', 'web')
+      await mkdir(profileDir, { recursive: true })
+      await writeFile(join(profileDir, 'cordis.patch.yml'), [
+        '- id: deepseek-account',
+        '  config:',
+        `    platformOrigin: http://127.0.0.1:${address.port}`,
+        '    allowLoopbackHttp: true',
+        '',
+      ].join('\n'))
+    }
 
     let currentApp: ElectronApplication | undefined
     let server: Server | undefined
@@ -152,6 +187,7 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettin
     activeLaunch = undefined
     await chmod(dshHome, 0o755).catch(() => undefined)
     if (server !== undefined) await new Promise<void>(resolve => server!.close(() => resolve()))
+    if (accountServer !== undefined) await new Promise<void>(resolve => accountServer!.close(() => resolve()))
     await rm(root, { recursive: true, force: true })
   },
 
@@ -220,6 +256,34 @@ async function packagedOrStubHeadline(window: Page): Promise<void> {
     await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
   }
 }
+
+shellTest.describe('built-in account sign-in', () => {
+  shellTest.use({ mockAccountPlatform: true })
+
+  shellTest('the bottom-left sign-in opens its authorization URL in the system browser @smoke @critical', async ({ electronApp, window }) => {
+    test.skip(!PACKAGED, 'the built-in account menu is provided by the real Harness')
+    await packagedOrStubHeadline(window)
+    await electronApp.evaluate(({ shell }) => {
+      Object.defineProperty(globalThis, '__e2eExternalUrls', { configurable: true, value: [] as string[] })
+      Object.defineProperty(shell, 'openExternal', {
+        configurable: true,
+        value: async (url: string) => {
+          ((globalThis as typeof globalThis & { __e2eExternalUrls: string[] }).__e2eExternalUrls).push(url)
+        },
+      })
+    })
+    await window.getByRole('button', { name: 'Account menu' }).click()
+    const signIn = window.getByRole('menuitem', { name: 'Sign in' })
+    await expect(signIn).toBeVisible()
+    await signIn.click()
+    const dialog = window.getByRole('dialog')
+    await expect(dialog).toBeVisible({ timeout: 10_000 })
+    await expect(dialog.getByRole('button', { name: 'Copy sign-in link' })).toBeVisible({ timeout: 15_000 })
+    await expect.poll(() => electronApp.evaluate(() => (
+      (globalThis as typeof globalThis & { __e2eExternalUrls?: string[] }).__e2eExternalUrls ?? []
+    )), { timeout: 10_000 }).toContainEqual(expect.stringMatching(/^http:\/\/127\.0\.0\.1:\d+\/dsh\/authorize\?from=e2e&theme=dark$/))
+  })
+})
 
 async function menuLabels(app: ElectronApplication): Promise<string[]> {
   return app.evaluate(({ Menu }) => {

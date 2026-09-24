@@ -280,3 +280,5 @@ minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-chunked-list@0.1.7-rc.1'
   - '@deepseek-ai/dsh-client-ui-sidebar-documentpreview@0.1.7-rc.1'
   - '@deepseek-ai/dsh-tool-present@0.1.7-rc.1'
+patchedDependencies:
+  '@deepseek-ai/dsh-client-ui-settings-account@0.1.7-rc.1': patches/@deepseek-ai__dsh-client-ui-settings-account@0.1.7-rc.1.patch
