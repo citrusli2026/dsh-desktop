@@ -1760,3 +1760,12 @@ CI 三跑三种新表现,未收敛,按"宁停不发"中止本版:①升级冒烟
 Release CI：<https://github.com/citrusli2026/dsh-desktop/actions/runs/35946298227>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.1.shell.2>；
 官网：<https://dsh-desktop.com>。
+
+## 65. v0.1.7-rc.2.shell.0 巡检发布：0.1.7-rc.2 + UOS/Deepin 桌面适配（2026-09-25）
+
+1. **巡检发现**:内核 0.1.7-rc.2 发布;#73(UOS/Deepin 双问题,报告人自带根因)为 A 类——Linux 任务栏默认图标 + 0.1.7 新 UI 右上角操作区与原生窗口控件重叠。
+2. **#73 修复**:①主窗口 Linux 携带 `build/icon.png` 作 `_NET_WM_ICON`(任务栏不再回退默认图标);②Linux 恢复完整原生标题栏(0.1.7 Web UI 无 Linux 避让位,overlay 控件与网页右上角动作区重叠,原生标题栏根除此类冲突;mac/win 样式不变)。
+3. **内核 bump 与登录补丁重建**:0.1.7-rc.2 的 `dsh-client-ui-settings-account` 变更使 rc.1 的登录授权自动打开补丁失效——按 rc.2 重建(effect 移到 `authorizeUrl` 声明之后,首版插入顺序引发渲染期 TDZ 使登录对话框无法打开,CI 拦截后本地 sign-in 规格复现并修正)。新 peer `dsh-llm-deepseek` 入清单。
+4. **门禁**:299 单测(新增 Linux 标题栏契约)、双树审计归零、dev E2E 16/16、三冒烟、垃圾桶 E2E、market offline 1/1 + real 2/2、LAN QR 2/2。
+5. **发布**:tag `v0.1.7-rc.2.shell.0` → `ed5d3cb`;Release run `36035036992` 全绿(首跑被补丁 TDZ 拦截,修正后重发)。GitCode 镜像上传 6/6 成功、匿名下载 0/6(平台附件故障第 5 版持续,§60-64);官网数据由调度重探。
+6. **issue**:#73 已回复修复说明并关闭;#72(GitCode backfill shell.3)为平台故障建档随工单跟踪;#65(多网卡多二维码)保持 open 为后续增强;#56/#39/#33 等外部反馈。
