@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.7-rc.1.shell.0`（2026-09-23 已发布；内核 `0.1.7-rc.1`；0.1.7 线 E2E 适配轮,§63） |
-| 已发布 | ✅ `0.1.7-rc.1.shell.0`（三端 dmg/exe/deb；内核 0.1.7-rc.1 + 账号弹层导航/welcome 种子等 E2E 适配） |
-| 本地门禁 | ✅ 297 项单测、类型检查、runtime/site、安全审计（双树 0 漏洞）、构建全绿；dev E2E 16/16、垃圾桶 UI 打包 E2E、闭包 smoke、真实 Harness UI、Safe Mode 注入冒烟、offline + real market、LAN QR 全链通过 |
-| 核心发布 | ✅ `v0.1.7-rc.1.shell.0` Release run `35871714648` 全绿：8 文件契约、attestation、三平台跨版本数据保留（含 0.1.7 设置迁移两态断言）、闭包清单 smoke、NSIS 残留矩阵、Harness 真渲染、Safe Mode 故障注入 |
-| 官网数据 | ✅ 当前 `site/data/release.json` 指向 `v0.1.7-rc.1.shell.0`（`gitcode_ok=false`——GitCode 平台附件故障持续,§60-63,非镜像缺失） |
-| 国内镜像 | ⚠️ `v0.1.7-rc.1.shell.0` GitCode:6/6 资产本机直连上传成功、匿名下载 404（平台级附件故障连续第 4 版,紧急工单挂起;tag 对齐 `458df11`） |
-| 实时下载统计 | ✅ `/api/downloads` 实时可用（2026-09-23 累计 4194+,59 个版本） |
+| 最新代码基线 | ✅ `0.1.7-rc.1.shell.2`（2026-09-24 已发布；内核 `0.1.7-rc.1`；#68 本地偏好迁移修复,§64） |
+| 已发布 | ✅ `0.1.7-rc.1.shell.2`（三端 dmg/exe/deb；8 个 GitHub Release 资产） |
+| 本地门禁 | ✅ 298 项单测、类型检查、runtime/site、安全审计（双树 0 漏洞）、构建全绿；dev E2E 16/16、packaged E2E 6/6、两种 packaged smoke、cross-version macOS smoke、market offline 1 + real 2、LAN QR 2 全通过；AVD 缺少 adb |
+| 核心发布 | ✅ `v0.1.7-rc.1.shell.2` Release run `35946298227` 全绿：Windows 安装器完整性、跨版本升级、NSIS 残留矩阵、packaged smoke、attestation；三平台构建与 8 资产契约齐全 |
+| 官网数据 | ✅ Site Data Refresh run `35948337492` 成功，提交 `4234404`；线上 `/data/release.json` 指向 shell.2，6/6 `gitcode_ok=false` 如实反映匿名 404 |
+| 国内镜像 | ⚠️ shell.2 GitCode API 接收 6/6 资产；匿名 Range GET 0/6（平台级附件故障延续 §60-63）；24 小时后复探已设跟进 |
+| 实时下载统计 | ✅ `/api/downloads` 可用（2026-09-24：4252 总计，mac 533 / Windows 3302 / Linux 417；60 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1731,3 +1731,18 @@ CI 三跑三种新表现,未收敛,按"宁停不发"中止本版:①升级冒烟
 - Release run `35871714648`(成功);Site Data Refresh run `35875766208`(成功);backfill `35875745453`(失败,已由本机镜像接管)。
 - 本地门禁:verify 297 单测全绿、LAN QR 2/2、打包套件 trash/market-offline/notice 导航通过(zh 系统的环境性断言差异见 #68)。
 - 后续:#68(shell 读内核 profile 存储,恢复语言偏好持久化)、盯上游 rc→stable、GitCode 附件工单、welcome 版本号变更时同步 `e2e/onboarding.ts` 种子。
+
+## 64. v0.1.7-rc.1.shell.2 Windows 优先巡检发布（2026-09-24）
+
+1. **官网与内核巡检**：阿里 DNS `@223.5.5.5` 返回 apex `64.29.17.1`、www `64.29.17.65`；直连 apex HTTPS `200`。`node scripts/version.mjs check` 退出码 0，内核 `0.1.7-rc.1` 仍是最新，无需内核 bump。
+2. **Issue 处理**：#64/#69 为 GitCode 附件匿名下载 404，已回复诊断与 GitHub 备用下载；#65 多网段/多二维码属于跨移动端与桌面端扩展，需先决定默认网络暴露范围，暂缓实现；#66 是闭包漏掉两个非可选 peer、后续闭包已补齐；#67 是内核 0.1.7 把 Settings 移入账号菜单后旧 E2E 定位器失效，shell.0 已修复。#68 的 locale/theme profile 读取修复随本版发布并已回复升级建议；#33/#39/#56 仍在等用户反馈。
+3. **shell.1 失败审计与修复**：shell.1 Release run `35944446387` 三平台都在 `settings.yaml.imported` 字节断言失败。根因是升级夹具先启动旧版让内核迁移设置，再人工写回旧 `settings.yaml`，制造不可能的混合状态。shell.2 把用户数据播种移到旧版首次启动之前，并在迁移后及安装升级后继续检查数据保留。失败 tag `v0.1.7-rc.1.shell.1` 保留，不删除。
+4. **本地验证**：`pnpm run verify` 通过，298 项单测（行覆盖率 92.98%、分支 83.70%、函数 87.06%）；typecheck/runtime/site/build 全绿，根目录与 Harness 双树安全审计均无已知漏洞。dev E2E 16/16，packaged E2E 6/6（含真实内核设置迁移），两种 packaged smoke、dist:dir、macOS shell.0→shell.2 跨版本升级、market offline 1/1、market real 2/2、LAN QR 2/2 全通过。未运行 AVD：机器无 `adb`。
+5. **发布与 Windows**：`0085192` 推送到 origin 与 GitCode；tag `v0.1.7-rc.1.shell.2` 两端 peeled commit 一致。Release run `35946298227` verify + 三平台构建 + publish 全绿，GitHub Release 有 8 个约定资产与构建 attestation。Windows 安装器完整性检查、跨版本升级、NSIS corrupt/readonly/lock 残留矩阵、真实 Harness 和安装 smoke 均通过。按 ADR 0016 Windows 当前保持未签名；本版发布不需要人工签名操作。
+6. **GitCode 镜像**：本机镜像脚本经 SOCKS 下载校验并上传 deb/exe/dmg 与 3×sha256，API 接收 6/6；匿名 Range GET 0/6，仍为 §60–63 的服务端附件/CDN 故障。GitHub Release 可用。已安排 24 小时后的同线程复探；若仍有 404，只提醒维护者跟进工单，不自动向 GitCode 发消息。
+7. **官网数据与后续**：Site Data Refresh run `35948337492` 成功，bot 提交 `4234404`；线上 `/data/release.json` 指向 shell.2，包含 6 个资产且 6/6 `gitcode_ok=false`，符合 0/6 匿名探测。生成时间 `2026-09-24T03:07:22.486Z`；`/api/downloads` 实时计数 4252（mac 533 / Windows 3302 / Linux 417，60 个版本）。官网 apex 探测正常，无需改 DNS。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.1.shell.2>；
+Release CI：<https://github.com/citrusli2026/dsh-desktop/actions/runs/35946298227>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.1.shell.2>；
+官网：<https://dsh-desktop.com>。
