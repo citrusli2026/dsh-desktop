@@ -42,6 +42,13 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.7-rc.1.shell.1 <small>（内核 0.1.7-rc.1）</small></h2>
+  <ul>
+    <li>修复内核 0.1.7 迁移旧版设置后，原生菜单、窗口标题、托盘等桌面界面语言回退到操作系统语言的问题。壳现在优先读取 <code>web</code> profile 中的语言和主题偏好，并跟随 profile 更新。</li>
+    <li>保留迁移兼容：仍可读取现存的 <code>settings.yaml</code> 及内核归档的 <code>settings.yaml.imported</code>；读取旧归档时不会重新创建旧设置文件。</li>
+    <li>偏好留在本机 Harness profile 中，不会上传。</li>
+  </ul>
+
   <h2>v0.1.7-rc.1.shell.0 <small>（内核 0.1.7-rc.1）</small></h2>
   <ul>
     <li><strong>内核升级</strong>：随官方 <code>@deepseek-ai/dsh</code> <code>0.1.7-rc.1</code>（上一内置内核 0.1.6-alpha.2，直接跨到 rc 线）。上游变更内容见 <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">官方发布页</a>。</li>
@@ -101,16 +108,6 @@
     <li><strong>修复：归档会话判定失效</strong>：内核工作区注册表把归档列表嵌在 <code>global</code> 字段下，壳只读顶层导致归档会话永远显示为未归档；现兼容两种结构，取消归档的写回也保持内核的 unit 头格式。</li>
     <li><strong>修复：内核残留入桶</strong>：「恢复内置内核」后，被切走的 overlay 内核目录现在移入垃圾桶（30 天还原窗口），不再永久占用磁盘；移动失败时保持原样，绝不影响恢复本身。</li>
     <li><strong>测试网</strong>：新增打包 E2E（种子条目还原 → 启动期过期清理断言 → 两步确认清除 → 会话入桶全链贯穿 UI）与契约测试断言（设计体系 class、确认交互、页签语义），让垃圾桶的风格漂移未来能被 CI 拦住。</li>
-  </ul>
-
-  <h2>v0.1.6-alpha.2.shell.0 <small>（内核 0.1.6-alpha.2）</small></h2>
-  <ul>
-    <li><strong>内核升级</strong>：随官方 <code>@deepseek-ai/dsh</code> <code>0.1.6-alpha.2</code>（上一内置内核 0.1.6-alpha.1）。上游变更内容见 <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">官方发布页</a>。</li>
-    <li><strong>依赖闭包同步</strong>：重新生成 lockfile，同步 supply-chain release-age 豁免清单；官方 npm 安全审计零已知漏洞。</li>
-    <li><strong>闭包安全地板</strong>：上游 <code>dsh-office-to-pdf</code> 传递依赖 fflate（GHSA-px8p-9vwx-vf98，恶意 ZIP64 死循环）已按安全地板模式钉到 0.8.3，双树 npm 审计零已知漏洞。</li>
-    <li><strong>桌面控件挂载适配</strong>：适配 0.1.6-alpha.2 内核新的 profile 解析代——桌面控件包的链接同时落在新内核解析的 profile 目录锚点与旧内核兼容锚点（内核 overlay 回滚场景仍可用），打包冒烟（含安全模式故障注入）全绿。</li>
-    <li><strong>验证</strong>：283 项单测、dev E2E 16/16、打包冒烟（真实 Harness UI 渲染 + 安全模式注入）、离线 + 真实市场 E2E、LAN 扫码全部通过。</li>
-    <li><strong>边界说明</strong>：桌面壳无功能变更；社区插件仍不进入安装包。若插件与新内核不兼容，启动失败时错误页提供一键「升级 / 禁用」恢复。</li>
   </ul>
   <!-- changelog:auto:end -->
 
