@@ -1769,3 +1769,20 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.1
 4. **门禁**:299 单测(新增 Linux 标题栏契约)、双树审计归零、dev E2E 16/16、三冒烟、垃圾桶 E2E、market offline 1/1 + real 2/2、LAN QR 2/2。
 5. **发布**:tag `v0.1.7-rc.2.shell.0` → `ed5d3cb`;Release run `36035036992` 全绿(首跑被补丁 TDZ 拦截,修正后重发)。GitCode 镜像上传 6/6 成功、匿名下载 0/6(平台附件故障第 5 版持续,§60-64);官网数据由调度重探。
 6. **issue**:#73 已回复修复说明并关闭;#72(GitCode backfill shell.3)为平台故障建档随工单跟踪;#65(多网卡多二维码)保持 open 为后续增强;#56/#39/#33 等外部反馈。
+
+## 66. v0.1.7-rc.2.shell.1 登录流 E2E + 多地址二维码 + macOS 封印修复（2026-09-26）
+
+用户目标「issues 彻底修复 + 左下角登录流 E2E 验证修复 + 发新版」的实现记录:
+
+1. **#79 macOS 无法启动(关键,已修)**:rc.2.shell.0 的 macOS 版在 codesign 之后写入 manifest.json,破坏 ad-hoc 封印,系统判「已损坏」。修复:after-sign 钩子改为文档化 no-op,macOS 不再随包发布 manifest;运行体检在 macOS 改用 codesign 封印校验(`verifyDarwinSeal`,closure-manifest.ts)。
+2. **补丁 TDZ 崩溃(本版 CI 拦截)**:随 rc.2 重建的登录授权自动打开补丁,首版把 effect 插在 `authorizeUrl` 声明之前,渲染期依赖数组触发 TDZ,登录对话框无法打开(三平台 CI 齐挂)。修正:effect 移到声明之后;本地打包 sign-in 规格 8.4s 通过后才重发。
+3. **#65 局域网多地址二维码(实现)**:`lan.ts` 新增 `pairingUrlKind`(CGNAT → vpn)与 `lanPairingUrlCandidates`(内核 URL + 全部私有候选 IP,同址去重);配对窗口按可达地址渲染多个二维码并标注类别;上限 4 个。双网卡机器物理网卡优先不回归(+1 平台感知单测)。
+4. **门禁**:300 单测全绿、dev E2E 16/16、三打包冒烟、垃圾桶 E2E、market offline 1/1 + real 2/2、LAN QR 2/2、双树审计归零、登录流程打包 E2E(spec 263)通过。
+5. **发布**:tag `v0.1.7-rc.2.shell.1` → `20146ba`;Release run `36322077444` verify + 三平台构建 + publish 全绿,8 资产 + attestation。
+6. **镜像**:GitHub→GitCode 跨境下载间歇失败(本机网络至 GitHub 亦间歇),重试后本机上传 6/6 完成;匿名下载 404 属 §60 平台故障,复探随调度。
+7. **issue 收尾**:#79(修复说明+隔离标记指引)、#65(多二维码进展)、#72(平台故障)、#74(补丁 TDZ)、#75(时序抢跑)均已回复;#79/#72/#74/#75 关闭,#65 保持 open 为增强跟踪。
+
+发布:<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.2.shell.1>;
+Release CI:<https://github.com/citrusli2026/dsh-desktop/actions/runs/36035036992>;
+GitCode:<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.2.shell.1>;
+官网:<https://dsh-desktop.com>。
