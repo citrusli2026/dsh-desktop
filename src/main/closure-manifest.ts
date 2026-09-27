@@ -194,3 +194,34 @@ export function closureRepairUrls(
     ? { primary: gitcode, alt: github, asset }
     : { primary: github, alt: gitcode, asset }
 }
+
+/**
+ * macOS integrity (#79): ad-hoc codesign seals the ENTIRE bundle — any file
+ * added after signing (like this module's own manifest.json) breaks the seal
+ * and macOS reports the app as damaged. So darwin builds ship NO manifest;
+ * their integrity check IS the code signature, verified with codesign.
+ * Returns the first codesign stderr line on failure for the health report.
+ */
+export async function verifyDarwinSeal(appBundle: string): Promise<
+  { status: 'ok' | 'failed' | 'missing-tool'; detail: string }
+> {
+  const { spawn } = await import('node:child_process')
+  return new Promise(resolve => {
+    const child = spawn('codesign', ['--verify', '--deep', '--strict', appBundle], {
+      stdio: ['ignore', 'ignore', 'pipe'],
+    })
+    let stderr = ''
+    child.stderr?.on('data', chunk => { stderr += String(chunk) })
+    const timer = setTimeout(() => { child.kill('SIGKILL'); resolve({ status: 'missing-tool', detail: 'codesign timed out' }) }, 30_000)
+    child.once('error', error => {
+      clearTimeout(timer)
+      resolve({ status: 'missing-tool', detail: error instanceof Error ? error.message : String(error) })
+    })
+    child.once('exit', code => {
+      clearTimeout(timer)
+      resolve(code === 0
+        ? { status: 'ok', detail: '' }
+        : { status: 'failed', detail: stderr.split('\n').find(line => line.trim() !== '') ?? `codesign exited ${String(code)}` })
+    })
+  })
+}

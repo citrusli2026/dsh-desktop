@@ -1,8 +1,9 @@
 /** Read-only, local-first health checks for the desktop tools surface. */
 import { constants } from 'node:fs'
 import { access, open, readFile, stat, statfs } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { verifyClosureManifest, closureRepairUrls, type ClosureIntegrityResult } from './closure-manifest.ts'
+import { verifyDarwinSeal, verifyClosureManifest, closureRepairUrls, type ClosureIntegrityResult } from './closure-manifest.ts'
 import { missingVcRuntimeDlls, VC_REDIST_URL } from './win-runtime.ts'
 import { dshBin, nodeBin } from './paths.ts'
 import { readProfileStatus } from './profile.ts'
@@ -261,7 +262,21 @@ export async function runDesktopHealthCheck(options: DesktopHealthCheckOptions):
   // Full-closure verification against the packaged manifest (decision 0032).
   // Dev checkouts have no manifest, which keeps the cheap checks above as the
   // only gate — same behavior as before the manifest existed.
-  const integrity = await verifyClosureManifest(options.resourcesRoot)
+  // macOS integrity is the ad-hoc code signature (#79): shipping a manifest
+  // after signing breaks the seal, so darwin verifies the seal instead and
+  // ships no manifest at all (missing-manifest falls through to cheap checks
+  // for dev checkouts).
+  const darwinAppBundle = join(options.resourcesRoot, '..')
+  const useDarwinSeal = process.platform === 'darwin'
+    && darwinAppBundle.endsWith('.app') && existsSync(darwinAppBundle)
+  const integrity = useDarwinSeal
+    ? await (async () => {
+        const seal = await verifyDarwinSeal(darwinAppBundle)
+        return seal.status === 'ok'
+          ? { status: 'ok' as const, checked: -1, problems: [], problemCount: 0 }
+          : { status: 'changed' as const, checked: 0, problems: [`changed ${darwinAppBundle}: ${seal.detail}`], problemCount: 1 }
+      })()
+    : await verifyClosureManifest(options.resourcesRoot)
   let harnessVersion = 'unknown'
   if (runtimeReady) {
     try {

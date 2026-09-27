@@ -4,18 +4,18 @@ import { join } from 'node:path'
 import { shellText, type ShellLocale } from './locale.ts'
 import type { LanPairing } from './lan.ts'
 import { asDataUrl } from './shell-html.ts'
-import { pairingPageMarkup } from './lan-page.ts'
+import { pairingPageMarkup, type PairingQr } from './lan-page.ts'
 import { hiddenTitleBarOptions } from './window-chrome.ts'
 
-export { pairingPageMarkup } from './lan-page.ts'
+export { pairingPageMarkup, type PairingQr } from './lan-page.ts'
 
 let pairingWindow: BrowserWindow | undefined
 
-function page(pairing: LanPairing, qrSvg: string, locale: ShellLocale): string {
-  return asDataUrl(pairingPageMarkup(pairing, qrSvg, locale))
+function page(pairing: LanPairing, qrSvgs: readonly PairingQr[], locale: ShellLocale): string {
+  return asDataUrl(pairingPageMarkup(pairing, qrSvgs, locale))
 }
 
-export function showLanPairingWindow(parent: BrowserWindow | undefined, pairing: LanPairing, qrSvg: string, locale: ShellLocale): BrowserWindow {
+export function showLanPairingWindow(parent: BrowserWindow | undefined, pairing: LanPairing, qrSvgs: readonly PairingQr[], locale: ShellLocale): BrowserWindow {
   if (pairingWindow !== undefined && !pairingWindow.isDestroyed()) {
     pairingWindow.show()
     pairingWindow.focus()
@@ -48,7 +48,7 @@ export function showLanPairingWindow(parent: BrowserWindow | undefined, pairing:
     if (pairingWindow === window) pairingWindow = undefined
   })
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
-  void window.loadURL(page(pairing, qrSvg, locale))
+  void window.loadURL(page(pairing, qrSvgs, locale))
   return window
 }
 

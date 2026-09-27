@@ -180,6 +180,8 @@ const english = {
   'presets.invalid': 'The file is not a valid dsh preset.',
   'presets.empty': 'No user presets yet; create one in the official presets picker.',
   'lan.close': 'Close',
+  'lan.kind.lan': '局域网',
+  'lan.kind.vpn': 'VPN 虚拟网卡',
 } as const
 
 export type CopyKey = keyof typeof english
@@ -354,6 +356,8 @@ const chinese: Record<CopyKey, string> = {
   'presets.invalid': '文件不是有效的 dsh 预设。',
   'presets.empty': '还没有用户预设；请先在官方预设选择器里创建一个。',
   'lan.close': '关闭',
+  'lan.kind.lan': 'LAN',
+  'lan.kind.vpn': 'VPN virtual adapter',
 }
 
 export const SHELL_COPY: Readonly<Record<ShellLocale, Readonly<Record<CopyKey, string>>>> = {

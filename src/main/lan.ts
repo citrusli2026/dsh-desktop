@@ -467,3 +467,51 @@ export class LanService {
     this.options.onStateChanged?.()
   }
 }
+
+/** How a pairing URL can be reached: over the physical LAN or over a VPN
+ *  virtual adapter (CGNAT, #63/#65). */
+export type PairingUrlKind = 'lan' | 'vpn'
+
+/** Classify by host: CGNAT 100.64.0.0/10 hosts are VPN virtual adapters. */
+export function pairingUrlKind(url: string): PairingUrlKind {
+  try {
+    const octets = new URL(url).hostname.split('.').map(Number)
+    if (octets.length === 4 && octets[0] === 100 && (octets[1] ?? 0) >= 64 && (octets[1] ?? 0) <= 127) return 'vpn'
+  } catch {
+    // Unparseable falls through to the plain-LAN default.
+  }
+  return 'lan'
+}
+
+/**
+ * The same pairing entry reachable over every private candidate IP: the QR
+ * window renders one code per address (#65) so a phone on any of them —
+ * physical LAN or VPN virtual adapter — can pair. The kernel-provided URL
+ * comes first; each candidate swaps the host and keeps port/path/query.
+ */
+export function lanPairingUrlCandidates(
+  pairingUrl: string,
+  candidateIps: readonly string[],
+): Array<{ url: string; kind: PairingUrlKind }> {
+  const base = (() => {
+    try {
+      return new URL(pairingUrl)
+    } catch {
+      return null
+    }
+  })()
+  if (base === null) return []
+  const out: Array<{ url: string; kind: PairingUrlKind }> = []
+  const push = (url: string): void => {
+    if (out.some(candidate => candidate.url === url)) return
+    out.push({ url, kind: pairingUrlKind(url) })
+  }
+  push(pairingUrl)
+  for (const ip of candidateIps) {
+    if (!isPrivateLanIPv4(ip)) continue
+    const alt = new URL(pairingUrl)
+    alt.hostname = ip
+    push(alt.toString())
+  }
+  return out
+}

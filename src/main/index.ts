@@ -56,7 +56,7 @@ import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
 import { DEEPSEEK_PLATFORM_RECHARGE_URL } from './links.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
-import { LanService, loadOrCreateLanMasterToken, qrSvgFromText } from './lan.ts'
+import { lanPairingUrlCandidates, LanService, listPrivateLanIPv4, loadOrCreateLanMasterToken, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
 import { isMainWindowHarnessSender, isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
 import { DesktopPreferencesController, type DesktopPreferencesResult, type DesktopPreferencesUpdate } from './desktop-preferences.ts'
@@ -520,8 +520,12 @@ async function showLanQr(): Promise<boolean> {
   const pairing = lanService.currentPairing
   if (pairing === undefined) return false
   try {
-    const qrSvg = await qrSvgFromText(pairing.pairingUrl, mobileShellRoot())
-    showLanPairingWindow(windowContext.mainWindow, pairing, qrSvg, currentLocale)
+    const candidates = lanPairingUrlCandidates(pairing.pairingUrl, listPrivateLanIPv4()).slice(0, 4)
+    const qrSvgs = []
+    for (const candidate of candidates) {
+      qrSvgs.push({ svg: await qrSvgFromText(candidate.url, mobileShellRoot()), kind: candidate.kind, url: candidate.url })
+    }
+    showLanPairingWindow(windowContext.mainWindow, pairing, qrSvgs, currentLocale)
     return true
   } catch (error) {
     await dialog.showMessageBox({
@@ -538,8 +542,12 @@ async function startLanLink(): Promise<boolean> {
   try {
     const pairing = await lanService.start()
     refreshNativeSurfaces()
-    const qrSvg = await qrSvgFromText(pairing.pairingUrl, mobileShellRoot())
-    showLanPairingWindow(windowContext.mainWindow, pairing, qrSvg, currentLocale)
+    const candidates = lanPairingUrlCandidates(pairing.pairingUrl, listPrivateLanIPv4()).slice(0, 4)
+    const qrSvgs = []
+    for (const candidate of candidates) {
+      qrSvgs.push({ svg: await qrSvgFromText(candidate.url, mobileShellRoot()), kind: candidate.kind, url: candidate.url })
+    }
+    showLanPairingWindow(windowContext.mainWindow, pairing, qrSvgs, currentLocale)
     return true
   } catch (error) {
     await dialog.showMessageBox({

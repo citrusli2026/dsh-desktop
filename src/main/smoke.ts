@@ -4,7 +4,7 @@ import { appendFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { shellText, type ShellLocale } from './locale.ts'
-import { verifyClosureManifest } from './closure-manifest.ts'
+import { verifyClosureManifest, verifyDarwinSeal } from './closure-manifest.ts'
 import {
   SMOKE_EXIT_FAIL,
   SMOKE_EXIT_OK,
@@ -55,6 +55,17 @@ export async function smokeVerifyClosure(resourcesRoot: string): Promise<void> {
       quitGracefully(SMOKE_EXIT_FAIL)
       return
     }
+  }
+  // macOS: no manifest ships (it would break the ad-hoc seal, #79); the
+  // code signature is the integrity check. Tampering a resource file breaks
+  // the seal, so the tamper run expects a codesign failure.
+  if (process.platform === 'darwin') {
+    const bundle = join(resourcesRoot, '..')
+    const seal = await verifyDarwinSeal(bundle)
+    const ok = tamper ? seal.status === 'failed' : seal.status === 'ok'
+    console.error(`smoke-closure: ${ok ? 'OK' : 'FAIL'} tamper=${tamper ? '1' : '0'} codesign=${seal.status}${seal.detail === '' ? '' : ` (${seal.detail.slice(0, 120)})`}`)
+    quitGracefully(ok ? SMOKE_EXIT_OK : SMOKE_EXIT_FAIL)
+    return
   }
   const result = await verifyClosureManifest(resourcesRoot)
   const ok = tamper ? result.status === 'changed' : result.status === 'ok'

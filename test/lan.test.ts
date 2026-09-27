@@ -19,7 +19,7 @@ test('private LAN address detection rejects loopback and public addresses', () =
 test('pairing expiry is based on an absolute timestamp', () => {
   assert.equal(isLanPairingExpired({ expiresAt: 1_000 }, 999), false)
   assert.equal(isLanPairingExpired({ expiresAt: 1_000 }, 1_000), true)
-  const markup = pairingPageMarkup({ baseUrl: 'http://192.168.1.2:3081/', pairingUrl: 'http://192.168.1.2:3081/pair', code: '123456', expiresInSeconds: 600, expiresAt: 1_600_000, lanAddress: '192.168.1.2', listenPort: 3081 }, '<svg></svg>', 'en')
+  const markup = pairingPageMarkup({ baseUrl: 'http://192.168.1.2:3081/', pairingUrl: 'http://192.168.1.2:3081/pair', code: '123456', expiresInSeconds: 600, expiresAt: 1_600_000, lanAddress: '192.168.1.2', listenPort: 3081 }, [{ svg: '<svg></svg>', kind: 'lan', url: 'http://192.168.1.2:3081/pair' }], 'en')
   assert.match(markup, /id="countdown"/)
   assert.match(markup, /setInterval\(updateCountdown, 1000\)/)
   assert.match(markup, /has expired/)
@@ -249,4 +249,19 @@ test('CGNAT 100.64.0.0/10 (Tailscale/ZeroTier) counts as a private LAN address',
     utun0: [{ address: '100.64.250.1', netmask: '255.192.0.0', family: 'IPv4', mac: '', internal: false, cidr: '100.64.250.1/10' }],
   })
   assert.deepEqual(dual, ['192.168.1.126', '100.64.250.1'])
+})
+
+test('lanPairingUrlCandidates builds one reachable URL per private candidate', async () => {
+  const { lanPairingUrlCandidates } = await import('../src/main/lan.ts')
+  const pairingUrl = 'http://192.168.1.126:3081/pair?code=123456'
+  const candidates = lanPairingUrlCandidates(pairingUrl, [
+    '100.64.250.1',   // VPN virtual adapter (CGNAT → kind vpn)
+    '192.168.1.126',  // the primary host itself → deduped
+    '8.8.8.8',        // public → skipped
+  ])
+  assert.deepEqual(candidates, [
+    { url: 'http://192.168.1.126:3081/pair?code=123456', kind: 'lan' },
+    { url: 'http://100.64.250.1:3081/pair?code=123456', kind: 'vpn' },
+  ])
+  assert.equal(lanPairingUrlCandidates('not a url', []).length, 0)
 })
