@@ -42,6 +42,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.7-rc.2.shell.1 <small>（内核 0.1.7-rc.2）</small></h2>
+  <ul>
+    <li><strong>修复 macOS 无法启动（#79，关键）</strong>：v0.1.7-rc.2.shell.0 的 macOS 版本因完整性清单文件在代码签名<strong>之后</strong>写入而破坏 ad-hoc 封印，macOS 判定应用「已损坏」拒绝启动。本轮起 macOS <strong>不再打包清单文件</strong>（它会破坏封印，二者不可兼得）——macOS 的完整性改由<strong>代码签名本身</strong>校验（<code>codesign --verify --deep --strict</code>，运行体检自动执行），比 SHA-256 清单更强。shell.0 的 macOS 用户请务必升级到本版；Windows/Linux 不受影响，清单校验照旧。</li>
+    <li><strong>左下角登录流程端到端验证与加固</strong>：账号弹层 → 登录 → 授权页自动打开的全链路已有打包 E2E 覆盖并全绿；随 rc.2 重建的登录授权自动打开补丁完成端到端验证（本迭代在真实安装包上复现并修复了该补丁的 effect 顺序问题——插入位置在声明之前会引发渲染期错误，登录对话框无法打开）。</li>
+    <li><strong>局域网多地址二维码（#65）</strong>：配对窗口现在按可达地址渲染<strong>多个二维码</strong>并标注类别（局域网 / VPN 虚拟网卡），Tailscale/ZeroTier 与物理局域网的设备都能扫到属于自己的入口；同一地址自动去重，最多展示 4 个。</li>
+    <li><strong>内核与边界不变</strong>：内置内核仍为 0.1.7-rc.2；不新增权限、不改变数据目录边界。</li>
+  </ul>
+
   <h2>v0.1.7-rc.2.shell.0 <small>（内核 0.1.7-rc.2）</small></h2>
   <ul>
     <li><strong>内核升级</strong>：随官方 <code>@deepseek-ai/dsh</code> <code>0.1.7-rc.2</code>（上一内置内核 0.1.7-rc.1）。上游变更见 <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">官方发布页</a>。</li>
@@ -98,13 +106,6 @@
     <li><strong>内核行为变化（对用户可见）</strong>：0.1.7 起内核对损坏的社区插件改为「隔离并继续启动」，插件不再拖垮整个 Harness；壳的启动冒烟已按新契约更新。</li>
     <li><strong>验证</strong>：296 项单测、双树审计零已知漏洞、dev E2E 16/16、打包冒烟（真实渲染 + 安全模式故障注入 + 闭包校验）、离线/真实市场 E2E（含真实 dshmarket 安装与版本核对）、垃圾桶 UI E2E、LAN 扫码全部通过。</li>
     <li><strong>边界说明</strong>：桌面壳无功能变更；社区插件仍不进入安装包。若插件与新内核不兼容，启动失败时错误页提供一键「升级 / 禁用」恢复。</li>
-  </ul>
-
-  <h2>v0.1.6-alpha.2.shell.4 <small>（内核 0.1.6-alpha.2）</small></h2>
-  <ul>
-    <li><strong>局域网入口支持 VPN 虚拟网卡（Tailscale / ZeroTier 等）</strong>：CGNAT 段 <code>100.64.0.0/10</code> 现在被视为合法局域网地址——此前即使通过 <code>DSH_LAN_IP</code> 显式指定也会被拒绝。自动探测顺序保持物理网卡（Wi-Fi/以太网）优先，没有物理网卡可达时自动使用 Tailscale/ZeroTier 等 VPN 虚拟网卡；同一虚拟网内的手机扫码即可进入 Harness。</li>
-    <li><strong>测试健壮性</strong>：打包 E2E 的设置页导航适配多版内核 UI（含 0.1.7 的账号弹层入口），升级冒烟接受 0.1.7 的设置文件迁移契约（<code>settings.yaml</code> → <code>.imported</code> 逐字节归档），为下一版内核升级铺路。</li>
-    <li><strong>内核与边界不变</strong>：内置内核仍为 0.1.6-alpha.2；不新增权限、不改变数据目录边界。</li>
   </ul>
   <!-- changelog:auto:end -->
 

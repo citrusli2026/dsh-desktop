@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.7-rc.2.shell.1 <small>（kernel 0.1.7-rc.2）</small></h2>
+  <ul>
+    <li>Critical macOS launch fix (#79): v0.1.7-rc.2.shell.0 shipped the closure manifest after the ad-hoc seal, so macOS reported the app as damaged. macOS builds no longer ship a manifest — integrity on macOS is now enforced by the code signature itself, verified at runtime via <code>codesign --verify --deep --strict</code> in the health check. macOS shell.0 users must update.</li>
+    <li>The bottom-left account-popover login flow (popover → Sign in → authorize URL) is covered end-to-end by packaged E2E, including the rc.2-rebuilt auto-open patch.</li>
+    <li>The LAN pairing window now renders one QR code per reachable address, labeled LAN vs VPN virtual adapter (#65 follow-up). Bundled kernel unchanged at 0.1.7-rc.2.</li>
+  </ul>
+
   <h2>v0.1.7-rc.2.shell.0 <small>（kernel 0.1.7-rc.2）</small></h2>
   <ul>
     <li>Kernel bump to official <code>@deepseek-ai/dsh</code> 0.1.7-rc.2 (previous 0.1.6-alpha.2 line via rc.1).</li>
@@ -91,12 +98,6 @@
     <li>Kernel bump: bundled <code>@deepseek-ai/dsh</code> locked to <code>0.1.7-alpha.1</code> (previous 0.1.6-alpha.2); shell revision reset to 0. See the <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">official upstream release notes</a> for kernel changes.</li>
     <li>New-kernel peer gaps (dsh-client-store, dsh-deepseek-account) joined the closure; 12 sub-packages without a 0.1.7-alpha.1 release stay at their resolved versions. Kernel 0.1.7 now isolates a broken community plugin and keeps booting — the shell startup smoke follows that contract. Zero known vulnerabilities in both npm trees.</li>
     <li>Desktop shell unchanged. If a community plugin is incompatible with the new kernel, the error page offers one-click Update / Disable recovery.</li>
-  </ul>
-
-  <h2>v0.1.6-alpha.2.shell.4 <small>（kernel 0.1.6-alpha.2）</small></h2>
-  <ul>
-    <li>LAN mobile access now supports VPN virtual adapters (#63): CGNAT 100.64.0.0/10 addresses (Tailscale/ZeroTier) are accepted as private LAN IPs. Auto-discovery keeps physical NICs first and falls back to VPN adapters; a phone on the same virtual network can pair via the QR code. <code>DSH_LAN_IP</code> also accepts CGNAT addresses.</li>
-    <li>Packaging E2E hardened across kernel UI versions; the upgrade smoke follows kernel 0.1.7's settings-file migration contract ahead of the next kernel bump. Bundled kernel unchanged at 0.1.6-alpha.2.</li>
   </ul>
   <!-- changelog:auto:end -->
 
