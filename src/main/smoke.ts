@@ -60,10 +60,13 @@ export async function smokeVerifyClosure(resourcesRoot: string): Promise<void> {
   // code signature is the integrity check. Tampering a resource file breaks
   // the seal, so the tamper run expects a codesign failure.
   if (process.platform === 'darwin') {
-    const bundle = join(resourcesRoot, '..')
+    // resourcesRoot is …/Contents/Resources; the .app bundle is two levels up.
+    const bundle = join(resourcesRoot, '..', '..')
     const seal = await verifyDarwinSeal(bundle)
     const ok = tamper ? seal.status === 'failed' : seal.status === 'ok'
-    console.error(`smoke-closure: ${ok ? 'OK' : 'FAIL'} tamper=${tamper ? '1' : '0'} codesign=${seal.status}${seal.detail === '' ? '' : ` (${seal.detail.slice(0, 120)})`}`)
+    // status=ok / status=changed is the contract the packaged closure smoke
+    // asserts (same vocabulary as the manifest-based verification).
+    console.error(`smoke-closure: ${ok ? 'OK' : 'FAIL'} tamper=${tamper ? '1' : '0'} status=${seal.status === 'ok' ? 'ok' : 'changed'} codesign=${seal.status}${seal.detail === '' ? '' : ` (${seal.detail.slice(0, 120)})`}`)
     quitGracefully(ok ? SMOKE_EXIT_OK : SMOKE_EXIT_FAIL)
     return
   }

@@ -266,7 +266,7 @@ export async function runDesktopHealthCheck(options: DesktopHealthCheckOptions):
   // after signing breaks the seal, so darwin verifies the seal instead and
   // ships no manifest at all (missing-manifest falls through to cheap checks
   // for dev checkouts).
-  const darwinAppBundle = join(options.resourcesRoot, '..')
+  const darwinAppBundle = join(options.resourcesRoot, '..', '..')
   const useDarwinSeal = process.platform === 'darwin'
     && darwinAppBundle.endsWith('.app') && existsSync(darwinAppBundle)
   const integrity = useDarwinSeal
