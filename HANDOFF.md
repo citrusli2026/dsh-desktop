@@ -1805,3 +1805,10 @@ Release CI:<https://github.com/citrusli2026/dsh-desktop/actions/runs/36409719826
 GitCode:<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.2.shell.2>;
 官网:<https://dsh-desktop.com>。#65 已关闭(完全支持公告)。
 
+## 68. 巡检:GitCode 历史资产 v2 全量找回 + 内核 0.2.0-rc.1 叫停(2026-09-29)
+
+1. **GitCode 历史资产找回(§67 修复流程的批量复用)**:逐版本匿名探测确认事故窗口内 8 个版本资产全灭(v0.1.6-alpha.2.shell.2/3/4、rc.1.shell.0/2/3、rc.2.shell.0/1,各 0/3 安装包可达),2026-09-20 前与 shell.2 完好。恢复脚本 `/tmp/v2recover.py`(会话产物,流程:gh 下载断点续传+sha256 校验→`gitcode-release.sh` v2 上传→v2 GET 读旧链→PUT 一次性「action:delete 全部旧链 + action:create 新 6 链」→匿名 200/206 验证→清 staging),**8/8 版本全部 6/6 匿名验证通过**(shell.1 由试跑+批量各跑一遍,幂等无害;PUT 顺带清掉了 backfill 时代遗留的死链与同版本内多余附件,每版恰好 6 链)。遗留:恢复脚本值得正式化进 `scripts/`(v2 管道 + 逐版本找回),待 v5 修复决定去留。
+2. **内核 0.2.0-rc.1 升级叫停(宁停不发)**:`version.mjs check` 报新版;`bump dsh 0.2.0-rc.1` 流程全绿(34 项 peer 同步、release-age 豁免 229 项、lockfile/bootstrap、登录补丁对新款重生成——上游 SignInDialog 仍无自动打开 effect,语义一致重生成、node --check 通过、部署闭包 marker 验证);verify+301 单测+audit 双树归零+E2E 16/16+LAN QR 2/2+两种 packaged smoke+market offline 全过。**market:real 连续两次失败,根因确诊**:0.2.0-rc.1 新增安装时 peer 强制校验,上游市场索引钉 `dshmarket@1.66.2`(peer 仅声明到 0.1.x)→ 安装被拒(install-failed);npmmirror 上 1.66.4/1.66.5 已声明 `^0.2.0-rc.1` 支持但索引未采纳。属上游生态倾斜,壳侧不可修;allow-version 强豁免=替全体用户绕过安全门,不可取。**已回滚**(工作树 checkout+删除新补丁文件+lockfile/bootstrap 还原,typecheck+301 单测复绿)。**下次巡检**:先本地重试 market:real(或直接查 npmmirror dshmarket dist-tags 与市场索引钉版),索引升到 1.66.4+ 再走完整 runbook。
+3. **官网可达性**:阿里 DNS 依旧 64.29.17.1/65,直连 200。
+4. **issue**:#82(backfill 失败,bot 开)以事故复盘+shell.2 修复结论回复后关闭;#33/#39/#56 维持等外部反馈。
+
