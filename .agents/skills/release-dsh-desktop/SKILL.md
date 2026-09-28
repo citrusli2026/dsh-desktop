@@ -124,44 +124,67 @@ windows-2022 + ubuntu-24.04) → publish. Success means: 8 assets
 (dmg/exe/deb + three `.sha256` + blockmap + latest.yml; AppImage is
 not built), attestations verified, release created.
 
-### 6. GitCode mirror (domestic machine first, backfill as fallback)
+### 6. GitCode mirror (v2 browser pipeline — v5 API path is broken)
 
-**Preferred: mirror from this machine** — domestic network reaches GitCode
-fast (~2 MB/s vs ~160 KB/s cross-border), one command does probe → download
-→ upload → verify. GitHub assets are unreachable directly from this
-machine, so the download goes through a proxy: `GH_SOCKS5` (a local Clash /
-similar SOCKS endpoint) is the verified fastest path (~1 MB/s), falling back
-to `GH_PROXY_PREFIX` when the SOCKS tunnel is down:
+**INCIDENT (2026-09-20 → ongoing, root-caused 2026-09-28 on shell.2):**
+GitCode's **v5 upload pipeline** (`api.gitcode.com/api/v5/.../upload_url`,
+PRIVATE-TOKEN — what `mirror-gitcode.mjs` and `gitcode-backfill.yml` use)
+returns success but **never persists the object**: the release lists the
+asset yet anonymous downloads 404 `NOT_PATH`. The **web-api v2 pipeline**
+(`web-api.gitcode.com/api/v2/.../releases/upload`, browser Bearer/Cookie)
+works perfectly. Differential proof: assets uploaded pre-incident still
+serve (302); in the same release a v2-uploaded probe served while v5-uploaded
+siblings 404'd. Until GitCode fixes v5, both v5-based tools "succeed"
+falsely — verify with anonymous Range GETs, never trust upload API status.
+
+**Working procedure (proven end-to-end on shell.2, fully automatable):**
+
+1. Download assets: `gh release download <tag> -R citrusli2026/dsh-desktop
+   -p <file> -O <path>` — the gh HTTP stack beats curl from this network
+   (3.3 MB/s vs 200 KB/s; concurrent range curls get reset). Verify each
+   installer against its sibling `.sha256`.
+2. Load `kimi-webbridge`, open a logged-in `gitcode.com` tab (session
+   `release-task`). Upload each file through the v2 pipeline (borrows the
+   tab's auth; ~15 MB/s domestic, 270 MB in ~16 s), saving the descriptor
+   JSON each run prints:
+   ```sh
+   bash .agents/skills/gitcode-release-publisher/scripts/gitcode-release.sh upload \
+     --session "release-task" --repo citrusli2026/dsh-desktop --file <path>
+   ```
+3. Delete same-name broken attachments first — linking a name that already
+   exists on the release returns 400. From the logged-in tab, PUT the
+   release with `action:"delete"` descriptors:
+   `PUT web-api.gitcode.com/api/v2/projects/<owner%2Frepo>/releases/<tag>`
+   with header `Authorization: Bearer <localStorage.access_token>` and body
+   `{name, description, release_status:0, assets:[], tag_name, links:[<descriptors>]}`;
+   descriptor `action:"delete"` removes, `action:"create"` (default) adds.
+   Never delete the release object or move the tag.
+4. Link the new descriptors the same way (`action:"create"`).
+5. Verify: `--check-only` (needs 6/6), plus one full installer download
+   from GitCode checksum-matched against the `.sha256` (~8 MB/s domestic).
+
+UI fallback for steps 3–4 (release edit page): some rows need trusted
+CDP clicks (`Input.dispatchMouseEvent`) — DOM `el.click()` is ignored, and
+icon-only buttons have no text to locate by. In-page `new File` +
+`DataTransfer` injection works for small files when the extension's file
+access is off.
+
+**Legacy v5 path (dead until GitCode fixes it — kept for reference):**
 
 ```sh
 GITCODE_TOKEN=<gitcode personal token> GITCODE_REPO=citrusli2026/dsh-desktop \
   GH_SOCKS5=127.0.0.1:7890 \
   node scripts/mirror-gitcode.mjs v<version>
-
-# fallback: public HTTP proxy prefix
-GITCODE_TOKEN=<gitcode personal token> GITCODE_REPO=citrusli2026/dsh-desktop \
-  GH_PROXY_PREFIX=<proxy prefix, e.g. https://ghproxy.net/https://github.com> \
-  node scripts/mirror-gitcode.mjs v<version>
 ```
 
-Network facts (verified on shell.1, re-verified on shell.2 — the shell.2
-mirror ran fully unaided in ~6.5 min): HTTP + SOCKS ports of the same Clash
-proxy can route differently — `curl -x http://127.0.0.1:7890` measured
-~30 KB/s while `curl -x socks5h://127.0.0.1:7890` measured ~1 MB/s, so
-always prefer the SOCKS slot; public HTTP proxies (ghproxy.net,
-gh-proxy.com) sit at ~0.2 MB/s and are the ones that give up on large
-files (dmg/exe) mid-download. The mirror script downloads with curl
-`-C -` resume and 8 retries.
+`mirror-gitcode.mjs` itself (probe → download → upload → verify, curl
+`-C -` resume, idempotent, `--check-only` probe mode, explicit local files)
+remains the verification tool of record: its Range-GET checks are how the
+v2 uploads above are confirmed. **Follow-up debt: port the script to the
+v2 pipeline so the one-command flow works again.**
 
-Idempotent and re-runnable: already-mirrored assets are skipped (one-byte
-Range GET) and installers are checksum-verified against their sibling
-`.sha256`. Probe-only (no token needed): add `--check-only`. Explicit local
-files skip the download: `node scripts/mirror-gitcode.mjs v<version> <file...>`
-(the daily daemon `gitcode-mirror-daemon.sh` defaults `GH_SOCKS5` to
-`127.0.0.1:7890`).
-
-**Fallback: dispatch the backfill workflow** (idempotent — only missing
-files are uploaded, safe to re-run):
+**Fallback: dispatch the backfill workflow** — also v5-based, same silent
+failure; do not trust it until the incident is fixed:
 
 ```sh
 gh workflow run gitcode-backfill.yml -f tag=v<version>
@@ -254,6 +277,8 @@ GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-desktop \
 | `audit-harness-peers` fails after bump | new kernel peer gap; add the package to the manifest and re-install |
 | `main` push rejected | bot sync landed; `git pull --rebase`, re-tag if the tag was already cut |
 | backfill run cancels at ~120 min with installers missing | normal; re-dispatch (idempotent), expect 2–3 runs |
+| upload API reports success + release lists assets, but anonymous Range GET 404 `NOT_PATH` on EVERY asset of a fresh release | v5 upload pipeline silently non-persisting (2026-09-20 incident): uploads via `api.gitcode.com` v5 never reach storage. Switch to the v2 browser pipeline (section 6), delete the dead attachments (`action:"delete"`), re-upload + re-link, re-verify |
+| linking a v2-uploaded asset fails with 400 `release update failed` | a link with the same filename already exists on the release; delete the old one first, then link |
 | `gitcode_ok=false` in bot sync although mirror is up | bot ran before mirror finished; regenerate locally after verifying |
 | runner upload stuck for hours | check assets with Range GETs; if still 404 after a run, cancel and re-dispatch |
 | exe specifically times out 3× | retry run; if persistent, switch to browser upload from domestic network |

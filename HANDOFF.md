@@ -13,8 +13,8 @@
 | 已发布 | ✅ `0.1.7-rc.2.shell.2`（三端 dmg/exe/deb；8 个 GitHub Release 资产） |
 | 本地门禁 | ✅ `pnpm run verify`（312 项单测）、类型/runtime/site/build 全绿；E2E 16/16 含 LAN 配对双链路；多地址代理独立冒烟通过 |
 | 核心发布 | ✅ `v0.1.7-rc.2.shell.2` Release run `36409719826` 全绿：三平台构建、publish、8 资产齐全，tag 剥离 `1881d15` |
-| 官网数据 | ✅ Site Data Refresh run `36412821948` 成功，bot 提交 `4c46c0d`；线上 `/data/release.json` 指向 shell.2，6 个资产均 `gitcode_ok=false`（平台故障如实标记） |
-| 国内镜像 | ⚠️ shell.2 本机镜像补齐：6/6（dmg/exe/deb + 3×sha256）经 gh 通道下载、本地 sha256 校验后国内直连上传，API 一次过并在发布页显示 6/6；匿名 Range GET 仍 0/6——§60 平台级附件故障延续（第 8 天，0.1.6 时代资产同 404）；GitHub 下载可用；紧急工单仍待维护者提交 |
+| 官网数据 | ✅ Site Data Refresh run `36412821948` 成功,bot 提交 `4c46c0d`;镜像修复后本地重生成,6 资产 `gitcode_ok=true`,线上 `/data/release.json` 指向 shell.2 |
+| 国内镜像 | ✅ shell.2 6/6 修复上线（v2 管道上传 + 挂链,§67）:匿名 Range GET 6×302、check-only 6/6、exe 全量下载 sha256 一致;**根因是 v5 API 上传管道 9-20 起静默丢对象,v2（网页端）管道正常**——v5 修复前 mirror 脚本/backfill 工作流会继续假成功,下版直接走 v2 流程 |
 | 实时下载统计 | ✅ `/api/downloads` 指向 shell.2 实时可用；核验时累计 5008（mac 600 / Windows 3935 / Linux 473，64 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -1797,8 +1797,8 @@ GitCode:<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.2.s
 4. **UI**:配对窗口每个地址独立二维码(局域网/VPN 标注,CGNAT 100.64/10 → vpn);controls 插件网卡勾选节 + 多二维码 TrashSection。
 5. **门禁**:312 单测全绿(新增 `resolveLanListenHosts` 优先级矩阵)、`verify` 全绿、E2E 16/16(两条 LAN 链路跑在多服务代理上)。
 6. **发布**:tag `v0.1.7-rc.2.shell.2` → `1881d15`;Release run `36409719826` verify + 三平台构建 + publish 全绿,8 资产。**新增约束:GitHub main 分支 ruleset 禁止强推(GH013)**——wip 提交 `b2b4d6a` 无法改写,以追加提交 `9d203cc` 收尾;此后 main 历史一律 append-only。
-7. **镜像(当晚本机补齐 6/6)**:backfill run `36412876972` 跨境上传 deb/dmg 三连 0 字节超时后 502,exe 被 120min 预算截断,run 取消。当晚本机接管:本机网络当日劣化(curl 直连 GitHub 仅 ~200KB/s、TCP 握手 17s,6 路分块并发连接全被重置,SOCKS 7890 不通),**`gh release download` 通道实测最快(exe 75s/250MB ≈ 3.3MB/s,dmg 后半程 ~1.7MB/s)**;三安装包与 3×sha256 落盘后逐一通过发布侧 sha256 校验(dmg `eec95c20`/exe `087a2600`/deb `af3088a2`),`mirror-gitcode.mjs` 显式本地文件模式国内直连上传,**6/6 API 一次过、发布页显示齐全**;匿名 Range GET 仍 0/6——§60 附件故障第 8 天未愈(0.1.6 时代资产同 404),GitCode 紧急工单仍待维护者提交(模板 §60-62)。GitHub 为当前唯一可用下载通道。
-8. **发布元数据**:Release run `36409719826`(成功);Site Data Refresh run `36412821948`(成功,bot 提交 `4c46c0d`);gitcode main 分支补推对齐 `4c46c0d`。线上核验:`/data/release.json` 指向 shell.2、`/api/downloads` 实时计数 5008(mac 600 / Windows 3935 / Linux 473,64 版本)。**经验固化:GitHub 大文件下载优先 `gh release download`,curl 直连/公共代理/分块并发在本机当前网络均劣于它。**
+7. **镜像(根因定位并完全修复,当晚完成)**:backfill run `36412876972` 取消后,本机先按旧流程以 v5 管道补传 6/6(API 一次过),但匿名 Range GET 仍 0/6——同症第 8 天,初判"平台服务端故障"。深挖后**根因改判:GitCode 两条上传管道行为分叉**——v5 API(`api.gitcode.com`,PRIVATE-TOKEN)的 OBS PUT 报成功但对象从未持久化(2026-09-20 起静默失效);**web-api v2 管道(网页端所用,`web-api.gitcode.com`,浏览器 Bearer/Cookie)完全正常**。鉴别证据:故障前上传的 `0.1.6-alpha.2.shell.1` 资产至今 302 可下;同发布内 v2 上传的 80B 探针 302、v5 上传的 sha256 404,仅管道不同。修复全流程(自动化,无人工浏览器操作):gh 通道下载 6 资产逐一 sha256 校验 → `gitcode-release.sh upload`(浏览器授权借 v2 管道,单文件 220-270MB 仅 16s ≈ 15MB/s)→ 编辑页删除 8 个 v5 坏附件(部分行删除按钮为 icon-only 且需 CDP 真实点击,DOM click 无效)→ 页面上下文 Bearer PUT 挂链新描述符(links 数组=追加;描述符 `action:"delete"` 可删附件;同名附件需先删后挂,直接挂会 400)→ **6/6 匿名 302、`--check-only` 6/6、exe 全量下载 30s/250MB 且 sha256 逐字节一致**。两个探针附件事后已 `action:"delete"` 清除。
+8. **发布元数据与遗留**:Release run `36409719826`(成功);Site Data Refresh run `36412821948`(成功,bot 提交 `4c46c0d`);gitcode main 分支补推对齐;镜像修复后 `gen-site-data.mjs` 重生成,6 资产 `gitcode_ok=true`。**经验固化**:①GitHub 大文件下载优先 `gh release download`(当日 curl 直连 200KB/s/握手 17s/并发全被重置,gh 实测 3.3MB/s);②**v5 管道修复前,`mirror-gitcode.mjs` 与 `gitcode-backfill.yml`(均走 v5)会继续"假成功"——下版镜像直接走 v2 流程(见 release 技能),或为脚本改造 v2 路径**;③维护者向 GitCode 提的工单应改为报告 v5 upload_url/OBS-callback 管道缺陷(附 trace_id),平台修复后 v5 自动恢复。
 
 发布:<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.2.shell.2>;
 Release CI:<https://github.com/citrusli2026/dsh-desktop/actions/runs/36409719826>;
