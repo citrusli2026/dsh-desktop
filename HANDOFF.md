@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-09-24。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-09-28。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.1.7-rc.1.shell.3`（2026-09-24 已发布；内核 `0.1.7-rc.1`；左下角 DeepSeek 登录修复,§65） |
-| 已发布 | ✅ `0.1.7-rc.1.shell.3`（三端 dmg/exe/deb；8 个 GitHub Release 资产） |
-| 本地门禁 | ✅ `pnpm run verify`（298 项单测）、类型/runtime/site/build 全绿；LAN 配对 E2E 2/2、macOS 打包登录 E2E 1/1、dist:dir 通过 |
-| 核心发布 | ✅ `v0.1.7-rc.1.shell.3` Release run `35998913940` 全绿：三平台构建、Windows 安装器完整性/跨版本升级/NSIS 矩阵、packaged smoke、attestation；8 资产齐全 |
-| 官网数据 | ✅ Site Data Refresh run `36001375635` 成功，bot 提交 `984bee4`；线上 `/data/release.json` 指向 shell.3，6 个资产均 `gitcode_ok=false`；首页下载按钮已核验为 GitHub |
-| 国内镜像 | ⚠️ shell.3 GitCode API 接收并在发布页显示 6/6 资产；匿名 Range GET 0/6，平台级附件故障延续 §60-64；GitHub 下载可用 |
-| 实时下载统计 | ✅ `/api/downloads` 指向 shell.3；核验时累计 4361（GitHub 3842 / GitCode 519；mac 546 / Windows 3385 / Linux 430，61 个版本） |
+| 最新代码基线 | ✅ `0.1.7-rc.2.shell.2`（2026-09-28 已发布；内核 `0.1.7-rc.2`；#65 多网卡多二维码完全支持,§67） |
+| 已发布 | ✅ `0.1.7-rc.2.shell.2`（三端 dmg/exe/deb；8 个 GitHub Release 资产） |
+| 本地门禁 | ✅ `pnpm run verify`（312 项单测）、类型/runtime/site/build 全绿；E2E 16/16 含 LAN 配对双链路；多地址代理独立冒烟通过 |
+| 核心发布 | ✅ `v0.1.7-rc.2.shell.2` Release run `36409719826` 全绿：三平台构建、publish、8 资产齐全，tag 剥离 `1881d15` |
+| 官网数据 | ✅ Site Data Refresh run `36412821948` 成功，bot 提交 `4c46c0d`；线上 `/data/release.json` 指向 shell.2，6 个资产均 `gitcode_ok=false`（平台故障如实标记） |
+| 国内镜像 | ⚠️ shell.2 本机镜像补齐：6/6（dmg/exe/deb + 3×sha256）经 gh 通道下载、本地 sha256 校验后国内直连上传，API 一次过并在发布页显示 6/6；匿名 Range GET 仍 0/6——§60 平台级附件故障延续（第 8 天，0.1.6 时代资产同 404）；GitHub 下载可用；紧急工单仍待维护者提交 |
+| 实时下载统计 | ✅ `/api/downloads` 指向 shell.2 实时可用；核验时累计 5008（mac 600 / Windows 3935 / Linux 473，64 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1786,3 +1786,22 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.1
 Release CI:<https://github.com/citrusli2026/dsh-desktop/actions/runs/36035036992>;
 GitCode:<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.2.shell.1>;
 官网:<https://dsh-desktop.com>。
+
+## 67. v0.1.7-rc.2.shell.2 #65 多网卡多二维码完全支持发布（2026-09-28）
+
+用户目标「#65 多网卡多二维码增强,需要完全支持,再迭代一个版本」的实现记录:
+
+1. **移动配对代理多地址同时监听(dsh-mobile-shell eb1dfe5)**:`DSH_LAN_IPS` 逗号列表为每个地址启动一套完整服务——请求处理、WebSocket 升级、SSE 长连接超时配置(requestTimeout/headersTimeout/timeout=0)各自就位;`discoverPublicBases` 接受显式 `listenHosts`。
+2. **中途拦截的结构缺陷**:多地址重构遗留嵌套循环——外层带升级处理器的服务从不 listen,内层裸服务重复监听(第二轮迭代必 EADDRINUSE);且 module 级 `server.on('upgrade')` 先于循环定义触发 ReferenceError。收敛为单循环后双地址冒烟全绿(127.0.0.1 + 实际局域网地址,双监听、逐服务配对码铸造)。
+3. **壳侧 lan.ts**:`resolveLanListenHosts`(网卡勾选 > DSH_LAN_IP 单/逗号/0.0.0.0/all > 自动发现,非法输入收口自动发现)多地址时通配绑定 + `DSH_LAN_IPS` 注入,127.0.0.1 保留给健康/配对 API;`LanPairing.pairingUrls` 携带全部同源配对地址。
+4. **UI**:配对窗口每个地址独立二维码(局域网/VPN 标注,CGNAT 100.64/10 → vpn);controls 插件网卡勾选节 + 多二维码 TrashSection。
+5. **门禁**:312 单测全绿(新增 `resolveLanListenHosts` 优先级矩阵)、`verify` 全绿、E2E 16/16(两条 LAN 链路跑在多服务代理上)。
+6. **发布**:tag `v0.1.7-rc.2.shell.2` → `1881d15`;Release run `36409719826` verify + 三平台构建 + publish 全绿,8 资产。**新增约束:GitHub main 分支 ruleset 禁止强推(GH013)**——wip 提交 `b2b4d6a` 无法改写,以追加提交 `9d203cc` 收尾;此后 main 历史一律 append-only。
+7. **镜像(当晚本机补齐 6/6)**:backfill run `36412876972` 跨境上传 deb/dmg 三连 0 字节超时后 502,exe 被 120min 预算截断,run 取消。当晚本机接管:本机网络当日劣化(curl 直连 GitHub 仅 ~200KB/s、TCP 握手 17s,6 路分块并发连接全被重置,SOCKS 7890 不通),**`gh release download` 通道实测最快(exe 75s/250MB ≈ 3.3MB/s,dmg 后半程 ~1.7MB/s)**;三安装包与 3×sha256 落盘后逐一通过发布侧 sha256 校验(dmg `eec95c20`/exe `087a2600`/deb `af3088a2`),`mirror-gitcode.mjs` 显式本地文件模式国内直连上传,**6/6 API 一次过、发布页显示齐全**;匿名 Range GET 仍 0/6——§60 附件故障第 8 天未愈(0.1.6 时代资产同 404),GitCode 紧急工单仍待维护者提交(模板 §60-62)。GitHub 为当前唯一可用下载通道。
+8. **发布元数据**:Release run `36409719826`(成功);Site Data Refresh run `36412821948`(成功,bot 提交 `4c46c0d`);gitcode main 分支补推对齐 `4c46c0d`。线上核验:`/data/release.json` 指向 shell.2、`/api/downloads` 实时计数 5008(mac 600 / Windows 3935 / Linux 473,64 版本)。**经验固化:GitHub 大文件下载优先 `gh release download`,curl 直连/公共代理/分块并发在本机当前网络均劣于它。**
+
+发布:<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.2.shell.2>;
+Release CI:<https://github.com/citrusli2026/dsh-desktop/actions/runs/36409719826>;
+GitCode:<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.2.shell.2>;
+官网:<https://dsh-desktop.com>。#65 已关闭(完全支持公告)。
+
