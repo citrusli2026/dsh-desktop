@@ -265,3 +265,32 @@ test('lanPairingUrlCandidates builds one reachable URL per private candidate', a
   ])
   assert.equal(lanPairingUrlCandidates('not a url', []).length, 0)
 })
+
+test('resolveLanListenHosts prefers NIC selection over DSH_LAN_IP over auto candidates', async () => {
+  const { resolveLanListenHosts } = await import('../src/main/lan.ts')
+  const candidates = ['192.168.1.126', '100.64.250.1']
+  // NIC checkbox selection wins and drops invalid entries; deduped.
+  assert.deepEqual(
+    resolveLanListenHosts({ selected: ['192.168.1.126', '8.8.8.8', '192.168.1.126'], requested: '10.0.0.5', candidates }),
+    ['192.168.1.126'],
+  )
+  // All-invalid selection falls through to the env request.
+  assert.deepEqual(
+    resolveLanListenHosts({ selected: ['8.8.8.8'], requested: '10.0.0.5', candidates }),
+    ['10.0.0.5'],
+  )
+  // DSH_LAN_IP comma list keeps order; 0.0.0.0 / all = wildcard.
+  assert.deepEqual(
+    resolveLanListenHosts({ requested: '10.0.0.5, 10.0.0.6,', candidates }),
+    ['10.0.0.5', '10.0.0.6'],
+  )
+  assert.deepEqual(resolveLanListenHosts({ requested: '0.0.0.0', candidates }), ['0.0.0.0'])
+  assert.deepEqual(resolveLanListenHosts({ requested: 'all', candidates }), ['0.0.0.0'])
+  // Mixed valid/invalid comma list is rejected wholesale (fail closed to auto).
+  assert.deepEqual(
+    resolveLanListenHosts({ requested: '10.0.0.5,8.8.8.8', candidates }),
+    candidates,
+  )
+  // No selection, no env → auto candidates verbatim.
+  assert.deepEqual(resolveLanListenHosts({ candidates }), candidates)
+})
