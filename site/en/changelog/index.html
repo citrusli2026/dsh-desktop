@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.1.7-rc.2.shell.2 <small>（kernel 0.1.7-rc.2）</small></h2>
+  <ul>
+    <li><strong>#65 fully supported</strong>: LAN pairing now listens on every private address (physical NICs + VPN virtual adapters) with one QR code per address, labelled lan/vpn.</li>
+    <li>NIC checkbox selection (persisted) and <code>DSH_LAN_IP</code> override (single / comma list / <code>0.0.0.0</code>) in the pairing panel.</li>
+    <li>Proxy fix: the multi-address rewrite left a nested loop so the WS-upgrade handler and SSE timeout config never reached the listening servers; repaired and smoke/E2E verified.</li>
+  </ul>
+
   <h2>v0.1.7-rc.2.shell.1 <small>（kernel 0.1.7-rc.2）</small></h2>
   <ul>
     <li>Critical macOS launch fix (#79): v0.1.7-rc.2.shell.0 shipped the closure manifest after the ad-hoc seal, so macOS reported the app as damaged. macOS builds no longer ship a manifest — integrity on macOS is now enforced by the code signature itself, verified at runtime via <code>codesign --verify --deep --strict</code> in the health check. macOS shell.0 users must update.</li>
@@ -91,13 +98,6 @@
     <li>New-kernel peer gaps (dsh-client-store, dsh-deepseek-account) joined the closure; 12 sub-packages without a 0.1.7-alpha.2 release stay at their resolved versions. Zero known vulnerabilities in both npm trees.</li>
     <li>Desktop shell unchanged. If a community plugin is incompatible with the new kernel, the error page offers one-click Update / Disable recovery.</li>
     <li>Known behavior change: after the kernel's lossless settings.yaml migration (archived as <code>.imported</code>), the shell's native surfaces (menu/tray/notifications) follow the OS language; the in-app language choice no longer survives a restart until the shell reads the kernel's new settings store (#68).</li>
-  </ul>
-
-  <h2>v0.1.7-alpha.1.shell.0 <small>（kernel 0.1.7-alpha.1）</small></h2>
-  <ul>
-    <li>Kernel bump: bundled <code>@deepseek-ai/dsh</code> locked to <code>0.1.7-alpha.1</code> (previous 0.1.6-alpha.2); shell revision reset to 0. See the <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">official upstream release notes</a> for kernel changes.</li>
-    <li>New-kernel peer gaps (dsh-client-store, dsh-deepseek-account) joined the closure; 12 sub-packages without a 0.1.7-alpha.1 release stay at their resolved versions. Kernel 0.1.7 now isolates a broken community plugin and keeps booting — the shell startup smoke follows that contract. Zero known vulnerabilities in both npm trees.</li>
-    <li>Desktop shell unchanged. If a community plugin is incompatible with the new kernel, the error page offers one-click Update / Disable recovery.</li>
   </ul>
   <!-- changelog:auto:end -->
 
