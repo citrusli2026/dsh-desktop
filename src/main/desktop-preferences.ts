@@ -150,6 +150,9 @@ export class DesktopPreferencesController {
     if (patch.firstTaskCompleted !== undefined) {
       this.current = this.store.updateDesktopPreferences({ firstTaskCompleted: patch.firstTaskCompleted })
     }
+    if (patch.lanListenAddresses !== undefined) {
+      this.current = this.store.updateDesktopPreferences({ lanListenAddresses: patch.lanListenAddresses })
+    }
     return { ok: true, preferences: this.snapshot }
   }
 

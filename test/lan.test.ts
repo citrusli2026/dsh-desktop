@@ -19,7 +19,7 @@ test('private LAN address detection rejects loopback and public addresses', () =
 test('pairing expiry is based on an absolute timestamp', () => {
   assert.equal(isLanPairingExpired({ expiresAt: 1_000 }, 999), false)
   assert.equal(isLanPairingExpired({ expiresAt: 1_000 }, 1_000), true)
-  const markup = pairingPageMarkup({ baseUrl: 'http://192.168.1.2:3081/', pairingUrl: 'http://192.168.1.2:3081/pair', code: '123456', expiresInSeconds: 600, expiresAt: 1_600_000, lanAddress: '192.168.1.2', listenPort: 3081 }, [{ svg: '<svg></svg>', kind: 'lan', url: 'http://192.168.1.2:3081/pair' }], 'en')
+  const markup = pairingPageMarkup({ baseUrl: 'http://192.168.1.2:3081/', pairingUrl: 'http://192.168.1.2:3081/pair', pairingUrls: ['http://192.168.1.2:3081/pair'], code: '123456', expiresInSeconds: 600, expiresAt: 1_600_000, lanAddress: '192.168.1.2', listenPort: 3081 }, [{ svg: '<svg></svg>', kind: 'lan', url: 'http://192.168.1.2:3081/pair' }], 'en')
   assert.match(markup, /id="countdown"/)
   assert.match(markup, /setInterval\(updateCountdown, 1000\)/)
   assert.match(markup, /has expired/)

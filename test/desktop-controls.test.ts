@@ -92,6 +92,8 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   // Restart joined the extension surfaces (decision 0028).
   assert.match(client, /restartHarness/)
   assert.match(client, /data-dsh-safe-mode-banner/)
+  assert.match(client, /listLanInterfaces/)
+  assert.match(client, /data-dsh-lan-nic/)
   assert.match(client, /getRecoverySuspects/)
   assert.match(client, /safeModeSuspect/)
   assert.match(client, /data-dsh-safe-mode-suspect/)

@@ -134,6 +134,8 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Read shell-only preferences without exposing the settings file to Web UI. */
   getDesktopPreferences: (): Promise<DesktopPreferencesSnapshot | null> =>
     ipcRenderer.invoke('desktop:preferences:get'),
+  listLanInterfaces: (): Promise<Array<{ name: string; address: string }> | null> =>
+    ipcRenderer.invoke('desktop:lan-interfaces'),
   /** Update one or more shell preferences through the allowlisted main handler. */
   updateDesktopPreferences: (patch: DesktopPreferencesUpdate): Promise<DesktopPreferencesResult | null> =>
     ipcRenderer.invoke('desktop:preferences:update', patch),

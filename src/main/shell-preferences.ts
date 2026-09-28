@@ -22,6 +22,9 @@ export interface DesktopPreferences {
   firstRunGuideDismissed: boolean
   /** Set by the main process after an existing or newly completed conversation. */
   firstTaskCompleted: boolean
+  /** LAN multi-NIC listen (#65): explicit listen addresses; empty = auto
+   *  (physical first, then VPN virtual adapters). */
+  lanListenAddresses?: string[]
 }
 
 interface ShellPreferences {

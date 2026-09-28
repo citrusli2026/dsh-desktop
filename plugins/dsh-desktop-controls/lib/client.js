@@ -1395,6 +1395,7 @@ window.__ModuleLoader__.load({
               lanState?.running === true ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-stop": true, "data-dsh-desktop-lan-target": true, disabled: lanBusy, onClick: () => void lanAction("stopLanPairing"), children: copy.lanStop }) : null,
             ] }),
           ] }) : null,
+          typeof bridge?.listLanInterfaces === "function" ? react_jsx_runtime.jsx(LanNicSection, { copy: copy, bridge: bridge }) : null,
           react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, "data-dsh-desktop-shortcut-row": true, children: [
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.shortcut, recording ? react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.shortcutHelp }) : null] }),
             react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
@@ -1574,6 +1575,42 @@ window.__ModuleLoader__.load({
           react_jsx_runtime.jsx("span", { "data-dsh-controls-action-arrow": true, "aria-hidden": "true", children: "›" }),
         ],
       });
+    }
+
+    /* NIC 勾选（#65）：选择局域网入口监听哪些网卡，空 = 自动。 */
+    function LanNicSection({ copy, bridge }) {
+      const zh = useChinese();
+      const [interfaces, setInterfaces] = react.useState(null);
+      const [selected, setSelected] = react.useState(null);
+      const [busy, setBusy] = react.useState(false);
+      react.useEffect(() => {
+        if (typeof bridge?.listLanInterfaces !== "function") return;
+        void bridge.listLanInterfaces().then((list) => { if (Array.isArray(list)) setInterfaces(list); });
+        if (typeof bridge?.getDesktopPreferences === "function") {
+          void bridge.getDesktopPreferences().then((value) => {
+            if (value !== null && Array.isArray(value.lanListenAddresses)) setSelected(value.lanListenAddresses);
+          });
+        }
+      }, [bridge]);
+      if (interfaces === null) return null;
+      const toggle = (address) => {
+        const current = new Set(selected ?? []);
+        if (current.has(address)) current.delete(address);
+        else current.add(address);
+        const next = [...current];
+        setSelected(next);
+        setBusy(true);
+        void bridge.updateDesktopPreferences({ lanListenAddresses: next }).finally(() => setBusy(false));
+      };
+      const rows = interfaces.map((entry) => react_jsx_runtime.jsx("label", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
+        react_jsx_runtime.jsx("input", { type: "checkbox", checked: (selected ?? []).includes(entry.address), onChange: () => toggle(entry.address) }),
+        react_jsx_runtime.jsx("span", { children: entry.address + "  ·  " + entry.name })
+      ] }, entry.address));
+      return react_jsx_runtime.jsxs("div", { "data-dsh-lan-nic": true, style: { marginTop: "10px" }, children: [
+        react_jsx_runtime.jsx("p", { style: { fontSize: "12px", color: "#8b90a0", margin: "0 0 6px" }, children: zh ? "勾选要监听的网卡（保存后 LAN 重启生效；不勾 = 自动）" : "Pick NICs to listen on (applies after LAN restart; none = auto)" }),
+        rows,
+        selected !== null && selected.length === 0 ? react_jsx_runtime.jsx("p", { style: { fontSize: "11px", color: "#8b90a0", margin: "4px 0 0" }, children: zh ? "未勾选：自动监听所有可达网卡" : "None selected: every reachable NIC listens automatically" }) : null
+      ] });
     }
 
     function DesktopControls({ useSessions }) {

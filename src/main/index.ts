@@ -3,7 +3,7 @@ import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, net, 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
-import { homedir } from 'node:os'
+import { homedir, networkInterfaces } from 'node:os'
 import { dirname, join } from 'node:path'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
@@ -56,7 +56,7 @@ import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
 import { DEEPSEEK_PLATFORM_RECHARGE_URL } from './links.ts'
 import { markCloseToTrayExplained, shouldExplainCloseToTray } from './shell-preferences.ts'
-import { lanPairingUrlCandidates, LanService, listPrivateLanIPv4, loadOrCreateLanMasterToken, qrSvgFromText } from './lan.ts'
+import { isPrivateLanIPv4, lanPairingUrlCandidates, pairingUrlKind, LanService, listPrivateLanIPv4, loadOrCreateLanMasterToken, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
 import { isMainWindowHarnessSender, isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
 import { DesktopPreferencesController, type DesktopPreferencesResult, type DesktopPreferencesUpdate } from './desktop-preferences.ts'
@@ -92,6 +92,10 @@ const lanService = new LanService({
     // dead port — close it instead of letting a stale code linger.
     if (lanService.currentPairing === undefined) closeLanPairingWindow()
     refreshNativeSurfaces()
+  },
+  listenSelection: () => {
+    const snapshot = desktopPreferencesController?.snapshot
+    return snapshot?.lanListenAddresses
   },
 })
 
@@ -520,10 +524,12 @@ async function showLanQr(): Promise<boolean> {
   const pairing = lanService.currentPairing
   if (pairing === undefined) return false
   try {
-    const candidates = lanPairingUrlCandidates(pairing.pairingUrl, listPrivateLanIPv4()).slice(0, 4)
+    const urls = pairing.pairingUrls.length > 0
+      ? pairing.pairingUrls
+      : lanPairingUrlCandidates(pairing.pairingUrl, listPrivateLanIPv4()).map(candidate => candidate.url)
     const qrSvgs = []
-    for (const candidate of candidates) {
-      qrSvgs.push({ svg: await qrSvgFromText(candidate.url, mobileShellRoot()), kind: candidate.kind, url: candidate.url })
+    for (const url of urls.slice(0, 4)) {
+      qrSvgs.push({ svg: await qrSvgFromText(url, mobileShellRoot()), kind: pairingUrlKind(url), url })
     }
     showLanPairingWindow(windowContext.mainWindow, pairing, qrSvgs, currentLocale)
     return true
@@ -542,10 +548,12 @@ async function startLanLink(): Promise<boolean> {
   try {
     const pairing = await lanService.start()
     refreshNativeSurfaces()
-    const candidates = lanPairingUrlCandidates(pairing.pairingUrl, listPrivateLanIPv4()).slice(0, 4)
+    const urls = pairing.pairingUrls.length > 0
+      ? pairing.pairingUrls
+      : lanPairingUrlCandidates(pairing.pairingUrl, listPrivateLanIPv4()).map(candidate => candidate.url)
     const qrSvgs = []
-    for (const candidate of candidates) {
-      qrSvgs.push({ svg: await qrSvgFromText(candidate.url, mobileShellRoot()), kind: candidate.kind, url: candidate.url })
+    for (const url of urls.slice(0, 4)) {
+      qrSvgs.push({ svg: await qrSvgFromText(url, mobileShellRoot()), kind: pairingUrlKind(url), url })
     }
     showLanPairingWindow(windowContext.mainWindow, pairing, qrSvgs, currentLocale)
     return true
@@ -815,6 +823,15 @@ ipcMain.handle('desktop:lan:state', (event) => {
   return { running: lanService.isRunning, busy: lanService.isBusy }
 })
 
+ipcMain.handle('desktop:lan-interfaces', (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  const interfaces = networkInterfaces()
+  return Object.entries(interfaces)
+    .flatMap(([name, entries]) => (entries ?? [])
+      .filter(entry => entry.family === 'IPv4' && !entry.internal && isPrivateLanIPv4(entry.address))
+      .map(entry => ({ name, address: entry.address })))
+})
+
 ipcMain.handle('desktop:preferences:get', (event) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
   return desktopPreferencesController?.snapshot ?? null
@@ -840,10 +857,19 @@ ipcMain.handle('desktop:preferences:update', (event, patch: unknown) => {
   if (typeof candidate.screenCapture === 'boolean') update.screenCapture = candidate.screenCapture
   if (typeof candidate.agentDeletionInterception === 'boolean') update.agentDeletionInterception = candidate.agentDeletionInterception
   if (typeof candidate.firstRunGuideDismissed === 'boolean') update.firstRunGuideDismissed = candidate.firstRunGuideDismissed
+  if (Array.isArray(candidate.lanListenAddresses)) {
+    const addresses = candidate.lanListenAddresses.filter((value): value is string => typeof value === 'string' && isPrivateLanIPv4(value))
+    update.lanListenAddresses = addresses
+  }
   const result = desktopPreferencesController?.update(update) ?? null
   // The screen capture flag reaches the harness through its spawn env; a
   // change lands on the next kernel boot (same restart semantics as Safe Mode).
   if (update.screenCapture !== undefined || update.agentDeletionInterception !== undefined) void shellApp.runHarnessRestart()
+  // NIC selection (#65) applies to the LAN proxy without touching the kernel:
+  // restart just the LAN service so the new listen set goes live immediately.
+  if (update.lanListenAddresses !== undefined && lanService.isRunning) {
+    void lanService.stop().then(() => lanService.start()).catch(() => undefined)
+  }
   return result
 })
 

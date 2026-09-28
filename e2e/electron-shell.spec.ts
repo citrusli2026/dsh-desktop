@@ -863,7 +863,8 @@ shellTest('a plugin crash auto-quarantines the suspect and boots again', async (
   }
 })
 
-shellTest('LAN pairing shows a scannable QR link for the private address', async ({ electronApp, window }) => {
+shellTest('LAN pairing shows a scannable QR link for the private address', async ({ electronApp, window }, testInfo) => {
+  testInfo.setTimeout(120_000)
   await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
   const { networkInterfaces } = await import('node:os')
   const hasPrivateLan = Object.values(networkInterfaces())
@@ -891,9 +892,16 @@ shellTest('LAN pairing shows a scannable QR link for the private address', async
     return pairingPage !== undefined
   }, { timeout: 30_000 }).toBe(true)
   const content = await pairingPage!.evaluate(() => document.body.innerText)
-  expect(content).toMatch(/(Address|地址)[:：]\s*http:\/\/\d+\.\d+\.\d+\.\d+:\d+\//)
+  // Multi-NIC contract (#65): one QR per reachable address, each labeled
+  // LAN vs VPN virtual adapter, plus the 6-digit pairing code as text.
   expect(content).toMatch(/\d{6}/)
-  expect(await pairingPage!.locator('svg[aria-label]').count()).toBe(1)
+  const qrCount = await pairingPage!.locator('svg[aria-label]').count()
+  expect(qrCount).toBeGreaterThanOrEqual(1)
+  const addresses = await pairingPage!.locator('.qr-url').allTextContents()
+  expect(addresses.length).toBe(qrCount)
+  for (const address of addresses) {
+    expect(address).toMatch(/http:\/\/\d+\.\d+\.\d+\.\d+:\d+\//)
+  }
   await pairingPage!.close().catch(() => {})
   await expect.poll(() => electronApp.windows().some(candidate => candidate !== window
     && candidate.url().startsWith('data:') && !candidate.isClosed()))

@@ -14,6 +14,8 @@ import { InFlight, ManagedChild } from './process-lifecycle.ts'
 export interface LanPairing {
   readonly baseUrl: string
   readonly pairingUrl: string
+  /** Every reachable entry (one per listened address), primary first (#65). */
+  readonly pairingUrls: readonly string[]
   readonly code: string
   readonly expiresInSeconds: number
   readonly expiresAt: number
@@ -42,6 +44,9 @@ export interface LanServiceOptions {
   readonly onStateChanged?: () => void
   /** Test hook: inject a fixed LAN address to skip private-LAN discovery. */
   readonly lanAddress?: () => string
+  /** User-selected listen addresses from the settings checkboxes (#65);
+   *  empty/undefined falls back to auto discovery. */
+  readonly listenSelection?: () => readonly string[] | undefined
 }
 
 const DEFAULT_LISTEN_PORT = 3081
@@ -167,7 +172,7 @@ async function requestPairing(
   baseUrl: string,
   token: string,
   signal?: AbortSignal,
-): Promise<{ code: string; expiresInSeconds: number; pairingUrl: string }> {
+): Promise<{ code: string; expiresInSeconds: number; pairingUrl: string; pairingUrls: readonly string[] }> {
   const requestSignal = signal === undefined
     ? AbortSignal.timeout(2_000)
     : AbortSignal.any([signal, AbortSignal.timeout(2_000)])
@@ -187,18 +192,20 @@ async function requestPairing(
   // matches the proxy we just spoke to. A compromised or buggy proxy must
   // not redirect the QR code at an arbitrary host.
   const expectedOrigin = new URL(baseUrl).origin
-  const pairingUrl = pairingUrls.find(url => {
+  const validUrls = pairingUrls.filter(url => {
     try {
       return new URL(url).origin === expectedOrigin
     } catch {
       return false
     }
   })
+  const pairingUrl = validUrls[0]
   if (pairingUrl === undefined) throw new Error('proxy returned no LAN pairing URL on the expected origin')
   return {
     code: body.code,
     expiresInSeconds: typeof body.expiresInSeconds === 'number' ? body.expiresInSeconds : 600,
     pairingUrl,
+    pairingUrls: validUrls,
   }
 }
 
@@ -348,30 +355,39 @@ export class LanService {
       // Injected address (tests) bypasses discovery and the private-LAN guard;
       // production still walks DSH_LAN_IP and network interfaces.
       const injectedAddress = this.options.lanAddress?.()
+      // Multi-NIC listen (#65): the proxy binds one server per address, so a
+      // phone on the physical LAN and one on a VPN virtual adapter can both
+      // pair at the same time.
+      let listenHosts: string[]
       let lanAddress: string
       if (injectedAddress !== undefined) {
+        listenHosts = [injectedAddress]
         lanAddress = injectedAddress
       } else {
-        const requestedAddress = process.env.DSH_LAN_IP
-        if (requestedAddress !== undefined && !isPrivateLanIPv4(requestedAddress)) {
-          throw new Error(`DSH_LAN_IP must be a private LAN IPv4 address, got ${requestedAddress}`)
-        }
-        const discovered = requestedAddress ?? listPrivateLanIPv4()[0]
-        if (discovered === undefined) throw new Error('No private LAN IPv4 address found; connect to Wi-Fi or Ethernet first')
-        lanAddress = discovered
+        listenHosts = resolveLanListenHosts({
+          requested: process.env.DSH_LAN_IP,
+          selected: this.options.listenSelection?.(),
+          candidates: listPrivateLanIPv4(),
+        })
+        if (listenHosts.length === 0) throw new Error('No private LAN IPv4 address found; connect to Wi-Fi or Ethernet first')
+        // Multi-NIC (#65): with more than one candidate the proxy binds the
+        // wildcard — every NIC (physical + VPN virtual adapters) is reachable
+        // at once, and its pairing URLs enumerate one entry per address. The
+        // health/pairing API goes over loopback, which a wildcard listener
+        // always answers.
+        if (listenHosts.length > 1) lanAddress = '0.0.0.0'
+        else lanAddress = listenHosts[0] ?? ''
       }
-      const target = parseTargetUrl(targetUrl)
-      // Kernels ≥ 0.1.2-alpha.2 print the ready URL with a browser trust
-      // token; handing it to the proxy lets it hold an upstream session
-      // cookie so paired devices can load the UI (see dsh-remote.mjs).
-      // applyState restarts the proxy whenever the ready URL changes, so the
-      // token tracks kernel restarts.
+      // Wildcard bind (multi-NIC #65): the shell-facing API and the health
+      // probe go over loopback, which a wildcard listener always answers.
       const upstreamToken = new URL(targetUrl).searchParams.get('token') ?? undefined
       const listenPort = await chooseListenPort(lanAddress)
       if (controller.signal.aborted) throw new Error('LAN proxy start cancelled')
       const token = await this.options.masterToken?.() ?? randomBytes(32).toString('hex')
       if (token.length < 8) throw new Error('LAN master token must contain at least 8 characters')
-      const baseUrl = `http://${lanAddress}:${listenPort}/`
+      const apiBase = `http://127.0.0.1:${listenPort}/`
+      const baseUrl = listenHosts.length > 1 ? apiBase : `http://${lanAddress}:${listenPort}/`
+      const target = parseTargetUrl(targetUrl)
       const mobileShell = readMobileShellArtifact(this.mobileShellPath)
       const proxyPath = mobileShell.proxyPath
       const launcherPath = mobileShell.launcherPath
@@ -383,6 +399,7 @@ export class LanService {
           DSH_REMOTE_TOKEN: token,
           ...(upstreamToken === undefined ? {} : { DSH_UPSTREAM_TOKEN: upstreamToken }),
           DSH_LISTEN_HOST: lanAddress,
+          ...(listenHosts.length > 1 ? { DSH_LAN_IPS: listenHosts.join(',') } : {}),
           DSH_LISTEN_PORT: String(listenPort),
           DSH_TARGET_HOST: target.host,
           DSH_TARGET_PORT: String(target.port),
@@ -415,6 +432,7 @@ export class LanService {
       this.pairing = {
         baseUrl,
         pairingUrl: result.pairingUrl,
+        pairingUrls: result.pairingUrls,
         code: result.code,
         expiresInSeconds,
         expiresAt: Date.now() + expiresInSeconds * 1_000,
@@ -471,6 +489,32 @@ export class LanService {
 /** How a pairing URL can be reached: over the physical LAN or over a VPN
  *  virtual adapter (CGNAT, #63/#65). */
 export type PairingUrlKind = 'lan' | 'vpn'
+
+/**
+ * Which addresses the LAN proxy listens on (#65 full support):
+ * 1. an explicit NIC selection (settings checkboxes) wins;
+ * 2. `DSH_LAN_IP` stays compatible — single address, or comma list, or the
+ *    `0.0.0.0` wildcard;
+ * 3. otherwise all discovered private candidates (physical first, then VPN
+ *    virtual adapters) listen at once.
+ */
+export function resolveLanListenHosts(opts: {
+  requested?: string
+  selected?: readonly string[]
+  candidates: readonly string[]
+}): string[] {
+  if (opts.selected !== undefined && opts.selected.length > 0) {
+    const valid = opts.selected.filter(address => isPrivateLanIPv4(address))
+    if (valid.length > 0) return [...new Set(valid)]
+  }
+  if (opts.requested !== undefined && opts.requested !== '') {
+    if (opts.requested === '0.0.0.0' || opts.requested === 'all') return ['0.0.0.0']
+    const parts = opts.requested.split(',').map(part => part.trim()).filter(part => part !== '')
+    if (parts.every(part => isPrivateLanIPv4(part)) && parts.length > 0) return parts
+    if (isPrivateLanIPv4(opts.requested)) return [opts.requested]
+  }
+  return [...opts.candidates]
+}
 
 /** Classify by host: CGNAT 100.64.0.0/10 hosts are VPN virtual adapters. */
 export function pairingUrlKind(url: string): PairingUrlKind {
