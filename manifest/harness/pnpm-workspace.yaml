@@ -24,15 +24,8 @@ overrides:
   'js-yaml@^4.1.0': 4.3.2
   'hono@^4.11.4': 4.13.5
   'undici@^8.10.0': 8.10.2
-# ip-address <= 10.5.0 (GHSA-rpw4-54j3-4h4q isLinkLocal / GHSA-2vr4-cq9g-pvrc NAT64)
-# has no patched release yet; 10.5.0 is the latest. Reachable only through the
-# kernel's express-rate-limit chain; mis-classification affects rate-limit
-# accounting of private/NAT64 addresses in the local harness, not credential or
-# file boundaries. Revisit when ip-address ships a fix (drop these entries).
-auditConfig:
-  ignoreGhsas:
-    - GHSA-rpw4-54j3-4h4q
-    - GHSA-2vr4-cq9g-pvrc
+  # ip-address <= 10.5.0: GHSA-rpw4-54j3-4h4q (isLinkLocal) / GHSA-2vr4-cq9g-pvrc (NAT64).
+  'ip-address@^10.2.0': 10.5.1
 minimumReleaseAgeExclude:
   - '@deepseek-ai/cordis-plugin-group@1.0.1'
   - '@deepseek-ai/dsh-anonymous-user-id@0.2.0-rc.1'

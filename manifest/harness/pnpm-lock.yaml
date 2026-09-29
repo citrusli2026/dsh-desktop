@@ -12,6 +12,7 @@ overrides:
   js-yaml@^4.1.0: 4.3.2
   hono@^4.11.4: 4.13.5
   undici@^8.10.0: 8.10.2
+  ip-address@^10.2.0: 10.5.1
 
 patchedDependencies:
   '@deepseek-ai/dsh-client-ui-settings-account@0.2.0-rc.1':
@@ -3595,8 +3596,8 @@ packages:
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
 
-  ip-address@10.5.0:
-    resolution: {integrity: sha512-R5SnVLJmgYYvf2F2ZgwSBnelz5G4q5AxIC277GDfUaNbrZKNANcBC7RHqYYePlszf4kBolVkJauG0ZjHHFh55g==}
+  ip-address@10.5.1:
+    resolution: {integrity: sha512-EXujUp9jyOI/chPgtqk6uy7fDq8AeCB/WlfEuPg9LN0fN9lzKAKfuDYi60SMhHwgUiEhZvVYsbGZN+RUU1INiA==}
     engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
@@ -8263,7 +8264,7 @@ snapshots:
     dependencies:
       debug: 4.4.3
       express: 5.2.1
-      ip-address: 10.5.0
+      ip-address: 10.5.1
     transitivePeerDependencies:
       - supports-color
     optional: true
@@ -8483,7 +8484,7 @@ snapshots:
   inherits@2.0.4:
     optional: true
 
-  ip-address@10.5.0:
+  ip-address@10.5.1:
     optional: true
 
   ipaddr.js@1.9.1:
