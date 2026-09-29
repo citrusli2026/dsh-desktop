@@ -8,11 +8,12 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - '@xmldom/xmldom@0.8.15 || 0.9.12'
-  - fast-uri@3.1.6
 
 # Security floors for vulnerable transitive build dependencies.
 overrides:
-  'fast-uri@^3.0.0': 3.1.6
+  'fast-uri@^3.0.0': 3.1.7
   '@xmldom/xmldom@^0.8.8': 0.8.15
   '@xmldom/xmldom@^0.9.10': 0.9.12
   'js-yaml@^4.1.0': 4.3.2
+  'undici@^6.25.0': 6.28.1
+  'undici@^7.24.4': 7.29.1

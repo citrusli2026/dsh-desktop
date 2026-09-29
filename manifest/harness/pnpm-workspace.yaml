@@ -15,13 +15,24 @@ allowBuilds:
   node-addon-require-builtin: false
 overrides:
   'fflate@^0.8.0': 0.8.3
-  'fast-uri@^3.0.0': 3.1.6
+  'fast-uri@^3.0.0': 3.1.7
   'qs@^6.14.0': 6.16.0
-  # Security floors for vulnerable kernel transitives (audited 2026-09-09; fflate added 2026-09-16):
+  # Security floors for vulnerable kernel transitives (audited 2026-09-09; fflate added 2026-09-16;
+  # fast-uri/undici floors added 2026-09-29: GHSA-qw65-cvwx-89v3 / GHSA-58mr-gqgx-xq4g / GHSA-3wwx-pv8p-q78v):
   # sharp libheif GHSA-rgj7-g3m4-5g8c, js-yaml GHSA-2883-xcg3-v3hh, hono CVE-2026-39408 fix.
   'sharp@^0.35.3': 0.35.4
   'js-yaml@^4.1.0': 4.3.2
   'hono@^4.11.4': 4.13.5
+  'undici@^8.10.0': 8.10.2
+# ip-address <= 10.5.0 (GHSA-rpw4-54j3-4h4q isLinkLocal / GHSA-2vr4-cq9g-pvrc NAT64)
+# has no patched release yet; 10.5.0 is the latest. Reachable only through the
+# kernel's express-rate-limit chain; mis-classification affects rate-limit
+# accounting of private/NAT64 addresses in the local harness, not credential or
+# file boundaries. Revisit when ip-address ships a fix (drop these entries).
+auditConfig:
+  ignoreGhsas:
+    - GHSA-rpw4-54j3-4h4q
+    - GHSA-2vr4-cq9g-pvrc
 minimumReleaseAgeExclude:
   - '@deepseek-ai/cordis-plugin-group@1.0.1'
   - '@deepseek-ai/dsh-anonymous-user-id@0.2.0-rc.1'
