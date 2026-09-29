@@ -1,16 +1,26 @@
 #!/bin/bash
 # Daily automatic GitCode mirror (idempotent): find the latest published
 # release via git ls-remote (same network path as the maintainer's pushes)
-# and run scripts/mirror-gitcode.mjs. Failures only append to the log —
-# the mirror is best-effort and re-runs every day; the release runbook
-# still mirrors explicitly at release time.
+# and run scripts/mirror-gitcode-v2.mjs — the web-api v2 pipeline, which is
+# the only upload path GitCode currently persists (the legacy v5 pipeline
+# reports success but never stores the object; see docs/decisions and the
+# release runbook). Failures only append to the log — the mirror is
+# best-effort and re-runs every day; the release runbook still mirrors
+# explicitly at release time.
+#
+# Requires a logged-in gitcode.com tab with the kimi-webbridge daemon up
+# (the script borrows that session's auth). When the browser is closed the
+# run fails fast and cleanly — the next scheduled run retries.
 #
 # Configuration lives OUTSIDE the repo (never commit credentials):
-#   ~/.gitcode-mirror.env  —  GITCODE_TOKEN=… and optional GH_SOCKS5=…/GH_PROXY_PREFIX=…
-# GH_SOCKS5 defaults to the local Clash SOCKS proxy (127.0.0.1:7890) —
-# verified ~1 MB/s for GitHub asset downloads, the fastest path here.
+#   ~/.gitcode-mirror.env  —  optional NODE_BIN=… / KIMI_WEBBRIDGE_URL=…
+# (GITCODE_TOKEN is no longer needed: v2 auth is browser-borrowed.)
 # Log: ~/Library/Logs/dsh-gitcode-mirror.log
 set -uo pipefail
+
+# launchd provides a minimal PATH; add the usual tool locations so gh/git
+# resolve (the daemon's own node lookup below handles node explicitly).
+export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.volta/bin:$PATH"
 
 LOG="$HOME/Library/Logs/dsh-gitcode-mirror.log"
 ENV_FILE="$HOME/.gitcode-mirror.env"
@@ -40,10 +50,9 @@ fi
 
 set -a
 # shellcheck disable=SC1090
-. "$ENV_FILE"
+[ -f "$ENV_FILE" ] && . "$ENV_FILE"
 set +a
 export GITCODE_REPO
-export GH_SOCKS5="${GH_SOCKS5:-127.0.0.1:7890}"
 
 # Latest release tag from the remote (the local checkout may lag behind bot
 # syncs; the remote is authoritative). 45s cap keeps a dead network cheap.
@@ -55,7 +64,7 @@ if [ -z "$TAG" ]; then
 fi
 
 log "mirror $TAG"
-if ! (cd "$REPO_DIR" && "$NODE_BIN" scripts/mirror-gitcode.mjs "$TAG" >> "$LOG" 2>&1); then
+if ! (cd "$REPO_DIR" && "$NODE_BIN" scripts/mirror-gitcode-v2.mjs "$TAG" >> "$LOG" 2>&1); then
   log "mirror $TAG FAILED — will retry on the next scheduled run"
   exit 1
 fi

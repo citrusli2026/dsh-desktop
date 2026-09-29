@@ -18,6 +18,60 @@ are all part of the release, not afterthoughts.
    (`dsh-shell-bot` site syncs) — always `git pull --rebase` right
    before tagging and re-create the tag if it was made pre-rebase.
 3. Local gates runnable: pnpm 10.33.2 (the repo's `packageManager` pin; see the pnpm fault-table entry for why 11.x is banned), Node 24, network to npm registry.
+4. For the mirror step: kimi-webbridge daemon + a logged-in gitcode.com
+   tab in the user's browser (`~/.kimi-webbridge/bin/kimi-webbridge start`).
+
+## Release-day playbook (follow in order; each step names its success signal)
+
+1. `node scripts/version.mjs check` → exit 3 with `update available: <v>`.
+2. `node scripts/version.mjs bump dsh <v>` → prints `synced N dsh-* peer pins`.
+3. `node scripts/sync-release-age-excludes.mjs <v>` → `241 -> 229 pinned entries` (numbers vary).
+4. `pnpm -C manifest/harness install --lockfile-only` → if it exits with
+   `ERR_PNPM_UNUSED_PATCH`, rebuild the login patch for the new kernel
+   version (see the patch-regeneration fault-table row), then re-run.
+5. `pnpm -C manifest/harness install --frozen-lockfile` → `Done`.
+6. `pnpm run bootstrap` → `audit-harness-peers: closure satisfied`; fix
+   missing non-optional peers and re-run when it reports gaps.
+7. Verify the login patch landed in the staged closure:
+   `grep -c openedAttemptId resources/harness/node_modules/@deepseek-ai/dsh-client-ui-settings-account/lib/client.js` → non-zero.
+8. `pnpm run verify` → exit 0 (typecheck, unit tests + coverage, site
+   checks, build).
+9. `pnpm exec playwright test -g "LAN pairing"` → 2 passed. Then
+   `pnpm test:e2e:market:offline` → 1 passed, and `pnpm run smoke:packaged`
+   → `packaged smoke: OK`.
+10. `pnpm test:e2e:market:real` → 2 passed. **If it reports
+    `install-failed`**, read the market fault-table row (bundled-pnpm
+    publish-age window vs the new kernel's peer enforcement) before
+    touching anything.
+11. Docs: ARCHITECTURE.md header, README/README.zh.md, `scripts/version.mjs`
+    examples → new version.
+12. `node scripts/write-release-notes.mjs v<v>.shell.0`, fill every
+    `<...>`, `node scripts/write-release-notes.mjs check v<v>.shell.0` →
+    `release-notes: OK`. Commit the bump (message:
+    `chore: bump dsh kernel to <v> (shell revision resets to 0)`).
+13. `git pull --rebase origin main`; `git tag v<v>.shell.0`; push main +
+    tag to origin **and** gitcode (branch + tag). Confirm both remotes'
+    peeled tag commit match `git rev-parse v<v>.shell.0^{}`.
+14. `gh run list --workflow=release.yml --limit 1` → note the id;
+    `gh run watch <id> --exit-status` → exit 0, jobs verify + 3×build +
+    publish all `success`. **If verify fails on
+    `security:audit`**, apply the audit-floor row below, then cancel the
+    run, `git tag -f`, force-push the tag to both remotes, and watch the
+    new run.
+15. `gh release view v<v>.shell.0 --json assets` → 8 assets.
+16. Mirror: `node scripts/mirror-gitcode-v2.mjs v<v>.shell.0` → exit 0,
+    `6/6 assets verified anonymously`. Add one full-download spot check:
+    `curl -sL -o /tmp/v.deb <gitcode deb URL> && shasum -a 256 /tmp/v.deb`
+    vs the `.sha256` file.
+17. Site data: `node scripts/gen-site-data.mjs` (or `GH_CLI=1 …` when
+    direct GitHub and SOCKS are down but gh works) → file written with the
+    new tag and `gitcode_ok=true` ×6; commit + push (pull --rebase first;
+    on release.json conflict keep the freshly regenerated local version).
+18. HANDOFF: new section (next number; check `grep -n "^## " HANDOFF.md |
+    tail -1`), status table rows updated, commit + push to both remotes.
+19. Live check: `https://dsh-desktop.com/data/release.json` shows the new
+    tag + `gitcode_ok=true`; `https://dsh-desktop.com/api/downloads` shows
+    live counts. Vercel deploys within a couple of minutes.
 
 ## Workflow
 
@@ -124,50 +178,82 @@ windows-2022 + ubuntu-24.04) → publish. Success means: 8 assets
 (dmg/exe/deb + three `.sha256` + blockmap + latest.yml; AppImage is
 not built), attestations verified, release created.
 
-### 6. GitCode mirror (v2 browser pipeline — v5 API path is broken)
+### 6. GitCode mirror (one command — v2 pipeline)
 
-**INCIDENT (2026-09-20 → ongoing, root-caused 2026-09-28 on shell.2):**
+**INCIDENT (2026-09-20 → ongoing, root-caused 2026-09-28/29):**
 GitCode's **v5 upload pipeline** (`api.gitcode.com/api/v5/.../upload_url`,
-PRIVATE-TOKEN — what `mirror-gitcode.mjs` and `gitcode-backfill.yml` use)
-returns success but **never persists the object**: the release lists the
-asset yet anonymous downloads 404 `NOT_PATH`. The **web-api v2 pipeline**
-(`web-api.gitcode.com/api/v2/.../releases/upload`, browser Bearer/Cookie)
-works perfectly. Differential proof: assets uploaded pre-incident still
-serve (302); in the same release a v2-uploaded probe served while v5-uploaded
-siblings 404'd. Until GitCode fixes v5, both v5-based tools "succeed"
-falsely — verify with anonymous Range GETs, never trust upload API status.
+PRIVATE-TOKEN — what the legacy `mirror-gitcode.mjs` upload path and
+`gitcode-backfill.yml` use) returns success but **never persists the
+object**: the release lists the asset yet anonymous downloads 404
+`NOT_PATH`. The **web-api v2 pipeline** (browser-borrowed auth) persists
+correctly. Differential proof: pre-incident assets still serve (302); in
+the same release a v2-uploaded probe served while v5-uploaded siblings
+404'd. Never trust an upload's own success report — only anonymous
+Range GETs.
 
-**Working procedure (proven end-to-end on shell.2, fully automatable):**
+**Prerequisites (check these first — the script fails fast with a clear
+message when one is missing):**
 
-1. Download assets: `gh release download <tag> -R citrusli2026/dsh-desktop
-   -p <file> -O <path>` — the gh HTTP stack beats curl from this network
-   (3.3 MB/s vs 200 KB/s; concurrent range curls get reset). Verify each
-   installer against its sibling `.sha256`.
-2. Load `kimi-webbridge`, open a logged-in `gitcode.com` tab (session
-   `release-task`). Upload each file through the v2 pipeline (borrows the
-   tab's auth; ~15 MB/s domestic, 270 MB in ~16 s), saving the descriptor
-   JSON each run prints:
-   ```sh
-   bash .agents/skills/gitcode-release-publisher/scripts/gitcode-release.sh upload \
-     --session "release-task" --repo citrusli2026/dsh-desktop --file <path>
-   ```
-3. Delete same-name broken attachments first — linking a name that already
-   exists on the release returns 400. From the logged-in tab, PUT the
-   release with `action:"delete"` descriptors:
-   `PUT web-api.gitcode.com/api/v2/projects/<owner%2Frepo>/releases/<tag>`
-   with header `Authorization: Bearer <localStorage.access_token>` and body
-   `{name, description, release_status:0, assets:[], tag_name, links:[<descriptors>]}`;
-   descriptor `action:"delete"` removes, `action:"create"` (default) adds.
-   Never delete the release object or move the tag.
-4. Link the new descriptors the same way (`action:"create"`).
-5. Verify: `--check-only` (needs 6/6), plus one full installer download
-   from GitCode checksum-matched against the `.sha256` (~8 MB/s domestic).
+1. `gh` authenticated (`gh auth status`) — downloads use `gh release download`.
+2. kimi-webbridge daemon up **and** a logged-in gitcode.com tab open in the
+   user's browser: `~/.kimi-webbridge/bin/kimi-webbridge start`, then any
+   navigate in session `release-task` connects the extension. If no tab is
+   open / not logged in, the script says so — ask the user to open
+   gitcode.com and sign in, then re-run.
+3. The GitCode tag already pushed and aligned (the script checks it):
+   `git push gitcode refs/tags/<tag>`.
 
-UI fallback for steps 3–4 (release edit page): some rows need trusted
-CDP clicks (`Input.dispatchMouseEvent`) — DOM `el.click()` is ignored, and
-icon-only buttons have no text to locate by. In-page `new File` +
-`DataTransfer` injection works for small files when the extension's file
-access is off.
+**Run it:**
+
+```sh
+node scripts/mirror-gitcode-v2.mjs <tag>          # mirror everything missing
+node scripts/mirror-gitcode-v2.mjs <tag> --check-only   # probe only, no writes
+```
+
+Expected success output (grep-able):
+
+```
+mirror-v2: tag v<version> aligned at <sha8>
+mirror-v2: <N> public asset(s) for v<version>
+mirror-v2: present|MISSING <asset>        (per asset)
+mirror-v2: downloaded/uploaded <asset>    (only for missing ones)
+mirror-v2: linked <N> asset(s) (<M> old link(s) replaced)
+mirror-v2: 6/6 assets verified anonymously
+```
+
+Exit 0 = every asset serves anonymously. The script is idempotent — safe
+to re-run after any failure, it only touches missing assets.
+
+What it does per asset: probe stable URL (range GET) → `gh release
+download` + sibling-`.sha256` verification → v2 upload via
+`gitcode-release.sh upload` (borrows the tab's auth; ~15 MB/s domestic)
+→ link through a v2 PUT (`action:"delete"` + `action:"create"`, see
+semantics below) → anonymous re-verification.
+
+**Link-row semantics learned the hard way (the script implements all of
+this — read before hand-editing a release):**
+
+- `PUT web-api.gitcode.com/api/v2/projects/<owner%2Frepo>/releases/<tag>`
+  with `Authorization: Bearer <localStorage.access_token>` from the tab,
+  body `{name, description, release_status:0, assets:[], tag_name,
+  links:[...]}`. `links` entries are ADDITIVE actions, not a full set.
+- `action:"create"` (default) adds; linking a name that already exists
+  returns 400 `release update failed`.
+- `action:"delete"` **must carry the link row `id`** (from a v2 GET of the
+  release). Without the id the server answers 200 and silently keeps the
+  row — a no-op that looks like success — and that row then blocks the
+  same-name create with 400. Deleting leaves a null-attachment "tombstone"
+  row in the GET listing; the id-carrying delete above is what clears it.
+- Never delete the release object or move the tag.
+
+**If the script reports the webbridge tab is unreachable but `gh` works:**
+the same PUT can be issued from Node with browser-borrowed headers
+(`Authorization`, `Cookie`, `User-Agent`, `Origin`, `Referer`) — the
+bundled script already does this, so this is a note for hand-debugging,
+not a separate procedure. When the page's own network is hung (fetches
+never settle, evaluates time out) but the machine can reach GitCode, this
+Node-side path is the workaround; a background-XHR + sync-poll evaluate
+also works.
 
 **Legacy v5 path (dead until GitCode fixes it — kept for reference):**
 
@@ -177,11 +263,11 @@ GITCODE_TOKEN=<gitcode personal token> GITCODE_REPO=citrusli2026/dsh-desktop \
   node scripts/mirror-gitcode.mjs v<version>
 ```
 
-`mirror-gitcode.mjs` itself (probe → download → upload → verify, curl
-`-C -` resume, idempotent, `--check-only` probe mode, explicit local files)
-remains the verification tool of record: its Range-GET checks are how the
-v2 uploads above are confirmed. **Follow-up debt: port the script to the
-v2 pipeline so the one-command flow works again.**
+`mirror-gitcode.mjs` (probe → download → upload → verify, curl `-C -`
+resume, idempotent, `--check-only` probe mode, explicit local files) is
+kept for its `--check-only` probe mode, which any verification flow can
+use. The daily daemon `scripts/gitcode-mirror-daemon.sh` already points
+at the v2 script.
 
 **Fallback: dispatch the backfill workflow** — also v5-based, same silent
 failure; do not trust it until the incident is fixed:
@@ -287,7 +373,8 @@ GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-desktop \
 | linking a v2-uploaded asset fails with 400 `release update failed` | a link with the same filename already exists on the release; delete the old one first, then link |
 | `gitcode_ok=false` in bot sync although mirror is up | bot ran before mirror finished; regenerate locally after verifying |
 | CI verify fails on the dependency security audit right after a release-day advisory drop (`security:audit`, fresh GHSAs in the electron toolchain or the harness chain) | raise the **security floors** in BOTH `pnpm-workspace.yaml` override lists (root + `manifest/harness`) to the patched in-range versions, regenerate both lockfiles, re-run `pnpm security:audit` until exit 0, re-bootstrap, then **cancel the failed run, `git tag -f`, force-push the tag to both remotes** (established re-point procedure). Get patched versions from `gh api /advisories/<GHSA>` — if `first_patched_version` is missing it may just not be backfilled yet; check `gh api repos/<repo>/dependabot/alerts` for the real fix version before falling back to an audit ignore (prefer a floor whenever a patched version exists) |
-| market:real (`install-failed`) after a kernel bump that adds install-time peer enforcement | the packaged app installs plugins with the **bundled pnpm 11.11.0**, which applies a ~24h publish-age default: it resolves the newest plugin version OLDER than 24h. If that version's peers don't cover the new kernel it is rejected (clear message + `allow-version` guidance in the app's technical detail; the E2E only shows `install-failed`). Diagnose with a packaged-app probe calling `desktopAction('installDshMarket')` and reading `lastInstall.detail`. Fix = wait for a peer-compatible plugin version to cross the 24h window (self-heals); do NOT downgrade the bundled pnpm or grant allow-version — both strip real safety for all users |
+| market:real (`install-failed`) after a kernel bump that adds install-time peer enforcement | the packaged app installs plugins with the **bundled pnpm 11.11.0**, which applies a ~24h publish-age default: it resolves the newest plugin version OLDER than 24h. If that version's peers don't cover the new kernel it is rejected (clear message + `allow-version` guidance in the app's technical detail; the E2E only shows `install-failed`). Diagnose with the bundled probe: `pnpm run build && DSH_MARKET_PROBE=1 pnpm exec playwright test -g @market-probe` prints the full result (status/reason/detail) — see `e2e/market-probe.spec.ts`. Fix = wait for a peer-compatible plugin version to cross the 24h window (self-heals); do NOT downgrade the bundled pnpm or grant allow-version — both strip real safety for all users |
+| release PUT returns 200 but a link never disappears, or a same-name re-link returns 400 `release update failed` | the `action:"delete"` descriptor is missing the link row `id` (a v2 GET returns it): without the id the delete is a silent no-op that leaves a null-attachment tombstone blocking the same-name create. `scripts/mirror-gitcode-v2.mjs` carries the id — prefer it over hand-built PUTs |
 | runner upload stuck for hours | check assets with Range GETs; if still 404 after a run, cancel and re-dispatch |
 | exe specifically times out 3× | retry run; if persistent, switch to browser upload from domestic network |
 | mirror via public HTTP proxy: big files (dmg/exe) stall at 0 B or drop mid-download (observed `ghproxy.net`, `gh-proxy.com`) | GitHub assets are blocked directly; use `GH_SOCKS5=127.0.0.1:7890` (Clash SOCKS loop ~1 MB/s, verified fastest). If stuck, kill and rerun the mirror — it is idempotent; or download manually with `curl -sL -x socks5h://127.0.0.1:7890 -C -` and upload via `mirror-gitcode.mjs v<tag> <file...>` |
