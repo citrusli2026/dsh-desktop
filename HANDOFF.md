@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-09-28。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-09-30。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.2.0-rc.1.shell.0`（2026-09-29 已发布；内核 `0.2.0-rc.1`，跨次版本升级,§69） |
-| 已发布 | ✅ `0.2.0-rc.1.shell.0`（三端 dmg/exe/deb；8 个 GitHub Release 资产） |
-| 本地门禁 | ✅ `pnpm run verify`（301 项单测）、类型/runtime/site/build 全绿；E2E 16/16、LAN QR 2/2、market offline 1/1、两种打包冒烟通过；market:real 延后复验（24h 发布年龄窗，见 §69，今晚定时确认） |
-| 核心发布 | ✅ `v0.2.0-rc.1.shell.0` Release run `36517957143` 全绿：verify（含双树安全审计 0 漏洞）+ 三平台构建 + publish；8 资产齐全，tag 剥离 `e43088c`；首跑因新披露依赖公告失败，地板修复后重指 tag（§69） |
-| 官网数据 | ✅ `gen-site-data` 经 `GH_CLI=1` 通道重生成（当日直连 GitHub 与 SOCKS 均不可达而 gh 可用），6 资产 `gitcode_ok=true`，提交 `2aef157`；线上 `/data/release.json` 指向 shell.0 |
-| 国内镜像 | ✅ shell.0 6/6（v2 管道，§69）：6×302、check-only 6/6、tag 对齐 `e43088c`、deb 全量下载 sha256 逐字节一致；发布对象由守护进程预先创建、资产经 v2 上传 + Bearer PUT 挂链 |
-| 实时下载统计 | ✅ `/api/downloads` 指向 shell.0 实时可用；核验时累计 4602（mac 568 / Windows 3583 / Linux 451，65 个版本） |
+| 最新代码基线 | ✅ `0.2.0-rc.2.shell.0`（2026-09-29 已发布；内核 `0.2.0-rc.2`，见 §70） |
+| 已发布 | ✅ `0.2.0-rc.2.shell.0`（Linux deb、macOS dmg、Windows exe；8 个 GitHub Release 资产） |
+| 本地门禁 | ✅ `pnpm run verify`（301 项单测；双树安全审计 0 漏洞）、dev E2E 16 passed（9 skipped）、packaged E2E 7/7、LAN QR 2/2、market offline 1/1、real 2/2、dist:dir、两种 packaged smoke 通过；AVD 因无 `adb` 未运行（§70） |
+| 核心发布 | ✅ `v0.2.0-rc.2.shell.0` Release run `36584018005` 全绿：verify + Linux/macOS/Windows 构建 + publish；8 资产与构建来源证明齐全，tag peeled commit `40040b7`（§70） |
+| 官网数据 | ✅ Site Refresh run `36593265593` 使用 `GH_CLI=1` 通道全绿；bot 提交 `04b8d12`，线上 `/data/release.json` 指向 shell.0 且 6/6 `gitcode_ok=true`（§70） |
+| 国内镜像 | ✅ shell.0 走 GitCode v2 管道 6/6 匿名可下，v2 与 legacy check-only 均 6/6；tag 对齐 `40040b7`，deb 全量回读 218,472,048 字节、SHA-256 一致（§70） |
+| 实时下载统计 | ✅ `/api/downloads` HTTP 200；累计 5243（mac 633 / Windows 4108 / Linux 502，66 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1825,4 +1825,20 @@ GitCode:<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.1.7-rc.2.s
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.2.0-rc.1.shell.0>；
 Release CI：<https://github.com/citrusli2026/dsh-desktop/actions/runs/36517957143>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.0-rc.1.shell.0>；
+官网：<https://dsh-desktop.com>。
+
+## 70. v0.2.0-rc.2.shell.0 Windows 优先巡检发布（2026-09-29）
+
+1. **巡检**：`node scripts/version.mjs check` 退出码 0，内核 `0.2.0-rc.2` 为最新；阿里 DNS `@223.5.5.5` 返回 apex `64.29.17.1`、www `64.29.17.65`，直连 apex HTTPS `200`。
+2. **升级内容**：内核 `0.2.0-rc.1` → `0.2.0-rc.2`，`@deepseek-ai/dsh-*` 34 个 peer pins 同步，release-age 豁免同步；按 rc.2 重建账号登录补丁，Harness 新增必需 peer `@deepseek-ai/cordis-plugin-group@~1.0.4`。发布提交 `40040b7`，tag `v0.2.0-rc.2.shell.0`。
+3. **本地门禁**：`pnpm run verify`、双树 `security:audit`（0 漏洞）、dev E2E 16 passed（9 skipped）、`dist:dir`、两种 packaged smoke、packaged E2E 7/7、market offline 1/1 + real 2/2、LAN QR 2/2 全通过。AVD 未运行：机器无 `adb`。
+4. **发布与 Windows 优先验证**：Release run `36584018005` 全绿（verify + Linux/macOS/Windows build + publish）。verify 的 Playwright 汇总有 13 passed、12 skipped，并附 worker teardown timeout 注释；job 最终为 success，且本地完整 E2E 与 Windows packaged E2E 均通过。Windows 2022 job 的安装器内容校验、旧版升级数据保留、NSIS corrupt/readonly/lock 矩阵、打包 Harness/Safe Mode/容错用例、packaged E2E、静默 NSIS 安装及 attestation 全通过。GitHub Release 有 8 个资产（含 `latest.yml`、blockmap 与校验文件）。本版按 ADR 0016 继续发布未签名 Windows 安装器，不需要人工签名处理。
+5. **GitCode 镜像**：GitHub 与 GitCode 上 release tag 的 peeled commit 均为 `40040b7957fa0edb92b766c21cdc149fa53e033c`。自动 v5 backfill run `36587343804` 在 release GET/创建步骤以 curl exit 22 失败；事后 v2 API 确认同 tag 发布对象已存在、commit 正确、初始链接数为 0。改用 v2 浏览器授权管道，三安装包 checksum 验证通过，6 个资产上传/挂链完成；v2 与 legacy `--check-only` 均 6/6。Deb 全量回读 218,472,048 字节，SHA-256 `ee31a87e0cbd32ee9ebf4c5db75397d47d3b0d1f0bf98fb6e1bc957b709e4502` 一致。
+6. **官网数据与自动化修复**：Release 后自动 Site Refresh run `36587356168` 在 GitHub 校验文件下载遇 HTTP 500 后失败，未提交数据。`.github/workflows/site-refresh.yml` 的两处生成命令改走 `GH_CLI=1` 稳定通道，修复提交 `4085ac6`；手动重跑 `36593265593` 全绿，attempt 1 即确认镜像齐全，bot 提交 `04b8d12`。线上 `/data/release.json` 指向本版且 6/6 `gitcode_ok=true`；`/api/downloads` HTTP 200，累计 5243（mac 633 / Windows 4108 / Linux 502，66 个版本）。
+7. **Issues**：#86 是 legacy v5 backfill 对既有 release 对象处理失败；#87 是自动官网探测遇校验文件 HTTP 500。均已在 issue 中用中文记录根因与修复结果并关闭。#33/#39/#56 均有维护者诊断且在等用户反馈，保持不动。
+8. **一次性镜像复探**：对 `v0.1.7-rc.1.shell.2` 执行 `node scripts/mirror-gitcode.mjs ... --check-only`，匿名下载 6/6 均可用；对应的一次性复探 automation 已删除。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.2.0-rc.2.shell.0>；
+Release CI：<https://github.com/citrusli2026/dsh-desktop/actions/runs/36584018005>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.0-rc.2.shell.0>；
 官网：<https://dsh-desktop.com>。
