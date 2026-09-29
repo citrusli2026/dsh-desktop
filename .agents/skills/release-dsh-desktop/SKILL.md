@@ -224,6 +224,12 @@ node scripts/gen-site-data.mjs   # sets gitcode_ok from live Range GETs
 git add site/data/release.json && git commit -m "chore: refresh release data — verified GitCode mirror and download counts"
 ```
 
+When direct GitHub and the SOCKS proxy are both unreachable but the
+authenticated `gh` CLI still works (a frequent domestic-network state),
+run `GH_CLI=1 node scripts/gen-site-data.mjs` — it routes the API reads
+and checksum fetches through `gh api` (same escape-hatch idea as
+`GH_SOCKS5`, which routes through curl).
+
 Watch for push races: the bot pushes its own sync; `git pull --rebase`
 and re-push. If `release.json` conflicts, keep the bot's download
 counts and regenerate over it.
@@ -280,6 +286,8 @@ GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-desktop \
 | upload API reports success + release lists assets, but anonymous Range GET 404 `NOT_PATH` on EVERY asset of a fresh release | v5 upload pipeline silently non-persisting (2026-09-20 incident): uploads via `api.gitcode.com` v5 never reach storage. Switch to the v2 browser pipeline (section 6), delete the dead attachments (`action:"delete"`), re-upload + re-link, re-verify |
 | linking a v2-uploaded asset fails with 400 `release update failed` | a link with the same filename already exists on the release; delete the old one first, then link |
 | `gitcode_ok=false` in bot sync although mirror is up | bot ran before mirror finished; regenerate locally after verifying |
+| CI verify fails on the dependency security audit right after a release-day advisory drop (`security:audit`, fresh GHSAs in the electron toolchain or the harness chain) | raise the **security floors** in BOTH `pnpm-workspace.yaml` override lists (root + `manifest/harness`) to the patched in-range versions, regenerate both lockfiles, re-run `pnpm security:audit` until exit 0, re-bootstrap, then **cancel the failed run, `git tag -f`, force-push the tag to both remotes** (established re-point procedure). Get patched versions from `gh api /advisories/<GHSA>` — if `first_patched_version` is missing it may just not be backfilled yet; check `gh api repos/<repo>/dependabot/alerts` for the real fix version before falling back to an audit ignore (prefer a floor whenever a patched version exists) |
+| market:real (`install-failed`) after a kernel bump that adds install-time peer enforcement | the packaged app installs plugins with the **bundled pnpm 11.11.0**, which applies a ~24h publish-age default: it resolves the newest plugin version OLDER than 24h. If that version's peers don't cover the new kernel it is rejected (clear message + `allow-version` guidance in the app's technical detail; the E2E only shows `install-failed`). Diagnose with a packaged-app probe calling `desktopAction('installDshMarket')` and reading `lastInstall.detail`. Fix = wait for a peer-compatible plugin version to cross the 24h window (self-heals); do NOT downgrade the bundled pnpm or grant allow-version — both strip real safety for all users |
 | runner upload stuck for hours | check assets with Range GETs; if still 404 after a run, cancel and re-dispatch |
 | exe specifically times out 3× | retry run; if persistent, switch to browser upload from domestic network |
 | mirror via public HTTP proxy: big files (dmg/exe) stall at 0 B or drop mid-download (observed `ghproxy.net`, `gh-proxy.com`) | GitHub assets are blocked directly; use `GH_SOCKS5=127.0.0.1:7890` (Clash SOCKS loop ~1 MB/s, verified fastest). If stuck, kill and rerun the mirror — it is idempotent; or download manually with `curl -sL -x socks5h://127.0.0.1:7890 -C -` and upload via `mirror-gitcode.mjs v<tag> <file...>` |
