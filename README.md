@@ -69,15 +69,15 @@ Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the
 
 ## Versioning
 
-Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.2.0-rc.1.shell.0` bundles `@deepseek-ai/dsh` 0.2.0-rc.1 at shell revision 0. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically.
+Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.2.0-rc.2.shell.0` bundles `@deepseek-ai/dsh` 0.2.0-rc.2 at shell revision 0. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically.
 
 ## Development
 
-Requires Node `^22.19.0 || >=24.0.0` and pnpm 11:
+Requires Node `^22.19.0 || >=24.0.0` and pnpm 10.33.2:
 
 ```sh
 pnpm install         # deps + Electron binary
-pnpm run bootstrap   # materialize the harness closure + bundled Node 22 LTS
+pnpm run bootstrap   # materialize the harness closure + bundled Node 24.21.0
 pnpm run dev         # run locally
 pnpm run smoke       # smoke: harness ready -> window loads -> verify page -> exit
 pnpm run verify      # typecheck, unit tests + coverage, site checks, build

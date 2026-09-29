@@ -42,6 +42,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.0-rc.2.shell.0 <small>（kernel 0.2.0-rc.2）</small></h2>
+  <ul>
+    <li>Upgrade from kernel 0.2.0-rc.1 to 0.2.0-rc.2; sync 34 dsh package pins and the resolved closure.</li>
+    <li>Keep sign-in authorization opening once per attempt in the system browser with the current theme; the patch is rebuilt and covered by packaged E2E.</li>
+    <li>Plugin installs enforce peer compatibility. Compatible community market releases are selected automatically after clearing the bundled pnpm publish-age window.</li>
+  </ul>
+
   <h2>v0.2.0-rc.1.shell.0 <small>（kernel 0.2.0-rc.1）</small></h2>
   <ul>
     <li>Kernel upgrade 0.1.7-rc.2 → 0.2.0-rc.1 (first 0.2.0 release candidate); 34 dsh-* peer pins synced, release-age excludes re-pinned (229), and the sign-in auto-open patch rebuilt against the new version.</li>

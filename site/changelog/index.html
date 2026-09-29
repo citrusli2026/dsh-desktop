@@ -42,6 +42,13 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.0-rc.2.shell.0 <small>（内核 0.2.0-rc.2）</small></h2>
+  <ul>
+    <li><strong>内核升级</strong>：从 0.2.0-rc.1 升级到 0.2.0-rc.2；34 个 <code>dsh-*</code> peer pin 与闭包锁文件同步，并按解析版本维护 release-age 豁免。</li>
+    <li><strong>登录授权适配</strong>：每次新授权尝试都会将授权链接自动打开到系统浏览器并保留当前主题；补丁按 rc.2 组件重建，真实打包 E2E 通过。</li>
+    <li><strong>插件兼容保护</strong>：安装继续校验插件 peer 版本，不兼容时说明原因并拒绝安装；兼容的社区市场版本跨过随包 pnpm 年龄门槛后会自动解析。</li>
+  </ul>
+
   <h2>v0.2.0-rc.1.shell.0 <small>（内核 0.2.0-rc.1）</small></h2>
   <ul>
     <li><strong>内核升级 0.1.7-rc.2 → 0.2.0-rc.1</strong>：跟随上游 0.2.0 线的首个候选版。壳侧闭包同步 34 个 <code>dsh-*</code> peer 钉、release-age 豁免清单重钉 229 项；登录授权自动打开补丁按新版本语义原样重建（上游 SignInDialog 仍未内置该能力）。</li>

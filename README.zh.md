@@ -80,18 +80,18 @@ DeepSeek Harness 为 DeepSeek 的商标,本仓库仅做 MIT 许可下的再打�
 
 ## 版本号
 
-版本与 tag 为复合式:`<dsh 版本>.shell.<壳修订号>`——如 `0.2.0-rc.1.shell.0`
-表示打包 `@deepseek-ai/dsh` 0.2.0-rc.1、壳第 0 次修订。版本字段由
+版本与 tag 为复合式:`<dsh 版本>.shell.<壳修订号>`——如 `0.2.0-rc.2.shell.0`
+表示打包 `@deepseek-ai/dsh` 0.2.0-rc.2、壳第 0 次修订。版本字段由
 `scripts/version.mjs` 统一管理;`dsh-watch` 工作流每日检查上游 npm,
 发现新版自动开经验证的 bump PR。
 
 ## 开发
 
-要求:Node `^22.19.0 || >=24.0.0`,pnpm 11。
+要求:Node `^22.19.0 || >=24.0.0`,pnpm 10.33.2。
 
 ```sh
 pnpm install         # 依赖 + Electron 二进制
-pnpm run bootstrap   # 物化 harness 闭包 + 内置 Node 22 LTS
+pnpm run bootstrap   # 物化 harness 闭包 + 内置 Node 24.21.0
 pnpm run dev         # 本机运行
 pnpm run smoke       # 冒烟:harness 就绪 → 窗口加载 → 校验页面 → 退出
 pnpm run verify      # typecheck + 单测与覆盖率 + site check + 构建
