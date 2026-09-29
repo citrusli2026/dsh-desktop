@@ -12,6 +12,9 @@
 | `HANDOFF.md` | **运维核心**：当前状态、发布流程、速查、版本记录 | 每次发布、镜像或官网调整后 |
 | `docs/ARCHITECTURE.md` | 产品架构、源码职责、验证契约 | 架构或门禁变化时 |
 | `docs/reliable-shell-iteration-plan.md` | 可靠 Electron 壳与开箱即用的后续迭代边界和顺序 | 产品范围或迭代推进时 |
+| [双路线执行入口](plans/2026-09-29-dual-track.md) | 主干可靠性维护与官方桌面补丁 Worktree 的分工、执行顺序和模型交接 | 后续路线或执行状态变化时 |
+| [主干可靠性任务](plans/reliable-shell/README.md) | 现有壳的数据兼容、任务保护、更新与恢复任务卡 | 按任务验收后更新 progress |
+| [官方桌面补丁实验](plans/official-desktop/README.md) | 固定上游源码、有序补丁、隔离构建和平台验证 | 仅在实验 Worktree 实施，按任务更新 progress |
 | `docs/decisions/README.md` | ADR 索引 | 新增决策记录时 |
 | `docs/test-hardening-plan.md` | 测试完善迭代规划（v0.1.1-rc.2.shell.2，P0/P1/P2 工作项） | 测试门禁变化或迭代推进时 |
 | `docs/seo-follow-up.md` | 官网 SEO 后续路线、Search Console 验证和 30/60/90 天增长任务 | SEO 数据、收录状态或内容计划变化时 |

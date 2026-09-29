@@ -1,5 +1,7 @@
 # dsh-desktop 后续迭代计划：可靠 Electron 壳 + 开箱即用
 
+> 2026-09-29 路线确认：主干继续保留现有壳，下一轮按[详细可靠性执行计划](plans/reliable-shell/README.md)逐项实施。基于官方桌面端的小补丁路线在独立 Worktree 验证，见[双路线入口](plans/2026-09-29-dual-track.md)。下文保留既有范围及历史交付记录，不把新计划视为已完成。
+
 > 规划日期：2026-08-30。本文结合 Raycast、Alfred、VS Code、Claude Desktop 等行业产品的公开文档做了方法对标；只提取适合可靠桌面壳的做法，不承诺一次性实现所有候选项。
 > 正式产品取舍见 [ADR 0030](decisions/0030-reliable-electron-shell-scope.zh.md)。
 
