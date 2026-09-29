@@ -33,6 +33,18 @@ const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || ''
 // route fetches through the local SOCKS proxy via curl instead of fetch().
 const SOCKS = process.env.GH_SOCKS5
 
+// When even curl cannot reach GitHub but the authenticated `gh` CLI can (its
+// HTTP stack survives routes direct connections cannot), set GH_CLI=1 to
+// read GitHub through `gh api` instead.
+const GH_CLI = process.env.GH_CLI === '1'
+
+function ghApiText(url, accept) {
+  const path = url.replace(/^https:\/\/api\.github\.com/, '')
+  const args = ['api', path]
+  if (accept !== undefined) args.push('-H', `Accept: ${accept}`)
+  return execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+}
+
 function curlText(url, headers) {
   const args = ['-sfSL', '--max-time', '300']
   if (SOCKS) args.push('-x', `socks5h://${SOCKS}`)
@@ -48,6 +60,7 @@ async function api(url) {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     'User-Agent': 'dsh-desktop-site-generator',
   }
+  if (GH_CLI) return JSON.parse(ghApiText(url))
   if (SOCKS !== undefined) return JSON.parse(curlText(url, headers))
   const res = await fetch(url, { headers })
   if (!res.ok) {
@@ -61,13 +74,15 @@ async function readChecksum(asset) {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     'User-Agent': 'dsh-desktop-site-generator',
   }
-  const text = SOCKS !== undefined
-    ? curlText(asset.browser_download_url, headers)
-    : await (async () => {
-        const response = await fetch(asset.browser_download_url, { headers })
-        if (!response.ok) throw new Error(`checksum download ${response.status} for ${asset.name}`)
-        return response.text()
-      })()
+  const text = GH_CLI
+    ? ghApiText(`https://api.github.com/repos/${REPO}/releases/assets/${asset.id}`, 'application/octet-stream')
+    : SOCKS !== undefined
+      ? curlText(asset.browser_download_url, headers)
+      : await (async () => {
+          const response = await fetch(asset.browser_download_url, { headers })
+          if (!response.ok) throw new Error(`checksum download ${response.status} for ${asset.name}`)
+          return response.text()
+        })()
   const match = SHA256_LINE.exec(text)
   if (match === null || `${match[2]}.sha256` !== asset.name) throw new Error(`invalid checksum asset ${asset.name}`)
   return match[1]
