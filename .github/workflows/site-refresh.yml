@@ -48,6 +48,7 @@ jobs:
         id: gen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_CLI: '1'
         run: |
           git config user.name "dsh-shell-bot"
           git config user.email "bot@users.noreply.github.com"
@@ -65,6 +66,7 @@ jobs:
         if: steps.gen.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_CLI: '1'
         run: |
           for i in 1 2 3 4 5 6; do
             node scripts/gen-site-data.mjs >/dev/null
