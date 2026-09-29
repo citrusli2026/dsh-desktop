@@ -44,9 +44,10 @@
   <!-- changelog:auto:start -->
   <h2>v0.2.0-rc.2.shell.0 <small>（内核 0.2.0-rc.2）</small></h2>
   <ul>
-    <li><strong>内核升级</strong>：从 0.2.0-rc.1 升级到 0.2.0-rc.2；34 个 <code>dsh-*</code> peer pin 与闭包锁文件同步，并按解析版本维护 release-age 豁免。</li>
-    <li><strong>登录授权适配</strong>：每次新授权尝试都会将授权链接自动打开到系统浏览器并保留当前主题；补丁按 rc.2 组件重建，真实打包 E2E 通过。</li>
-    <li><strong>插件兼容保护</strong>：安装继续校验插件 peer 版本，不兼容时说明原因并拒绝安装；兼容的社区市场版本跨过随包 pnpm 年龄门槛后会自动解析。</li>
+    <li><strong>内核升级</strong>：从 0.2.0-rc.1 升级到 0.2.0-rc.2，壳侧同步 34 个 <code>dsh-*</code> peer pin，并按 lockfile 实际解析结果维护 release-age 豁免。Windows x64、macOS arm64 与 Linux 安装包由发布流水线构建。</li>
+    <li><strong>登录授权适配</strong>：登录授权链接在每次新授权尝试时自动于系统浏览器打开，并保留当前主题；补丁按 rc.2 组件重新生成并通过真实打包 E2E。</li>
+    <li><strong>插件兼容性</strong>：随内核继续在安装时校验插件 peer 兼容性；插件不兼容时会明确拒绝并说明原因。社区市场版本需声明支持 0.2.0 内核，等待兼容版本跨过随包 pnpm 的发布年龄门槛后会自动解析到兼容版本。</li>
+    <li><strong>安全边界</strong>：不新增权限，不改变用户数据目录；插件风险豁免仍需用户明确选择。</li>
   </ul>
 
   <h2>v0.2.0-rc.1.shell.0 <small>（内核 0.2.0-rc.1）</small></h2>
@@ -99,15 +100,6 @@
     <li>修复内核 0.1.7 迁移旧版设置后，原生菜单、窗口标题、托盘等桌面界面语言回退到操作系统语言的问题。壳现在优先读取 <code>web</code> profile 中的语言和主题偏好，并跟随 profile 更新。</li>
     <li>保留迁移兼容：仍可读取现存的 <code>settings.yaml</code> 及内核归档的 <code>settings.yaml.imported</code>；读取旧归档时不会重新创建旧设置文件。</li>
     <li>偏好留在本机 Harness profile 中，不会上传。</li>
-  </ul>
-
-  <h2>v0.1.7-rc.1.shell.0 <small>（内核 0.1.7-rc.1）</small></h2>
-  <ul>
-    <li><strong>内核升级</strong>：随官方 <code>@deepseek-ai/dsh</code> <code>0.1.7-rc.1</code>（上一内置内核 0.1.6-alpha.2，直接跨到 rc 线）。上游变更内容见 <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">官方发布页</a>。</li>
-    <li><strong>内核行为变化（对用户可见）</strong>：0.1.7 起内核对损坏的社区插件改为「隔离并继续启动」，插件不再拖垮整个 Harness；设置文件无损迁移（旧文件逐字节归档为 <code>.imported</code>）；设置入口移至左下角账号弹层。壳的启动冒烟、升级数据保留断言与设置导航 E2E 均已按新契约更新（随 v0.1.6-alpha.2.shell.4 入库，本轮首次随内核发版验证）。</li>
-    <li><strong>依赖闭包同步</strong>：重新生成 lockfile，同步 supply-chain release-age 豁免清单；官方 npm 安全审计零已知漏洞。新内核 peer 缺口 <code>dsh-client-store</code>、<code>dsh-deepseek-account</code> 已加入闭包清单（audit 门指认）；未随 rc.1 发版的 dsh-* 子包按解析版本保留，无版本倾斜。</li>
-    <li><strong>边界说明</strong>：桌面壳无功能变更；社区插件仍不进入安装包。若插件与新内核不兼容，启动失败时错误页提供一键「升级 / 禁用」恢复。</li>
-    <li><strong>已知行为变化</strong>：内核 0.1.7 将 <code>settings.yaml</code> 无损迁移（归档为 <code>.imported</code>）后，壳的原生界面语言（菜单/托盘/通知）改随操作系统语言，应用内语言选择暂不跨重启保留——后续版本将改为读取内核新设置存储（#68）。</li>
   </ul>
   <!-- changelog:auto:end -->
 

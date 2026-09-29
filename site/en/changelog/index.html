@@ -44,9 +44,10 @@
   <!-- changelog:auto:start -->
   <h2>v0.2.0-rc.2.shell.0 <small>（kernel 0.2.0-rc.2）</small></h2>
   <ul>
-    <li>Upgrade from kernel 0.2.0-rc.1 to 0.2.0-rc.2; sync 34 dsh package pins and the resolved closure.</li>
-    <li>Keep sign-in authorization opening once per attempt in the system browser with the current theme; the patch is rebuilt and covered by packaged E2E.</li>
-    <li>Plugin installs enforce peer compatibility. Compatible community market releases are selected automatically after clearing the bundled pnpm publish-age window.</li>
+    <li>Upgrade the bundled kernel from 0.2.0-rc.1 to 0.2.0-rc.2 and sync the 34 dsh package pins and resolved closure.</li>
+    <li>Keep the sign-in authorization URL opening once per attempt in the system browser, with the current theme, rebuilt and verified against rc.2.</li>
+    <li>Enforce plugin peer compatibility during install; a compatible community market release is selected automatically after it clears the bundled pnpm publish-age window.</li>
+    <li>No new permissions or data-directory changes. Windows x64, macOS arm64, and Linux packages are built by the release pipeline.</li>
   </ul>
 
   <h2>v0.2.0-rc.1.shell.0 <small>（kernel 0.2.0-rc.1）</small></h2>
@@ -94,15 +95,6 @@
   <ul>
     <li>Fix desktop native-surface language fallback after Harness 0.1.7 migrates legacy settings by reading locale and theme preferences from the active web profile and following profile edits.</li>
     <li>Keep compatibility with existing and archived settings files without recreating the legacy file after migration. Preferences stay in the local Harness profile.</li>
-  </ul>
-
-  <h2>v0.1.7-rc.1.shell.0 <small>（kernel 0.1.7-rc.1）</small></h2>
-  <ul>
-    <li>Kernel bump: bundled <code>@deepseek-ai/dsh</code> locked to <code>0.1.7-rc.1</code> (previous 0.1.6-alpha.2, jumping straight to the rc line); shell revision reset to 0. See the <a href="https://github.com/deepseek-ai/deepseek-harness/releases" target="_blank" rel="noopener">official upstream release notes</a> for kernel changes.</li>
-    <li>Kernel 0.1.7 behavior changes: a broken community plugin is now isolated instead of crashing the boot; settings migrate losslessly (old file archived byte-exact as <code>.imported</code>); the settings entry moved into the account popup. The shell's startup smoke, upgrade-retention assertions and settings-navigation E2E follow the new contract (landed with v0.1.6-alpha.2.shell.4, first exercised on a kernel release here).</li>
-    <li>New-kernel peer gaps (dsh-client-store, dsh-deepseek-account) joined the closure; sub-packages without an rc.1 release stay at their resolved versions. Zero known vulnerabilities in both npm trees.</li>
-    <li>Desktop shell unchanged. If a community plugin is incompatible with the new kernel, the error page offers one-click Update / Disable recovery.</li>
-    <li>Known behavior change: after the kernel's lossless settings.yaml migration (archived as <code>.imported</code>), the shell's native surfaces (menu/tray/notifications) follow the OS language; the in-app language choice no longer survives a restart until the shell reads the kernel's new settings store (#68).</li>
   </ul>
   <!-- changelog:auto:end -->
 
