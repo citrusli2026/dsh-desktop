@@ -1,8 +1,8 @@
 diff --git a/lib/client.js b/lib/client.js
-index b839447..bf7909a 100644
+index 75b943a..9edbe80 100644
 --- a/lib/client.js
 +++ b/lib/client.js
-@@ -990,6 +990,7 @@ window.__ModuleLoader__.load({
+@@ -993,6 +993,7 @@ window.__ModuleLoader__.load({
  			const [busy, setBusy] = (0, react.useState)(false);
  			const [failed, setFailed] = (0, react.useState)(false);
  			const [copyResult, setCopyResult] = (0, react.useState)(null);
@@ -10,7 +10,7 @@ index b839447..bf7909a 100644
  			const attempt = account.view?.attempt;
  			(0, react.useEffect)(() => {
  				setCopyResult(null);
-@@ -1004,6 +1005,11 @@ window.__ModuleLoader__.load({
+@@ -1007,6 +1008,11 @@ window.__ModuleLoader__.load({
  				};
  			}, [copyResult]);
  			const authorizeUrl = attempt?.authorizeUrl;
