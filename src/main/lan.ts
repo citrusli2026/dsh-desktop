@@ -171,6 +171,7 @@ async function waitForHealth(baseUrl: string, timeoutMs = START_TIMEOUT_MS, sign
 async function requestPairing(
   baseUrl: string,
   token: string,
+  allowedHosts: readonly string[],
   signal?: AbortSignal,
 ): Promise<{ code: string; expiresInSeconds: number; pairingUrl: string; pairingUrls: readonly string[] }> {
   const requestSignal = signal === undefined
@@ -188,17 +189,7 @@ async function requestPairing(
   const pairingUrls = Array.isArray(body.pairingUrls)
     ? body.pairingUrls.filter((url): url is string => typeof url === 'string')
     : []
-  // Pairing URLs are untrusted proxy output: keep only those whose origin
-  // matches the proxy we just spoke to. A compromised or buggy proxy must
-  // not redirect the QR code at an arbitrary host.
-  const expectedOrigin = new URL(baseUrl).origin
-  const validUrls = pairingUrls.filter(url => {
-    try {
-      return new URL(url).origin === expectedOrigin
-    } catch {
-      return false
-    }
-  })
+  const validUrls = filterPairingUrls(baseUrl, pairingUrls, allowedHosts)
   const pairingUrl = validUrls[0]
   if (pairingUrl === undefined) throw new Error('proxy returned no LAN pairing URL on the expected origin')
   return {
@@ -207,6 +198,26 @@ async function requestPairing(
     pairingUrl,
     pairingUrls: validUrls,
   }
+}
+
+export function filterPairingUrls(baseUrl: string, pairingUrls: readonly string[], allowedHosts: readonly string[]): string[] {
+  // Pairing URLs are untrusted proxy output: keep only those that address a
+  // local interface on the same scheme and port as the proxy we spoke to, so
+  // a compromised or buggy proxy cannot redirect the QR code at an arbitrary
+  // host. Every listen address is accepted — not only the probe origin —
+  // because a wildcard/multi-NIC proxy publishes one entry per interface (#65).
+  const expected = new URL(baseUrl)
+  const allowed = new Set([expected.hostname, ...allowedHosts])
+  return pairingUrls.filter(url => {
+    try {
+      const candidate = new URL(url)
+      return candidate.protocol === expected.protocol
+        && candidate.port === expected.port
+        && allowed.has(candidate.hostname)
+    } catch {
+      return false
+    }
+  })
 }
 
 function proxyEnvironment(values: Readonly<Record<string, string>>): NodeJS.ProcessEnv {
@@ -385,8 +396,17 @@ export class LanService {
       if (controller.signal.aborted) throw new Error('LAN proxy start cancelled')
       const token = await this.options.masterToken?.() ?? randomBytes(32).toString('hex')
       if (token.length < 8) throw new Error('LAN master token must contain at least 8 characters')
-      const apiBase = `http://127.0.0.1:${listenPort}/`
-      const baseUrl = listenHosts.length > 1 ? apiBase : `http://${lanAddress}:${listenPort}/`
+      // The proxy answers on every listen address (it binds the wildcard in
+      // the multi-NIC case), while loopback never appears in its pairing URLs.
+      // Anchoring on a concrete address keeps the origin check in
+      // requestPairing() able to match what the proxy actually publishes.
+      const probeHost = listenHosts.find(host => host !== '0.0.0.0')
+        ?? listPrivateLanIPv4()[0]
+        ?? '127.0.0.1'
+      const apiBase = `http://${probeHost}:${listenPort}/`
+      const baseUrl = listenHosts.length > 1 || lanAddress === '0.0.0.0'
+        ? apiBase
+        : `http://${lanAddress}:${listenPort}/`
       const target = parseTargetUrl(targetUrl)
       const mobileShell = readMobileShellArtifact(this.mobileShellPath)
       const proxyPath = mobileShell.proxyPath
@@ -427,7 +447,8 @@ export class LanService {
       child.once('error', error => this.options.onLog?.(`mobile-shell: ${error.message}`))
 
       await waitForHealth(baseUrl, START_TIMEOUT_MS, controller.signal)
-      const result = await requestPairing(baseUrl, token, controller.signal)
+      const allowedHosts = listenHosts.includes('0.0.0.0') ? listPrivateLanIPv4() : listenHosts
+      const result = await requestPairing(baseUrl, token, allowedHosts, controller.signal)
       const expiresInSeconds = Math.max(1, Math.floor(result.expiresInSeconds))
       this.pairing = {
         baseUrl,

@@ -102,3 +102,16 @@ test('first-success guide dismissal and completion persist independently', async
     await rm(join(path, '..'), { recursive: true, force: true })
   }
 })
+
+test('selected LAN listen addresses survive preference reloads', async () => {
+  const path = await tempPath()
+  try {
+    const store = createShellPreferences(path)
+    store.updateDesktopPreferences({ lanListenAddresses: ['192.168.1.10', '10.211.55.2'] })
+    assert.deepEqual(createShellPreferences(path).getDesktopPreferences().lanListenAddresses, ['192.168.1.10', '10.211.55.2'])
+    store.updateDesktopPreferences({ lanListenAddresses: [] })
+    assert.deepEqual(createShellPreferences(path).getDesktopPreferences().lanListenAddresses, [])
+  } finally {
+    await rm(join(path, '..'), { recursive: true, force: true })
+  }
+})

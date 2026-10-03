@@ -38,6 +38,9 @@ interface ShellPreferences {
   agentDeletionInterception?: boolean
   firstRunGuideDismissed?: boolean
   firstTaskCompleted?: boolean
+  /** LAN multi-NIC listen (#65). Persisted so the settings checkboxes
+   *  survive a reload; absent = auto (physical first, then VPN adapters). */
+  lanListenAddresses?: string[]
 }
 
 export interface ShellPreferencesStore {
@@ -70,6 +73,9 @@ function desktopPreferencesOf(raw: ShellPreferences): DesktopPreferences {
     agentDeletionInterception: raw.agentDeletionInterception !== false,
     firstRunGuideDismissed: raw.firstRunGuideDismissed === true,
     firstTaskCompleted: raw.firstTaskCompleted === true,
+    ...(Array.isArray(raw.lanListenAddresses)
+      ? { lanListenAddresses: raw.lanListenAddresses.filter(value => typeof value === 'string') }
+      : {}),
   }
 }
 
@@ -105,6 +111,7 @@ export function createShellPreferences(path: string): ShellPreferencesStore {
           agentDeletionInterception: next.agentDeletionInterception,
           firstRunGuideDismissed: next.firstRunGuideDismissed,
           firstTaskCompleted: next.firstTaskCompleted,
+          lanListenAddresses: next.lanListenAddresses,
         }
       })
       return desktopPreferencesOf(file.readSync())

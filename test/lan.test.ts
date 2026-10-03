@@ -5,7 +5,7 @@ import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { isLanPairingExpired, isPrivateLanIPv4, LanService, listPrivateLanIPv4, loadOrCreateLanMasterToken, qrSvgFromCode } from '../src/main/lan.ts'
+import { filterPairingUrls, isLanPairingExpired, isPrivateLanIPv4, LanService, listPrivateLanIPv4, loadOrCreateLanMasterToken, qrSvgFromCode } from '../src/main/lan.ts'
 import { pairingPageMarkup } from '../src/main/lan-page.ts'
 
 test('private LAN address detection rejects loopback and public addresses', () => {
@@ -35,6 +35,23 @@ test('LAN interface selection keeps private non-internal IPv4 addresses', () => 
     Loopback: [{ address: '127.0.0.1', netmask: '255.0.0.0', family: 'IPv4', mac: '', internal: true, cidr: '127.0.0.1/8' }],
   })
   assert.deepEqual(result, ['192.168.1.10', '172.18.0.2'])
+})
+
+test('pairing keeps every allowed NIC URL but rejects other origins', () => {
+  const urls = [
+    'http://192.168.1.10:3081/pair?code=123456',
+    'http://10.211.55.2:3081/pair?code=123456',
+    'http://10.37.129.2:3081/pair?code=123456',
+    'http://evil.example:3081/pair?code=123456',
+    'https://192.168.1.10:3081/pair?code=123456',
+    'http://192.168.1.10:3082/pair?code=123456',
+    'not a url',
+  ]
+  const expected = urls.slice(0, 3)
+  assert.deepEqual(filterPairingUrls('http://192.168.1.10:3081/', urls, [
+    '192.168.1.10', '10.211.55.2', '10.37.129.2',
+  ]), expected)
+  assert.deepEqual(filterPairingUrls('http://192.168.1.10:3081/', urls, ['192.168.1.10']), expected.slice(0, 1))
 })
 
 test('QR SVG contains a crisp module grid and white quiet zone', () => {
