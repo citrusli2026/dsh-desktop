@@ -1,8 +1,8 @@
 diff --git a/lib/client.js b/lib/client.js
-index ca2488a773c1f6c8f2d804e006c8a5b7b3b9d8b0..f647ef21dd64826a3e7e602e03197c0294192ec8 100644
+index 82741de3a2636b78d98c999e7add80a398b7f964..f99639d04b765c37e2a809c24c6a1d1017320b2a 100644
 --- a/lib/client.js
 +++ b/lib/client.js
-@@ -993,6 +993,7 @@ window.__ModuleLoader__.load({
+@@ -998,6 +998,7 @@
  			const [busy, setBusy] = (0, react.useState)(false);
  			const [failed, setFailed] = (0, react.useState)(false);
  			const [copyResult, setCopyResult] = (0, react.useState)(null);
@@ -10,7 +10,7 @@ index ca2488a773c1f6c8f2d804e006c8a5b7b3b9d8b0..f647ef21dd64826a3e7e602e03197c02
  			const attempt = account.view?.attempt;
  			(0, react.useEffect)(() => {
  				setCopyResult(null);
-@@ -1007,6 +1008,11 @@ window.__ModuleLoader__.load({
+@@ -1012,6 +1013,11 @@
  				};
  			}, [copyResult]);
  			const authorizeUrl = attempt?.authorizeUrl;
