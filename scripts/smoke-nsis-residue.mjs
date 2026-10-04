@@ -76,6 +76,15 @@ const nodeExeOf = installDir => join(installDir, 'resources', 'harness', 'node',
 const manifestOf = installDir => join(installDir, 'resources', 'manifest.json')
 const probeLog = join(tmpdir(), 'dsh-nsis-probe.log')
 
+/** electron-builder's non-one-click NSIS installer can launch the app after a
+ * silent install. A running dsh-desktop instance makes the next silent
+ * installer wait for an interactive close prompt, so clear only that app
+ * process between matrix scenarios (never terminate the Node runner). */
+async function stopInstalledApp() {
+  if (process.platform !== 'win32') return
+  await execFileP('taskkill.exe', ['/IM', 'dsh-desktop.exe', '/T', '/F'], { timeout: 30_000 }).catch(() => undefined)
+}
+
 /** The installer hooks append one line per probe to this log; print it so a
  *  failing scenario shows exactly what the installer saw ($INSTDIR, handle,
  *  last-error). */
@@ -163,16 +172,19 @@ const scenariosRun = []
 try {
   const defender = await defenderRealTimeProtection()
   console.log(`residue matrix: Defender real-time protection: ${defender}`)
+  await stopInstalledApp()
 
   let baseline = join(root, 'S1 baseline')
   await silentInstall(previous, baseline)
   await tamperAndUpgrade(baseline, corruptNodeExe)
+  await stopInstalledApp()
   scenariosRun.push('S1-corrupted-node-replaced')
   console.log('residue matrix: S1-corrupted-node-replaced OK')
 
   baseline = join(root, 'S2 baseline')
   await silentInstall(previous, baseline)
   await tamperAndUpgrade(baseline, path => chmod(path, 0o444))
+  await stopInstalledApp()
   scenariosRun.push('S2-readonly-node-replaced')
   console.log('residue matrix: S2-readonly-node-replaced OK')
 
@@ -206,6 +218,7 @@ try {
   const code = await silentInstall(currentInstaller, baseline)
   if (code !== 0) throw new Error(`installer after releasing the holder exited ${String(code)}`)
   await assertNodeMatchesManifest(baseline)
+  await stopInstalledApp()
   scenariosRun.push('S3-locked-node-fails-explicitly')
   console.log('residue matrix: S3-locked-node-fails-explicitly OK')
 
@@ -215,6 +228,7 @@ try {
     baseline = join(root, 'S4 baseline')
     await silentInstall(previous, baseline)
     await tamperAndUpgrade(baseline, corruptNodeExe)
+    await stopInstalledApp()
     scenariosRun.push('S4-second-pass-under-defender')
     console.log('residue matrix: S4-second-pass-under-defender OK (Defender RT on)')
   }
