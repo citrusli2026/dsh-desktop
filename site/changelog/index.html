@@ -42,6 +42,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-alpha.1.shell.0 <small>（内核 0.2.1-alpha.1）</small></h2>
+  <ul>
+    <li><strong>内核升级</strong>：从 0.2.0-rc.2 升级到 0.2.1-alpha.1，同步桌面壳的插件兼容版本与随包依赖。</li>
+    <li><strong>局域网配对</strong>：记住用户选择的网络地址；多网卡环境中先核对二维码所指向的地址，避免二维码指向不可用网卡。</li>
+    <li><strong>桌面垃圾桶</strong>：卡片、操作按钮和页签与设置页视觉风格一致；中文界面按中文格式显示日期，运行中的会话被拒绝删除时显示正确原因。</li>
+    <li><strong>数据边界</strong>：不新增权限，不改变用户数据目录或垃圾桶的 30 天保留规则。</li>
+  </ul>
+
   <h2>v0.2.0-rc.2.shell.0 <small>（内核 0.2.0-rc.2）</small></h2>
   <ul>
     <li><strong>内核升级</strong>：从 0.2.0-rc.1 升级到 0.2.0-rc.2，壳侧同步 34 个 <code>dsh-*</code> peer pin，并按 lockfile 实际解析结果维护 release-age 豁免。Windows x64、macOS arm64 与 Linux 安装包由发布流水线构建。</li>
@@ -93,13 +101,6 @@
     <li>修复内核 0.1.7 迁移 <code>settings.yaml</code> 后，原生菜单、窗口标题、托盘和通知语言回退的问题；优先从本地 <code>web</code> profile 读取语言与主题，并跟随 profile 更新。</li>
     <li>保留对旧 <code>settings.yaml</code> 和 <code>.imported</code> 归档的兼容，读取归档时不会重建旧文件；偏好只保存在本机。</li>
     <li>修正跨版本升级门禁：先在旧版首次启动前播种用户设置，再验证旧版迁移和新版安装都保留数据，避免测试夹具制造不真实的混合状态。</li>
-  </ul>
-
-  <h2>v0.1.7-rc.1.shell.1 <small>（内核 0.1.7-rc.1）</small></h2>
-  <ul>
-    <li>修复内核 0.1.7 迁移旧版设置后，原生菜单、窗口标题、托盘等桌面界面语言回退到操作系统语言的问题。壳现在优先读取 <code>web</code> profile 中的语言和主题偏好，并跟随 profile 更新。</li>
-    <li>保留迁移兼容：仍可读取现存的 <code>settings.yaml</code> 及内核归档的 <code>settings.yaml.imported</code>；读取旧归档时不会重新创建旧设置文件。</li>
-    <li>偏好留在本机 Harness profile 中，不会上传。</li>
   </ul>
   <!-- changelog:auto:end -->
 

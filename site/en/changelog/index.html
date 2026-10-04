@@ -42,6 +42,14 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-alpha.1.shell.0 <small>（kernel 0.2.1-alpha.1）</small></h2>
+  <ul>
+    <li>Upgrade the bundled kernel from 0.2.0-rc.2 to 0.2.1-alpha.1 and sync the packaged dependency closure.</li>
+    <li>Persist the chosen LAN address and validate pairing URLs on multi-interface hosts.</li>
+    <li>Match the trash page to the settings design, localize Chinese dates, and report active-session deletion failures accurately.</li>
+    <li>No new permissions or user-data changes. The release includes the downstream security patch for <code>http-cache-semantics</code> and passed both dependency audits.</li>
+  </ul>
+
   <h2>v0.2.0-rc.2.shell.0 <small>（kernel 0.2.0-rc.2）</small></h2>
   <ul>
     <li>Upgrade the bundled kernel from 0.2.0-rc.1 to 0.2.0-rc.2 and sync the 34 dsh package pins and resolved closure.</li>
@@ -89,12 +97,6 @@
     <li>Preserve native menu, window, tray, and notification language and theme when Harness 0.1.7 migrates legacy settings by reading preferences from the local web profile.</li>
     <li>Keep compatibility with legacy settings and imported archives without recreating the old settings file; preferences stay on the device.</li>
     <li>Correct the cross-version upgrade fixture so user settings exist before the previous release's first launch and verify both migration and upgrade preservation.</li>
-  </ul>
-
-  <h2>v0.1.7-rc.1.shell.1 <small>（kernel 0.1.7-rc.1）</small></h2>
-  <ul>
-    <li>Fix desktop native-surface language fallback after Harness 0.1.7 migrates legacy settings by reading locale and theme preferences from the active web profile and following profile edits.</li>
-    <li>Keep compatibility with existing and archived settings files without recreating the legacy file after migration. Preferences stay in the local Harness profile.</li>
   </ul>
   <!-- changelog:auto:end -->
 
