@@ -11,6 +11,9 @@ minimumReleaseAgeExclude:
 
 # Security floors for vulnerable transitive build dependencies.
 overrides:
+  # GHSA-ch52-4w7c-c8xp: upstream has not published a fix. This local,
+  # reviewed 4.2.1-dsh.0 build carries upstream PR #60's repair.
+  http-cache-semantics: file:vendor/http-cache-semantics
   'brace-expansion@^1.1.0': 1.1.21
   'brace-expansion@^2.0.0': 2.1.7
   'brace-expansion@^5.0.0': 5.0.12

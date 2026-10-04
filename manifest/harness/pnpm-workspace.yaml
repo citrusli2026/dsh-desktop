@@ -272,6 +272,8 @@ minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-client-ui-sidebar-documentpreview@0.2.1-alpha.1'
   - '@deepseek-ai/dsh-tool-present@0.2.1-alpha.1'
 overrides:
+  # GHSA-ch52-4w7c-c8xp: shared downstream repair; see vendor source.
+  http-cache-semantics: file:../../vendor/http-cache-semantics
   'fast-uri@^3.0.0': 3.1.8
   'fflate@^0.8.0': 0.8.3
   'hono@^4.11.4': 4.13.7
