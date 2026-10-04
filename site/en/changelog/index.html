@@ -42,6 +42,15 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-alpha.1.shell.3 <small>（kernel 0.2.1-alpha.1）</small></h2>
+  <ul>
+    <li>Upgrade the bundled kernel from 0.2.0-rc.2 to 0.2.1-alpha.1 and sync the packaged dependency closure.</li>
+    <li>Persist the chosen LAN address and validate pairing URLs on multi-interface hosts.</li>
+    <li>Match the trash page to the settings design, localize Chinese dates, and report active-session deletion failures accurately.</li>
+    <li>Stop the dsh-desktop process family and uninstall each upgraded tree between Windows NSIS residue scenarios so the next installer cannot block on a registered installation.</li>
+    <li>No new permissions or user-data changes. The release includes the downstream <code>http-cache-semantics</code> security patch and passed both dependency audits.</li>
+  </ul>
+
   <h2>v0.2.1-alpha.1.shell.2 <small>（kernel 0.2.1-alpha.1）</small></h2>
   <ul>
     <li>Upgrade the bundled kernel from 0.2.0-rc.2 to 0.2.1-alpha.1 and sync the packaged dependency closure.</li>
@@ -95,13 +104,6 @@
     <li>Critical macOS launch fix (#79): v0.1.7-rc.2.shell.0 shipped the closure manifest after the ad-hoc seal, so macOS reported the app as damaged. macOS builds no longer ship a manifest — integrity on macOS is now enforced by the code signature itself, verified at runtime via <code>codesign --verify --deep --strict</code> in the health check. macOS shell.0 users must update.</li>
     <li>The bottom-left account-popover login flow (popover → Sign in → authorize URL) is covered end-to-end by packaged E2E, including the rc.2-rebuilt auto-open patch.</li>
     <li>The LAN pairing window now renders one QR code per reachable address, labeled LAN vs VPN virtual adapter (#65 follow-up). Bundled kernel unchanged at 0.1.7-rc.2.</li>
-  </ul>
-
-  <h2>v0.1.7-rc.2.shell.0 <small>（kernel 0.1.7-rc.2）</small></h2>
-  <ul>
-    <li>Kernel bump to official <code>@deepseek-ai/dsh</code> 0.1.7-rc.2 (previous 0.1.6-alpha.2 line via rc.1).</li>
-    <li>UOS/Deepin desktop adaptation (#73): the Linux main window now carries the app icon (<code>_NET_WM_ICON</code>) so taskbars stop showing a default icon, and Linux restores the full native title bar — the 0.1.7 web UI's top-right actions no longer collide with native window controls. macOS/Windows keep their hidden-title-bar styles.</li>
-    <li>The DeepSeek login auto-open patch was rebuilt against rc.2. Closure peers synced; zero known vulnerabilities.</li>
   </ul>
   <!-- changelog:auto:end -->
 
