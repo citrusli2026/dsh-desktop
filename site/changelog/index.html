@@ -42,6 +42,15 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-alpha.1.shell.2 <small>（内核 0.2.1-alpha.1）</small></h2>
+  <ul>
+    <li><strong>内核升级</strong>：从 0.2.0-rc.2 升级到 0.2.1-alpha.1，同步桌面壳的插件兼容版本与随包依赖。</li>
+    <li><strong>局域网配对</strong>：记住用户选择的网络地址；多网卡环境中先核对二维码所指向的地址，避免二维码指向不可用网卡。</li>
+    <li><strong>桌面垃圾桶</strong>：卡片、操作按钮和页签与设置页视觉风格一致；中文界面按中文格式显示日期，运行中的会话被拒绝删除时显示正确原因。</li>
+    <li><strong>Windows 发布门禁</strong>：NSIS 残留矩阵在场景之间清理 dsh-desktop 进程族，避免后续静默安装被交互式关闭提示阻塞。</li>
+    <li><strong>数据边界</strong>：不新增权限，不改变用户数据目录或垃圾桶的 30 天保留规则。</li>
+  </ul>
+
   <h2>v0.2.1-alpha.1.shell.1 <small>（内核 0.2.1-alpha.1）</small></h2>
   <ul>
     <li><strong>内核升级</strong>：从 0.2.0-rc.2 升级到 0.2.1-alpha.1，同步桌面壳的插件兼容版本与随包依赖。</li>
@@ -97,12 +106,6 @@
     <li><strong>登录授权自动打开补丁随 rc.2 重建</strong>：账号设置中 DeepSeek 登录授权页自动打开的体验补丁已按 rc.2 重建（此前仅适配 rc.1）。</li>
     <li><strong>依赖闭包同步</strong>：新 peer <code>dsh-llm-deepseek</code> 入清单；12 个未随 rc.2 发版的子包按解析版本保留；双树 npm 审计零已知漏洞。</li>
     <li><strong>内核与边界不变</strong>：不新增权限、不改变插件安装与数据目录边界；体检保持只读、不上传、不自动修复。</li>
-  </ul>
-
-  <h2>v0.1.7-rc.1.shell.3 <small>（内核 0.1.7-rc.1）</small></h2>
-  <ul>
-    <li>修复左下角 DeepSeek 账号菜单中的内置登录：获取授权地址后自动交由系统浏览器打开，并保留当前主题。</li>
-    <li>每次登录尝试最多自动打开一次授权地址；登录仍由 Harness 账号流程处理。</li>
   </ul>
   <!-- changelog:auto:end -->
 
