@@ -30,6 +30,7 @@ window.__ModuleLoader__.load({
       }
       [data-dsh-desktop-controls] button,
       [data-dsh-desktop-settings] button,
+      [data-dsh-trash-section] button,
       [data-dsh-desktop-settings] input { font: inherit; }
       [data-dsh-desktop-controls] [data-dsh-controls-trigger] {
         align-items: center;
@@ -315,13 +316,15 @@ window.__ModuleLoader__.load({
       }
       [data-dsh-desktop-controls] [data-dsh-guide-state] { font-size: 10px; white-space: nowrap; }
       /* 设置页「桌面设置」分区：与 Harness 设置页同款排版（标题→说明→条目行）。 */
-      [data-dsh-desktop-settings-section] {
+      [data-dsh-desktop-settings-section],
+      [data-dsh-trash-section] {
         --dsh-controls-accent: #4d6bfe;
         --dsh-controls-panel: var(--dsw-alias-bg-layer-2, #ffffff);
         --dsh-controls-panel-muted: var(--dsw-alias-bg-layer-1, #f7f8fa);
         --dsh-controls-text: var(--dsw-alias-label-primary, #1f232b);
         --dsh-controls-muted: var(--dsw-alias-label-secondary, #6d7380);
         --dsh-controls-border: var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
+        --dsh-controls-accent-soft: color-mix(in srgb, var(--dsh-controls-accent) 9%, transparent);
         color: var(--dsw-alias-label-primary, #1f232b);
         font-size: 13px;
         line-height: 1.6;
@@ -344,7 +347,8 @@ window.__ModuleLoader__.load({
         margin: -8px 0 2px;
         max-width: 640px;
       }
-      [data-dsh-desktop-settings] [data-dsh-desktop-setting-row] {
+      [data-dsh-desktop-settings] [data-dsh-desktop-setting-row],
+      [data-dsh-trash-section] [data-dsh-desktop-setting-row] {
         align-items: center;
         border-bottom: 1px solid var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
         display: flex;
@@ -354,8 +358,10 @@ window.__ModuleLoader__.load({
         padding: 9px 0;
         margin: 0;
       }
-      [data-dsh-desktop-settings] [data-dsh-desktop-setting-row]:last-child { border-bottom: 0; }
-      [data-dsh-desktop-settings] [data-dsh-desktop-setting-label] {
+      [data-dsh-desktop-settings] [data-dsh-desktop-setting-row]:last-child,
+      [data-dsh-trash-section] [data-dsh-desktop-setting-row]:last-child { border-bottom: 0; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-setting-label],
+      [data-dsh-trash-section] [data-dsh-desktop-setting-label] {
         color: var(--dsw-alias-label-primary, #1f232b);
         display: block;
         flex: 1 1 auto;
@@ -379,7 +385,8 @@ window.__ModuleLoader__.load({
         white-space: nowrap;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-record],
-      [data-dsh-desktop-settings] [data-dsh-desktop-lan-target] {
+      [data-dsh-desktop-settings] [data-dsh-desktop-lan-target],
+      [data-dsh-trash-section] [data-dsh-desktop-lan-target] {
         background: transparent;
         border: 1px solid var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
         border-radius: 8px;
@@ -390,10 +397,13 @@ window.__ModuleLoader__.load({
         white-space: nowrap;
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-record]:hover,
-      [data-dsh-desktop-settings] [data-dsh-desktop-lan-target]:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(31, 35, 43, .06)); }
+      [data-dsh-desktop-settings] [data-dsh-desktop-lan-target]:hover,
+      [data-dsh-trash-section] [data-dsh-desktop-lan-target]:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(31, 35, 43, .06)); }
       [data-dsh-desktop-settings] [data-dsh-desktop-record][disabled],
-      [data-dsh-desktop-settings] [data-dsh-desktop-lan-target][disabled] { cursor: wait; opacity: .65; }
-      [data-dsh-desktop-settings] [data-dsh-desktop-lan-actions] {
+      [data-dsh-desktop-settings] [data-dsh-desktop-lan-target][disabled],
+      [data-dsh-trash-section] [data-dsh-desktop-lan-target][disabled] { cursor: wait; opacity: .65; }
+      [data-dsh-desktop-settings] [data-dsh-desktop-lan-actions],
+      [data-dsh-trash-section] [data-dsh-desktop-lan-actions] {
         align-items: center;
         display: inline-flex;
         gap: 8px;
@@ -967,12 +977,12 @@ window.__ModuleLoader__.load({
         try {
           const outcome = await action();
           await refresh();
-          setMessage(outcome === false ? t.failed : t.done);
+          setMessage(outcome === "active" ? t.active : outcome === false || outcome === null ? t.failed : t.done);
         }
         catch { setMessage(t.failed); }
         finally { setBusy(false); }
       };
-      const fmt = (ms) => new Date(ms).toLocaleString();
+      const fmt = (ms) => new Date(ms).toLocaleString(zh ? "zh-CN" : "en-US");
       const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
       const daysLeftOf = (deletedAt) => Math.max(0, Math.ceil((deletedAt + RETENTION_MS - Date.now()) / (24 * 60 * 60 * 1000)));
       const kindLabel = { preset: zh ? "预设" : "Preset", plugin: zh ? "插件" : "Plugin", kernel: zh ? "内核" : "Kernel", session: zh ? "会话" : "Session", file: zh ? "文件" : "File" };
@@ -996,7 +1006,6 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsxs("small", { "data-dsh-trash-detail": true, children: [
               `${t.deletedAt} ${fmt(entry.deletedAt)} · ${t.daysLeft(daysLeft)}`,
               daysLeft <= 0 ? react_jsx_runtime.jsx("span", { "data-dsh-trash-badge": true, children: t.expiredBadge }) : null,
-              entry.source ? ` · ${entry.source}` : "",
               react_jsx_runtime.jsx("span", { "data-dsh-trash-origin": true, title: entry.originPath, children: `${t.origin}: ${entry.originPath}` }),
             ] }),
           ] }),
@@ -1020,10 +1029,7 @@ window.__ModuleLoader__.load({
         ] }),
         react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
           session.archived && typeof bridge.unarchiveSession === "function" ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => void act(() => bridge.unarchiveSession(session.sessionId)), children: t.unarchive }) : null,
-          react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => void act(async () => {
-            const outcome = await bridge.deleteTrashSession(session.projectKey, session.sessionId);
-            if (outcome === "active") setMessage(t.active);
-          }), children: t.sessionDelete }),
+          react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => void act(() => bridge.deleteTrashSession(session.projectKey, session.sessionId)), children: t.sessionDelete }),
         ] }),
       ] }, session.sessionId + session.projectKey);
       const archivedSessions = (sessions ?? []).filter((session) => session.archived === true);

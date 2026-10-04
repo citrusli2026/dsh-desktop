@@ -142,8 +142,12 @@ trashTest('trash UI restores and purges through the design system @smoke', async
 
   // Design system + tab semantics + retention countdown on the fresh entry.
   await expect(trash.locator('[role="tablist"]')).toBeVisible()
+  await expect(trash).toHaveCSS('border-top-left-radius', '14px')
   const freshRow = trash.locator('[data-dsh-desktop-setting-label]').filter({ hasText: 'old-workspace.dshpreset' })
   await expect(freshRow).toBeVisible()
+  await expect(freshRow.locator('..')).toHaveCSS('display', 'flex')
+  await expect(trash.getByRole('button', { name: '还原', exact: true }).first()).toHaveCSS('border-top-left-radius', '8px')
+  await expect(freshRow.locator('[data-dsh-trash-detail]')).toContainText(/删除于\s+20\d{2}\/\d{1,2}\/\d{1,2}/)
   await expect(trash.locator('[data-dsh-trash-badge]', { hasText: '预设' })).toBeVisible()
   await expect(freshRow.getByText(/天后自动清除|今日自动清除/)).toBeVisible()
 
