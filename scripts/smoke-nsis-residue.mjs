@@ -86,6 +86,15 @@ async function stopInstalledApp() {
   await execFileP('taskkill.exe', ['/IM', 'dsh-desktop*.exe', '/T', '/F'], { timeout: 30_000 }).catch(() => undefined)
 }
 
+/** Remove the upgraded tree before the next scenario. Besides freeing files,
+ * the uninstaller clears NSIS's registered install path; otherwise the next
+ * silent install of the older release can enter its downgrade prompt and
+ * wait forever even when /D points at a fresh directory. */
+async function removeInstalledApp(installDir) {
+  await stopInstalledApp()
+  await execFileP(uninstallerOf(installDir), ['/S'], { timeout: 300_000 }).catch(() => undefined)
+}
+
 /** The installer hooks append one line per probe to this log; print it so a
  *  failing scenario shows exactly what the installer saw ($INSTDIR, handle,
  *  last-error). */
@@ -178,14 +187,14 @@ try {
   let baseline = join(root, 'S1 baseline')
   await silentInstall(previous, baseline)
   await tamperAndUpgrade(baseline, corruptNodeExe)
-  await stopInstalledApp()
+  await removeInstalledApp(baseline)
   scenariosRun.push('S1-corrupted-node-replaced')
   console.log('residue matrix: S1-corrupted-node-replaced OK')
 
   baseline = join(root, 'S2 baseline')
   await silentInstall(previous, baseline)
   await tamperAndUpgrade(baseline, path => chmod(path, 0o444))
-  await stopInstalledApp()
+  await removeInstalledApp(baseline)
   scenariosRun.push('S2-readonly-node-replaced')
   console.log('residue matrix: S2-readonly-node-replaced OK')
 
@@ -219,7 +228,7 @@ try {
   const code = await silentInstall(currentInstaller, baseline)
   if (code !== 0) throw new Error(`installer after releasing the holder exited ${String(code)}`)
   await assertNodeMatchesManifest(baseline)
-  await stopInstalledApp()
+  await removeInstalledApp(baseline)
   scenariosRun.push('S3-locked-node-fails-explicitly')
   console.log('residue matrix: S3-locked-node-fails-explicitly OK')
 
@@ -229,7 +238,7 @@ try {
     baseline = join(root, 'S4 baseline')
     await silentInstall(previous, baseline)
     await tamperAndUpgrade(baseline, corruptNodeExe)
-    await stopInstalledApp()
+    await removeInstalledApp(baseline)
     scenariosRun.push('S4-second-pass-under-defender')
     console.log('residue matrix: S4-second-pass-under-defender OK (Defender RT on)')
   }
