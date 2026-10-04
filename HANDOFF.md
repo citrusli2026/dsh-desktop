@@ -1842,3 +1842,10 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.0-rc.1
 Release CI：<https://github.com/citrusli2026/dsh-desktop/actions/runs/36584018005>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.0-rc.2.shell.0>；
 官网：<https://dsh-desktop.com>。
+
+## 71. v0.2.1-alpha.1.shell.0 候选版暂停发布（2026-10-04）
+
+1. **候选内容**：内核已从 `0.2.0-rc.2` 升到 `0.2.1-alpha.1`，同步 peer pins、闭包锁文件、登录补丁和 release-age 豁免；局域网配对会保存用户选择的网卡并校验多网卡二维码地址。垃圾桶卡片、页签、行内按钮与桌面设置共用视觉样式，中文日期按中文格式显示，运行中的会话删除失败不再误报“已完成”。候选提交保存在本地 `codex/patrol-20261004-blocked`，已基于最新 `origin/main` 重放。
+2. **本地验证**：`node scripts/version.mjs check` 退出 0（`0.2.1-alpha.1` 仍为最新）；`pnpm run verify` 全绿（303 项单测、typecheck、runtime、站点检查、build），`dist:dir` 和打包版垃圾桶 E2E 通过，深色界面截图已核对。内核与局域网改动在本轮此前还通过了完整 dev E2E、LAN QR、两种 packaged smoke 和市场 offline/real 探针。
+3. **发布阻塞**：根树与 Harness 生产树的安全审计均报 `GHSA-ch52-4w7c-c8xp` high，路径分别经 `electron-builder` 和 `dsh-otel` 到 `http-cache-semantics@4.2.0`。2026-10-04 的 GitHub 公告显示受影响版本至 `4.2.0`、尚无修复版；npm 最新仍为 `4.2.0`。遵循“双树审计归零、门禁不全绿宁停不发”，未创建 tag、未推双远端、未触发 Release CI 或镜像。发布说明已写为候选稿，明确标注未发布。
+4. **恢复步骤**：上游发布修复版后，在根树和 Harness 树提高安全版本地板并重建锁文件与闭包；双树审计归零后重跑完整 runbook，更新发布说明的验证段，随后提交到 main、打 tag、推双远端并验证 CI、GitCode 镜像和官网数据。
