@@ -76,13 +76,14 @@ const nodeExeOf = installDir => join(installDir, 'resources', 'harness', 'node',
 const manifestOf = installDir => join(installDir, 'resources', 'manifest.json')
 const probeLog = join(tmpdir(), 'dsh-nsis-probe.log')
 
-/** electron-builder's non-one-click NSIS installer can launch the app after a
- * silent install. A running dsh-desktop instance makes the next silent
- * installer wait for an interactive close prompt, so clear only that app
- * process between matrix scenarios (never terminate the Node runner). */
+/** electron-builder's non-one-click NSIS installer can leave the app or its
+ * versioned setup helper alive after a silent install. Either process makes
+ * the next silent installer wait for an interactive close prompt, so clear
+ * only the dsh-desktop process family between scenarios (never terminate the
+ * Node runner). */
 async function stopInstalledApp() {
   if (process.platform !== 'win32') return
-  await execFileP('taskkill.exe', ['/IM', 'dsh-desktop.exe', '/T', '/F'], { timeout: 30_000 }).catch(() => undefined)
+  await execFileP('taskkill.exe', ['/IM', 'dsh-desktop*.exe', '/T', '/F'], { timeout: 30_000 }).catch(() => undefined)
 }
 
 /** The installer hooks append one line per probe to this log; print it so a
