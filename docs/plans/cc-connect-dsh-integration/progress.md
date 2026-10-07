@@ -24,7 +24,7 @@
 | CC-04 readiness | done | `c783f2f85a18fca12cbf5821bdbb9e48f7935209` / gitlink `20c9ab256e629b5f29965e4cbfc66946a3a3a6d4` | fake slog handler 覆盖成功一次、全失败零次；CLI 编译受环境阻塞 |
 | CC-05 子模块门禁 | done | `c88f4c911902cacaf6d53c28d3c8f160369c0979` / gitlink `62d05be3b11a3cf6a5659ee997df1016e4fdc102` | 包级 test/race 通过；全量受既有失败、依赖网络和缺失 web/dist 阻塞 |
 | DESK-01 打包 | done | `8a0e9a7` | sidecar 构建、manifest、Electron 资源映射、发布 CI 和 Windows 资源检查已完成；本机 `dist:dir`、SHA、版本和 macOS codesign 验证通过 |
-| DESK-02 路径与完整性 | todo | — | — |
+| DESK-02 路径与完整性 | done | `101b5be` | 新增 sidecar/manifest 路径解析，closure fixture 覆盖 sidecar，packaged smoke 校验 SHA 与 `--version` |
 | DESK-03 配置与凭证 | todo | — | — |
 | DESK-04 Supervisor | todo | — | — |
 | DESK-05 App 生命周期 | todo | — | — |
@@ -38,7 +38,7 @@
 
 ## 下一任务
 
-执行 `DESK-02`。接入 sidecar 路径解析、固定 DSH_HOME 和安装完整性校验。
+执行 `DESK-03`。实现非敏感设置、结构化 cc-connect TOML 和 Secret 安全存储。
 
 ## 每项完成后的记录格式
 
@@ -117,3 +117,12 @@
 - 测试命令与退出码：`node --check scripts/build-cc-connect.mjs`（0）；`node --check scripts/verify-windows-installer.mjs`（0）；`pnpm run typecheck`（0）；`pnpm run runtime:check`（0）；`pnpm exec node --test test/packaged-resources.test.ts`（0，5 passed）；`pnpm run build`（0）；`GOPROXY=https://goproxy.cn,direct pnpm run cc-connect:build`（0）；`GOPROXY=https://goproxy.cn,direct pnpm run dist:dir`（0）；解包 sidecar SHA 与 manifest（0）；sidecar `--version`（0）；`codesign --verify --deep --strict`（0）。
 - 未覆盖项：当前主机未生成 Windows NSIS 安装包，Windows verifier 仅完成脚本语法和静态资源断言；macOS 按现有签名策略不生成根 `resources/manifest.json`，完整 closure manifest 仍由 Windows/Linux `afterPack` 验证。默认 Go proxy/direct 路径超时，成功门禁使用临时环境变量 `GOPROXY=https://goproxy.cn,direct`，未写入仓库配置。
 - 下一任务：`DESK-02`。
+
+### DESK-02 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（无子模块改动）
+- 父仓库提交：`101b5be`
+- 行为变化：`paths.ts` 新增 `ccConnectBin()` 和 `ccConnectManifestPath()`，仅从 Electron resources root 拼接固定路径，不搜索 PATH；Windows 使用 `cc-connect.exe`。closure manifest fixture 纳入 `cc-connect/bin` 与 sidecar manifest；packaged smoke 校验 sidecar 文件、SHA-256 和 `--version`。
+- 测试命令与退出码：首次测试按 TDD 预期失败（缺少新导出、fixture 计数仍为 3）；`node --check scripts/smoke-packaged.mjs`（0）；`pnpm run typecheck`（0）；`pnpm exec node --test test/paths.test.ts test/closure-manifest.test.ts`（0，11 passed）；`pnpm run smoke:packaged`（0，sidecar SHA、版本和 Electron smoke 均通过）；`git diff --check`（0）。
+- 未覆盖项：本机为 macOS，未运行 Windows/Linux 原生 sidecar；Windows closure/installer 实机门禁留给 CI/REL-01。
+- 下一任务：`DESK-03`。
