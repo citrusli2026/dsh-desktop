@@ -34,14 +34,16 @@ interface Fixture {
   settingsPath: string
   dshHome: string
   userData: string
+  connectModePath: string | undefined
   relaunch: () => Promise<ElectronApplication>
 }
 
-const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettings: boolean; mockAccountPlatform: boolean }>({
+const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettings: boolean; mockAccountPlatform: boolean; connectSidecar: boolean }>({
   pathStyle: ['normal', { option: true }],
   seedLegacySettings: [false, { option: true }],
   mockAccountPlatform: [false, { option: true }],
-  electronApp: async ({ pathStyle, seedLegacySettings, mockAccountPlatform }, use, testInfo) => {
+  connectSidecar: [false, { option: true }],
+  electronApp: async ({ pathStyle, seedLegacySettings, mockAccountPlatform, connectSidecar }, use, testInfo) => {
     if (PACKAGED) testInfo.setTimeout(240_000) // 真实 Harness 首次渲染可达 120s
     const root = await mkdtemp(join(tmpdir(), 'dsh-electron-e2e-'))
     // 特殊路径变体:中文/空格目录(真实用户环境)与只读 DSH_HOME。
@@ -62,6 +64,24 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettin
     await writeFile(join(dshHome, 'settings.yaml'), initialSettings)
     await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
     if (pathStyle === 'readonly') await chmod(dshHome, 0o555)
+
+    let connectModePath: string | undefined
+    let connectBinPath: string | undefined
+    if (connectSidecar) {
+      connectModePath = join(root, 'fake-cc-connect.mode')
+      connectBinPath = join(root, 'fake-cc-connect.mjs')
+      await writeFile(connectModePath, 'ready\n')
+      await writeFile(connectBinPath, [
+        '#!/usr/bin/env node',
+        "import { readFileSync } from 'node:fs'",
+        "const mode = readFileSync(process.env.DSH_CC_CONNECT_TEST_MODE, 'utf8').trim()",
+        "console.error('fake cc-connect ready projects=1')",
+        "if (mode === 'crash') setTimeout(() => { console.error('fake sidecar crash'); process.exit(23) }, 40)",
+        'setInterval(() => {}, 1000)',
+        '',
+      ].join('\n'))
+      await chmod(connectBinPath, 0o755)
+    }
 
     let accountServer: Server | undefined
     if (PACKAGED && mockAccountPlatform) {
@@ -107,6 +127,10 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettin
       let launchArgs: string[] = [`--user-data-dir=${userData}`]
       if (process.platform === 'linux') launchArgs.push('--no-sandbox')
       const launchEnv: Record<string, string> = { ...process.env, DSH_HOME: dshHome }
+      if (connectModePath !== undefined && connectBinPath !== undefined) {
+        launchEnv.DSH_CC_CONNECT_TEST_BIN = connectBinPath
+        launchEnv.DSH_CC_CONNECT_TEST_MODE = connectModePath
+      }
       let executablePath: string | undefined
       if (PACKAGED) {
         // Unpacked build from dist/ — no stub server, the real Harness renders.
@@ -224,6 +248,13 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettin
   userData: async ({ electronApp }, use) => {
     const data = await electronApp.evaluate(({ app }) => app.getPath('userData'))
     await use(data)
+  },
+
+  connectModePath: async ({ connectSidecar, electronApp }, use) => {
+    const mode = connectSidecar
+      ? await electronApp.evaluate(() => process.env.DSH_CC_CONNECT_TEST_MODE ?? '')
+      : undefined
+    await use(mode === '' ? undefined : mode)
   },
 
   relaunch: async ({ electronApp }, use) => {
@@ -804,6 +835,103 @@ test.describe('environment edge paths', () => {
   shellTest('a read-only DSH_HOME still boots with defaults', async ({ electronApp, window }) => {
     await expect(window.getByRole('heading', { name: 'Harness test workspace' })).toBeVisible()
     await expect.poll(() => menuLabels(electronApp)).toContain('Help')
+  })
+})
+
+shellTest.describe('cc-connect desktop sidecar', () => {
+  shellTest.use({ connectSidecar: true })
+
+  shellTest('renderer bridge drives a fake sidecar through ready, crash, stop, and Safe Mode', async ({ window, dshHome, userData, connectModePath }) => {
+    type ConnectState = { enabled: boolean; phase: string; appId: string; secretConfigured: boolean; workspace: string; lastError?: string }
+    type ConnectBridge = {
+      getConnectState(): Promise<ConnectState | null>
+      saveConnectSettings(input: { enabled: boolean; appId: string; workspace: string; appSecret?: string }): Promise<{ ok: boolean; state: ConnectState } | null>
+      startConnect(): Promise<boolean>
+      stopConnect(): Promise<boolean>
+      restartConnect(): Promise<boolean>
+      desktopAction(action: 'enterSafeMode' | 'exitSafeMode'): Promise<boolean>
+    }
+    const state = () => window.evaluate(() => {
+      const value = (window as unknown as { dshDesktop?: Pick<ConnectBridge, 'getConnectState'> }).dshDesktop
+      if (value === undefined) throw new Error('desktop bridge missing')
+      return value.getConnectState()
+    }).catch(error => {
+      if (String(error).includes('Execution context was destroyed')) return null
+      throw error
+    })
+
+    await expect.poll(state).toMatchObject({ enabled: false, phase: 'disabled', secretConfigured: false })
+    expect(connectModePath).toBeTruthy()
+    const saved = await window.evaluate(async ({ workspace }) => {
+      const value = (window as unknown as { dshDesktop?: ConnectBridge }).dshDesktop
+      if (value === undefined) throw new Error('desktop bridge missing')
+      return value.saveConnectSettings({ enabled: true, appId: 'fake_app_id', appSecret: 'fake_app_secret', workspace })
+    }, { workspace: dshHome })
+    expect(saved).toMatchObject({ ok: true, state: { enabled: true, phase: 'stopped', appId: 'fake_app_id', secretConfigured: true, workspace: dshHome } })
+
+    expect(await window.evaluate(() => {
+      const value = (window as unknown as { dshDesktop?: ConnectBridge }).dshDesktop
+      if (value === undefined) throw new Error('desktop bridge missing')
+      return value.startConnect()
+    })).toBe(true)
+    const config = await readFile(join(userData, 'cc-connect', 'config.toml'), 'utf8')
+    expect(config).toContain('app_id = "fake_app_id"')
+    expect(config).not.toContain('fake_app_secret')
+    await expect.poll(state).toMatchObject({ enabled: true, phase: 'ready', secretConfigured: true })
+
+    await writeFile(connectModePath!, 'crash\n')
+    expect(await window.evaluate(() => {
+      const value = (window as unknown as { dshDesktop?: ConnectBridge }).dshDesktop
+      if (value === undefined) throw new Error('desktop bridge missing')
+      return value.restartConnect()
+    })).toBe(true)
+    await expect.poll(async () => {
+      const current = await state()
+      return current?.phase === 'degraded' || current?.phase === 'starting' ? current : null
+    }, { timeout: 10_000 }).not.toBeNull()
+    const crashed = await state()
+    expect(['degraded', 'starting']).toContain(crashed?.phase)
+    expect(crashed?.lastError).toMatch(/cc-connect exited/)
+
+    expect(await window.evaluate(() => {
+      const value = (window as unknown as { dshDesktop?: ConnectBridge }).dshDesktop
+      if (value === undefined) throw new Error('desktop bridge missing')
+      return value.stopConnect()
+    })).toBe(true)
+    await expect.poll(state).toMatchObject({ enabled: true, phase: 'stopped' })
+
+    await writeFile(connectModePath!, 'ready\n')
+    expect(await window.evaluate(() => {
+      const value = (window as unknown as { dshDesktop?: ConnectBridge }).dshDesktop
+      if (value === undefined) throw new Error('desktop bridge missing')
+      return value.startConnect()
+    })).toBe(true)
+    await expect.poll(state).toMatchObject({ phase: 'ready' })
+    const safeModeEntered = await window.evaluate(() => {
+      const value = (window as unknown as { dshDesktop?: ConnectBridge }).dshDesktop
+      if (value === undefined) throw new Error('desktop bridge missing')
+      return value.desktopAction('enterSafeMode')
+    }).catch(error => {
+      if (!String(error).includes('Execution context was destroyed')) throw error
+      return true
+    })
+    expect(safeModeEntered).toBe(true)
+    await expect.poll(state).toMatchObject({ enabled: true, phase: 'stopped' })
+    const safeModeExited = await window.evaluate(() => {
+      const value = (window as unknown as { dshDesktop?: ConnectBridge }).dshDesktop
+      if (value === undefined) throw new Error('desktop bridge missing')
+      return value.desktopAction('exitSafeMode')
+    }).catch(error => {
+      if (!String(error).includes('Execution context was destroyed')) throw error
+      return true
+    })
+    expect(safeModeExited).toBe(true)
+    await expect.poll(state).toMatchObject({ enabled: true, phase: 'ready' })
+    await window.evaluate(() => {
+      const value = (window as unknown as { dshDesktop?: ConnectBridge }).dshDesktop
+      if (value === undefined) throw new Error('desktop bridge missing')
+      return value.stopConnect()
+    })
   })
 })
 

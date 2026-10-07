@@ -17,3 +17,7 @@ test('Safe Mode and kernel changes refresh the sidecar configuration', () => {
   assert.match(source, /DSH_CC_CONNECT_FEISHU_SECRET/)
 })
 
+test('the fake Sidecar command override is development-only and never renderer-controlled', () => {
+  assert.match(source, /!app\.isPackaged[\s\S]*DSH_CC_CONNECT_TEST_BIN/)
+  assert.match(source, /command:\s*!app\.isPackaged[\s\S]*ccConnectBin\(\)/)
+})

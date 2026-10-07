@@ -7,7 +7,7 @@ import { homedir, networkInterfaces } from 'node:os'
 import { dirname, isAbsolute, join } from 'node:path'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
-import { dshBin, harnessRoot, mobileShellRoot, nodeBin, resourcesRoot } from './paths.ts'
+import { ccConnectBin, dshBin, harnessRoot, mobileShellRoot, nodeBin, resourcesRoot } from './paths.ts'
 import { readProfileStatus } from './profile.ts'
 import { readProfileManifest, writeProfileManifest, withoutBundle, withoutBundles, pickQuarantinable } from './plugin-recovery.ts'
 import { supportIssueUrl, type SupportContext } from './support.ts'
@@ -355,6 +355,9 @@ async function createConnectSupervisor(): Promise<ConnectSupervisor | undefined>
       if (state.phase === 'crashed') console.warn(`dsh-desktop: cc-connect crashed: ${state.lastError}`)
     },
   }, {
+    command: !app.isPackaged && process.env.DSH_CC_CONNECT_TEST_BIN !== undefined
+      ? process.env.DSH_CC_CONNECT_TEST_BIN
+      : ccConnectBin(),
     configPath,
     cwd: settings.workspace,
     env: {
