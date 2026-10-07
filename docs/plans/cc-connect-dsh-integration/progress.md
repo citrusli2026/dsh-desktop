@@ -25,7 +25,7 @@
 | CC-05 子模块门禁 | done | `c88f4c911902cacaf6d53c28d3c8f160369c0979` / gitlink `62d05be3b11a3cf6a5659ee997df1016e4fdc102` | 包级 test/race 通过；全量受既有失败、依赖网络和缺失 web/dist 阻塞 |
 | DESK-01 打包 | done | `8a0e9a7` | sidecar 构建、manifest、Electron 资源映射、发布 CI 和 Windows 资源检查已完成；本机 `dist:dir`、SHA、版本和 macOS codesign 验证通过 |
 | DESK-02 路径与完整性 | done | `101b5be` | 新增 sidecar/manifest 路径解析，closure fixture 覆盖 sidecar，packaged smoke 校验 SHA 与 `--version` |
-| DESK-03 配置与凭证 | todo | — | — |
+| DESK-03 配置与凭证 | done | `51c7803` | 固定 TOML、非敏感 settings、safeStorage/file 凭证存储和脱敏测试已完成 |
 | DESK-04 Supervisor | todo | — | — |
 | DESK-05 App 生命周期 | todo | — | — |
 | DESK-06 IPC/Preload | todo | — | — |
@@ -38,7 +38,7 @@
 
 ## 下一任务
 
-执行 `DESK-03`。实现非敏感设置、结构化 cc-connect TOML 和 Secret 安全存储。
+执行 `DESK-04`。实现 Sidecar Supervisor 的启动、readiness、退避和停止状态机。
 
 ## 每项完成后的记录格式
 
@@ -126,3 +126,12 @@
 - 测试命令与退出码：首次测试按 TDD 预期失败（缺少新导出、fixture 计数仍为 3）；`node --check scripts/smoke-packaged.mjs`（0）；`pnpm run typecheck`（0）；`pnpm exec node --test test/paths.test.ts test/closure-manifest.test.ts`（0，11 passed）；`pnpm run smoke:packaged`（0，sidecar SHA、版本和 Electron smoke 均通过）；`git diff --check`（0）。
 - 未覆盖项：本机为 macOS，未运行 Windows/Linux 原生 sidecar；Windows closure/installer 实机门禁留给 CI/REL-01。
 - 下一任务：`DESK-03`。
+
+### DESK-03 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（无子模块改动）
+- 父仓库提交：`51c7803`
+- 行为变化：新增 `cc-connect-config.ts`，以固定结构生成带 TOML 转义的绝对路径配置，始终写入 `${DSH_CC_CONNECT_FEISHU_SECRET}` 占位符；非敏感 `settings.json` 与 `config.toml` 均原子写入且权限为 0600。新增 `cc-connect-credentials.ts`，优先使用 Electron `safeStorage`，不可用时使用 0600 文件 fallback；支持读取、删除、状态查询，并对错误文本脱敏。
+- 测试命令与退出码：TDD 初次运行因两个实现文件不存在退出 1；`pnpm run typecheck`（0）；`pnpm exec node --test test/cc-connect-config.test.ts test/cc-connect-credentials.test.ts`（0，6 passed）；`pnpm exec node --test test/cc-connect-config.test.ts test/cc-connect-credentials.test.ts test/config-file.test.ts`（0，13 passed）；凭证扫描命令（0，只有测试占位符和既有示例命中）；`git diff --check`（0）。
+- 未覆盖项：未接入 Supervisor/IPC，尚未验证真实 Electron safeStorage provider；未写入任何真实用户目录或凭证。
+- 下一任务：`DESK-04`。
