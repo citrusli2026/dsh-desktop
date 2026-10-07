@@ -33,12 +33,12 @@
 | QA-01 假 Sidecar E2E | done | `4708ef04369617018638fe2c64fd95a59fed2e1c` | Electron renderer-to-main 假 Sidecar E2E 覆盖 disabled、保存、ready、重连崩溃、停止和 Safe Mode；开发环境路径注入不影响打包路径 |
 | QA-02 DSH ACP 契约 | done | `5d980fcce09604a9b536b26195d7414f744f738b` | 临时 DSH_HOME + 当前捆绑 Node/DSH 真实 ACP 测试通过 initialize/new/mock prompt/close/list/resume/close |
 | QA-03 飞书人工验收 | blocked | — | 缺少真实飞书 App ID/Secret，按要求记录为外部阻塞；未读取或写入任何真实凭证 |
-| DOC-01 用户文档 | todo | — | — |
+| DOC-01 用户文档 | done | `34e4554` | 新增飞书后台、启动/停止、Safe Mode、数据位置、脱敏日志、禁用与凭证删除指南；更新文档索引和发布说明；文档契约、全量测试、覆盖率、typecheck、site:check 通过 |
 | REL-01 最终门禁 | todo | — | — |
 
 ## 下一任务
 
-执行 `DOC-01`。补充用户文档与发布说明，然后执行 REL-01 最终门禁。
+执行 `REL-01`。运行 validation.md 全部命令，确认两棵工作树干净、gitlink 指向已推送子模块提交，并只生成本地 unpacked 构建。
 
 ## 每项完成后的记录格式
 
@@ -198,3 +198,12 @@
 - 测试命令与退出码：凭证存在性检查（只输出变量名和 present/empty，不输出值）（0，结果为无匹配凭证环境变量）。
 - 未覆盖项：真实飞书 App ID/Secret 和人工操作授权缺失，QA-03 是真实外部阻塞；自动门禁、假 Sidecar 和本地 mock ACP 已覆盖。
 - 下一任务：`DOC-01`。
+
+### DOC-01 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（无子模块改动，使用已推送固定提交）
+- 父仓库提交：`34e4554`
+- 行为变化：新增 `docs/cc-connect.md`，说明飞书机器人/权限/事件与发布要求、Desktop 设置页的启动/停止/重连语义、Safe Mode 生命周期、`userData/cc-connect` 与 DSH_HOME 数据位置、滚动脱敏日志，以及退出应用后删除 `credentials.json` 的彻底清理步骤；更新文档索引和当前发布说明。新增文档契约测试，防止关键安全与生命周期说明回退。
+- 测试命令与退出码：TDD 首次 `node --test test/cc-connect-docs.test.ts`（1，文档尚不存在）；修正文档后同命令（0，1 passed）；`pnpm test`（0，329 passed）；`pnpm run test:coverage`（0，88.72% 行、81.27% 分支、84.31% 函数）；`pnpm run typecheck`（0）；`pnpm run site:check`（0）；`git diff --check`（0）。
+- 未覆盖项：真实飞书账号人工验收仍是 QA-03 已记录的外部阻塞；文档没有改变该边界，也没有读取或写入真实凭证。
+- 下一任务：`REL-01`。
