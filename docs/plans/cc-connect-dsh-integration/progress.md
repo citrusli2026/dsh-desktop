@@ -5,12 +5,12 @@
 ## 当前基线
 
 - 父仓库分支：`codex/cc-connect-dsh-integration`
-- 父仓库基线：`6ae74923289fe771287e03e3234bb140455f4177`
+- 父仓库最终门禁提交：`9b9459dfa4dc8affd760b2a2cb546a4abffc4f7b`
 - 子模块远端：`git@github.com:citrusli2026/cc-connect.git`
 - 子模块目录：`third_party/cc-connect`
-- 子模块基线：`dfad19415a38b00b2c5c288610784d1a7eef337f`
+- 子模块最终提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`
 - 子模块本地开发分支：`codex/dsh-agent-integration`
-- 产品功能实现：尚未开始
+- 产品功能实现：已完成；QA-03 保持真实凭证外部阻塞
 
 ## 状态表
 
@@ -34,11 +34,11 @@
 | QA-02 DSH ACP 契约 | done | `5d980fcce09604a9b536b26195d7414f744f738b` | 临时 DSH_HOME + 当前捆绑 Node/DSH 真实 ACP 测试通过 initialize/new/mock prompt/close/list/resume/close |
 | QA-03 飞书人工验收 | blocked | — | 缺少真实飞书 App ID/Secret，按要求记录为外部阻塞；未读取或写入任何真实凭证 |
 | DOC-01 用户文档 | done | `34e4554` | 新增飞书后台、启动/停止、Safe Mode、数据位置、脱敏日志、禁用与凭证删除指南；更新文档索引和发布说明；文档契约、全量测试、覆盖率、typecheck、site:check 通过 |
-| REL-01 最终门禁 | todo | — | — |
+| REL-01 最终门禁 | done | `9b9459dfa4dc8affd760b2a2cb546a4abffc4f7b` | validation.md 命令已执行；Desktop 全量、E2E、unpacked sidecar SHA/版本和双仓库干净/gitlink 可达性通过；子模块全量保留既有 web/dist 与基线测试阻塞 |
 
 ## 下一任务
 
-执行 `REL-01`。运行 validation.md 全部命令，确认两棵工作树干净、gitlink 指向已推送子模块提交，并只生成本地 unpacked 构建。
+无后续自动任务；计划完成。QA-03 因缺少真实飞书凭证保持外部阻塞。
 
 ## 每项完成后的记录格式
 
@@ -207,3 +207,13 @@
 - 测试命令与退出码：TDD 首次 `node --test test/cc-connect-docs.test.ts`（1，文档尚不存在）；修正文档后同命令（0，1 passed）；`pnpm test`（0，329 passed）；`pnpm run test:coverage`（0，88.72% 行、81.27% 分支、84.31% 函数）；`pnpm run typecheck`（0）；`pnpm run site:check`（0）；`git diff --check`（0）。
 - 未覆盖项：真实飞书账号人工验收仍是 QA-03 已记录的外部阻塞；文档没有改变该边界，也没有读取或写入真实凭证。
 - 下一任务：`REL-01`。
+
+### REL-01 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（已推送至 `origin/codex/dsh-agent-integration`）
+- 父仓库提交：`9b9459dfa4dc8affd760b2a2cb546a4abffc4f7b`（已推送至 `origin/codex/cc-connect-dsh-integration`；本任务无代码变更，仅作最终门禁提交）
+- 行为变化：无新增功能；完成本计划最终交付核对。只生成并验证本机 macOS arm64 unpacked 包，未创建 tag、Release 或真实发布。
+- 测试命令与退出码：`git status --short --branch`、`git submodule status`、两棵树状态和 gitlink 可达性（均 0）；`gofmt -d`（0）；`GOPROXY=https://goproxy.cn,direct go test ./agent/dsh ./agent/acp`（0）；同包 `go test -race`（0）；包含 CLI 的快速 Go test（1，缺少 `web/dist`）；CLI build（1，同一缺失 artifact）；`go test ./...`（1，缺少 `web/dist`、既有 `agent/codex` skills EOF、既有 core workspace-skills 基线失败）；`go test -race ./...`（1，同样阻塞）；`go vet ./...`（1，缺少 `web/dist`）；DSH ACP 临时目录 help 探测（0）；Desktop 快速门禁 21/21（0）；`pnpm run typecheck`（0）；`pnpm run runtime:check`（0）；`pnpm run test:coverage`（0，329 passed，88.72% 行、81.27% 分支、84.31% 函数）；`pnpm run build`（0）；`GOPROXY=https://goproxy.cn,direct pnpm run cc-connect:build`（0）；`GOPROXY=https://goproxy.cn,direct pnpm run dist:dir`（0）；`pnpm run smoke:packaged`（0）；`pnpm run smoke:packaged-ui`（0）；validation grep E2E（0，17 passed、9 skipped）；修正后的 unpacked sidecar/manifest/sha 校验（0）；Secret 扫描（0，仅测试、示例和占位符命中）；`git submodule sync --recursive && git submodule update --init --recursive`（0）。
+- 本地打包验证：`dist/mac-arm64/dsh-desktop.app` 存在；sidecar `--version` 报告 commit `c88f4c9`；打包 manifest SHA 与二进制 `6932e48b339ef532afd0793d9f130eed5100e82ee9499d0fa195846fb113d423` 一致；macOS 根 closure manifest 按既有签名策略省略；真实 Harness UI packaged smoke 通过。
+- 未覆盖项：QA-03 仍缺少真实飞书 App ID/Secret 和人工授权；当前主机未生成 Windows/Linux 原生安装包，跨平台打包留给对应 CI；子模块全量门禁的 `web/dist` 与既有 Codex/Workspace Skills 失败均不属于本计划改动，未擅自修改。未读取或写入任何真实用户目录或凭证。
+- 下一任务：无；计划完成，QA-03 为唯一真实外部阻塞。
