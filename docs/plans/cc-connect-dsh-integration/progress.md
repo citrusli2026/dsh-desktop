@@ -28,7 +28,7 @@
 | DESK-03 配置与凭证 | done | `51c7803` | 固定 TOML、非敏感 settings、safeStorage/file 凭证存储和脱敏测试已完成 |
 | DESK-04 Supervisor | done | `de5a5cf` | 独立 Sidecar 状态机、ready、stderr/log、脱敏、5 分钟/5 次退避和 SIGTERM→SIGKILL 已完成 |
 | DESK-05 App 生命周期 | done | `c63f1e6` | Harness ready 后按配置启动 Sidecar；Safe Mode 停止/恢复；Kernel 切换、恢复和回滚按当前 active kernel 重写配置并重启；退出纳入 Sidecar 停止和 8 秒保护 |
-| DESK-06 IPC/Preload | todo | — | — |
+| DESK-06 IPC/Preload | done | `1aa97b6` | 新增六个 guarded IPC、窄 Preload bridge、非敏感 Connect 状态类型和原生 workspace 目录选择/绝对目录校验；Secret 仅写入不读回 |
 | DESK-07 设置页 | todo | — | — |
 | QA-01 假 Sidecar E2E | todo | — | — |
 | QA-02 DSH ACP 契约 | todo | — | — |
@@ -38,7 +38,7 @@
 
 ## 下一任务
 
-执行 `DESK-06`。接入 IPC/Preload，向设置页提供非敏感配置和状态。
+执行 `DESK-07`。在 `dsh-desktop-controls` 设置页增加消息连接配置。
 
 ## 每项完成后的记录格式
 
@@ -153,3 +153,12 @@
 - 测试命令与退出码：`node --test test/cc-connect-lifecycle.test.ts`（0，2 passed）；`pnpm run typecheck`（0）；相关 Desktop 测试（0，34 passed）；`pnpm run runtime:check`（0）；`pnpm test`（0，324 passed）；`pnpm run test:coverage`（0，88.72% 行覆盖、81.38% 分支覆盖、84.31% 函数覆盖）；`pnpm run build`（0）；`pnpm run smoke:packaged`（0，sidecar SHA/版本和 Electron smoke 通过）；`git diff --check`（0）。
 - 未覆盖项：生命周期测试未启动真实 Electron App，使用源码接线检查；Sidecar 运行仍由 DESK-04 假进程测试覆盖。未连接飞书、未写入真实用户目录或凭证；Windows/Linux 原生打包仍待跨平台门禁。
 - 下一任务：`DESK-06`。
+
+### DESK-06 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（无子模块改动）
+- 父仓库提交：`1aa97b6`
+- 行为变化：新增 `getConnectState`、`saveConnectSettings`、`pickConnectWorkspace`、`startConnect`、`stopConnect`、`restartConnect` 六个窄接口；所有主进程 handler 校验 `isMainWindowHarnessSender`。Renderer 只得到 enabled/appId/secretConfigured/workspace/credentialProtection/脱敏状态，Secret 空值保留旧值且无读取接口；workspace 由原生目录选择器返回并在主进程验证绝对目录。
+- 测试命令与退出码：TDD 首次 `node --test test/cc-connect-ipc.test.ts`（1，预期因桥接尚不存在失败）；实现后同命令（0，2 passed）；相关 Connect/Desktop 测试（0，18 passed）；`pnpm run typecheck`（0）；串行 `pnpm test`（0，326 passed）；`pnpm run test:coverage`（0，88.72% 行覆盖、81.38% 分支覆盖、84.31% 函数覆盖）；`pnpm run runtime:check`（0）；`pnpm run build`（0）；`git diff --check`（0）。一次与覆盖率并行的 `pnpm test` 因已有 500ms 假 Sidecar readiness 测试在并发负载下退出 1，单测和串行全量均通过。
+- 未覆盖项：设置页尚未接入，真实 Electron renderer-to-main E2E、假 Sidecar E2E 仍待 DESK-07/QA-01；未连接飞书、未写入真实用户目录或凭证。
+- 下一任务：`DESK-07`。
