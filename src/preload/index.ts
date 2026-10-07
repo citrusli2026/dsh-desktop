@@ -13,6 +13,7 @@ import type { ProfilePackageStatus } from '../main/profile.ts'
 import type { KernelOperationResult } from '../main/kernel-manager.ts'
 import type { MarketInstallProgress, MarketInstallResult } from '../main/market-install.ts'
 import type { DesktopHealthReport } from '../main/health-check.ts'
+import type { ConnectSaveResult, ConnectSettingsInput, ConnectState } from '../main/cc-connect-types.ts'
 
 export interface DesktopTrashSession {
   projectKey: string
@@ -134,6 +135,19 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Read shell-only preferences without exposing the settings file to Web UI. */
   getDesktopPreferences: (): Promise<DesktopPreferencesSnapshot | null> =>
     ipcRenderer.invoke('desktop:preferences:get'),
+  /** Read non-sensitive cc-connect settings and runtime state. */
+  getConnectState: (): Promise<ConnectState | null> => ipcRenderer.invoke('desktop:connect:get-state'),
+  /** Persist non-sensitive settings and optionally replace the Secret. */
+  saveConnectSettings: (input: ConnectSettingsInput): Promise<ConnectSaveResult | null> =>
+    ipcRenderer.invoke('desktop:connect:save-settings', input),
+  /** Let the main process choose and validate an absolute workspace directory. */
+  pickConnectWorkspace: (): Promise<string | null> => ipcRenderer.invoke('desktop:connect:pick-workspace'),
+  /** Start the configured cc-connect sidecar after Harness readiness. */
+  startConnect: (): Promise<boolean> => ipcRenderer.invoke('desktop:connect:start'),
+  /** Stop the sidecar without changing its enabled setting. */
+  stopConnect: (): Promise<boolean> => ipcRenderer.invoke('desktop:connect:stop'),
+  /** Restart the sidecar using the current active kernel. */
+  restartConnect: (): Promise<boolean> => ipcRenderer.invoke('desktop:connect:restart'),
   listLanInterfaces: (): Promise<Array<{ name: string; address: string }> | null> =>
     ipcRenderer.invoke('desktop:lan-interfaces'),
   /** Update one or more shell preferences through the allowlisted main handler. */

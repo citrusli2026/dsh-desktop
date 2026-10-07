@@ -1,10 +1,10 @@
 /** Electron lifecycle assembly for the bundled DeepSeek Harness runtime. */
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, net, Notification, session, shell, systemPreferences, type MessageBoxOptions } from 'electron'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile, stat, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { homedir, networkInterfaces } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, isAbsolute, join } from 'node:path'
 import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { dshBin, harnessRoot, mobileShellRoot, nodeBin, resourcesRoot } from './paths.ts'
@@ -64,9 +64,10 @@ import { createShellPreferences } from './shell-preferences.ts'
 import { conversationSucceeded, focusWindowOnNotificationClick, normalizePublicStatusSnapshot, notificationsForPublicStatus, type PublicStatusSnapshot } from './desktop-notifications.ts'
 import { completeMarketInstall, type MarketInstallCommandResult, type MarketInstallProgress, type MarketInstallResult } from './market-install.ts'
 import { runDesktopHealthCheck } from './health-check.ts'
-import { readConnectSettings, writeConnectToml } from './cc-connect-config.ts'
+import { readConnectSettings, writeConnectSettings, writeConnectToml } from './cc-connect-config.ts'
 import { ConnectCredentials, credentialsPath } from './cc-connect-credentials.ts'
-import { ConnectSupervisor } from './cc-connect-supervisor.ts'
+import { ConnectSupervisor, type ConnectState as ConnectRuntimeState } from './cc-connect-supervisor.ts'
+import type { ConnectSaveResult, ConnectSettingsInput, ConnectState } from './cc-connect-types.ts'
 
 const DEV_WEB_URL = process.env[DEV_WEB_URL_ENV]
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -78,6 +79,7 @@ let desktopPreferencesController: DesktopPreferencesController | undefined
 let lastPublicStatus: PublicStatusSnapshot | undefined
 let lastHarnessPhase: HarnessState['phase'] | undefined
 let connectSupervisor: ConnectSupervisor | undefined
+let lastConnectRuntimeState: ConnectRuntimeState | undefined
 /** Decision 0026: one healthy boot is guaranteed for the overlay selected at
  *  launch; its failure rolls the shell back to the bundled kernel. */
 let kernelLaunchGuard: KernelLaunchGuard | undefined
@@ -253,6 +255,81 @@ async function installChildEnv(): Promise<NodeJS.ProcessEnv> {
   return env
 }
 
+function connectStateFromRuntime(
+  settings: Awaited<ReturnType<typeof readConnectSettings>>,
+  credentials: { secretConfigured: boolean; credentialProtection: 'none' | 'safeStorage' | 'file' },
+  runtime: ConnectRuntimeState | undefined,
+  credentialError = false,
+): ConnectState {
+  const state: ConnectState = {
+    enabled: settings.enabled,
+    phase: settings.enabled ? runtime?.phase ?? 'stopped' : 'disabled',
+    appId: settings.appId,
+    secretConfigured: credentials.secretConfigured,
+    workspace: settings.workspace,
+    credentialProtection: credentials.credentialProtection,
+  }
+  if (credentialError) state.lastError = 'credential storage unavailable'
+  if (runtime !== undefined) {
+    if ('lastError' in runtime && runtime.lastError !== undefined) state.lastError = runtime.lastError.slice(0, 1_000)
+    if ('restartAttempts' in runtime && runtime.restartAttempts !== undefined) state.restartAttempts = runtime.restartAttempts
+  }
+  return state
+}
+
+async function readConnectState(): Promise<ConnectState> {
+  const userData = app.getPath('userData')
+  const settings = await readConnectSettings(userData)
+  const credentials = new ConnectCredentials(credentialsPath(userData))
+  try {
+    return connectStateFromRuntime(settings, await credentials.state(), lastConnectRuntimeState)
+  } catch {
+    return connectStateFromRuntime(settings, { secretConfigured: false, credentialProtection: 'none' }, lastConnectRuntimeState, true)
+  }
+}
+
+function parseConnectSettingsInput(raw: unknown): ConnectSettingsInput | undefined {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined
+  const value = raw as Record<string, unknown>
+  if (typeof value.enabled !== 'boolean' || typeof value.appId !== 'string' || typeof value.workspace !== 'string') return undefined
+  if (value.appSecret !== undefined && typeof value.appSecret !== 'string') return undefined
+  return value.appSecret === undefined
+    ? { enabled: value.enabled, appId: value.appId, workspace: value.workspace }
+    : { enabled: value.enabled, appId: value.appId, workspace: value.workspace, appSecret: value.appSecret }
+}
+
+async function validConnectWorkspace(workspace: string): Promise<boolean> {
+  if (!isAbsolute(workspace)) return false
+  try {
+    return (await stat(workspace)).isDirectory()
+  } catch {
+    return false
+  }
+}
+
+async function saveConnectSettings(raw: unknown): Promise<ConnectSaveResult> {
+  const current = await readConnectState()
+  const input = parseConnectSettingsInput(raw)
+  if (input === undefined) return { ok: false, reason: 'invalid-input', state: current }
+  if (input.enabled && input.appId.trim() === '') return { ok: false, reason: 'invalid-input', state: current }
+  if (input.workspace !== '' && !(await validConnectWorkspace(input.workspace))) return { ok: false, reason: 'invalid-workspace', state: current }
+  if (input.enabled && input.workspace === '') return { ok: false, reason: 'invalid-workspace', state: current }
+
+  const userData = app.getPath('userData')
+  try {
+    if (input.appSecret !== undefined && input.appSecret !== '') {
+      await new ConnectCredentials(credentialsPath(userData)).setSecret(input.appSecret)
+    }
+    await writeConnectSettings(userData, { enabled: input.enabled, appId: input.appId, workspace: input.workspace })
+    if (!input.enabled) await stopConnectSupervisor()
+    else if (connectSupervisor !== undefined) await restartConnectForCurrentKernel()
+    return { ok: true, state: await readConnectState() }
+  } catch (error) {
+    console.warn(`dsh-desktop: cc-connect settings unavailable: ${error instanceof Error ? error.message : String(error)}`)
+    return { ok: false, reason: 'storage', state: await readConnectState() }
+  }
+}
+
 async function createConnectSupervisor(): Promise<ConnectSupervisor | undefined> {
   const userData = app.getPath('userData')
   const settings = await readConnectSettings(userData)
@@ -274,6 +351,7 @@ async function createConnectSupervisor(): Promise<ConnectSupervisor | undefined>
   })
   return new ConnectSupervisor({
     onState: state => {
+      lastConnectRuntimeState = state
       if (state.phase === 'crashed') console.warn(`dsh-desktop: cc-connect crashed: ${state.lastError}`)
     },
   }, {
@@ -857,6 +935,50 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
   if (action === 'enterSafeMode') return applySafeMode(true)
   if (action === 'exitSafeMode') return applySafeMode(false)
   return false
+})
+
+ipcMain.handle('desktop:connect:get-state', async (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return readConnectState()
+})
+
+ipcMain.handle('desktop:connect:save-settings', async (event, raw: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return saveConnectSettings(raw)
+})
+
+ipcMain.handle('desktop:connect:pick-workspace', async (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  const window = windowContext.mainWindow
+  if (window === undefined || window.isDestroyed()) return null
+  const result = await dialog.showOpenDialog(window, { properties: ['openDirectory', 'createDirectory'] })
+  const workspace = result.filePaths[0]
+  return result.canceled || workspace === undefined || !(await validConnectWorkspace(workspace)) ? null : workspace
+})
+
+ipcMain.handle('desktop:connect:start', async (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
+  return startConnectAfterHarness()
+})
+
+ipcMain.handle('desktop:connect:stop', async (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
+  try {
+    await stopConnectSupervisor()
+    return true
+  } catch {
+    return false
+  }
+})
+
+ipcMain.handle('desktop:connect:restart', async (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
+  try {
+    await stopConnectSupervisor()
+    return startConnectAfterHarness()
+  } catch {
+    return false
+  }
 })
 
 ipcMain.handle('desktop:bundled-plugins', async (event) => {
