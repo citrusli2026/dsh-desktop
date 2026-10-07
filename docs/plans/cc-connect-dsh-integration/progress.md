@@ -31,14 +31,14 @@
 | DESK-06 IPC/Preload | done | `1aa97b6` | 新增六个 guarded IPC、窄 Preload bridge、非敏感 Connect 状态类型和原生 workspace 目录选择/绝对目录校验；Secret 仅写入不读回 |
 | DESK-07 设置页 | done | `f95538f65a543218d605e52451da552f0282a346` | dsh-desktop-controls 增加中英文消息连接设置卡片、Secret 保留/清空语义、workspace 原生选择和 Sidecar 操作状态；静态契约、全量测试、构建通过 |
 | QA-01 假 Sidecar E2E | done | `4708ef04369617018638fe2c64fd95a59fed2e1c` | Electron renderer-to-main 假 Sidecar E2E 覆盖 disabled、保存、ready、重连崩溃、停止和 Safe Mode；开发环境路径注入不影响打包路径 |
-| QA-02 DSH ACP 契约 | todo | — | — |
+| QA-02 DSH ACP 契约 | done | `5d980fcce09604a9b536b26195d7414f744f738b` | 临时 DSH_HOME + 当前捆绑 Node/DSH 真实 ACP 测试通过 initialize/new/mock prompt/close/list/resume/close |
 | QA-03 飞书人工验收 | todo | — | — |
 | DOC-01 用户文档 | todo | — | — |
 | REL-01 最终门禁 | todo | — | — |
 
 ## 下一任务
 
-执行 `QA-02`。运行临时 DSH_HOME 下的真实 DSH ACP 契约测试。
+执行 `QA-03`。在不写入仓库或日志的前提下尝试人工飞书验收；若无真实凭证，记录外部阻塞并继续 DOC-01。
 
 ## 每项完成后的记录格式
 
@@ -180,3 +180,12 @@
 - 测试命令与退出码：新增契约测试首次 `node --test test/cc-connect-lifecycle.test.ts`（1，预期因开发环境 override 尚不存在失败）；实现后同命令及 `test/cc-connect-supervisor.test.ts`（0，8 passed）；`pnpm run build`（0，E2E 所需 main bundle）；`pnpm exec playwright test e2e/electron-shell.spec.ts -g "renderer bridge drives a fake sidecar" --reporter=line`（0，1 passed）；`pnpm run typecheck`（0）；`git diff --check`（0）。实现前同一 E2E 在崩溃状态断言处退出 1，补上环境路径接线并重建 bundle 后通过。
 - 未覆盖项：未在打包应用中注入假 Sidecar，未连接真实飞书；真实 DSH ACP 会话契约留待 QA-02；未写入真实用户目录或凭证。
 - 下一任务：`QA-02`。
+
+### QA-02 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（无子模块改动）
+- 父仓库提交：`5d980fcce09604a9b536b26195d7414f744f738b`
+- 行为变化：新增真实 DSH ACP 契约测试。测试先用捆绑 DSH 初始化 `acp` profile，再在临时 `DSH_HOME` 写入仅含本地 loopback endpoint 和假 API key 环境名的 patch；从捆绑 Node 启动当前 DSH ACP，通过本地 HTTP SSE mock route 完成 prompt，不连接真实账户或网络服务。
+- 测试命令与退出码：首次 `node --test test/dsh-acp-contract.test.ts`（1，测试最初错误要求 resume 响应必须返回 sessionId；DSH 合法响应可省略该字段）；修正后同命令（0，1 passed，覆盖 initialize/new/prompt/close/list/resume/close）；`pnpm run typecheck` 首次（1，测试数组元素可为 undefined）；修正后（0）；`git diff --check`（0）。
+- 未覆盖项：未使用真实 DeepSeek/飞书凭证；QA-03 人工飞书验收仍待真实凭证；未写入真实用户目录或凭证。
+- 下一任务：`QA-03`。
