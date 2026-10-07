@@ -60,6 +60,17 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /getBalance/)
   assert.match(client, /getKernelState/)
   assert.match(client, /kernelInstall/)
+  // Feishu/cc-connect settings stay in the existing settings.section surface.
+  assert.match(client, /dsh-desktop-connect/)
+  assert.match(client, /getConnectState/)
+  assert.match(client, /saveConnectSettings/)
+  assert.match(client, /pickConnectWorkspace/)
+  assert.match(client, /startConnect/)
+  assert.match(client, /stopConnect/)
+  assert.match(client, /restartConnect/)
+  assert.match(client, /connectAppSecret/)
+  assert.match(client, /connectProtected/)
+  assert.match(client, /setConnectForm\(\{[\s\S]*appSecret: ""/)
   // A successful check with no newer kernel must still answer the user.
   assert.match(client, /kernelUpToDate/)
   assert.match(client, /kernelRolledBack/)

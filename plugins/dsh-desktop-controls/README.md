@@ -22,3 +22,9 @@ Status notices and first-task completion are derived from the Harness
 screenshots or the DOM to infer activity, and it sends no status data over the
 network. If the bridge is unavailable, the controls fall back to instructions
 for the system tray and window context menu.
+
+The Desktop settings page also contains an optional Feishu message connection.
+Enter the Feishu App ID and Secret, choose an absolute workspace directory, and
+save before starting the bundled cc-connect sidecar. The Secret input is
+cleared after a successful save; only whether a Secret is configured and the
+sidecar's redacted status are shown back to the page.
