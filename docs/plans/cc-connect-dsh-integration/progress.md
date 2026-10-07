@@ -26,7 +26,7 @@
 | DESK-01 打包 | done | `8a0e9a7` | sidecar 构建、manifest、Electron 资源映射、发布 CI 和 Windows 资源检查已完成；本机 `dist:dir`、SHA、版本和 macOS codesign 验证通过 |
 | DESK-02 路径与完整性 | done | `101b5be` | 新增 sidecar/manifest 路径解析，closure fixture 覆盖 sidecar，packaged smoke 校验 SHA 与 `--version` |
 | DESK-03 配置与凭证 | done | `51c7803` | 固定 TOML、非敏感 settings、safeStorage/file 凭证存储和脱敏测试已完成 |
-| DESK-04 Supervisor | todo | — | — |
+| DESK-04 Supervisor | done | `de5a5cf` | 独立 Sidecar 状态机、ready、stderr/log、脱敏、5 分钟/5 次退避和 SIGTERM→SIGKILL 已完成 |
 | DESK-05 App 生命周期 | todo | — | — |
 | DESK-06 IPC/Preload | todo | — | — |
 | DESK-07 设置页 | todo | — | — |
@@ -38,7 +38,7 @@
 
 ## 下一任务
 
-执行 `DESK-04`。实现 Sidecar Supervisor 的启动、readiness、退避和停止状态机。
+执行 `DESK-05`。接入 App 启动、Safe Mode、退出和 Kernel 切换生命周期。
 
 ## 每项完成后的记录格式
 
@@ -135,3 +135,12 @@
 - 测试命令与退出码：TDD 初次运行因两个实现文件不存在退出 1；`pnpm run typecheck`（0）；`pnpm exec node --test test/cc-connect-config.test.ts test/cc-connect-credentials.test.ts`（0，6 passed）；`pnpm exec node --test test/cc-connect-config.test.ts test/cc-connect-credentials.test.ts test/config-file.test.ts`（0，13 passed）；凭证扫描命令（0，只有测试占位符和既有示例命中）；`git diff --check`（0）。
 - 未覆盖项：未接入 Supervisor/IPC，尚未验证真实 Electron safeStorage provider；未写入任何真实用户目录或凭证。
 - 下一任务：`DESK-04`。
+
+### DESK-04 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（无子模块改动）
+- 父仓库提交：`de5a5cf`
+- 行为变化：新增 `cc-connect-supervisor.ts`，复用 `ManagedChild`/`InFlight` 实现 `disabled → stopped → starting → ready` 以及 `degraded/crashed` 状态；监听 stdout/stderr 的 `cc-connect ready`，记录 0600 rolling log，按 5 分钟窗口最多 5 次重启并采用有界退避；停止执行 SIGTERM 后 5 秒 SIGKILL，启动/停止并发共享 promise，日志和错误脱敏并限长。
+- 测试命令与退出码：TDD 初次运行因 supervisor 实现不存在退出 1；`pnpm run typecheck`（0）；`pnpm exec node --test test/cc-connect-supervisor.test.ts`（0，5 passed）；`pnpm exec node --test test/cc-connect-supervisor.test.ts test/supervisor.test.ts`（0，14 passed）；`git diff --check`（0）。
+- 未覆盖项：尚未接入真实 Electron App 生命周期、Safe Mode、Kernel 切换和 IPC；测试使用假 Node sidecar，未连接飞书。
+- 下一任务：`DESK-05`。
