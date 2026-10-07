@@ -20,8 +20,8 @@
 | PLAN-01 ADR | done | `0f92715f22004c49125a8c020fdcba6a3596a680` | 中英文 ADR、新索引链接；文档门禁通过 |
 | CC-01 一级 DSH Agent | done | `90e2f65b5128c43659d6b43745e0373cbee4d218` / gitlink `a6b6ea20ec2cbc25565b4500ae2606b629b07136` | Agent 单测已写入；格式门禁通过，Go 测试受模块下载阻塞 |
 | CC-02 session/resume | done | `604c1abe7593a12d7902802859805d9c1dad4e90` / gitlink `78034bf00eec431f3310827f6241b77d6dabe7e1` | fake ACP 覆盖 load、resume、无能力、错误和缺少响应 ID；Go 测试受模块下载阻塞 |
-| CC-03 close 与事件映射 | next | — | — |
-| CC-04 readiness | todo | — | — |
+| CC-03 close 与事件映射 | done | `e0ca09b9c82f82a4470e597dd677ccef7d1301b0` / gitlink `6ea430a355b648582b7518c4afee6bc466b7ba6e` | close、thought、createdAt 单测已写入；Go 测试受模块下载阻塞 |
+| CC-04 readiness | next | — | — |
 | CC-05 子模块门禁 | todo | — | — |
 | DESK-01 打包 | todo | — | — |
 | DESK-02 路径与完整性 | todo | — | — |
@@ -38,7 +38,7 @@
 
 ## 下一任务
 
-执行 `PLAN-01`。先读 ADR 0023、0030、0031 和 `docs/decisions/README.md`，新增 0033 中英文决策记录。该任务只写决策文档，不实现代码。
+执行 `CC-04`。为 cc-connect 增加稳定的 `cc-connect ready` 结构化日志，并用不启动真实平台的测试锁定成功一次、失败零次。
 
 ## 每项完成后的记录格式
 
@@ -81,3 +81,12 @@
 - 测试命令与退出码：`gofmt -d agent/acp/list_sessions.go agent/acp/session.go agent/acp/session_resume_test.go`（0）；`git diff --check`（0）；`GOPROXY=off go test ./agent/acp`（1，既有 `gorilla/websocket`、`robfig/cron` 模块未缓存且外部代理不可达）。
 - 未覆盖项：在线 Go 单测、race、子模块全量门禁和真实 DSH ACP 契约测试待依赖可用后执行。
 - 下一任务：`CC-03`。
+
+### CC-03 — 2026-10-07
+
+- 子模块提交：`e0ca09b9c82f82a4470e597dd677ccef7d1301b0`（已推送至 `origin/codex/dsh-agent-integration`）
+- 父仓库提交：gitlink `6ea430a355b648582b7518c4afee6bc466b7ba6e`
+- 行为变化：记录 DSH `close` capability；Close 最多等待 2 秒请求 `session/close` 后终止现有 ACP 进程，且重复调用幂等；映射 `agent_thought_chunk` 为 `EventThinking`；支持 RFC3339 `updatedAt` 和 DSH `Date.now()` Unix 毫秒 `createdAt`。
+- 测试命令与退出码：随包代码确认 `@deepseek-ai/dsh-acp` 的 `close/list/resume` capability、`agent_thought_chunk` payload 和 `Date.now()` 单位（0）；`gofmt -d agent/acp/list_sessions.go agent/acp/session.go agent/acp/session_close_test.go agent/acp/session_thought_test.go agent/acp/session_list_created_at_test.go`（0）；`git diff --check`（0）；`GOPROXY=off go test ./agent/acp`（1，既有模块未缓存且外部代理不可达）。
+- 未覆盖项：在线 ACP 单测、race、子模块全量门禁和真实 DSH 进程契约测试待依赖可用后执行。
+- 下一任务：`CC-04`。
