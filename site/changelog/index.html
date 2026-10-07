@@ -42,6 +42,15 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-alpha.1.shell.4 <small>（内核 0.2.1-alpha.1）</small></h2>
+  <ul>
+    <li><strong>局域网配对稳定性</strong>：发布当前主线已实现的多网卡 URL 校验与网卡选择持久化，避免配对二维码锚定回环地址后失败。</li>
+    <li><strong>故障恢复</strong>：发布当前主线已实现的 Windows 运行文件、sharp 原生模块和插件内核不匹配诊断；Safe Mode/插件恢复路径保持可用。</li>
+    <li><strong>发布链路</strong>：移除会触发已知失效 GitCode v5 回补的自动步骤，改由 GitCode v2 国内镜像流程在发布后逐资产匿名校验。</li>
+    <li><strong>供应链安全</strong>：将 sharp 提升到 <code>0.35.5</code>，修复 <code>GHSA-wq5f-xc86-pv6w</code>；<code>sprintf-js</code> 的 <code>CVE-2026-97058</code> 目前无上游修复，审计仅对这一条公告做了显式临时忽略。</li>
+    <li><strong>边界说明</strong>：内置官方 Harness 内核版本不变；不新增权限，不改变用户数据目录或垃圾桶保留规则。</li>
+  </ul>
+
   <h2>v0.2.1-alpha.1.shell.3 <small>（内核 0.2.1-alpha.1）</small></h2>
   <ul>
     <li><strong>内核升级</strong>：从 0.2.0-rc.2 升级到 0.2.1-alpha.1，同步桌面壳的插件兼容版本与随包依赖。</li>
@@ -98,14 +107,6 @@
     <li><strong>网卡选择与覆盖</strong>：配对面板新增网卡勾选，勾选结果持久化；高级场景可用 <code>DSH_LAN_IP</code> 环境变量覆盖（单地址、逗号分隔多地址、或 <code>0.0.0.0</code>/<code>all</code> 全网卡通配）。</li>
     <li><strong>代理稳定性修复</strong>：多地址监听重构中遗留的循环嵌套导致升级（WebSocket）处理器与 SSE 长连接超时配置未应用到实际监听的服务，已修复；双地址冒烟 + 双 LAN E2E 全绿。</li>
     <li><strong>边界说明</strong>：LAN 配对仅限局域网/虚拟局域网内使用，令牌一次性配对、不穿透公网，不上传任何数据。</li>
-  </ul>
-
-  <h2>v0.1.7-rc.2.shell.1 <small>（内核 0.1.7-rc.2）</small></h2>
-  <ul>
-    <li><strong>修复 macOS 无法启动（#79，关键）</strong>：v0.1.7-rc.2.shell.0 的 macOS 版本因完整性清单文件在代码签名<strong>之后</strong>写入而破坏 ad-hoc 封印，macOS 判定应用「已损坏」拒绝启动。本轮起 macOS <strong>不再打包清单文件</strong>（它会破坏封印，二者不可兼得）——macOS 的完整性改由<strong>代码签名本身</strong>校验（<code>codesign --verify --deep --strict</code>，运行体检自动执行），比 SHA-256 清单更强。shell.0 的 macOS 用户请务必升级到本版；Windows/Linux 不受影响，清单校验照旧。</li>
-    <li><strong>左下角登录流程端到端验证与加固</strong>：账号弹层 → 登录 → 授权页自动打开的全链路已有打包 E2E 覆盖并全绿；随 rc.2 重建的登录授权自动打开补丁完成端到端验证（本迭代在真实安装包上复现并修复了该补丁的 effect 顺序问题——插入位置在声明之前会引发渲染期错误，登录对话框无法打开）。</li>
-    <li><strong>局域网多地址二维码（#65）</strong>：配对窗口现在按可达地址渲染<strong>多个二维码</strong>并标注类别（局域网 / VPN 虚拟网卡），Tailscale/ZeroTier 与物理局域网的设备都能扫到属于自己的入口；同一地址自动去重，最多展示 4 个。</li>
-    <li><strong>内核与边界不变</strong>：内置内核仍为 0.1.7-rc.2；不新增权限、不改变数据目录边界。</li>
   </ul>
   <!-- changelog:auto:end -->
 

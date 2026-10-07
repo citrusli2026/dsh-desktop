@@ -42,6 +42,15 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-alpha.1.shell.4 <small>（kernel 0.2.1-alpha.1）</small></h2>
+  <ul>
+    <li>Keep the bundled official DeepSeek Harness kernel at 0.2.1-alpha.1 and publish shell revision 4.</li>
+    <li>Ship the existing multi-NIC LAN pairing, runtime/native-module diagnostics, and plugin recovery fixes in the refreshed installer.</li>
+    <li>Remove the automatic legacy GitCode v5 backfill dispatch; verify the domestic v2 mirror independently with anonymous range requests.</li>
+    <li>Upgrade sharp to 0.35.5 for GHSA-wq5f-xc86-pv6w; explicitly track the unfixable sprintf-js CVE-2026-97058 until upstream publishes a fix.</li>
+    <li>Local verification passed typecheck, runtime checks, 305 unit tests, site/API checks, LAN pairing, offline market install, and packaged smoke. The current dshmarket release does not yet declare compatibility with the bundled prerelease kernel, so peer and publish-age safety gates remain unchanged.</li>
+  </ul>
+
   <h2>v0.2.1-alpha.1.shell.3 <small>（kernel 0.2.1-alpha.1）</small></h2>
   <ul>
     <li>Upgrade the bundled kernel from 0.2.0-rc.2 to 0.2.1-alpha.1 and sync the packaged dependency closure.</li>
@@ -97,13 +106,6 @@
     <li><strong>#65 fully supported</strong>: LAN pairing now listens on every private address (physical NICs + VPN virtual adapters) with one QR code per address, labelled lan/vpn.</li>
     <li>NIC checkbox selection (persisted) and <code>DSH_LAN_IP</code> override (single / comma list / <code>0.0.0.0</code>) in the pairing panel.</li>
     <li>Proxy fix: the multi-address rewrite left a nested loop so the WS-upgrade handler and SSE timeout config never reached the listening servers; repaired and smoke/E2E verified.</li>
-  </ul>
-
-  <h2>v0.1.7-rc.2.shell.1 <small>（kernel 0.1.7-rc.2）</small></h2>
-  <ul>
-    <li>Critical macOS launch fix (#79): v0.1.7-rc.2.shell.0 shipped the closure manifest after the ad-hoc seal, so macOS reported the app as damaged. macOS builds no longer ship a manifest — integrity on macOS is now enforced by the code signature itself, verified at runtime via <code>codesign --verify --deep --strict</code> in the health check. macOS shell.0 users must update.</li>
-    <li>The bottom-left account-popover login flow (popover → Sign in → authorize URL) is covered end-to-end by packaged E2E, including the rc.2-rebuilt auto-open patch.</li>
-    <li>The LAN pairing window now renders one QR code per reachable address, labeled LAN vs VPN virtual adapter (#65 follow-up). Bundled kernel unchanged at 0.1.7-rc.2.</li>
   </ul>
   <!-- changelog:auto:end -->
 
