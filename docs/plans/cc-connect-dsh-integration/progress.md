@@ -29,7 +29,7 @@
 | DESK-04 Supervisor | done | `de5a5cf` | 独立 Sidecar 状态机、ready、stderr/log、脱敏、5 分钟/5 次退避和 SIGTERM→SIGKILL 已完成 |
 | DESK-05 App 生命周期 | done | `c63f1e6` | Harness ready 后按配置启动 Sidecar；Safe Mode 停止/恢复；Kernel 切换、恢复和回滚按当前 active kernel 重写配置并重启；退出纳入 Sidecar 停止和 8 秒保护 |
 | DESK-06 IPC/Preload | done | `1aa97b6` | 新增六个 guarded IPC、窄 Preload bridge、非敏感 Connect 状态类型和原生 workspace 目录选择/绝对目录校验；Secret 仅写入不读回 |
-| DESK-07 设置页 | todo | — | — |
+| DESK-07 设置页 | done | `f95538f65a543218d605e52451da552f0282a346` | dsh-desktop-controls 增加中英文消息连接设置卡片、Secret 保留/清空语义、workspace 原生选择和 Sidecar 操作状态；静态契约、全量测试、构建通过 |
 | QA-01 假 Sidecar E2E | todo | — | — |
 | QA-02 DSH ACP 契约 | todo | — | — |
 | QA-03 飞书人工验收 | todo | — | — |
@@ -38,7 +38,7 @@
 
 ## 下一任务
 
-执行 `DESK-07`。在 `dsh-desktop-controls` 设置页增加消息连接配置。
+执行 `QA-01`。用假 Sidecar 验证 renderer-to-main 设置与 Sidecar 生命周期。
 
 ## 每项完成后的记录格式
 
@@ -162,3 +162,12 @@
 - 测试命令与退出码：TDD 首次 `node --test test/cc-connect-ipc.test.ts`（1，预期因桥接尚不存在失败）；实现后同命令（0，2 passed）；相关 Connect/Desktop 测试（0，18 passed）；`pnpm run typecheck`（0）；串行 `pnpm test`（0，326 passed）；`pnpm run test:coverage`（0，88.72% 行覆盖、81.38% 分支覆盖、84.31% 函数覆盖）；`pnpm run runtime:check`（0）；`pnpm run build`（0）；`git diff --check`（0）。一次与覆盖率并行的 `pnpm test` 因已有 500ms 假 Sidecar readiness 测试在并发负载下退出 1，单测和串行全量均通过。
 - 未覆盖项：设置页尚未接入，真实 Electron renderer-to-main E2E、假 Sidecar E2E 仍待 DESK-07/QA-01；未连接飞书、未写入真实用户目录或凭证。
 - 下一任务：`DESK-07`。
+
+### DESK-07 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（无子模块改动）
+- 父仓库提交：`f95538f65a543218d605e52451da552f0282a346`
+- 行为变化：`dsh-desktop-controls` 设置页新增中英文飞书消息连接卡片，包含启用开关、App ID、Secret、默认 workspace、原生目录选择、保存、启动、停止和重连操作；Secret 输入留空时保留已有值，保存成功后清空输入；页面只显示是否已配置及凭证保护方式，并展示脱敏状态和最近错误。缺少新 bridge 时显示不可用提示且不抛错，操作期间按钮置忙并禁用。
+- 测试命令与退出码：TDD 首次 `node --test test/desktop-controls.test.ts`（1，预期因设置页契约尚不存在失败）；实现后同命令（0，5 passed）；`node --check plugins/dsh-desktop-controls/lib/client.js`（0）；`pnpm test`（0，326 passed）；`pnpm run test:coverage`（0，88.72% 行覆盖、81.33% 分支覆盖、84.31% 函数覆盖）；`pnpm run typecheck`（0）；`pnpm run runtime:check`（0）；`pnpm run build`（0）；`git diff --check`（0）。
+- 未覆盖项：尚未运行真实 Electron renderer-to-main 页面操作和假 Sidecar E2E；人工飞书凭证验收、Windows/Linux 原生打包留待后续门禁；未写入真实用户目录或凭证。UI 设计按 `frontend-design` skill 的现有设计系统和紧凑状态卡片指导实现。
+- 下一任务：`QA-01`。
