@@ -18,8 +18,8 @@
 |---|---|---|---|
 | 仓库准备：父分支和子模块 | done | `5c8d430` | 两个分支已推送；子模块固定到 `dfad1941` |
 | PLAN-01 ADR | done | `0f92715f22004c49125a8c020fdcba6a3596a680` | 中英文 ADR、新索引链接；文档门禁通过 |
-| CC-01 一级 DSH Agent | next | — | — |
-| CC-02 session/resume | todo | — | — |
+| CC-01 一级 DSH Agent | done | `90e2f65b5128c43659d6b43745e0373cbee4d218` / gitlink `a6b6ea20ec2cbc25565b4500ae2606b629b07136` | Agent 单测已写入；格式门禁通过，Go 测试受模块下载阻塞 |
+| CC-02 session/resume | next | — | — |
 | CC-03 close 与事件映射 | todo | — | — |
 | CC-04 readiness | todo | — | — |
 | CC-05 子模块门禁 | todo | — | — |
@@ -63,3 +63,12 @@
 - 测试命令与退出码：`git diff --check`（0）；决策文件存在性检查（0）；ADR 索引链接检查（0）。
 - 未覆盖项：未运行运行时代码或集成测试；人工飞书验收不属于本任务。
 - 下一任务：`CC-01`。
+
+### CC-01 — 2026-10-07
+
+- 子模块提交：`90e2f65b5128c43659d6b43745e0373cbee4d218`（已推送至 `origin/codex/dsh-agent-integration`）
+- 父仓库提交：gitlink `a6b6ea20ec2cbc25565b4500ae2606b629b07136`
+- 行为变化：新增一级 `type = "dsh"` ACP Agent，默认 `dsh --profile acp` 与 `DeepSeek Harness`，保留用户覆盖的 command、args、display_name、work_dir、env；加入 `no_dsh` 插件注册、构建列表和配置样例。
+- 测试命令与退出码：`gofmt -d agent/dsh/dsh.go agent/dsh/dsh_test.go cmd/cc-connect/plugin_agent_dsh.go`（0）；`git diff --check`（0）；`GOPROXY=off go test ./agent/dsh`（1，既有 `gorilla/websocket`、`robfig/cron` 模块未缓存且外部代理不可达）。
+- 未覆盖项：`go test ./agent/dsh ./agent/acp ./cmd/cc-connect`、race、全量测试和构建未能执行；registry 集成只能由 Go 门禁覆盖。
+- 下一任务：`CC-02`。
