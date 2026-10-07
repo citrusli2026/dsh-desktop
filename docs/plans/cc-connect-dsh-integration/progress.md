@@ -21,8 +21,8 @@
 | CC-01 一级 DSH Agent | done | `90e2f65b5128c43659d6b43745e0373cbee4d218` / gitlink `a6b6ea20ec2cbc25565b4500ae2606b629b07136` | Agent 单测已写入；格式门禁通过，Go 测试受模块下载阻塞 |
 | CC-02 session/resume | done | `604c1abe7593a12d7902802859805d9c1dad4e90` / gitlink `78034bf00eec431f3310827f6241b77d6dabe7e1` | fake ACP 覆盖 load、resume、无能力、错误和缺少响应 ID；Go 测试受模块下载阻塞 |
 | CC-03 close 与事件映射 | done | `e0ca09b9c82f82a4470e597dd677ccef7d1301b0` / gitlink `6ea430a355b648582b7518c4afee6bc466b7ba6e` | close、thought、createdAt 单测已写入；Go 测试受模块下载阻塞 |
-| CC-04 readiness | next | — | — |
-| CC-05 子模块门禁 | todo | — | — |
+| CC-04 readiness | done | `c783f2f85a18fca12cbf5821bdbb9e48f7935209` / gitlink `20c9ab256e629b5f29965e4cbfc66946a3a3a6d4` | fake slog handler 覆盖成功一次、全失败零次；CLI 编译受环境阻塞 |
+| CC-05 子模块门禁 | next | — | — |
 | DESK-01 打包 | todo | — | — |
 | DESK-02 路径与完整性 | todo | — | — |
 | DESK-03 配置与凭证 | todo | — | — |
@@ -38,7 +38,7 @@
 
 ## 下一任务
 
-执行 `CC-04`。为 cc-connect 增加稳定的 `cc-connect ready` 结构化日志，并用不启动真实平台的测试锁定成功一次、失败零次。
+执行 `CC-05`。运行并记录子模块快速/全量门禁，修复仅限前述任务引入的问题，提交并推送子模块后更新父 gitlink。
 
 ## 每项完成后的记录格式
 
@@ -90,3 +90,12 @@
 - 测试命令与退出码：随包代码确认 `@deepseek-ai/dsh-acp` 的 `close/list/resume` capability、`agent_thought_chunk` payload 和 `Date.now()` 单位（0）；`gofmt -d agent/acp/list_sessions.go agent/acp/session.go agent/acp/session_close_test.go agent/acp/session_thought_test.go agent/acp/session_list_created_at_test.go`（0）；`git diff --check`（0）；`GOPROXY=off go test ./agent/acp`（1，既有模块未缓存且外部代理不可达）。
 - 未覆盖项：在线 ACP 单测、race、子模块全量门禁和真实 DSH 进程契约测试待依赖可用后执行。
 - 下一任务：`CC-04`。
+
+### CC-04 — 2026-10-07
+
+- 子模块提交：`c783f2f85a18fca12cbf5821bdbb9e48f7935209`（已推送至 `origin/codex/dsh-agent-integration`）
+- 父仓库提交：gitlink `20c9ab256e629b5f29965e4cbfc66946a3a3a6d4`
+- 行为变化：所有 engine 完成启动尝试且未走“全部失败退出”路径后，输出一次结构化 `cc-connect ready` 日志并附带项目数；全部失败时不输出，不改变原有退出语义。
+- 测试命令与退出码：`gofmt -d cmd/cc-connect/main.go cmd/cc-connect/main_test.go`（0）；`git diff --check`（0）；`GOPROXY=off go test ./cmd/cc-connect`（1，既有 Go 模块未缓存，且 `web/embed.go` 缺少 `web/dist`）。
+- 未覆盖项：在线 CLI 单测、race、构建和实际 daemon 启动日志待 Go 依赖与 Web artifact 可用后执行。
+- 下一任务：`CC-05`。
