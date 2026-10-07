@@ -22,8 +22,8 @@
 | CC-02 session/resume | done | `604c1abe7593a12d7902802859805d9c1dad4e90` / gitlink `78034bf00eec431f3310827f6241b77d6dabe7e1` | fake ACP 覆盖 load、resume、无能力、错误和缺少响应 ID；Go 测试受模块下载阻塞 |
 | CC-03 close 与事件映射 | done | `e0ca09b9c82f82a4470e597dd677ccef7d1301b0` / gitlink `6ea430a355b648582b7518c4afee6bc466b7ba6e` | close、thought、createdAt 单测已写入；Go 测试受模块下载阻塞 |
 | CC-04 readiness | done | `c783f2f85a18fca12cbf5821bdbb9e48f7935209` / gitlink `20c9ab256e629b5f29965e4cbfc66946a3a3a6d4` | fake slog handler 覆盖成功一次、全失败零次；CLI 编译受环境阻塞 |
-| CC-05 子模块门禁 | next | — | — |
-| DESK-01 打包 | todo | — | — |
+| CC-05 子模块门禁 | done | `c88f4c911902cacaf6d53c28d3c8f160369c0979` / gitlink `62d05be3b11a3cf6a5659ee997df1016e4fdc102` | 包级 test/race 通过；全量受既有失败、依赖网络和缺失 web/dist 阻塞 |
+| DESK-01 打包 | next | — | — |
 | DESK-02 路径与完整性 | todo | — | — |
 | DESK-03 配置与凭证 | todo | — | — |
 | DESK-04 Supervisor | todo | — | — |
@@ -38,7 +38,7 @@
 
 ## 下一任务
 
-执行 `CC-05`。运行并记录子模块快速/全量门禁，修复仅限前述任务引入的问题，提交并推送子模块后更新父 gitlink。
+执行 `DESK-01`。为固定子模块提交构建并打包当前目标平台 cc-connect，生成 manifest 并增加打包资源检查。
 
 ## 每项完成后的记录格式
 
@@ -99,3 +99,12 @@
 - 测试命令与退出码：`gofmt -d cmd/cc-connect/main.go cmd/cc-connect/main_test.go`（0）；`git diff --check`（0）；`GOPROXY=off go test ./cmd/cc-connect`（1，既有 Go 模块未缓存，且 `web/embed.go` 缺少 `web/dist`）。
 - 未覆盖项：在线 CLI 单测、race、构建和实际 daemon 启动日志待 Go 依赖与 Web artifact 可用后执行。
 - 下一任务：`CC-05`。
+
+### CC-05 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（已推送至 `origin/codex/dsh-agent-integration`）
+- 父仓库提交：gitlink `62d05be3b11a3cf6a5659ee997df1016e4fdc102`
+- 行为变化：无；修复本计划新增 ACP 测试中的常量取址和未使用导入，使包级门禁可执行。
+- 测试命令与退出码：`GOPROXY=direct go test ./agent/dsh ./agent/acp`（0）；`GOPROXY=direct go test -race ./agent/dsh ./agent/acp`（0）；`GOPROXY=direct go test ./agent/dsh ./agent/acp ./cmd/cc-connect`（1，CLI 依赖下载超时且缺少 `web/dist`）；`GOPROXY=direct go build ./cmd/cc-connect`（1，同上）；`GOPROXY=direct go test ./...`（1，CLI/platform/web 依赖和 `web/dist` 阻塞，另有既有 `agent/codex` 测试失败）；`GOPROXY=direct go test -race ./...`（1，同样的编译阻塞及既有 Codex/Workspace Skills 测试失败）；`GOPROXY=direct go vet ./...`（1，同样的编译阻塞）；`git diff --check`（0）。
+- 未覆盖项：完整 Go 门禁需补齐既有跨平台依赖、构建 `web/dist`，并修复/隔离未改动的 Codex/Workspace Skills 基线失败；这些不属于本计划已允许文件，未擅自修改。`go test ./agent/codex -run '^TestListSkills_ExcludesClaudeDisabledAndCachedSkills$' -count=1` 单独重跑仍失败。
+- 下一任务：`DESK-01`。
