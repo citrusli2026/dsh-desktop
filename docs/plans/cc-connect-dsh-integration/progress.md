@@ -27,7 +27,7 @@
 | DESK-02 路径与完整性 | done | `101b5be` | 新增 sidecar/manifest 路径解析，closure fixture 覆盖 sidecar，packaged smoke 校验 SHA 与 `--version` |
 | DESK-03 配置与凭证 | done | `51c7803` | 固定 TOML、非敏感 settings、safeStorage/file 凭证存储和脱敏测试已完成 |
 | DESK-04 Supervisor | done | `de5a5cf` | 独立 Sidecar 状态机、ready、stderr/log、脱敏、5 分钟/5 次退避和 SIGTERM→SIGKILL 已完成 |
-| DESK-05 App 生命周期 | todo | — | — |
+| DESK-05 App 生命周期 | done | `c63f1e6` | Harness ready 后按配置启动 Sidecar；Safe Mode 停止/恢复；Kernel 切换、恢复和回滚按当前 active kernel 重写配置并重启；退出纳入 Sidecar 停止和 8 秒保护 |
 | DESK-06 IPC/Preload | todo | — | — |
 | DESK-07 设置页 | todo | — | — |
 | QA-01 假 Sidecar E2E | todo | — | — |
@@ -38,7 +38,7 @@
 
 ## 下一任务
 
-执行 `DESK-05`。接入 App 启动、Safe Mode、退出和 Kernel 切换生命周期。
+执行 `DESK-06`。接入 IPC/Preload，向设置页提供非敏感配置和状态。
 
 ## 每项完成后的记录格式
 
@@ -144,3 +144,12 @@
 - 测试命令与退出码：TDD 初次运行因 supervisor 实现不存在退出 1；`pnpm run typecheck`（0）；`pnpm exec node --test test/cc-connect-supervisor.test.ts`（0，5 passed）；`pnpm exec node --test test/cc-connect-supervisor.test.ts test/supervisor.test.ts`（0，14 passed）；`git diff --check`（0）。
 - 未覆盖项：尚未接入真实 Electron App 生命周期、Safe Mode、Kernel 切换和 IPC；测试使用假 Node sidecar，未连接飞书。
 - 下一任务：`DESK-05`。
+
+### DESK-05 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（无子模块改动）
+- 父仓库提交：`c63f1e6`
+- 行为变化：主进程仅在设置启用、配置完整、Harness 已 ready 且非 Safe Mode 时生成配置并启动 cc-connect；进入 Safe Mode 停止 Sidecar，退出后随 Harness 恢复；Kernel install/restore/rollback 后按当前 active DSH bin 重写 TOML 并重启 Sidecar；退出流程把 Sidecar stop 纳入已有 8 秒总保护。新增生命周期静态接线检查。
+- 测试命令与退出码：`node --test test/cc-connect-lifecycle.test.ts`（0，2 passed）；`pnpm run typecheck`（0）；相关 Desktop 测试（0，34 passed）；`pnpm run runtime:check`（0）；`pnpm test`（0，324 passed）；`pnpm run test:coverage`（0，88.72% 行覆盖、81.38% 分支覆盖、84.31% 函数覆盖）；`pnpm run build`（0）；`pnpm run smoke:packaged`（0，sidecar SHA/版本和 Electron smoke 通过）；`git diff --check`（0）。
+- 未覆盖项：生命周期测试未启动真实 Electron App，使用源码接线检查；Sidecar 运行仍由 DESK-04 假进程测试覆盖。未连接飞书、未写入真实用户目录或凭证；Windows/Linux 原生打包仍待跨平台门禁。
+- 下一任务：`DESK-06`。
