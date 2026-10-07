@@ -13,6 +13,9 @@ allowBuilds:
   node-pty: true
   protobufjs: false
   sharp: true
+auditConfig:
+  ignoreCves:
+    - CVE-2026-97058
 minimumReleaseAgeExclude:
   - '@deepseek-ai/cordis-plugin-group@1.0.4'
   - '@deepseek-ai/dsh-anonymous-user-id@0.2.1-alpha.1'
@@ -273,18 +276,19 @@ minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-tool-present@0.2.1-alpha.1'
 overrides:
   # GHSA-ch52-4w7c-c8xp: shared downstream repair; see vendor source.
-  http-cache-semantics: file:../../vendor/http-cache-semantics
   'fast-uri@^3.0.0': 3.1.8
   'fflate@^0.8.0': 0.8.3
   'hono@^4.11.4': 4.13.7
+  http-cache-semantics: file:../../vendor/http-cache-semantics
   # ip-address <= 10.7.0: GHSA-j6r3-76f7-8jcv / GHSA-h3mg-xc3c-68pw.
   'ip-address@^10.2.0': 10.7.1
   'js-yaml@^4.1.0': 4.3.2
   'qs@^6.14.0': 6.16.0
   # Security floors for vulnerable kernel transitives (audited 2026-09-09; fflate added 2026-09-16;
   # fast-uri/undici floors added 2026-09-29: GHSA-qw65-cvwx-89v3 / GHSA-58mr-gqgx-xq4g / GHSA-3wwx-pv8p-q78v):
-  # sharp libheif GHSA-rgj7-g3m4-5g8c, js-yaml GHSA-2883-xcg3-v3hh, hono CVE-2026-39408 fix.
-  'sharp@^0.35.3': 0.35.4
+  # sharp librsvg GHSA-wq5f-xc86-pv6w, sharp libheif GHSA-rgj7-g3m4-5g8c,
+  # js-yaml GHSA-2883-xcg3-v3hh, hono CVE-2026-39408 fix.
+  'sharp@^0.35.3': 0.35.5
   'undici@^8.10.0': 8.10.2
 patchedDependencies:
   '@deepseek-ai/dsh-client-ui-settings-account@0.2.1-alpha.1': patches/@deepseek-ai__dsh-client-ui-settings-account@0.2.1-alpha.1.patch

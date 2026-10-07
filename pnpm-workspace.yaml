@@ -3,8 +3,11 @@
 # electron-winstaller 的脚本为 Windows 打 NSIS 包选择 7z 架构。
 
 allowBuilds:
-  esbuild: true
   electron-winstaller: true
+  esbuild: true
+auditConfig:
+  ignoreCves:
+    - CVE-2026-97058
 
 minimumReleaseAgeExclude:
   - '@xmldom/xmldom@0.8.15 || 0.9.12'
@@ -13,13 +16,17 @@ minimumReleaseAgeExclude:
 overrides:
   # GHSA-ch52-4w7c-c8xp: upstream has not published a fix. This local,
   # reviewed 4.2.1-dsh.0 build carries upstream PR #60's repair.
-  http-cache-semantics: file:vendor/http-cache-semantics
+  '@xmldom/xmldom@^0.8.8': 0.8.15
+  '@xmldom/xmldom@^0.9.10': 0.9.12
   'brace-expansion@^1.1.0': 1.1.21
   'brace-expansion@^2.0.0': 2.1.7
   'brace-expansion@^5.0.0': 5.0.12
   'fast-uri@^3.0.0': 3.1.8
-  '@xmldom/xmldom@^0.8.8': 0.8.15
-  '@xmldom/xmldom@^0.9.10': 0.9.12
+  http-cache-semantics: file:vendor/http-cache-semantics
   'js-yaml@^4.1.0': 4.3.2
   'undici@^6.25.0': 6.28.1
   'undici@^7.24.4': 7.29.1
+
+# GHSA-hp3w-g68c-fv3c / CVE-2026-97058: sprintf-js has no published fix yet.
+# security:audit ignores only this unfixable advisory; remove the exception when
+# the upstream dependency chain publishes a patched version.
