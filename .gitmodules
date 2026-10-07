@@ -1,0 +1,4 @@
+[submodule "third_party/cc-connect"]
+	path = third_party/cc-connect
+	url = git@github.com:citrusli2026/cc-connect.git
+	branch = main
