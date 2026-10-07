@@ -23,7 +23,7 @@
 | CC-03 close 与事件映射 | done | `e0ca09b9c82f82a4470e597dd677ccef7d1301b0` / gitlink `6ea430a355b648582b7518c4afee6bc466b7ba6e` | close、thought、createdAt 单测已写入；Go 测试受模块下载阻塞 |
 | CC-04 readiness | done | `c783f2f85a18fca12cbf5821bdbb9e48f7935209` / gitlink `20c9ab256e629b5f29965e4cbfc66946a3a3a6d4` | fake slog handler 覆盖成功一次、全失败零次；CLI 编译受环境阻塞 |
 | CC-05 子模块门禁 | done | `c88f4c911902cacaf6d53c28d3c8f160369c0979` / gitlink `62d05be3b11a3cf6a5659ee997df1016e4fdc102` | 包级 test/race 通过；全量受既有失败、依赖网络和缺失 web/dist 阻塞 |
-| DESK-01 打包 | next | — | — |
+| DESK-01 打包 | done | `8a0e9a7` | sidecar 构建、manifest、Electron 资源映射、发布 CI 和 Windows 资源检查已完成；本机 `dist:dir`、SHA、版本和 macOS codesign 验证通过 |
 | DESK-02 路径与完整性 | todo | — | — |
 | DESK-03 配置与凭证 | todo | — | — |
 | DESK-04 Supervisor | todo | — | — |
@@ -38,7 +38,7 @@
 
 ## 下一任务
 
-执行 `DESK-01`。为固定子模块提交构建并打包当前目标平台 cc-connect，生成 manifest 并增加打包资源检查。
+执行 `DESK-02`。接入 sidecar 路径解析、固定 DSH_HOME 和安装完整性校验。
 
 ## 每项完成后的记录格式
 
@@ -108,3 +108,12 @@
 - 测试命令与退出码：`GOPROXY=direct go test ./agent/dsh ./agent/acp`（0）；`GOPROXY=direct go test -race ./agent/dsh ./agent/acp`（0）；`GOPROXY=direct go test ./agent/dsh ./agent/acp ./cmd/cc-connect`（1，CLI 依赖下载超时且缺少 `web/dist`）；`GOPROXY=direct go build ./cmd/cc-connect`（1，同上）；`GOPROXY=direct go test ./...`（1，CLI/platform/web 依赖和 `web/dist` 阻塞，另有既有 `agent/codex` 测试失败）；`GOPROXY=direct go test -race ./...`（1，同样的编译阻塞及既有 Codex/Workspace Skills 测试失败）；`GOPROXY=direct go vet ./...`（1，同样的编译阻塞）；`git diff --check`（0）。
 - 未覆盖项：完整 Go 门禁需补齐既有跨平台依赖、构建 `web/dist`，并修复/隔离未改动的 Codex/Workspace Skills 基线失败；这些不属于本计划已允许文件，未擅自修改。`go test ./agent/codex -run '^TestListSkills_ExcludesClaudeDisabledAndCachedSkills$' -count=1` 单独重跑仍失败。
 - 下一任务：`DESK-01`。
+
+### DESK-01 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（无子模块改动，使用已推送固定提交）
+- 父仓库提交：`8a0e9a7`
+- 行为变化：新增 `scripts/build-cc-connect.mjs`，在干净子模块中以 `-trimpath`、固定 DSH commit ldflags 和最小 sidecar build tags 构建当前平台二进制；校验 `--version`、生成 SHA-256 manifest 并忽略本地二进制。Electron builder 复制 `resources/cc-connect`，`dist`/`dist:dir` 与 release CI 显式执行 sidecar 构建；Windows installer 检查验证 sidecar 和 manifest，macOS 跳过会改写 Mach-O 的二次签名。
+- 测试命令与退出码：`node --check scripts/build-cc-connect.mjs`（0）；`node --check scripts/verify-windows-installer.mjs`（0）；`pnpm run typecheck`（0）；`pnpm run runtime:check`（0）；`pnpm exec node --test test/packaged-resources.test.ts`（0，5 passed）；`pnpm run build`（0）；`GOPROXY=https://goproxy.cn,direct pnpm run cc-connect:build`（0）；`GOPROXY=https://goproxy.cn,direct pnpm run dist:dir`（0）；解包 sidecar SHA 与 manifest（0）；sidecar `--version`（0）；`codesign --verify --deep --strict`（0）。
+- 未覆盖项：当前主机未生成 Windows NSIS 安装包，Windows verifier 仅完成脚本语法和静态资源断言；macOS 按现有签名策略不生成根 `resources/manifest.json`，完整 closure manifest 仍由 Windows/Linux `afterPack` 验证。默认 Go proxy/direct 路径超时，成功门禁使用临时环境变量 `GOPROXY=https://goproxy.cn,direct`，未写入仓库配置。
+- 下一任务：`DESK-02`。
