@@ -32,13 +32,13 @@
 | DESK-07 设置页 | done | `f95538f65a543218d605e52451da552f0282a346` | dsh-desktop-controls 增加中英文消息连接设置卡片、Secret 保留/清空语义、workspace 原生选择和 Sidecar 操作状态；静态契约、全量测试、构建通过 |
 | QA-01 假 Sidecar E2E | done | `4708ef04369617018638fe2c64fd95a59fed2e1c` | Electron renderer-to-main 假 Sidecar E2E 覆盖 disabled、保存、ready、重连崩溃、停止和 Safe Mode；开发环境路径注入不影响打包路径 |
 | QA-02 DSH ACP 契约 | done | `5d980fcce09604a9b536b26195d7414f744f738b` | 临时 DSH_HOME + 当前捆绑 Node/DSH 真实 ACP 测试通过 initialize/new/mock prompt/close/list/resume/close |
-| QA-03 飞书人工验收 | todo | — | — |
+| QA-03 飞书人工验收 | blocked | — | 缺少真实飞书 App ID/Secret，按要求记录为外部阻塞；未读取或写入任何真实凭证 |
 | DOC-01 用户文档 | todo | — | — |
 | REL-01 最终门禁 | todo | — | — |
 
 ## 下一任务
 
-执行 `QA-03`。在不写入仓库或日志的前提下尝试人工飞书验收；若无真实凭证，记录外部阻塞并继续 DOC-01。
+执行 `DOC-01`。补充用户文档与发布说明，然后执行 REL-01 最终门禁。
 
 ## 每项完成后的记录格式
 
@@ -189,3 +189,12 @@
 - 测试命令与退出码：首次 `node --test test/dsh-acp-contract.test.ts`（1，测试最初错误要求 resume 响应必须返回 sessionId；DSH 合法响应可省略该字段）；修正后同命令（0，1 passed，覆盖 initialize/new/prompt/close/list/resume/close）；`pnpm run typecheck` 首次（1，测试数组元素可为 undefined）；修正后（0）；`git diff --check`（0）。
 - 未覆盖项：未使用真实 DeepSeek/飞书凭证；QA-03 人工飞书验收仍待真实凭证；未写入真实用户目录或凭证。
 - 下一任务：`QA-03`。
+
+### QA-03 — 2026-10-07
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（无子模块改动）
+- 父仓库提交：n/a（仅记录外部阻塞）
+- 行为变化：未执行人工飞书连接验收；检查到当前环境没有匹配的 Feishu/Lark/cc-connect 凭证环境变量。没有猜测、生成、读取或写入真实 App ID/Secret，也没有接触真实用户配置目录。
+- 测试命令与退出码：凭证存在性检查（只输出变量名和 present/empty，不输出值）（0，结果为无匹配凭证环境变量）。
+- 未覆盖项：真实飞书 App ID/Secret 和人工操作授权缺失，QA-03 是真实外部阻塞；自动门禁、假 Sidecar 和本地 mock ACP 已覆盖。
+- 下一任务：`DOC-01`。
