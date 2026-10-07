@@ -64,6 +64,9 @@ import { createShellPreferences } from './shell-preferences.ts'
 import { conversationSucceeded, focusWindowOnNotificationClick, normalizePublicStatusSnapshot, notificationsForPublicStatus, type PublicStatusSnapshot } from './desktop-notifications.ts'
 import { completeMarketInstall, type MarketInstallCommandResult, type MarketInstallProgress, type MarketInstallResult } from './market-install.ts'
 import { runDesktopHealthCheck } from './health-check.ts'
+import { readConnectSettings, writeConnectToml } from './cc-connect-config.ts'
+import { ConnectCredentials, credentialsPath } from './cc-connect-credentials.ts'
+import { ConnectSupervisor } from './cc-connect-supervisor.ts'
 
 const DEV_WEB_URL = process.env[DEV_WEB_URL_ENV]
 const MAC_UPDATE_CHECK_DELAY_MS = 15_000
@@ -74,6 +77,7 @@ let closeNoticeClaimed = false
 let desktopPreferencesController: DesktopPreferencesController | undefined
 let lastPublicStatus: PublicStatusSnapshot | undefined
 let lastHarnessPhase: HarnessState['phase'] | undefined
+let connectSupervisor: ConnectSupervisor | undefined
 /** Decision 0026: one healthy boot is guaranteed for the overlay selected at
  *  launch; its failure rolls the shell back to the bundled kernel. */
 let kernelLaunchGuard: KernelLaunchGuard | undefined
@@ -132,6 +136,7 @@ function safeModeActive(): boolean {
 /** Enter or exit Safe Mode: persist the flag, then restart the harness. */
 async function applySafeMode(enabled: boolean): Promise<boolean> {
   if (SMOKE_TEST || desktopPreferencesController === undefined) return false
+  if (enabled) await stopConnectSupervisor()
   if (!enabled) {
     lastPluginFailures = []
     void clearPersistedPluginSuspects(app.getPath('userData'))
@@ -139,7 +144,9 @@ async function applySafeMode(enabled: boolean): Promise<boolean> {
   const result = desktopPreferencesController.update({ safeMode: enabled })
   if (!result.ok) return false
   refreshNativeSurfaces()
-  return shellApp.runHarnessRestart()
+  const restarted = await shellApp.runHarnessRestart()
+  if (restarted && !enabled) await startConnectAfterHarness()
+  return restarted
 }
 
 const DSHMARKET_PACKAGE = 'dshmarket'
@@ -196,7 +203,7 @@ function rollbackKernel(version: string): void {
   console.warn(`dsh-desktop: kernel ${version} failed its health boot; rolling back to the bundled kernel`)
   markKernelFailed(kernelDir(), version)
   writeActiveOverlay(kernelDir(), undefined)
-  void shellApp.runHarnessRestart()
+  void shellApp.runHarnessRestart().then(() => restartConnectForCurrentKernel())
 }
 
 /** Switch to an installed overlay kernel and health-check the boot; any
@@ -213,6 +220,7 @@ async function switchKernel(version: string): Promise<KernelOperationResult> {
     rollbackKernel(version)
     return { status: 'rolled-back', version, reason: 'health-check-failed' }
   }
+  await restartConnectForCurrentKernel()
   return { status: 'ready', version }
 }
 
@@ -243,6 +251,73 @@ async function installChildEnv(): Promise<NodeJS.ProcessEnv> {
   }
   harnessChildEnv = env
   return env
+}
+
+async function createConnectSupervisor(): Promise<ConnectSupervisor | undefined> {
+  const userData = app.getPath('userData')
+  const settings = await readConnectSettings(userData)
+  if (!settings.enabled || settings.appId.trim() === '' || settings.workspace.trim() === '') return undefined
+
+  const secret = await new ConnectCredentials(credentialsPath(userData)).readSecret()
+  if (secret === undefined || secret === '') return undefined
+
+  const dshHome = desktopDshHome()
+  const configPath = await writeConnectToml(userData, {
+    settings,
+    paths: {
+      dataDir: join(userData, 'cc-connect', 'data'),
+      nodeCommand: nodeBin(),
+      dshEntry: activeKernelBin(harnessRoot(), kernelDir()),
+      dshHome,
+      workspace: settings.workspace,
+    },
+  })
+  return new ConnectSupervisor({
+    onState: state => {
+      if (state.phase === 'crashed') console.warn(`dsh-desktop: cc-connect crashed: ${state.lastError}`)
+    },
+  }, {
+    configPath,
+    cwd: settings.workspace,
+    env: {
+      ...harnessChildEnv,
+      DSH_HOME: dshHome,
+      DSH_CC_CONNECT_FEISHU_SECRET: secret,
+    },
+    redactValues: () => [secret],
+  })
+}
+
+async function stopConnectSupervisor(): Promise<void> {
+  const supervisor = connectSupervisor
+  if (supervisor === undefined) return
+  connectSupervisor = undefined
+  await supervisor.stop()
+}
+
+async function startConnectAfterHarness(): Promise<boolean> {
+  if (SMOKE_TEST || safeModeActive() || shellApp.state?.phase !== 'ready') {
+    await stopConnectSupervisor()
+    return false
+  }
+  await stopConnectSupervisor()
+  try {
+    const supervisor = await createConnectSupervisor()
+    if (supervisor === undefined) return false
+    connectSupervisor = supervisor
+    const started = await supervisor.start()
+    if (started) return true
+    await stopConnectSupervisor()
+    return false
+  } catch (error) {
+    await stopConnectSupervisor()
+    console.warn(`dsh-desktop: cc-connect unavailable: ${error instanceof Error ? error.message : String(error)}`)
+    return false
+  }
+}
+
+async function restartConnectForCurrentKernel(): Promise<boolean> {
+  return startConnectAfterHarness()
 }
 
 /**
@@ -765,6 +840,7 @@ ipcMain.handle('desktop:action', async (event, action: unknown) => {
     const previous = readActiveOverlay(kernelDir())?.version
     writeActiveOverlay(kernelDir(), undefined)
     const restarted = await shellApp.runHarnessRestart()
+    if (restarted) await restartConnectForCurrentKernel()
     if (restarted && previous !== undefined) {
       // The switched-away overlay moves to the trash (30-day restore window)
       // instead of lingering on disk; a failed move keeps it installed.
@@ -1229,14 +1305,14 @@ app.on('before-quit', (event) => {
   closeLanPairingWindow()
   localeController?.dispose()
   destroyTray()
-  if (shellApp.supervisorInstance !== undefined || lanService.isRunning) {
+  if (shellApp.supervisorInstance !== undefined || connectSupervisor !== undefined || lanService.isRunning) {
     event.preventDefault()
     // Absolute quit guard: each stop() already has a SIGKILL fallback, but if
     // something unexpected leaves a promise pending we still force-quit
     // within 8s instead of hanging the app on exit.
     const forceQuitTimer = setTimeout(() => app.quit(), 8_000)
     forceQuitTimer.unref()
-    void Promise.all([shellApp.stopHarness(), lanService.stop()]).finally(() => {
+    void Promise.all([shellApp.stopHarness(), connectSupervisor?.stop(), lanService.stop()]).finally(() => {
       clearTimeout(forceQuitTimer)
       app.quit()
     })
@@ -1324,6 +1400,7 @@ if (!gotLock) {
     try {
       const url = await boot()
       if (!SMOKE_TEST) {
+        await startConnectAfterHarness()
         if (app.isPackaged && process.platform === 'darwin') {
           const timer = setTimeout(() => { void checkMacUpdate(false, currentLocale) }, MAC_UPDATE_CHECK_DELAY_MS)
           timer.unref()
