@@ -1,4 +1,5 @@
 /** Locate the current platform's unpacked app and run its built-in smoke mode. */
+import { createHash } from 'node:crypto'
 import { access, chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { tmpdir } from 'node:os'
@@ -10,8 +11,45 @@ import { SMOKE_CLOSURE_FLAG, SMOKE_EXIT_FAIL, SMOKE_EXIT_OK, SMOKE_FLAG, SMOKE_S
 
 const distRoot = process.argv[2] ?? 'dist'
 const executable = await locatePackagedExecutable(distRoot)
+const resources = packagedResourcesDir(executable)
+
+async function verifyBundledSidecar() {
+  const binaryName = process.platform === 'win32' ? 'cc-connect.exe' : 'cc-connect'
+  const binary = join(resources, 'cc-connect', 'bin', binaryName)
+  const manifestPath = join(resources, 'cc-connect', 'manifest.json')
+  await access(binary)
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+  if (manifest.binary !== `bin/${binaryName}`) throw new Error(`packaged cc-connect manifest points to ${String(manifest.binary)}`)
+  const actual = createHash('sha256').update(await readFile(binary)).digest('hex')
+  if (manifest.sha256 !== actual) throw new Error(`packaged cc-connect SHA-256 mismatch: expected ${String(manifest.sha256)}, got ${actual}`)
+  await new Promise((resolve, reject) => {
+    const child = spawn(binary, ['--version'], { stdio: ['ignore', 'pipe', 'pipe'] })
+    let output = ''
+    child.stdout?.on('data', chunk => { output += String(chunk) })
+    child.stderr?.on('data', chunk => { output += String(chunk) })
+    const timeout = setTimeout(() => {
+      child.kill('SIGKILL')
+      reject(new Error('packaged cc-connect --version timed out'))
+    }, 10_000)
+    child.once('error', error => {
+      clearTimeout(timeout)
+      reject(error)
+    })
+    child.once('exit', code => {
+      clearTimeout(timeout)
+      if (code !== 0 || !output.includes('cc-connect')) {
+        reject(new Error(`packaged cc-connect --version failed (code ${String(code)})`))
+        return
+      }
+      resolve()
+    })
+  })
+  console.log(`packaged smoke: cc-connect OK (${binaryName}, sha256 ${actual})`)
+}
+
+await verifyBundledSidecar()
 for (const required of ['agent-trash-hook/agent-trash-hook.mjs', 'agent-trash-hook/rm-parser.mjs']) {
-  await access(join(packagedResourcesDir(executable), required))
+  await access(join(resources, required))
 }
 
 // DSH_SMOKE_UI adds the UI-render variant: the plain smoke fetches the boot

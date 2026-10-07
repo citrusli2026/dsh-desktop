@@ -13,14 +13,17 @@ async function tempDir(): Promise<string> {
   return mkdtemp(join(tmpdir(), 'closure-manifest-test-'))
 }
 
-/** A minimal resources tree shaped like the packaged one (harness + mobile-shell). */
+/** A minimal resources tree shaped like the packaged one. */
 async function fixture(): Promise<string> {
   const root = await tempDir()
   await mkdir(join(root, 'harness', 'node', 'bin'), { recursive: true })
   await mkdir(join(root, 'mobile-shell', 'app', 'www'), { recursive: true })
+  await mkdir(join(root, 'cc-connect', 'bin'), { recursive: true })
   await writeFile(join(root, 'harness', 'package.json'), '{"name":"harness"}\n')
   await writeFile(join(root, 'harness', 'node', 'bin', 'node'), 'fake-binary')
   await writeFile(join(root, 'mobile-shell', 'app', 'www', 'index.html'), '<html></html>')
+  await writeFile(join(root, 'cc-connect', 'bin', 'cc-connect'), 'fake-sidecar')
+  await writeFile(join(root, 'cc-connect', 'manifest.json'), '{"version":1}\n')
   return root
 }
 
@@ -35,13 +38,15 @@ test('generateClosureManifest covers every file with posix keys; clean tree veri
     const raw = JSON.parse(await readFile(closureManifestPath(root), 'utf8')) as { version: string; files: Record<string, string> }
     assert.equal(raw.version, '0.0.0-test')
     assert.deepEqual(Object.keys(raw.files).sort(), [
+      'cc-connect/bin/cc-connect',
+      'cc-connect/manifest.json',
       'harness/node/bin/node',
       'harness/package.json',
       'mobile-shell/app/www/index.html',
     ])
     const result = await verifyClosureManifest(root)
     assert.equal(result.status, 'ok')
-    assert.equal(result.checked, 3)
+    assert.equal(result.checked, 5)
     assert.equal(result.problemCount, 0)
     assert.deepEqual(result.problems, [])
   } finally {

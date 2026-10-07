@@ -55,3 +55,20 @@ export function nodeBin(root: string = harnessRoot(), platform: NodeJS.Platform 
 export function dshBin(root: string = harnessRoot()): string {
   return join(root, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
 }
+
+/**
+ * Absolute path of the bundled cc-connect sidecar.
+ * @param root - packaged resources root, defaulting to {@link resourcesRoot}.
+ * @returns the platform-specific cc-connect executable path.
+ */
+export function ccConnectBin(root: string = resourcesRoot(), platform: NodeJS.Platform = process.platform): string {
+  return join(root, 'cc-connect', 'bin', platform === 'win32' ? 'cc-connect.exe' : 'cc-connect')
+}
+
+/**
+ * Absolute path of the sidecar build manifest beside its executable.
+ * @param root - packaged resources root, defaulting to {@link resourcesRoot}.
+ */
+export function ccConnectManifestPath(root: string = resourcesRoot()): string {
+  return join(root, 'cc-connect', 'manifest.json')
+}
