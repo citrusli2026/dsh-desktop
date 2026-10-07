@@ -9,6 +9,7 @@
 | 文档 | 内容 | 维护时机 |
 |---|---|---|
 | `README.md` / `README.zh.md` | 面向用户：产品、下载、开发（官网为第一入口） | 功能、下载方式或开发流程变化时 |
+| [`cc-connect.md`](cc-connect.md) | cc-connect × DSH Desktop 飞书连接的配置、生命周期、数据与清理 | 集成行为或用户操作变化时 |
 | `HANDOFF.md` | **运维核心**：当前状态、发布流程、速查、版本记录 | 每次发布、镜像或官网调整后 |
 | `docs/ARCHITECTURE.md` | 产品架构、源码职责、验证契约 | 架构或门禁变化时 |
 | `docs/reliable-shell-iteration-plan.md` | 可靠 Electron 壳与开箱即用的后续迭代边界和顺序 | 产品范围或迭代推进时 |
