@@ -92,6 +92,8 @@ jobs:
       - name: Package mobile-shell Web artifact
         run: npm --prefix dsh-mobile-shell run package:web
       - run: pnpm run bootstrap
+      - name: Build pinned cc-connect sidecar
+        run: pnpm run cc-connect:build
       - name: Package (${{ matrix.targets }})
         # electron-builder is invoked directly: pnpm's `--` forwarding would
         # insert a literal `--` before these args and turn them positional.

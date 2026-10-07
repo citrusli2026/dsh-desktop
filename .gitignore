@@ -5,6 +5,7 @@ dist-review/
 resources/harness/
 resources/harness.tmp/
 resources/mobile-shell/
+resources/cc-connect/bin/
 *.log
 .DS_Store
 .env

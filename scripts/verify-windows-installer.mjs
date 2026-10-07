@@ -8,7 +8,7 @@
  *   - the bundled node.exe (#39: AV-damaged runtime),
  *   - the sharp native chain — .node + libvips DLLs (#56: ERR_DLOPEN_FAILED),
  *   - the closure integrity manifest itself,
- *   - shell-owned resources (mobile-shell, agent-trash-hook).
+ *   - shell-owned resources (mobile-shell, agent-trash-hook, cc-connect).
  *
  * Usage: node scripts/verify-windows-installer.mjs <installer.exe>
  * Runs on GitHub windows runners (7z.exe preinstalled) and locally with 7zz.
@@ -81,6 +81,8 @@ try {
     { label: 'libvips cpp dll', glob: 'resources/harness/node_modules/@img/sharp-win32-x64/lib/libvips-cpp-' },
     { label: 'mobile shell payload', path: 'resources/mobile-shell/web-artifact.json' },
     { label: 'agent trash hook', path: 'resources/agent-trash-hook/agent-trash-hook.mjs' },
+    { label: 'cc-connect sidecar', path: 'resources/cc-connect/bin/cc-connect.exe' },
+    { label: 'cc-connect manifest', path: 'resources/cc-connect/manifest.json' },
   ]
   const missing = []
   for (const item of critical) {
@@ -97,11 +99,18 @@ try {
     'resources/harness/node/bin/node.exe',
     'resources/harness/node_modules/@img/sharp-win32-x64/lib/sharp-win32-x64-0.35.4.node',
     'resources/harness/node_modules/@img/sharp-win32-x64/lib/libvips-42.dll',
+    'resources/cc-connect/bin/cc-connect.exe',
+    'resources/cc-connect/manifest.json',
     'resources/manifest.json',
   ]
   run7z(['x', '-y', `-o${extractRoot}`, inner, ...hashed])
   const manifest = JSON.parse(readFileSync(join(extractRoot, 'resources', 'manifest.json'), 'utf8'))
   const files = manifest.files ?? {}
+  const sidecarManifest = JSON.parse(readFileSync(join(extractRoot, 'resources', 'cc-connect', 'manifest.json'), 'utf8'))
+  const sidecarPath = join(extractRoot, 'resources', 'cc-connect', 'bin', 'cc-connect.exe')
+  const sidecarHash = createHash('sha256').update(readFileSync(sidecarPath)).digest('hex')
+  if (sidecarManifest.sha256 !== sidecarHash) fail('cc-connect manifest sha256 does not match the packaged sidecar')
+  console.log(`verify-windows-installer: cc-connect sha256 ok ${sidecarHash}`)
   let verified = 0
   for (const relative of hashed) {
     if (relative === 'resources/manifest.json') continue

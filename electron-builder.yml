@@ -42,6 +42,10 @@ extraResources:
     to: agent-trash-hook
     filter:
       - "**/*"
+  - from: resources/cc-connect
+    to: cc-connect
+    filter:
+      - "**/*"
 
 asar: true
 npmRebuild: false
@@ -66,6 +70,12 @@ mac:
   # intentionally not notarized and still needs a first-launch confirmation.
   identity: "-"
   hardenedRuntime: false
+  # Keep the sidecar bytes stable after build-cc-connect.mjs writes its
+  # manifest. It is launched as a child process and does not need to be
+  # re-signed by the app bundle; signing it here would rewrite its Mach-O
+  # load commands and invalidate the recorded SHA-256.
+  signIgnore:
+    - "/Contents/Resources/cc-connect/bin/cc-connect$"
   target:
     - dmg
   # One large installer per supported desktop platform (decision 0016).

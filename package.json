@@ -50,8 +50,9 @@
     "rebuild-harness-native": "node scripts/rebuild-harness-native.mjs",
     "bootstrap": "pnpm run deploy-harness && pnpm run fetch-node && pnpm run rebuild-harness-native",
     "postinstall": "node scripts/install-electron.mjs",
-    "dist": "pnpm run build && electron-builder",
-    "dist:dir": "pnpm run build && electron-builder --dir"
+    "cc-connect:build": "node scripts/build-cc-connect.mjs",
+    "dist": "pnpm run build && pnpm run cc-connect:build && electron-builder",
+    "dist:dir": "pnpm run build && pnpm run cc-connect:build && electron-builder --dir"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
