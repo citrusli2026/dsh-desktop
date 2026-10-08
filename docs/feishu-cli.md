@@ -34,7 +34,8 @@ lark-cli doctor
 - `cc-connect`：以飞书机器人身份接收消息，再把消息路由到 DSH Desktop。
 
 因此，仅安装官方 CLI 不会自动配置 Desktop 的消息机器人。要启用消息
-连接，请在 Desktop 的「设置 → 飞书消息连接」中配置机器人，或在隔离的
+连接，推荐在 Desktop 的原生菜单「扩展 / Desktop tools → 配置飞书机器人…」
+中选择工作区并扫描二维码；也可以在「设置 → 飞书消息连接」中手动配置，或在隔离的
 配置目录运行：
 
 ```bash
@@ -44,6 +45,10 @@ cc-connect feishu setup --project dsh-desktop
 没有凭证时该命令会显示飞书二维码；扫码新建机器人后会把凭证写回指定的
 cc-connect 配置。已有机器人可以使用 `--app app_id:app_secret` 绑定，但
 不要把真实 Secret 写进 shell 历史、仓库或日志。
+
+Desktop 的菜单流程只把最终凭证交给本机受保护存储，不会把 App Secret 写入
+`config.toml`、状态页或日志。手机提示“应用成功”后仍需等待 Desktop 显示配置完成；
+如果二维码超时，请重新生成新码。
 
 ## 安全边界
 
