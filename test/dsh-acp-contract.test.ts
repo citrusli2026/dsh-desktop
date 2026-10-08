@@ -156,14 +156,12 @@ async function runContract(home: string, workspace: string, port: number): Promi
     pending.clear()
     let closed = false
     const childClosed = once(child, 'close').then(() => { closed = true })
-    child.stdin.destroy()
     child.kill('SIGTERM')
     await Promise.race([childClosed, new Promise(resolvePromise => setTimeout(resolvePromise, 5_000))])
     if (!closed) {
       child.kill('SIGKILL')
       await Promise.race([childClosed, new Promise(resolvePromise => setTimeout(resolvePromise, 1_000))])
     }
-    lines.close()
     const errorText = await stderr
     assert.doesNotMatch(errorText, new RegExp(FAKE_API_KEY))
   }
