@@ -210,6 +210,8 @@ async function main() {
     assert.ok(request !== undefined)
     assert.equal(request.messages?.at(-1)?.content?.[0]?.text, 'Return the deterministic QA02 mock response.')
   } finally {
+    server.closeIdleConnections?.()
+    server.closeAllConnections?.()
     await new Promise(resolvePromise => server.close(() => resolvePromise()))
     await rm(root, { recursive: true, force: true })
   }
