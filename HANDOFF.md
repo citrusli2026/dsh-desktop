@@ -1864,3 +1864,17 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.0-rc.2
 Release CI：<https://github.com/citrusli2026/dsh-desktop/actions/runs/37178869197>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alpha.1.shell.3>；
 官网：<https://dsh-desktop.com>。
+
+## 73. v0.2.1-alpha.1.shell.5 cc-connect × DSH Desktop 完整集成发布（2026-10-09）
+
+1. **cc-connect 与 Desktop 集成**：子模块最终提交 `dd637656761ecaea0144bedbf3c7576e962f7da3`，已推送 `origin/codex/dsh-agent-integration`；修复 Feishu 配置路径创建/空配置索引，并接入 Desktop 原生「扩展 / Desktop tools → 配置飞书机器人…」独立二维码窗口。配置流程只使用临时目录，成功/取消/超时清理配置与 Secret；成功后保存受保护凭证、工作区并尝试启动 Sidecar。
+2. **一键能力与 skills**：新增 `pnpm run feishu:setup`，调用官方 `@larksuite/cli` 安装向导并生成官方 `lark-*` skills；新增 `.agents/skills/feishu-dsh-setup` 和 `docs/feishu-cli.md`，明确 CLI 用户身份与 cc-connect 机器人身份边界。真实官方 CLI 临时 HOME 下 OAuth、`whoami`、`doctor` 和 28 个 skills 安装均通过；未复制真实凭证到仓库、日志或真实用户目录。
+3. **真实飞书状态**：用户两次扫码后手机均显示“应用成功”，但 Desktop 侧 cc-connect 回调仍在等待/超时，尚未拿到可保存的机器人配置；因此 `QA-03-CC-BOT` 仍是唯一真实外部阻塞。二维码、临时配置和 Secret 边界已由假 Sidecar、临时目录和 E2E 覆盖，不能把手机提示单独视为 Desktop 回调成功。
+4. **门禁**：本地 Feishu setup 单测 4/4、TypeScript 检查通过；完整本地 E2E 18 passed/9 skipped、打包 E2E 8 passed、offline market 1 passed、站点/API 检查通过。GitHub Release run `37821983420` 全绿：verify 15 passed/12 skipped，Linux/macOS/Windows 构建、Windows NSIS residue、Feishu packaged QR E2E、NSIS silent smoke、attestation 和资产上传均通过；保留既有 worker teardown timeout 注记。
+5. **发布**：父仓库发布 tag `v0.2.1-alpha.1.shell.5` 最终对齐 `dba48daf16905adee6c026d53f1727848b3096`，GitHub Release 8 个资产已发布；Windows QR 失败的根因是 Electron `process.execPath` 不是 Node，已改用 bundled `harness/node/bin/node.exe`。
+6. **GitCode 与官网**：GitCode tag 对齐 `dba48daf16905adee6c026d53f1727848b3096`；按当前发布技能上传 macOS/Windows 安装包及 4 个校验文件，匿名 range GET `4/4` 通过。GitCode 因预发布标记超过 20 个限制创建为普通 Release；Linux `.deb` 保留 GitHub 下载，官网数据中的 `gitcode_ok=false` 是有意的 fallback。官网数据本地提交 `1406010`，Site Data Refresh run `37826506360` 已触发，待线上 JSON/下载 API 最终复核。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alpha.1.shell.5>；
+Release CI：<https://github.com/citrusli2026/dsh-desktop/actions/runs/37821983420>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alpha.1.shell.5>；
+官网：<https://dsh-desktop.com>。

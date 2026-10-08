@@ -264,3 +264,14 @@
 - 测试命令与退出码：先运行扩展文案契约测试（1，预期因官网文案尚未添加失败）；`node --test test/cc-connect-docs.test.ts`（0，1 passed）；`pnpm run site:check`（0，现有 12 页、170 条翻译契约通过）；`git diff --check`（0）。
 - 未覆盖项：真实飞书二维码回调仍是 QA-03-CC-BOT 的外部阻塞；完整发版门禁、打包产物和 Release 尚未执行。
 - 下一任务：`REL-02`。
+
+## REL-02 — 2026-10-09
+
+- 子模块提交：`dd637656761ecaea0144bedbf3c7576e962f7da3`（已推送至 `origin/codex/dsh-agent-integration`）。
+- 父仓库提交：`dba48daf16905adee6c026d53f1727848b3096`（Windows Feishu JS fixture 改用 bundled Node，已推送 GitHub/GitCode）；站点 release 数据提交 `1406010`（已推送 GitHub/GitCode）。
+- 行为变化：完成 cc-connect × DSH Desktop 集成、官方 Feishu CLI 一键入口/skills、扩展菜单独立二维码窗口、临时 Secret 边界、文档和中英文官网文案；Windows 打包 Feishu E2E 修复 Electron `process.execPath` 与 Node executable 混淆。
+- 测试命令与退出码：`node --test test/feishu-setup.test.ts`（0，4 passed）；`pnpm exec tsc --noEmit`（0）；本地 `pnpm run test:e2e`（0，18 passed、9 skipped）；`pnpm run test:e2e:packaged`（0，8 passed）；`pnpm run test:e2e:market:offline`（0，1 passed）；`pnpm run site:check`（0，12 pages、170 translations、API checks all pass）；GitHub Release run `37821983420`（0，verify 15 passed/12 skipped，Linux/macOS/Windows build、Windows Feishu QR packaged E2E、NSIS residue/silent install、attestation、publish 全部通过）。
+- 本地/发布产物：GitHub Release `v0.2.1-alpha.1.shell.5` 已发布 8 个资产；tag peeled commit 为 `dba48daf16905adee6c026d53f1727848b3096`；GitCode tag 对齐，按发布技能上传 macOS/Windows 安装包和 4 个校验文件，匿名 range GET `4/4` 通过。GitCode 预发布标记受 20 个上限限制，创建为普通 Release；Linux `.deb` 保留 GitHub 下载并在官网 fallback。
+- 真实验收：官方 CLI 临时 HOME 的 OAuth/`whoami`/`doctor` 和 28 个官方 skills 安装通过；用户两次扫码手机均提示“应用成功”，但 Desktop 侧 cc-connect callback 仍超时，未保存真实机器人配置。
+- 未覆盖项/风险：`QA-03-CC-BOT` 是真实外部阻塞，缺少 Desktop 端成功回调；子模块全量 Go gate 仍有计划外既有 `web/dist`、`agent/codex` Skills EOF、core workspace-skills 基线失败，未擅自修改；GitCode Linux 资产不镜像是当前发布技能策略。Site Data Refresh run `37826506360` 已触发，待最终线上 JSON/下载 API 复核。
+- 下一任务：无；计划完成，保留 `QA-03-CC-BOT` 外部阻塞记录。
