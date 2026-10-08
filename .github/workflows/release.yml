@@ -94,6 +94,10 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: third_party/cc-connect/go.mod
+          cache-dependency-path: third_party/cc-connect/go.sum
       - run: pnpm install --frozen-lockfile
       - name: Package mobile-shell Web artifact
         run: npm --prefix dsh-mobile-shell run package:web
