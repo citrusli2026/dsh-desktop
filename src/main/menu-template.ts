@@ -19,6 +19,7 @@ export interface MenuActions {
   checkForUpdates(): void
   showAbout(): void
   openExternal(url: string): void
+  showFeishuSetup(): void
   startLanLink(): void
   showLanQr(): void
   stopLanLink(): void
@@ -178,6 +179,8 @@ export function buildAppMenuTemplate(environment: MenuEnvironment, actions: Menu
   template.push({
     label: t('menu.extensions'),
     submenu: [
+      { label: t('menu.feishuSetup'), click: actions.showFeishuSetup },
+      { type: 'separator' },
       ...buildLanMenuItems(locale, { lanRunning, lanBusy }, actions),
       ...buildSafeModeMenuItems(locale, safeMode, actions),
       // Restart (decision 0028): the extension surfaces' plugin-refresh

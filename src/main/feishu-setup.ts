@@ -162,6 +162,10 @@ export class FeishuSetupRun {
           return
         }
         try {
+          // A test or very fast local sidecar may write the QR and exit before
+          // the polling interval fires. Capture it once more before resolving
+          // so the success page can retain the QR as an audit aid.
+          await pollQr()
           const config = await readFile(paths.configPath, 'utf8')
           finishResolve(extractFeishuCredentials(config))
         } catch (error) {

@@ -7,6 +7,7 @@ const actions: MenuActions = {
   showWindow() {},
   closeWindow() {}, quit() {}, toggleMaximize() {}, restartHarness() {}, toggleSafeMode() {},
   checkForUpdates() {}, showAbout() {}, openExternal() {},
+  showFeishuSetup() {},
   startLanLink() {}, showLanQr() {}, stopLanLink() {},
 }
 
@@ -84,6 +85,7 @@ test('desktop tools menu mirrors the desktop-controls overlay (pairing, Safe Mod
   const extensions = inactive.find(item => item.label === '桌面工具')?.submenu
   assert.ok(Array.isArray(extensions))
   assert.ok(labels(extensions).includes('连接移动设备…'))
+  assert.ok(labels(extensions).includes('配置飞书机器人…'))
   assert.ok(labels(extensions).includes('以安全模式启动'))
   assert.ok(labels(extensions).includes('重启 Harness…'))
   assert.ok(labels(extensions).includes('关于 dsh-desktop'))

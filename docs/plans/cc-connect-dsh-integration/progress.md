@@ -241,8 +241,17 @@
 ## 后续扩展：EXT-01 — 2026-10-08
 
 - 子模块提交：`dd637656761ecaea0144bedbf3c7576e962f7da3`（复用已推送修复）
-- 父仓库提交：待提交
+- 父仓库提交：`c17315d`（已推送至 `origin/codex/cc-connect-dsh-integration`）
 - 行为变化：新增隔离的 Feishu QR setup runner。它只在临时目录启动捆绑 cc-connect，等待 QR 图片、读取成功后的 App ID/Secret，并在完成或取消后删除临时配置；Secret 不进入状态、错误或日志。
 - 测试命令与退出码：先运行缺失实现的 `node --test test/feishu-setup.test.ts`（1，预期红灯）；`node --test test/feishu-setup.test.ts`（0，3 passed）；`pnpm run typecheck`（0）；`git diff --check`（0）。
 - 未覆盖项：尚未接入原生扩展菜单、窗口和 Desktop 设置保存；真实飞书验收仍待后续端到端任务。
 - 下一任务：`EXT-02`。
+
+## 后续扩展：EXT-02 — 2026-10-08
+
+- 子模块提交：`dd637656761ecaea0144bedbf3c7576e962f7da3`（复用已推送修复）
+- 父仓库提交：待提交
+- 行为变化：在原生「扩展 / Desktop tools」菜单增加独立飞书配置入口；新增专用二维码窗口和中英文状态页；成功后复用现有受保护凭证存储、保存工作区并自动尝试启动 Sidecar。退出应用时会取消尚未完成的配置流程。
+- 测试命令与退出码：缺失菜单实现的 `node --test test/menu-template.test.ts`（1，预期红灯）；`node --test test/menu-template.test.ts test/feishu-page.test.ts test/feishu-setup.test.ts`（0，13 passed）；`pnpm run typecheck`（0）；`pnpm run build`（0）；`pnpm exec playwright test e2e/electron-shell.spec.ts -g "Extensions menu completes QR setup" --reporter=list`（0，1 passed）；`git diff --check`（0）。
+- 未覆盖项：真实飞书二维码仍需手机端完成最终回调；完整发布门禁和官网文案待后续任务。
+- 下一任务：`DOC-02`。

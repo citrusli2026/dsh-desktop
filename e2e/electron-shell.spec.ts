@@ -38,12 +38,13 @@ interface Fixture {
   relaunch: () => Promise<ElectronApplication>
 }
 
-const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettings: boolean; mockAccountPlatform: boolean; connectSidecar: boolean }>({
+const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettings: boolean; mockAccountPlatform: boolean; connectSidecar: boolean; feishuSetupSidecar: boolean }>({
   pathStyle: ['normal', { option: true }],
   seedLegacySettings: [false, { option: true }],
   mockAccountPlatform: [false, { option: true }],
   connectSidecar: [false, { option: true }],
-  electronApp: async ({ pathStyle, seedLegacySettings, mockAccountPlatform, connectSidecar }, use, testInfo) => {
+  feishuSetupSidecar: [false, { option: true }],
+  electronApp: async ({ pathStyle, seedLegacySettings, mockAccountPlatform, connectSidecar, feishuSetupSidecar }, use, testInfo) => {
     if (PACKAGED) testInfo.setTimeout(240_000) // 真实 Harness 首次渲染可达 120s
     const root = await mkdtemp(join(tmpdir(), 'dsh-electron-e2e-'))
     // 特殊路径变体:中文/空格目录(真实用户环境)与只读 DSH_HOME。
@@ -67,6 +68,7 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettin
 
     let connectModePath: string | undefined
     let connectBinPath: string | undefined
+    let feishuSetupBinPath: string | undefined
     if (connectSidecar) {
       connectModePath = join(root, 'fake-cc-connect.mode')
       connectBinPath = join(root, 'fake-cc-connect.mjs')
@@ -81,6 +83,18 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettin
         '',
       ].join('\n'))
       await chmod(connectBinPath, 0o755)
+    }
+    if (feishuSetupSidecar) {
+      feishuSetupBinPath = join(root, 'fake-feishu-setup.mjs')
+      await writeFile(feishuSetupBinPath, [
+        '#!/usr/bin/env node',
+        "import { writeFileSync } from 'node:fs'",
+        "const arg = name => process.argv[process.argv.indexOf(name) + 1]",
+        "writeFileSync(arg('--qr-image'), Buffer.from('fake-png'))",
+        "setTimeout(() => writeFileSync(arg('--config'), '[[' + 'projects]]\\nname = \\\"dsh-desktop\\\"\\n\\n[[projects.platforms]]\\ntype = \\\"feishu\\\"\\n\\n[projects.platforms.options]\\napp_id = \\\"cli_fake_id\\\"\\napp_secret = \\\"fake-secret-value\\\"\\n'), 40)",
+        '',
+      ].join('\n'))
+      await chmod(feishuSetupBinPath, 0o755)
     }
 
     let accountServer: Server | undefined
@@ -130,6 +144,10 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettin
       if (connectModePath !== undefined && connectBinPath !== undefined) {
         launchEnv.DSH_CC_CONNECT_TEST_BIN = connectBinPath
         launchEnv.DSH_CC_CONNECT_TEST_MODE = connectModePath
+      }
+      if (feishuSetupBinPath !== undefined) {
+        launchEnv.DSH_CC_CONNECT_SETUP_TEST_BIN = feishuSetupBinPath
+        launchEnv.DSH_CC_CONNECT_SETUP_TEST_WORKSPACE = dshHome
       }
       let executablePath: string | undefined
       if (PACKAGED) {
@@ -932,6 +950,29 @@ shellTest.describe('cc-connect desktop sidecar', () => {
       if (value === undefined) throw new Error('desktop bridge missing')
       return value.stopConnect()
     })
+  })
+})
+
+shellTest.describe('Feishu extension setup', () => {
+  shellTest.use({ connectSidecar: true, feishuSetupSidecar: true })
+
+  shellTest('the Extensions menu completes QR setup and starts the sidecar @smoke @critical', async ({ electronApp, window, dshHome, userData }) => {
+    await packagedOrStubHeadline(window)
+    await expect.poll(() => menuLabels(electronApp)).toContain('Set up Feishu bot…')
+
+    const setupWindowPromise = electronApp.waitForEvent('window')
+    await clickMenuItem(electronApp, 'Set up Feishu bot…')
+    const setupWindow = await setupWindowPromise
+    await setupWindow.waitForLoadState('domcontentloaded')
+    await expect(setupWindow.getByRole('img', { name: 'Set up Feishu bot' })).toBeVisible()
+    await expect(setupWindow.getByText('Connected. You can close this window.')).toBeVisible({ timeout: 10_000 })
+
+    const settings = JSON.parse(await readFile(join(userData, 'cc-connect', 'settings.json'), 'utf8')) as Record<string, unknown>
+    expect(settings).toMatchObject({ enabled: true, appId: 'cli_fake_id', workspace: dshHome })
+    await expect.poll(() => window.evaluate(async () => {
+      const bridge = (window as unknown as { dshDesktop?: { getConnectState(): Promise<{ phase: string } | null> } }).dshDesktop
+      return bridge?.getConnectState().then(state => state?.phase)
+    })).toBe('ready')
   })
 })
 
