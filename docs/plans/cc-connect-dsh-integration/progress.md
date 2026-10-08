@@ -217,3 +217,13 @@
 - 本地打包验证：`dist/mac-arm64/dsh-desktop.app` 存在；sidecar `--version` 报告 commit `c88f4c9`；打包 manifest SHA 与二进制 `6932e48b339ef532afd0793d9f130eed5100e82ee9499d0fa195846fb113d423` 一致；macOS 根 closure manifest 按既有签名策略省略；真实 Harness UI packaged smoke 通过。
 - 未覆盖项：QA-03 仍缺少真实飞书 App ID/Secret 和人工授权；当前主机未生成 Windows/Linux 原生安装包，跨平台打包留给对应 CI；子模块全量门禁的 `web/dist` 与既有 Codex/Workspace Skills 失败均不属于本计划改动，未擅自修改。未读取或写入任何真实用户目录或凭证。
 - 下一任务：无；计划完成，QA-03 为唯一真实外部阻塞。
+
+## 后续扩展：FEISHU-CLI-01 — 2026-10-08
+
+- 子模块提交：`c88f4c911902cacaf6d53c28d3c8f160369c0979`（无子模块改动）
+- 父仓库提交：`b5bbbe4`（一键入口、可复用 skill、文档和契约测试）
+- 行为变化：新增 `pnpm run feishu:setup`，调用官方 `@larksuite/cli` 安装向导，生成官方飞书 skills 并引导用户 OAuth；新增 `.agents/skills/feishu-dsh-setup`，明确用户身份 CLI 与 cc-connect 机器人身份的边界，禁止 Secret/token 进入仓库、命令记录或日志。
+- 测试命令与退出码：`node --test test/feishu-cli-setup.test.ts`（0，2 passed）；`pnpm run feishu:setup -- --dry-run`（0）；`node --check scripts/setup-feishu-cli.mjs`（0）；skill `quick_validate.py`（0）；`git diff --check`（0）。
+- 真实飞书验证：官方 CLI 临时 HOME 下 `config init --new`、浏览器 OAuth、`lark-cli whoami` 和 `lark-cli doctor` 均通过；用户身份、机器人身份、Feishu/MCP 端点均 ready。真实 CLI 凭证保留在临时目录，未复制到仓库或真实 DSH 目录。
+- 未覆盖项：cc-connect 机器人二维码已生成并等待手机飞书扫码确认；Desktop 消息链路的 QA-03 仍待该外部动作完成。官方授权有一项企业策略禁止申请的视频会议权限，不影响已验证的 CLI/消息/文档等能力。
+- 下一任务：`QA-03-CC-BOT`（手机飞书扫码后继续临时 cc-connect → DSH ACP → Desktop/飞书消息验收）。
