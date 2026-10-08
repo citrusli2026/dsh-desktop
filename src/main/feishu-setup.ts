@@ -106,6 +106,7 @@ export class FeishuSetupRun {
       let settled = false
       let qrSeen = false
       let qrTimer: NodeJS.Timeout | undefined
+      let qrPollInFlight: Promise<void> | undefined
       const timeout = setTimeout(() => finishReject(new Error('Feishu QR setup timed out')), this.timeoutMs)
       timeout.unref()
       const finishResolve = (value: { appId: string; appSecret: string }): void => {
@@ -123,19 +124,25 @@ export class FeishuSetupRun {
         reject(error)
       }
       this.finishReject = finishReject
-      const pollQr = async (): Promise<void> => {
-        if (settled || qrSeen) return
-        try {
-          await access(paths.qrImagePath)
-          const image = await readFile(paths.qrImagePath)
-          if (image.length > 0) {
-            qrSeen = true
-            this.emit('waiting-for-scan')
-            this.options.onQr?.(image)
+      const pollQr = (): Promise<void> => {
+        if (settled || qrSeen) return Promise.resolve()
+        if (qrPollInFlight !== undefined) return qrPollInFlight
+        qrPollInFlight = (async () => {
+          try {
+            await access(paths.qrImagePath)
+            const image = await readFile(paths.qrImagePath)
+            if (image.length > 0) {
+              qrSeen = true
+              this.emit('waiting-for-scan')
+              this.options.onQr?.(image)
+            }
+          } catch {
+            // The sidecar writes the QR asynchronously; keep polling until it exits.
+          } finally {
+            qrPollInFlight = undefined
           }
-        } catch {
-          // The sidecar writes the QR asynchronously; keep polling until it exits.
-        }
+        })()
+        return qrPollInFlight
       }
       qrTimer = setInterval(() => { void pollQr() }, 80)
       void pollQr()
