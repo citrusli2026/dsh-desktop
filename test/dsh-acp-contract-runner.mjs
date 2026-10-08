@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { createInterface } from 'node:readline'
-import { spawn } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import { once } from 'node:events'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -11,18 +11,13 @@ const NODE_BIN = resolve('resources/harness/node/bin/node')
 const DSH_BIN = resolve('resources/harness/node_modules/@deepseek-ai/dsh/lib/bin.js')
 const FAKE_API_KEY = 'fake-qa02-key'
 
-async function bootstrapProfile(home, workspace) {
-  const child = spawn(NODE_BIN, [DSH_BIN, '--profile', 'acp', '--dump-config'], {
+function bootstrapProfile(home, workspace) {
+  const stdout = execFileSync(NODE_BIN, [DSH_BIN, '--profile', 'acp', '--dump-config'], {
     cwd: workspace,
     env: { ...process.env, DSH_HOME: home },
-    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: 'utf8',
+    timeout: 20_000,
   })
-  const [stdout, stderr] = await Promise.all([
-    readStream(child.stdout),
-    readStream(child.stderr),
-  ])
-  const [code] = await once(child, 'exit')
-  assert.equal(code, 0, `dsh ACP help failed: ${stderr || stdout}`)
   assert.match(stdout, /@deepseek-ai\/dsh-acp-app/)
 }
 
