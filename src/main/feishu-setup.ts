@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { access, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { nodeBin } from './paths.ts'
 
 export type FeishuSetupStage = 'starting' | 'waiting-for-scan' | 'completed' | 'cancelled'
 
@@ -32,11 +33,22 @@ export function feishuSetupSpawnCommand(
   command: string,
   args: readonly string[],
   platform: NodeJS.Platform = process.platform,
+  nodeCommand?: string,
 ): { command: string; args: readonly string[] } {
   if (platform === 'win32' && /\.(?:c|m)?js$/i.test(command)) {
-    return { command: process.execPath, args: [command, ...args] }
+    return { command: nodeCommand ?? bundledNodeCommand(), args: [command, ...args] }
   }
   return { command, args }
+}
+
+function bundledNodeCommand(): string {
+  try {
+    return nodeBin()
+  } catch {
+    // Unit tests and development utilities may call this helper without an
+    // Electron app. The production path is the bundled Node executable.
+    return process.execPath
+  }
 }
 
 export function extractFeishuCredentials(config: string): { appId: string; appSecret: string } {

@@ -6,9 +6,14 @@ import { join } from 'node:path'
 import { FeishuSetupRun, extractFeishuCredentials, feishuSetupSpawnCommand } from '../src/main/feishu-setup.ts'
 
 test('FeishuSetupRun wraps JavaScript fixtures with Node on Windows', () => {
-  const result = feishuSetupSpawnCommand('C:\\temp\\fake-feishu-setup.mjs', ['--qr-image', 'qr.png'], 'win32')
+  const result = feishuSetupSpawnCommand(
+    'C:\\temp\\fake-feishu-setup.mjs',
+    ['--qr-image', 'qr.png'],
+    'win32',
+    'C:\\dsh\\resources\\harness\\node\\bin\\node.exe',
+  )
 
-  assert.equal(result.command, process.execPath)
+  assert.equal(result.command, 'C:\\dsh\\resources\\harness\\node\\bin\\node.exe')
   assert.deepEqual(result.args, ['C:\\temp\\fake-feishu-setup.mjs', '--qr-image', 'qr.png'])
 })
 
