@@ -20,6 +20,8 @@ jobs:
       DSH_MOBILE_SHELL_WEB_ROOT: ${{ github.workspace }}/dsh-mobile-shell/dist/web
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: recursive
       - uses: actions/checkout@v7
         with:
           repository: citrusli2026/dsh-mobile-shell
@@ -78,6 +80,8 @@ jobs:
       DSH_MOBILE_SHELL_WEB_ROOT: ${{ github.workspace }}/dsh-mobile-shell/dist/web
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: recursive
       - uses: actions/checkout@v7
         with:
           repository: citrusli2026/dsh-mobile-shell
