@@ -54,6 +54,22 @@ function silentInstall(installer, installDir) {
   })
 }
 
+/** Run an NSIS executable without piping its detached helper handles back to
+ * Node. The uninstaller can launch a short-lived helper while its own process
+ * exits; execFile would keep waiting on inherited stdio handles indefinitely.
+ */
+function runSilentExecutable(executable, args, timeout = 300_000) {
+  return new Promise((resolveCode, reject) => {
+    const child = spawn(executable, args, { stdio: 'ignore', windowsHide: true })
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL')
+      reject(new Error(`executable timed out: ${executable}`))
+    }, timeout)
+    child.once('error', error => { clearTimeout(timer); reject(error) })
+    child.once('exit', code => { clearTimeout(timer); resolveCode(code ?? -1) })
+  })
+}
+
 /** Defender real-time protection state for the T6 record: true / false /
  *  'unknown' (PowerShell or the Mp module unavailable). */
 async function defenderRealTimeProtection() {
@@ -92,7 +108,7 @@ async function stopInstalledApp() {
  * wait forever even when /D points at a fresh directory. */
 async function removeInstalledApp(installDir) {
   await stopInstalledApp()
-  await execFileP(uninstallerOf(installDir), ['/S'], { timeout: 300_000 }).catch(() => undefined)
+  await runSilentExecutable(uninstallerOf(installDir), ['/S']).catch(() => undefined)
 }
 
 /** The installer hooks append one line per probe to this log; print it so a
@@ -168,7 +184,7 @@ async function isNodeLocked(path) {
  *  copies would aim the embedded-path uninstaller at the source). */
 async function tamperAndUpgrade(baselineDir, tamper) {
   await tamper(nodeExeOf(baselineDir))
-  await execFileP(uninstallerOf(baselineDir), ['/S'], { timeout: 300_000 })
+  await runSilentExecutable(uninstallerOf(baselineDir), ['/S'])
   const code = await silentInstall(currentInstaller, baselineDir)
   if (code !== 0) throw new Error(`current installer exited ${String(code)}`)
   await assertNodeMatchesManifest(baselineDir)
@@ -205,7 +221,7 @@ try {
   try {
     // The locked file must survive the old uninstaller (RMDir /r skips it in
     // silent mode); verify the lock is really held right up to the upgrade.
-    await execFileP(uninstallerOf(baseline), ['/S'], { timeout: 300_000 })
+    await runSilentExecutable(uninstallerOf(baseline), ['/S'])
     const exists = await readFile(nodeExeOf(baseline)).then(() => true, () => false)
     if (!exists) throw new Error('expected the locked node.exe to survive the old uninstaller (matrix precondition)')
     if (!await isNodeLocked(nodeExeOf(baseline))) {
