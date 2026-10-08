@@ -250,7 +250,7 @@
 ## 后续扩展：EXT-02 — 2026-10-08
 
 - 子模块提交：`dd637656761ecaea0144bedbf3c7576e962f7da3`（复用已推送修复）
-- 父仓库提交：待提交
+- 父仓库提交：`5c80fb6`（已推送至 `origin/codex/cc-connect-dsh-integration`）
 - 行为变化：在原生「扩展 / Desktop tools」菜单增加独立飞书配置入口；新增专用二维码窗口和中英文状态页；成功后复用现有受保护凭证存储、保存工作区并自动尝试启动 Sidecar。退出应用时会取消尚未完成的配置流程。
 - 测试命令与退出码：缺失菜单实现的 `node --test test/menu-template.test.ts`（1，预期红灯）；`node --test test/menu-template.test.ts test/feishu-page.test.ts test/feishu-setup.test.ts`（0，13 passed）；`pnpm run typecheck`（0）；`pnpm run build`（0）；`pnpm exec playwright test e2e/electron-shell.spec.ts -g "Extensions menu completes QR setup" --reporter=list`（0，1 passed）；`git diff --check`（0）。
 - 未覆盖项：真实飞书二维码仍需手机端完成最终回调；完整发布门禁和官网文案待后续任务。
