@@ -228,3 +228,12 @@
 - 真实飞书验证：官方 CLI 临时 HOME 下 `config init --new`、浏览器 OAuth、`lark-cli whoami` 和 `lark-cli doctor` 均通过；用户身份、机器人身份、Feishu/MCP 端点均 ready。真实 CLI 凭证保留在临时目录，未复制到仓库或真实 DSH 目录。
 - 未覆盖项：cc-connect 机器人二维码已生成并等待手机飞书扫码确认；Desktop 消息链路的 QA-03 仍待该外部动作完成。官方授权有一项企业策略禁止申请的视频会议权限，不影响已验证的 CLI/消息/文档等能力。
 - 下一任务：`QA-03-CC-BOT`（手机飞书扫码后继续临时 cc-connect → DSH ACP → Desktop/飞书消息验收）。
+
+## 后续扩展：CC-06 — 2026-10-08
+
+- 子模块提交：`dd637656761ecaea0144bedbf3c7576e962f7da3`（已推送至 `origin/codex/dsh-agent-integration`）
+- 父仓库提交：`784e124`（已推送至 `origin/codex/cc-connect-dsh-integration`，更新 gitlink 和 macOS sidecar manifest）
+- 行为变化：修复 `cc-connect feishu setup/new --config <不存在路径>` 在飞书授权成功后无法回填的缺陷；自动创建配置父目录和空配置，并修正空配置时项目/平台索引越界。
+- 测试命令与退出码：`GOPROXY=direct go test ./config -run TestEnsureProjectWithFeishuPlatform_CreatesMissingConfigFile -count=1`（0）；相关 config 测试（0）；`GOPROXY=direct go test ./config`（0）；`GOPROXY=direct go test ./config ./cmd/cc-connect`（1，既有缺失 `web/dist`）；`pnpm run cc-connect:build`（0）；父仓库 gitlink/manifest 精确提交并推送（0）。
+- 未覆盖项：修复后二进制已生成新的二维码，等待手机端再次完成该码的授权回调；成功后继续 QA-03-CC-BOT。
+- 下一任务：`QA-03-CC-BOT`。
