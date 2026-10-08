@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08T16:31:40.626Z",
+  "generated_at": "2026-10-08T17:09:42.577Z",
   "repo": {
     "full_name": "citrusli2026/dsh-desktop",
     "html_url": "https://github.com/citrusli2026/dsh-desktop",
@@ -7,10 +7,10 @@
     "license": "MIT"
   },
   "stats": {
-    "installer_downloads": 5381,
-    "mac_downloads": 661,
-    "win_downloads": 4185,
-    "linux_downloads": 535,
+    "installer_downloads": 5384,
+    "mac_downloads": 662,
+    "win_downloads": 4186,
+    "linux_downloads": 536,
     "releases": 68
   },
   "release": {
@@ -23,7 +23,7 @@
       {
         "name": "dsh-desktop-0.2.1-alpha.1.shell.4-amd64.deb",
         "size": 222924316,
-        "downloads": 19,
+        "downloads": 20,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.2.1-alpha.1.shell.4/dsh-desktop-0.2.1-alpha.1.shell.4-amd64.deb",
         "kind": "installer",
         "sha256": null,
@@ -33,7 +33,7 @@
       {
         "name": "dsh-desktop-0.2.1-alpha.1.shell.4-amd64.deb.sha256",
         "size": 110,
-        "downloads": 51,
+        "downloads": 56,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.2.1-alpha.1.shell.4/dsh-desktop-0.2.1-alpha.1.shell.4-amd64.deb.sha256",
         "kind": "checksum",
         "sha256": "42dc9fa5cc1784379a286ea9f09d05809fba872e65b6a34548160658c8787347",
@@ -43,7 +43,7 @@
       {
         "name": "dsh-desktop-0.2.1-alpha.1.shell.4-arm64-mac.dmg",
         "size": 279085270,
-        "downloads": 13,
+        "downloads": 14,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.2.1-alpha.1.shell.4/dsh-desktop-0.2.1-alpha.1.shell.4-arm64-mac.dmg",
         "kind": "installer",
         "sha256": null,
@@ -53,7 +53,7 @@
       {
         "name": "dsh-desktop-0.2.1-alpha.1.shell.4-arm64-mac.dmg.sha256",
         "size": 114,
-        "downloads": 48,
+        "downloads": 53,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.2.1-alpha.1.shell.4/dsh-desktop-0.2.1-alpha.1.shell.4-arm64-mac.dmg.sha256",
         "kind": "checksum",
         "sha256": "4a3a900ba7df30bf995254631770a0438f4b1721f74b5e224d9b307b9f7267e1",
@@ -63,7 +63,7 @@
       {
         "name": "dsh-desktop-setup-0.2.1-alpha.1.shell.4.exe",
         "size": 254993089,
-        "downloads": 98,
+        "downloads": 99,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.2.1-alpha.1.shell.4/dsh-desktop-setup-0.2.1-alpha.1.shell.4.exe",
         "kind": "installer",
         "sha256": null,
@@ -73,7 +73,7 @@
       {
         "name": "dsh-desktop-setup-0.2.1-alpha.1.shell.4.exe.sha256",
         "size": 110,
-        "downloads": 50,
+        "downloads": 55,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.2.1-alpha.1.shell.4/dsh-desktop-setup-0.2.1-alpha.1.shell.4.exe.sha256",
         "kind": "checksum",
         "sha256": "edd1d1b65528ac1f1f0970954ad41b7b6b6fcba376b01f3009776f7dca66da0b",
