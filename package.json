@@ -51,6 +51,7 @@
     "bootstrap": "pnpm run deploy-harness && pnpm run fetch-node && pnpm run rebuild-harness-native",
     "postinstall": "node scripts/install-electron.mjs",
     "cc-connect:build": "node scripts/build-cc-connect.mjs",
+    "feishu:setup": "node scripts/setup-feishu-cli.mjs",
     "dist": "pnpm run build && pnpm run cc-connect:build && electron-builder",
     "dist:dir": "pnpm run build && pnpm run cc-connect:build && electron-builder --dir"
   },
