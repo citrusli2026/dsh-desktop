@@ -28,6 +28,17 @@ export interface FeishuSetupRunOptions {
   onStage?: (stage: FeishuSetupStage) => void
 }
 
+export function feishuSetupSpawnCommand(
+  command: string,
+  args: readonly string[],
+  platform: NodeJS.Platform = process.platform,
+): { command: string; args: readonly string[] } {
+  if (platform === 'win32' && /\.(?:c|m)?js$/i.test(command)) {
+    return { command: process.execPath, args: [command, ...args] }
+  }
+  return { command, args }
+}
+
 export function extractFeishuCredentials(config: string): { appId: string; appSecret: string } {
   const appId = readTomlString(config, 'app_id')
   const appSecret = readTomlString(config, 'app_secret')
@@ -147,7 +158,8 @@ export class FeishuSetupRun {
       qrTimer = setInterval(() => { void pollQr() }, 80)
       void pollQr()
       try {
-        this.child = spawn(this.options.command, args, {
+        const spawnCommand = feishuSetupSpawnCommand(this.options.command, args)
+        this.child = spawn(spawnCommand.command, spawnCommand.args, {
           cwd: this.options.workspace,
           env: { ...process.env, HOME: this.temporaryDirectory, USERPROFILE: this.temporaryDirectory },
           stdio: 'ignore',

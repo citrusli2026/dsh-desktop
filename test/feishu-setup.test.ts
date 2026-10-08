@@ -3,7 +3,14 @@ import assert from 'node:assert/strict'
 import { chmod, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { FeishuSetupRun, extractFeishuCredentials } from '../src/main/feishu-setup.ts'
+import { FeishuSetupRun, extractFeishuCredentials, feishuSetupSpawnCommand } from '../src/main/feishu-setup.ts'
+
+test('FeishuSetupRun wraps JavaScript fixtures with Node on Windows', () => {
+  const result = feishuSetupSpawnCommand('C:\\temp\\fake-feishu-setup.mjs', ['--qr-image', 'qr.png'], 'win32')
+
+  assert.equal(result.command, process.execPath)
+  assert.deepEqual(result.args, ['C:\\temp\\fake-feishu-setup.mjs', '--qr-image', 'qr.png'])
+})
 
 test('extractFeishuCredentials reads generated credentials without exposing them in a status message', () => {
   const credentials = extractFeishuCredentials([
