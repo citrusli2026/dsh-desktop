@@ -154,10 +154,16 @@ async function runContract(home: string, workspace: string, port: number): Promi
       waiter.reject(new Error('ACP process stopped'))
     }
     pending.clear()
-    lines.close()
+    let closed = false
+    const childClosed = once(child, 'close').then(() => { closed = true })
+    child.stdin.destroy()
     child.kill('SIGTERM')
-    await Promise.race([once(child, 'exit'), new Promise(resolvePromise => setTimeout(resolvePromise, 5_000))])
-    if (!child.killed) child.kill('SIGKILL')
+    await Promise.race([childClosed, new Promise(resolvePromise => setTimeout(resolvePromise, 5_000))])
+    if (!closed) {
+      child.kill('SIGKILL')
+      await Promise.race([childClosed, new Promise(resolvePromise => setTimeout(resolvePromise, 1_000))])
+    }
+    lines.close()
     const errorText = await stderr
     assert.doesNotMatch(errorText, new RegExp(FAKE_API_KEY))
   }
