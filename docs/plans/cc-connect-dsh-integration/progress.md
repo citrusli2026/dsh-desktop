@@ -237,3 +237,12 @@
 - 测试命令与退出码：`GOPROXY=direct go test ./config -run TestEnsureProjectWithFeishuPlatform_CreatesMissingConfigFile -count=1`（0）；相关 config 测试（0）；`GOPROXY=direct go test ./config`（0）；`GOPROXY=direct go test ./config ./cmd/cc-connect`（1，既有缺失 `web/dist`）；`pnpm run cc-connect:build`（0）；父仓库 gitlink/manifest 精确提交并推送（0）。
 - 未覆盖项：修复后二进制已生成新的二维码，等待手机端再次完成该码的授权回调；成功后继续 QA-03-CC-BOT。
 - 下一任务：`QA-03-CC-BOT`。
+
+## 后续扩展：EXT-01 — 2026-10-08
+
+- 子模块提交：`dd637656761ecaea0144bedbf3c7576e962f7da3`（复用已推送修复）
+- 父仓库提交：待提交
+- 行为变化：新增隔离的 Feishu QR setup runner。它只在临时目录启动捆绑 cc-connect，等待 QR 图片、读取成功后的 App ID/Secret，并在完成或取消后删除临时配置；Secret 不进入状态、错误或日志。
+- 测试命令与退出码：先运行缺失实现的 `node --test test/feishu-setup.test.ts`（1，预期红灯）；`node --test test/feishu-setup.test.ts`（0，3 passed）；`pnpm run typecheck`（0）；`git diff --check`（0）。
+- 未覆盖项：尚未接入原生扩展菜单、窗口和 Desktop 设置保存；真实飞书验收仍待后续端到端任务。
+- 下一任务：`EXT-02`。
