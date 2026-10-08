@@ -965,7 +965,7 @@ shellTest.describe('Feishu extension setup', () => {
     await clickMenuItem(electronApp, 'Set up Feishu bot…')
     const setupWindow = await setupWindowPromise
     await setupWindow.waitForLoadState('domcontentloaded')
-    await expect(setupWindow.getByRole('img', { name: 'Set up Feishu bot' })).toBeVisible()
+    await expect(setupWindow.locator('img.qr')).toBeVisible()
     await expect(setupWindow.getByText('Connected. You can close this window.')).toBeVisible({ timeout: 10_000 })
 
     const settings = JSON.parse(await readFile(join(userData, 'cc-connect', 'settings.json'), 'utf8')) as Record<string, unknown>
