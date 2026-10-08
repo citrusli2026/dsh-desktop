@@ -1872,7 +1872,7 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alph
 3. **真实飞书状态**：用户两次扫码后手机均显示“应用成功”，但 Desktop 侧 cc-connect 回调仍在等待/超时，尚未拿到可保存的机器人配置；因此 `QA-03-CC-BOT` 仍是唯一真实外部阻塞。二维码、临时配置和 Secret 边界已由假 Sidecar、临时目录和 E2E 覆盖，不能把手机提示单独视为 Desktop 回调成功。
 4. **门禁**：本地 Feishu setup 单测 4/4、TypeScript 检查通过；完整本地 E2E 18 passed/9 skipped、打包 E2E 8 passed、offline market 1 passed、站点/API 检查通过。GitHub Release run `37821983420` 全绿：verify 15 passed/12 skipped，Linux/macOS/Windows 构建、Windows NSIS residue、Feishu packaged QR E2E、NSIS silent smoke、attestation 和资产上传均通过；保留既有 worker teardown timeout 注记。
 5. **发布**：父仓库发布 tag `v0.2.1-alpha.1.shell.5` 最终对齐 `dba48daf16905adee6c026d53f1727848b3096`，GitHub Release 8 个资产已发布；Windows QR 失败的根因是 Electron `process.execPath` 不是 Node，已改用 bundled `harness/node/bin/node.exe`。
-6. **GitCode 与官网**：GitCode tag 对齐 `dba48daf16905adee6c026d53f1727848b3096`；按当前发布技能上传 macOS/Windows 安装包及 4 个校验文件，匿名 range GET `4/4` 通过。GitCode 因预发布标记超过 20 个限制创建为普通 Release；Linux `.deb` 保留 GitHub 下载，官网数据中的 `gitcode_ok=false` 是有意的 fallback。官网数据本地提交 `1406010`，Site Data Refresh run `37826506360` 已触发，待线上 JSON/下载 API 最终复核。
+6. **GitCode 与官网**：GitCode tag 对齐 `dba48daf16905adeaee6c026d53f1727848b3096`；按当前发布技能上传 macOS/Windows 安装包及 4 个校验文件，匿名 range GET `4/4` 通过。GitCode 因预发布标记超过 20 个限制创建为普通 Release；Linux `.deb` 保留 GitHub 下载，官网数据中的 `gitcode_ok=false` 是有意的 fallback。官网 Site Data Refresh run `37826506360` 成功完成；线上 `/data/release.json` 已切换到 shell.5，macOS/Windows 4 个 GitCode 资产均为 `gitcode_ok=true`，Linux 保持 GitHub fallback；`pnpm run site:check` 与 `/api/downloads` 校验通过。
 
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alpha.1.shell.5>；
 Release CI：<https://github.com/citrusli2026/dsh-desktop/actions/runs/37821983420>；
