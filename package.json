@@ -25,7 +25,7 @@
     "build": "node scripts/build.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --test \"test/**/*.test.ts\"",
-    "test:coverage": "node --test --test-concurrency=1 --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=75 --test-coverage-functions=70 \"test/**/*.test.ts\"",
+    "test:coverage": "node scripts/run-test-coverage.mjs",
     "test:e2e": "pnpm run build && playwright test",
     "test:e2e:android": "pnpm run build && playwright test -g @android-simulator",
     "test:e2e:packaged": "node scripts/e2e-packaged.mjs",
