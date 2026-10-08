@@ -255,3 +255,12 @@
 - 测试命令与退出码：缺失菜单实现的 `node --test test/menu-template.test.ts`（1，预期红灯）；`node --test test/menu-template.test.ts test/feishu-page.test.ts test/feishu-setup.test.ts`（0，13 passed）；`pnpm run typecheck`（0）；`pnpm run build`（0）；`pnpm exec playwright test e2e/electron-shell.spec.ts -g "Extensions menu completes QR setup" --reporter=list`（0，1 passed）；`git diff --check`（0）。
 - 未覆盖项：真实飞书二维码仍需手机端完成最终回调；完整发布门禁和官网文案待后续任务。
 - 下一任务：`DOC-02`。
+
+## 后续扩展：DOC-02 — 2026-10-08
+
+- 子模块提交：`dd637656761ecaea0144bedbf3c7576e962f7da3`（复用已推送修复）
+- 父仓库提交：`05e0d4f`（已推送至 `origin/codex/cc-connect-dsh-integration`）
+- 行为变化：补充扩展菜单二维码配置、临时目录/Secret 安全边界、官方 `lark-cli` skills 一键安装说明；更新中英文安装页和首页，明确用户 CLI 身份与 cc-connect 机器人身份的区别。
+- 测试命令与退出码：先运行扩展文案契约测试（1，预期因官网文案尚未添加失败）；`node --test test/cc-connect-docs.test.ts`（0，1 passed）；`pnpm run site:check`（0，现有 12 页、170 条翻译契约通过）；`git diff --check`（0）。
+- 未覆盖项：真实飞书二维码回调仍是 QA-03-CC-BOT 的外部阻塞；完整发版门禁、打包产物和 Release 尚未执行。
+- 下一任务：`REL-02`。
