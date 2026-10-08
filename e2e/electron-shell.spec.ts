@@ -13,6 +13,7 @@ import { dismissOnboardingModals, WELCOME_ACKNOWLEDGED_YAML } from './onboarding
 // dev-only, src/main/index.ts boot()), so stub-only page assertions are
 // skipped and the boot-overlay wait doubles as the real-render check.
 const PACKAGED = process.env.DSH_E2E_PACKAGED === '1'
+const FAKE_QR_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
 const require = createRequire(import.meta.url)
 const electronPath = require('electron') as string
 const execFileAsync = promisify(execFile)
@@ -90,7 +91,7 @@ const shellTest = test.extend<Fixture & { pathStyle: PathStyle; seedLegacySettin
         '#!/usr/bin/env node',
         "import { writeFileSync } from 'node:fs'",
         "const arg = name => process.argv[process.argv.indexOf(name) + 1]",
-        "writeFileSync(arg('--qr-image'), Buffer.from('fake-png'))",
+        `writeFileSync(arg('--qr-image'), Buffer.from(${JSON.stringify(FAKE_QR_PNG_BASE64)}, 'base64'))`,
         "setTimeout(() => writeFileSync(arg('--config'), '[[' + 'projects]]\\nname = \\\"dsh-desktop\\\"\\n\\n[[projects.platforms]]\\ntype = \\\"feishu\\\"\\n\\n[projects.platforms.options]\\napp_id = \\\"cli_fake_id\\\"\\napp_secret = \\\"fake-secret-value\\\"\\n'), 40)",
         '',
       ].join('\n'))
