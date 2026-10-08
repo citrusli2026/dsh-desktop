@@ -10,11 +10,9 @@ import { join, resolve } from 'node:path'
 const NODE_BIN = resolve('resources/harness/node/bin/node')
 const DSH_BIN = resolve('resources/harness/node_modules/@deepseek-ai/dsh/lib/bin.js')
 const FAKE_API_KEY = 'fake-qa02-key'
-const debug = message => console.error(`[qa02] ${message}`)
 
 async function bootstrapProfile(home, workspace) {
-  debug('bootstrap:start')
-  const child = spawn(NODE_BIN, [DSH_BIN, '--profile', 'acp', '--help'], {
+  const child = spawn(NODE_BIN, [DSH_BIN, '--profile', 'acp', '--dump-config'], {
     cwd: workspace,
     env: { ...process.env, DSH_HOME: home },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -25,8 +23,7 @@ async function bootstrapProfile(home, workspace) {
   ])
   const [code] = await once(child, 'exit')
   assert.equal(code, 0, `dsh ACP help failed: ${stderr || stdout}`)
-  assert.match(stdout, /Usage: dsh --profile acp/)
-  debug('bootstrap:done')
+  assert.match(stdout, /@deepseek-ai\/dsh-acp-app/)
 }
 
 async function readStream(stream) {
@@ -75,7 +72,6 @@ async function startMockMessagesServer() {
 }
 
 async function runContract(home, workspace, port) {
-  debug('contract:start')
   const patchPath = join(home, 'profiles', 'acp', 'cordis.patch.yml')
   await writeFile(patchPath, [
     '- id: llm-deepseek',
@@ -111,15 +107,11 @@ async function runContract(home, workspace, port) {
     clearTimeout(waiter.timer)
     pending.delete(message.id)
     if (message.error !== undefined) waiter.reject(new Error(`${message.error.code ?? 'rpc'}: ${message.error.message ?? 'unknown error'}`))
-    else {
-      debug(`rpc:done:${message.id}`)
-      waiter.resolve(message.result)
-    }
+    else waiter.resolve(message.result)
   })
 
   const call = (method, params) => {
     const id = ++nextId
-    debug(`rpc:start:${method}`)
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`)
     return new Promise((resolvePromise, reject) => {
       const timer = setTimeout(() => {
@@ -147,7 +139,6 @@ async function runContract(home, workspace, port) {
   })
 
   const cleanup = async () => {
-    debug('contract:cleanup:start')
     for (const waiter of pending.values()) {
       clearTimeout(waiter.timer)
       waiter.reject(new Error('ACP process stopped'))
@@ -168,7 +159,6 @@ async function runContract(home, workspace, port) {
     lines.close()
     const errorText = await stderr
     assert.doesNotMatch(errorText, new RegExp(FAKE_API_KEY))
-    debug('contract:cleanup:done')
   }
 
   try {
@@ -206,7 +196,6 @@ async function runContract(home, workspace, port) {
 }
 
 async function main() {
-  debug('main:start')
   const root = await mkdtemp(join(tmpdir(), 'dsh-qa02-'))
   const home = join(root, 'dsh-home')
   const workspace = join(root, 'workspace')
@@ -221,18 +210,15 @@ async function main() {
     assert.ok(request !== undefined)
     assert.equal(request.messages?.at(-1)?.content?.[0]?.text, 'Return the deterministic QA02 mock response.')
   } finally {
-    debug('server:close:start')
     server.closeIdleConnections?.()
     server.closeAllConnections?.()
     await new Promise(resolvePromise => server.close(() => resolvePromise()))
     await rm(root, { recursive: true, force: true })
-    debug('server:close:done')
   }
 }
 
 try {
   await main()
-  debug('main:done')
   process.exit(0)
 } catch (error) {
   console.error(error)
