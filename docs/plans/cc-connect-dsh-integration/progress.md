@@ -5,7 +5,7 @@
 ## 当前基线
 
 - 父仓库分支：`codex/cc-connect-dsh-integration`
-- 父仓库当前提交：`c07f5145d8fa11d274d04525ae1313662b929b99`
+- 父仓库当前提交：`ae0f9016f534322d638cd8bd304f5ceb9c0472b7`（QA-03 验收记录提交）
 - 子模块远端：`git@github.com:citrusli2026/cc-connect.git`
 - 子模块目录：`third_party/cc-connect`
 - 子模块当前提交：`dd637656761ecaea0144bedbf3c7576e962f7da3`
@@ -32,7 +32,7 @@
 | DESK-07 设置页 | done | `f95538f65a543218d605e52451da552f0282a346` | dsh-desktop-controls 增加中英文消息连接设置卡片、Secret 保留/清空语义、workspace 原生选择和 Sidecar 操作状态；静态契约、全量测试、构建通过 |
 | QA-01 假 Sidecar E2E | done | `4708ef04369617018638fe2c64fd95a59fed2e1c` | Electron renderer-to-main 假 Sidecar E2E 覆盖 disabled、保存、ready、重连崩溃、停止和 Safe Mode；开发环境路径注入不影响打包路径 |
 | QA-02 DSH ACP 契约 | done | `5d980fcce09604a9b536b26195d7414f744f738b` | 临时 DSH_HOME + 当前捆绑 Node/DSH 真实 ACP 测试通过 initialize/new/mock prompt/close/list/resume/close |
-| QA-03 飞书人工验收 | done | 待本次验收记录提交 | 真实 App ID/Secret 仅在隔离临时目录使用；Feishu websocket 入站、cc-connect 路由、真实 DSH ACP 和 Feishu 回包通过；凭证值未输出或写入仓库/真实用户目录 |
+| QA-03 飞书人工验收 | done | `ae0f9016f534322d638cd8bd304f5ceb9c0472b7` | 真实 App ID/Secret 仅在隔离临时目录使用；Feishu websocket 入站、cc-connect 路由、真实 DSH ACP 和 Feishu 回包通过；凭证值未输出或写入仓库/真实用户目录 |
 | DOC-01 用户文档 | done | `34e4554` | 新增飞书后台、启动/停止、Safe Mode、数据位置、脱敏日志、禁用与凭证删除指南；更新文档索引和发布说明；文档契约、全量测试、覆盖率、typecheck、site:check 通过 |
 | REL-01 最终门禁 | done | `9b9459dfa4dc8affd760b2a2cb546a4abffc4f7b` | validation.md 命令已执行；Desktop 全量、E2E、unpacked sidecar SHA/版本和双仓库干净/gitlink 可达性通过；子模块全量保留既有 web/dist 与基线测试阻塞 |
 
@@ -279,7 +279,7 @@
 ## QA-03-CC-BOT follow-up — 2026-10-09
 
 - 子模块提交：`dd637656761ecaea0144bedbf3c7576e962f7da3`（复用已推送修复）
-- 父仓库提交：待本次验收记录提交
+- 父仓库提交：`ae0f9016f534322d638cd8bd304f5ceb9c0472b7`（已推送至 `origin/codex/cc-connect-dsh-integration` 与 `gitcode/codex/cc-connect-dsh-integration`）
 - 行为变化：使用新的隔离临时目录运行 cc-connect；将本机 credentials service 文件临时复制到权限为 `0600` 的隔离 `DSH_HOME`，未修改真实用户目录。确认正确的新建 Feishu bot 会话后发送 `dsh-connect e2e ping`，真实 Feishu websocket 入站经 cc-connect 路由到 DSH ACP，随后成功回包并在飞书界面显示 “Connectivity confirmed”。
 - 验证命令与退出码：临时配置存在性/权限/字段检查（0，仅输出 present/empty）；飞书 `tenant_access_token` 与 bot info API 检查（HTTP 200，业务 code 0）；隔离 cc-connect/DSH ACP 端到端进程日志与退出状态（0）；飞书界面回包检查（0）；`node --test test/cc-connect-docs.test.ts`（0，1 passed）；临时诊断目录清理（0，已删除，真实 credentials 文件仍为 `0600`）。
 - 未覆盖项：本次集成验收没有剩余项。上游子模块全量 Go gate 仍保留既有 `web/dist`、`agent/codex` 和 core workspace-skills 基线失败；模型凭证仅作为用户拥有的临时测试输入，未随代码交付。
