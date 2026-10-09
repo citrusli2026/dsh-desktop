@@ -27,6 +27,8 @@ import {
   type KernelLaunchGuard,
   writeActiveOverlay,
 } from './kernel-manager.ts'
+import { RuntimeManager, runtimeEnvironmentsDir } from './runtime-manager.ts'
+import { builtinEdition, builtinEditionCatalog } from './edition-catalog.ts'
 import { missingVcRuntimeDlls, vcRuntimeDismissedPath, VC_REDIST_URL } from './win-runtime.ts'
 import { ensureInstallShims, prependPath, proxyEnvFromResolveProxy } from './install-env.ts'
 import { installAppMenu, showAboutDialog, type AboutMaintenanceActions } from './menu.ts'
@@ -162,6 +164,8 @@ const DSHMARKET_INSTALL_TIMEOUT_MS = 300_000
 let lastBalanceText: string | undefined
 let latestKernelVersion: string | undefined
 let lastKernelOperation: KernelOperationResult | undefined
+let runtimeManager: RuntimeManager | undefined
+const runtimeWindows = new Map<string, BrowserWindow>()
 // Chromium's fetch follows the system proxy; Node's does not. Every
 // main-process network call goes through it so real machines behind a
 // system-level proxy keep working (GUI launches carry no proxy env vars).
@@ -170,6 +174,72 @@ const balanceService = new BalanceService(async () => readDeepSeekApiKey(resolve
 
 function kernelDir(): string {
   return kernelsDir(app.getPath('userData'))
+}
+
+function getRuntimeManager(): RuntimeManager {
+  if (runtimeManager === undefined) {
+    runtimeManager = new RuntimeManager({
+      runtimeRoot: kernelDir(),
+      dataRoot: runtimeEnvironmentsDir(app.getPath('userData')),
+      nodeBin: nodeBin(),
+      env: harnessChildEnv,
+    })
+  }
+  return runtimeManager
+}
+
+async function openRuntimeEnvironment(id: string): Promise<boolean> {
+  const manager = getRuntimeManager()
+  const environment = await manager.startEnvironment(id)
+  if (environment.url === undefined) return false
+  const previous = runtimeWindows.get(id)
+  if (previous !== undefined && !previous.isDestroyed()) {
+    previous.show()
+    previous.focus()
+    return true
+  }
+  const window = new BrowserWindow({
+    title: `dsh · ${environment.name} · ${environment.runtimeVersion}`,
+    width: 1280,
+    height: 860,
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  })
+  runtimeWindows.set(id, window)
+  window.once('ready-to-show', () => window.show())
+  window.once('closed', () => {
+    if (runtimeWindows.get(id) === window) runtimeWindows.delete(id)
+    void manager.stopEnvironment(id)
+  })
+  try {
+    await window.loadURL(environment.url)
+    return true
+  } catch {
+    if (!window.isDestroyed()) window.close()
+    return false
+  }
+}
+
+async function stopRuntimeEnvironment(id: string): Promise<boolean> {
+  const window = runtimeWindows.get(id)
+  if (window !== undefined && !window.isDestroyed()) window.close()
+  await getRuntimeManager().stopEnvironment(id)
+  return true
+}
+
+async function installRuntime(version: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+  if (SMOKE_TEST) return { ok: false, reason: 'unavailable' }
+  return installKernel({
+    dir: kernelDir(),
+    version,
+    nodeBin: nodeBin(),
+    pnpmBin: pnpmBinPath(),
+    env: await installChildEnv(),
+  })
 }
 
 function pnpmBinPath(): string {
@@ -1079,6 +1149,72 @@ ipcMain.handle('desktop:kernel:state', (event) => {
   return { ...kernelState(harnessRoot(), kernelDir()), latestVersion: latestKernelVersion, lastOperation: lastKernelOperation }
 })
 
+ipcMain.handle('desktop:runtime:state', (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  return { ...getRuntimeManager().state(), editions: builtinEditionCatalog() }
+})
+
+ipcMain.handle('desktop:runtime:install', async (event, rawVersion: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  if (typeof rawVersion !== 'string') return { ok: false, reason: 'invalid-version' as const }
+  return installRuntime(rawVersion)
+})
+
+ipcMain.handle('desktop:runtime:create', async (event, raw: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return { ok: false, reason: 'invalid-input' as const }
+  const candidate = raw as Record<string, unknown>
+  if (typeof candidate.name !== 'string' || typeof candidate.runtimeVersion !== 'string') return { ok: false, reason: 'invalid-input' as const }
+  try {
+    const environment = await getRuntimeManager().createEnvironment({ name: candidate.name, runtimeVersion: candidate.runtimeVersion })
+    return { ok: true as const, environment, state: getRuntimeManager().state() }
+  } catch (error) {
+    return { ok: false as const, reason: error instanceof Error ? error.message : 'create-failed' }
+  }
+})
+
+ipcMain.handle('desktop:runtime:start', async (event, rawId: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  if (typeof rawId !== 'string') return { ok: false, reason: 'invalid-environment-id' as const }
+  try {
+    const opened = await openRuntimeEnvironment(rawId)
+    return opened ? { ok: true as const, state: getRuntimeManager().state() } : { ok: false as const, reason: 'window-load-failed' }
+  } catch (error) {
+    return { ok: false as const, reason: error instanceof Error ? error.message : 'start-failed' }
+  }
+})
+
+ipcMain.handle('desktop:runtime:stop', async (event, rawId: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  if (typeof rawId !== 'string') return { ok: false, reason: 'invalid-environment-id' as const }
+  try {
+    await stopRuntimeEnvironment(rawId)
+    return { ok: true as const, state: getRuntimeManager().state() }
+  } catch (error) {
+    return { ok: false as const, reason: error instanceof Error ? error.message : 'stop-failed' }
+  }
+})
+
+ipcMain.handle('desktop:runtime:uninstall', async (event, rawVersion: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
+  if (typeof rawVersion !== 'string') return { ok: false, reason: 'invalid-version' as const }
+  try {
+    await getRuntimeManager().uninstallRuntime(rawVersion)
+    return { ok: true as const, state: getRuntimeManager().state() }
+  } catch (error) {
+    return { ok: false as const, reason: error instanceof Error ? error.message : 'uninstall-failed' }
+  }
+})
+
+ipcMain.handle('desktop:edition:open-source', async (event, rawId: unknown) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
+  if (typeof rawId !== 'string') return false
+  const edition = builtinEdition(rawId)
+  if (edition === undefined) return false
+  await shell.openExternal(edition.source)
+  return true
+})
+
 ipcMain.handle('desktop:lan:state', (event) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
   return { running: lanService.isRunning, busy: lanService.isBusy }
@@ -1492,14 +1628,17 @@ app.on('before-quit', (event) => {
   closeFeishuSetupWindow()
   localeController?.dispose()
   destroyTray()
-  if (shellApp.supervisorInstance !== undefined || connectSupervisor !== undefined || lanService.isRunning) {
+  if (shellApp.supervisorInstance !== undefined || connectSupervisor !== undefined || lanService.isRunning || runtimeManager?.hasRunningProcesses() === true) {
     event.preventDefault()
     // Absolute quit guard: each stop() already has a SIGKILL fallback, but if
     // something unexpected leaves a promise pending we still force-quit
     // within 8s instead of hanging the app on exit.
     const forceQuitTimer = setTimeout(() => app.quit(), 8_000)
     forceQuitTimer.unref()
-    void Promise.all([shellApp.stopHarness(), connectSupervisor?.stop(), lanService.stop()]).finally(() => {
+    for (const runtimeWindow of runtimeWindows.values()) {
+      if (!runtimeWindow.isDestroyed()) runtimeWindow.close()
+    }
+    void Promise.all([shellApp.stopHarness(), connectSupervisor?.stop(), lanService.stop()]).then(() => runtimeManager?.stopAll()).finally(() => {
       clearTimeout(forceQuitTimer)
       app.quit()
     })

@@ -221,6 +221,8 @@ test('installKernel surfaces invalid versions and child failures', async () => {
   const dir = kernelsDir(await mkdtemp(join(tmpdir(), 'dsh-kernel-failure-')))
   try {
     assert.deepEqual(await installKernel({ dir, version: 'bad/version', nodeBin: 'node', pnpmBin: 'pnpm' }), { ok: false, reason: 'invalid-version' })
+    assert.deepEqual(await installKernel({ dir, version: '.', nodeBin: 'node', pnpmBin: 'pnpm' }), { ok: false, reason: 'invalid-version' })
+    assert.deepEqual(await installKernel({ dir, version: '..', nodeBin: 'node', pnpmBin: 'pnpm' }), { ok: false, reason: 'invalid-version' })
     const fakeSpawn = (() => ({
       on: (event: string, callback: () => void) => { if (event === 'error') callback() },
       kill: () => {},

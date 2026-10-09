@@ -26,6 +26,11 @@ export interface SpawnProcessOptions {
 export class ManagedChild {
   private child: ChildProcess | undefined
   private stopTask: Promise<void> | undefined
+  private readonly spawnImpl: typeof spawn
+
+  constructor(spawnImpl: typeof spawn = spawn) {
+    this.spawnImpl = spawnImpl
+  }
 
   /** The current child, or undefined when none is running. */
   get process(): ChildProcess | undefined {
@@ -43,7 +48,7 @@ export class ManagedChild {
    * process; slot bookkeeping (exit clears the slot) is this module's job.
    */
   spawn(options: SpawnProcessOptions): ChildProcess {
-    const child = spawn(options.command, options.args, {
+    const child = this.spawnImpl(options.command, options.args, {
       ...(options.cwd !== undefined ? { cwd: options.cwd } : {}),
       env: options.env,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -78,7 +83,7 @@ export class ManagedChild {
       // sweep the whole tree so grandchildren do not survive an app quit.
       child.kill('SIGTERM')
       if (process.platform === 'win32' && child.pid !== undefined) {
-        spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true })
+        this.spawnImpl('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true })
       }
     })
     this.stopTask = task

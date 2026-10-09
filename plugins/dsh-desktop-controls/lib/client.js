@@ -411,6 +411,29 @@ window.__ModuleLoader__.load({
         flex-wrap: wrap;
         justify-content: flex-end;
       }
+      [data-dsh-runtime-panel] {
+        background: var(--dsh-controls-panel-muted);
+        border: 1px solid var(--dsh-controls-border);
+        border-radius: 10px;
+        display: grid;
+        gap: 8px;
+        margin: 10px 0 2px;
+        padding: 10px 12px;
+      }
+      [data-dsh-runtime-form] { align-items: center; display: flex; flex-wrap: wrap; gap: 7px; }
+      [data-dsh-runtime-form] input,
+      [data-dsh-runtime-form] select {
+        background: var(--dsh-controls-panel);
+        border: 1px solid var(--dsh-controls-border);
+        border-radius: 7px;
+        color: var(--dsh-controls-text);
+        font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+        min-width: 130px;
+        padding: 6px 8px;
+      }
+      [data-dsh-runtime-row] { align-items: center; border-top: 1px solid var(--dsh-controls-border); display: flex; gap: 10px; justify-content: space-between; padding-top: 8px; }
+      [data-dsh-runtime-row] small { color: var(--dsh-controls-muted); display: block; font-size: 11px; }
+      [data-dsh-runtime-status] { color: var(--dsh-controls-muted); font-size: 11px; white-space: nowrap; }
       [data-dsh-desktop-settings] [data-dsh-market-risk] {
         align-items: flex-end;
         display: inline-flex;
@@ -905,6 +928,7 @@ window.__ModuleLoader__.load({
         marketTechnical: "查看脱敏技术详情", marketCopy: "复制技术详情", marketCopied: "已复制",
         balance: "余额", recharge: "充值",
         kernel: "内核版本", kernelBundled: "内置", kernelOverlay: "已切换",
+        runtimeManager: "多版本运行环境", runtimeManagerDetail: "安装多个官方 dsh 版本；每个环境拥有独立数据目录，可同时运行。", runtimeCatalog: "版本目录", runtimeSource: "来源", runtimeOfficial: "官方", runtimeCommunity: "社区", runtimeOpen: "查看发布页", runtimeVersionPlaceholder: "版本号，例如 0.1.1-rc.3", runtimeInstall: "安装版本", runtimeNamePlaceholder: "环境名称", runtimeCreate: "创建环境", runtimeEmpty: "先安装一个官方版本", runtimeStart: "启动", runtimeStop: "停止", runtimeUninstall: "卸载 runtime", runtimeMissing: "runtime 已卸载，环境数据仍保留", runtimeStopped: "已停止", runtimeStarting: "启动中", runtimeRunning: "运行中", runtimeFailed: "启动失败", runtimeUninstallConfirm: "卸载 runtime {version}？该环境的数据会保留。",
         kernelCheck: "检查新版", kernelInstall: "安装最新", kernelRestore: "恢复内置",
         kernelUpToDate: "已是最新版本。",
         kernelAvailable: "发现内核新版 {version}，可点击安装。", kernelInstalling: "正在安装并切换，可能需要几分钟…", kernelReady: "内核 {version} 已安装并运行。", kernelCheckFailed: "无法检查内核更新，请检查网络后重试。", kernelInstallFailed: "内核安装失败，尚未切换；请检查网络后重试。", kernelSwitchFailed: "内核已安装，但 Harness 重启失败。", kernelRolledBack: "新版内核健康检查失败，已恢复内置内核。", kernelRestored: "已恢复内置内核。", kernelRestoreFailed: "恢复内置内核后重启失败。", kernelUnavailable: "当前构建暂不可用内核更新。", kernelFailed: "操作未完成，请重试。",
@@ -959,6 +983,7 @@ window.__ModuleLoader__.load({
         marketTechnical: "Show sanitized technical detail", marketCopy: "Copy technical detail", marketCopied: "Copied",
         balance: "Balance", recharge: "Recharge",
         kernel: "Kernel version", kernelBundled: "bundled", kernelOverlay: "switched",
+        runtimeManager: "Multi-version environments", runtimeManagerDetail: "Install official dsh versions side by side; each environment keeps isolated data and can run concurrently.", runtimeCatalog: "Edition catalog", runtimeSource: "Source", runtimeOfficial: "Official", runtimeCommunity: "Community", runtimeOpen: "Open release page", runtimeVersionPlaceholder: "Version, e.g. 0.1.1-rc.3", runtimeInstall: "Install version", runtimeNamePlaceholder: "Environment name", runtimeCreate: "Create environment", runtimeEmpty: "Install an official version first", runtimeStart: "Start", runtimeStop: "Stop", runtimeUninstall: "Uninstall runtime", runtimeMissing: "Runtime uninstalled; environment data is kept", runtimeStopped: "Stopped", runtimeStarting: "Starting", runtimeRunning: "Running", runtimeFailed: "Failed to start", runtimeUninstallConfirm: "Uninstall runtime {version}? The environment data will be kept.",
         kernelCheck: "Check for newer", kernelInstall: "Install latest", kernelRestore: "Restore bundled",
         kernelUpToDate: "You're on the latest version.",
         kernelAvailable: "Kernel {version} is available; install it when ready.", kernelInstalling: "Installing and switching — this can take a few minutes…", kernelReady: "Kernel {version} is installed and running.", kernelCheckFailed: "Couldn't check for kernel updates. Check your network and retry.", kernelInstallFailed: "Kernel install failed before switching. Check your network and retry.", kernelSwitchFailed: "The kernel installed, but Harness could not restart.", kernelRolledBack: "The new kernel failed its health check; the bundled kernel was restored.", kernelRestored: "The bundled kernel is restored.", kernelRestoreFailed: "Harness could not restart after restoring the bundled kernel.", kernelUnavailable: "Kernel updates are not available in this build.", kernelFailed: "The operation did not finish; please retry.",
@@ -1462,6 +1487,95 @@ window.__ModuleLoader__.load({
         }
       };
 
+      const [runtimeState, setRuntimeState] = react.useState(null);
+      const [runtimeVersionInput, setRuntimeVersionInput] = react.useState("");
+      const [runtimeNameInput, setRuntimeNameInput] = react.useState("");
+      const [runtimeCreateVersion, setRuntimeCreateVersion] = react.useState("");
+      const [runtimeBusy, setRuntimeBusy] = react.useState("");
+
+      const refreshRuntime = async () => {
+        if (typeof bridge?.getRuntimeState !== "function") return null;
+        const value = await bridge.getRuntimeState();
+        if (value !== null) {
+          setRuntimeState(value);
+          setRuntimeCreateVersion((current) => current || value.runtimes[0] || "");
+        }
+        return value;
+      };
+
+      react.useEffect(() => { void refreshRuntime(); }, [bridge]);
+
+      const runtimeInstall = async () => {
+        const version = runtimeVersionInput.trim();
+        if (version === "" || typeof bridge?.installRuntime !== "function") return;
+        setRuntimeBusy("install");
+        try {
+          const result = await bridge.installRuntime(version);
+          setMessage(result?.ok === true ? `${copy.runtimeManager} · ${version}` : copy.kernelInstallFailed);
+          if (result?.ok === true) {
+            setRuntimeCreateVersion(version);
+            setRuntimeVersionInput("");
+          }
+          await refreshRuntime();
+        } finally {
+          setRuntimeBusy("");
+        }
+      };
+
+      const runtimeCreate = async () => {
+        const name = runtimeNameInput.trim();
+        if (name === "" || runtimeCreateVersion === "" || typeof bridge?.createRuntimeEnvironment !== "function") return;
+        setRuntimeBusy("create");
+        try {
+          const result = await bridge.createRuntimeEnvironment(name, runtimeCreateVersion);
+          setMessage(result?.ok === true ? copy.saved : copy.kernelFailed);
+          if (result?.ok === true) setRuntimeNameInput("");
+          await refreshRuntime();
+        } finally {
+          setRuntimeBusy("");
+        }
+      };
+
+      const runtimeProcess = async (id, action) => {
+        const method = action === "start" ? bridge?.startRuntimeEnvironment : bridge?.stopRuntimeEnvironment;
+        if (typeof method !== "function") return;
+        setRuntimeBusy(`${action}:${id}`);
+        try {
+          const result = await method(id);
+          if (result?.ok !== true) setMessage(result?.reason ?? copy.kernelFailed);
+          await refreshRuntime();
+        } finally {
+          setRuntimeBusy("");
+        }
+      };
+
+      const runtimeUninstall = async (version) => {
+        if (typeof bridge?.uninstallRuntime !== "function") return;
+        if (!window.confirm(copy.runtimeUninstallConfirm.replace("{version}", version))) return;
+        setRuntimeBusy(`uninstall:${version}`);
+        try {
+          const result = await bridge.uninstallRuntime(version);
+          setMessage(result?.ok === true ? copy.saved : result?.reason ?? copy.kernelFailed);
+          await refreshRuntime();
+        } finally {
+          setRuntimeBusy("");
+        }
+      };
+
+      const runtimeOpenEdition = (id) => {
+        if (typeof bridge?.openEditionSource === "function") void bridge.openEditionSource(id);
+      };
+
+      const runtimeStatusLabel = (status) => ({
+        stopped: copy.runtimeStopped,
+        starting: copy.runtimeStarting,
+        running: copy.runtimeRunning,
+        failed: copy.runtimeFailed,
+        "missing-runtime": copy.runtimeMissing,
+      }[status] ?? status);
+
+      const runtimeEditionTrust = (edition) => edition.trust === "official-verified" ? copy.runtimeOfficial : copy.runtimeCommunity;
+
       const refreshLanState = async () => {
         if (typeof bridge?.getLanState !== "function") return;
         const value = await bridge.getLanState();
@@ -1741,6 +1855,44 @@ window.__ModuleLoader__.load({
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: kernelBusy !== "", onClick: () => void kernelAction("check"), children: kernelBusy === "check" ? "…" : copy.kernelCheck }),
               kernel.latestVersion && kernel.latestVersion !== (kernel.overlayVersion ?? kernel.bundledVersion) ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: kernelBusy !== "", onClick: () => void kernelAction("install"), children: kernelBusy === "install" ? "…" : copy.kernelInstall }) : null,
               kernel.overlayVersion ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: kernelBusy !== "", onClick: () => void kernelAction("restore"), children: copy.kernelRestore }) : null,
+            ] }),
+          ] }) : null,
+          typeof bridge?.getRuntimeState === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-runtime-panel": true, children: [
+            react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-label": true, children: [
+              copy.runtimeManager,
+              react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.runtimeManagerDetail }),
+            ] }),
+            runtimeState?.editions?.length ? react_jsx_runtime.jsxs(react.Fragment, { children: [
+              react_jsx_runtime.jsx("small", { "data-dsh-runtime-status": true, children: copy.runtimeCatalog }),
+              runtimeState.editions.map((edition) => react_jsx_runtime.jsxs("div", { "data-dsh-runtime-row": true, children: [
+                react_jsx_runtime.jsxs("span", { children: [edition.name, react_jsx_runtime.jsx("small", { children: `${edition.publisher} · ${runtimeEditionTrust(edition)} · ${edition.isolation.join("/")}` })] }),
+                react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, onClick: () => runtimeOpenEdition(edition.id), children: copy.runtimeOpen }),
+              ] }, edition.id)),
+            ] }) : null,
+            react_jsx_runtime.jsxs("div", { "data-dsh-runtime-form": true, children: [
+              react_jsx_runtime.jsx("input", { type: "text", value: runtimeVersionInput, placeholder: copy.runtimeVersionPlaceholder, onChange: (event) => setRuntimeVersionInput(event.target.value), onKeyDown: (event) => { if (event.key === "Enter") void runtimeInstall(); } }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: runtimeBusy !== "" || runtimeVersionInput.trim() === "", onClick: () => void runtimeInstall(), children: runtimeBusy === "install" ? "…" : copy.runtimeInstall }),
+            ] }),
+            runtimeState === null ? react_jsx_runtime.jsx("small", { "data-dsh-runtime-status": true, children: copy.runtimeEmpty }) : react_jsx_runtime.jsxs(react.Fragment, { children: [
+              runtimeState.runtimes.length === 0 ? react_jsx_runtime.jsx("small", { "data-dsh-runtime-status": true, children: copy.runtimeEmpty }) : null,
+              react_jsx_runtime.jsxs("div", { "data-dsh-runtime-form": true, children: [
+                react_jsx_runtime.jsx("input", { type: "text", value: runtimeNameInput, placeholder: copy.runtimeNamePlaceholder, onChange: (event) => setRuntimeNameInput(event.target.value) }),
+                react_jsx_runtime.jsx("select", { value: runtimeCreateVersion, disabled: runtimeState.runtimes.length === 0, onChange: (event) => setRuntimeCreateVersion(event.target.value), children: runtimeState.runtimes.map((version) => react_jsx_runtime.jsx("option", { value: version, children: version }, version)) }),
+                react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: runtimeBusy !== "" || runtimeNameInput.trim() === "" || runtimeCreateVersion === "", onClick: () => void runtimeCreate(), children: runtimeBusy === "create" ? "…" : copy.runtimeCreate }),
+              ] }),
+              runtimeState.runtimes.map((version) => {
+                const usedByRunning = runtimeState.environments.some((environment) => environment.runtimeVersion === version && (environment.status === "running" || environment.status === "starting"));
+                return react_jsx_runtime.jsxs("div", { "data-dsh-runtime-row": true, children: [
+                  react_jsx_runtime.jsxs("span", { children: [version, react_jsx_runtime.jsx("small", { children: `${runtimeState.environments.filter((environment) => environment.runtimeVersion === version).length} ${copy.runtimeManager}` })] }),
+                  react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: runtimeBusy !== "" || usedByRunning, onClick: () => void runtimeUninstall(version), children: runtimeBusy === `uninstall:${version}` ? "…" : copy.runtimeUninstall }),
+                ] }, `runtime-${version}`);
+              }),
+              runtimeState.environments.map((environment) => react_jsx_runtime.jsxs("div", { "data-dsh-runtime-row": true, children: [
+                react_jsx_runtime.jsxs("span", { children: [environment.name, react_jsx_runtime.jsx("small", { children: `${environment.runtimeVersion} · ${runtimeStatusLabel(environment.status)}` })] }),
+                react_jsx_runtime.jsxs("span", { "data-dsh-desktop-lan-actions": true, children: [
+                  environment.status === "running" || environment.status === "starting" ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: runtimeBusy !== "", onClick: () => void runtimeProcess(environment.id, "stop"), children: runtimeBusy === `stop:${environment.id}` ? "…" : copy.runtimeStop }) : environment.status === "missing-runtime" ? null : react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: runtimeBusy !== "", onClick: () => void runtimeProcess(environment.id, "start"), children: runtimeBusy === `start:${environment.id}` ? "…" : copy.runtimeStart }),
+                ] }),
+              ] }, environment.id)),
             ] }),
           ] }) : null,
           typeof bridge?.listPresets === "function" ? react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, children: [

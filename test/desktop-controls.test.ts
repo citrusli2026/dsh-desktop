@@ -75,6 +75,16 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /kernelUpToDate/)
   assert.match(client, /kernelRolledBack/)
   assert.match(client, /kernelCheckFailed/)
+  // Multi-version dashboard: exact official installs, isolated environments,
+  // concurrent start/stop, and runtime-only uninstall.
+  assert.match(client, /getRuntimeState/)
+  assert.match(client, /installRuntime/)
+  assert.match(client, /createRuntimeEnvironment/)
+  assert.match(client, /startRuntimeEnvironment/)
+  assert.match(client, /uninstallRuntime/)
+  assert.match(client, /runtimeMissing/)
+  assert.match(client, /runtimeCatalog/)
+  assert.match(client, /openEditionSource/)
   assert.match(client, /dshDesktop/)
 
   // Host half: opt-in screen capture model tool (decision 0027, route C).
@@ -142,7 +152,12 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   const preload = await readFile(resolve('src/preload/index.ts'), 'utf8')
   const main = await readFile(resolve('src/main/index.ts'), 'utf8')
   assert.match(preload, /desktop:health-check/)
+  assert.match(preload, /desktop:runtime:state/)
+  assert.match(preload, /desktop:runtime:create/)
+  assert.match(preload, /desktop:runtime:uninstall/)
+  assert.match(preload, /desktop:edition:open-source/)
   assert.match(main, /runDesktopHealthCheck/)
+  assert.match(main, /builtinEditionCatalog/)
   assert.match(main, /conversationSucceeded/)
   assert.match(main, /firstRunGuideDismissed/)
   assert.doesNotMatch(main, /typeof candidate\.firstTaskCompleted/)

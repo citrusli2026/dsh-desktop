@@ -20,6 +20,7 @@ export const REGISTRY_URL = 'https://registry.npmjs.org/@deepseek-ai/dsh'
 export const REGISTRY_FETCH_TIMEOUT_MS = 15_000
 /** Give a switched kernel one supervised boot to reach ready; otherwise roll back. */
 export const KERNEL_HEALTH_TIMEOUT_MS = 90_000
+const SAFE_VERSION = /^[0-9A-Za-z](?:[0-9A-Za-z.-]*[0-9A-Za-z])?$/
 
 export interface OverlayPointer {
   version: string
@@ -242,7 +243,7 @@ export type InstallKernelResult = { ok: true } | { ok: false; reason: string }
  *  the bundled pnpm. Network required; the install is offline-safe to retry. */
 export async function installKernel(options: InstallKernelOptions): Promise<InstallKernelResult> {
   const { dir, version, nodeBin, pnpmBin, timeoutMs = 600_000, spawnImpl = spawn } = options
-  if (!/^[0-9A-Za-z.-]+$/.test(version)) return { ok: false, reason: 'invalid-version' }
+  if (!SAFE_VERSION.test(version)) return { ok: false, reason: 'invalid-version' }
   const target = join(dir, version)
   mkdirSync(target, { recursive: true })
   const manifest = join(target, 'package.json')

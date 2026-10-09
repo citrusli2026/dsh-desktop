@@ -11,6 +11,8 @@ import { MACOS_SIDEBAR_COLLAPSED_SAFE_TOP, MACOS_SIDEBAR_SAFE_TOP } from '../mai
 import type { DesktopPreferencesResult, DesktopPreferencesSnapshot, DesktopPreferencesUpdate } from '../main/desktop-preferences.ts'
 import type { ProfilePackageStatus } from '../main/profile.ts'
 import type { KernelOperationResult } from '../main/kernel-manager.ts'
+import type { RuntimeEnvironment, RuntimeManagerState } from '../main/runtime-manager.ts'
+import type { EditionManifest } from '../main/edition-catalog.ts'
 import type { MarketInstallProgress, MarketInstallResult } from '../main/market-install.ts'
 import type { DesktopHealthReport } from '../main/health-check.ts'
 import type { ConnectSaveResult, ConnectSettingsInput, ConnectState } from '../main/cc-connect-types.ts'
@@ -129,6 +131,19 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   /** Kernel overlay state (decision 0026). */
   getKernelState: (): Promise<{ bundledVersion?: string; overlayVersion?: string; failedVersions: string[]; installedVersions: string[]; latestVersion?: string; lastOperation?: KernelOperationResult } | null> =>
     ipcRenderer.invoke('desktop:kernel:state'),
+  /** Manage explicitly versioned dsh environments; each has its own DSH_HOME. */
+  getRuntimeState: (): Promise<(RuntimeManagerState & { editions: EditionManifest[] }) | null> => ipcRenderer.invoke('desktop:runtime:state'),
+  installRuntime: (version: string): Promise<{ ok: true } | { ok: false; reason: string } | null> =>
+    ipcRenderer.invoke('desktop:runtime:install', version),
+  createRuntimeEnvironment: (name: string, runtimeVersion: string): Promise<{ ok: true; environment: RuntimeEnvironment; state: RuntimeManagerState } | { ok: false; reason: string } | null> =>
+    ipcRenderer.invoke('desktop:runtime:create', { name, runtimeVersion }),
+  startRuntimeEnvironment: (id: string): Promise<{ ok: true; state: RuntimeManagerState } | { ok: false; reason: string } | null> =>
+    ipcRenderer.invoke('desktop:runtime:start', id),
+  stopRuntimeEnvironment: (id: string): Promise<{ ok: true; state: RuntimeManagerState } | { ok: false; reason: string } | null> =>
+    ipcRenderer.invoke('desktop:runtime:stop', id),
+  uninstallRuntime: (version: string): Promise<{ ok: true; state: RuntimeManagerState } | { ok: false; reason: string } | null> =>
+    ipcRenderer.invoke('desktop:runtime:uninstall', version),
+  openEditionSource: (id: string): Promise<boolean> => ipcRenderer.invoke('desktop:edition:open-source', id),
   /** Read the LAN pairing state for the extension settings surface. */
   getLanState: (): Promise<{ running: boolean; busy: boolean } | null> =>
     ipcRenderer.invoke('desktop:lan:state'),

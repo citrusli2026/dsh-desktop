@@ -43,6 +43,8 @@ src/main/update-prompt.ts   跨平台更新与 macOS check-only 提示
 src/main/smoke.ts           CI 冒烟断言与退出约定
 src/main/supervisor.ts      Harness 子进程生命周期与退避重启
 src/main/kernel-manager.ts  内核 overlay(0026):选择/安装/健康守卫与失败回滚
+src/main/runtime-manager.ts  多版本 Dashboard:官方 runtime、独立 Environment 与并行进程
+src/main/edition-catalog.ts  Edition 来源、信任等级与隔离元数据的只读目录
 src/main/desktop-controls.ts  shell-owned Web 插件挂载与降级
 src/main/global-shortcut.ts  桌面全局快捷键注册、校验与平台文案
 src/main/desktop-preferences.ts  快捷键、启动/通知与首次成功引导状态及原生副作用

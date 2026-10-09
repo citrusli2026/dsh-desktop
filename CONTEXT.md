@@ -27,6 +27,7 @@ DeepSeek Harness(`@deepseek-ai/dsh`,简称 **dsh**)的非官方 Electron 桌面�
 | **harness** | 被壳托管的 DeepSeek Harness 运行时;闭包 = 内置 Node 22(`resources/harness/node`)+ `@deepseek-ai/dsh` 及依赖(`resources/harness/node_modules`),由 `pnpm run bootstrap`(deploy-harness + fetch-node)物化 |
 | **shell / 壳修订** | 壳自身的修订;版本为复合式 `<dsh 版本>.shell.<壳修订>`,如 `0.1.1-rc.2.shell.2`(决策 0009) |
 | **DSH_HOME / settings.yaml** | 壳与 harness 的私有数据根(默认 `~/.dsh-desktop`,决策 0012);`settings.yaml` 是 Harness 偏好(locale/theme),变更经 fs.watch + 2 秒轮询兜底生效;桌面快捷键、开机启动、通知与首次成功引导状态保存在应用 userData 下的 `shell-preferences.json`;`DSH_HOME=~/.dsh` 可回退为与 CLI 共享 |
+| **Edition / Runtime / Environment** | Dashboard 的三层模型:Edition 是官方或社区桌面/runtime 来源;Runtime 是已安装的具体 dsh 版本;Environment 是绑定版本、独立 `DSH_HOME`/workspace、端口和进程生命周期的实例。目录/进程隔离是 L1–L3，不等于 OS 安全沙箱(决策 0034) |
 | **composite version** | `version.mjs`(show/check/bump shell/bump dsh/set)统一管理版本字段;tag `v<版本>` |
 | **smoke 协议** | `src/main/smoke-protocol.ts` 集中定义旗标/退出码/注入 env:`--smoke-test`、`--smoke-ui`、`DSH_DESKTOP_TEST_FAIL_HARNESS`、`DSH_DESKTOP_TEST_RETRY_FAIL`、`DSH_DESKTOP_DEV_WEB_URL`;`quitGracefully` 在 will-quit 强制 `app.exit(code)`(Windows 上 app.quit 会丢退出码) |
 | **S1 / S2 / S2.5 / A组** | 发布门禁层级,规划与边界见 `docs/test-hardening-plan.md`:S1=打包 E2E+故障注入;S2=安装态冒烟(deb/NSIS,含重装),macOS 无安装器故无 S2;S2.5=真实 Harness 首屏渲染(`--smoke-ui`);A组=设置面板/更新检查/诊断导出/几何恢复/真第二实例/特殊路径 |
