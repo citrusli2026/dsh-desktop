@@ -10,7 +10,7 @@
 - 子模块目录：`third_party/cc-connect`
 - 子模块当前提交：`dd637656761ecaea0144bedbf3c7576e962f7da3`
 - 子模块本地开发分支：`codex/dsh-agent-integration`
-- 产品功能实现：已完成；真实飞书应用创建回调和凭证有效性已验证，消息回流仍待最后一条人工测试消息
+- 产品功能实现：已完成；真实飞书应用回调、消息入站、DSH ACP 启动和飞书回包均已验证
 
 ## 状态表
 
@@ -32,13 +32,13 @@
 | DESK-07 设置页 | done | `f95538f65a543218d605e52451da552f0282a346` | dsh-desktop-controls 增加中英文消息连接设置卡片、Secret 保留/清空语义、workspace 原生选择和 Sidecar 操作状态；静态契约、全量测试、构建通过 |
 | QA-01 假 Sidecar E2E | done | `4708ef04369617018638fe2c64fd95a59fed2e1c` | Electron renderer-to-main 假 Sidecar E2E 覆盖 disabled、保存、ready、重连崩溃、停止和 Safe Mode；开发环境路径注入不影响打包路径 |
 | QA-02 DSH ACP 契约 | done | `5d980fcce09604a9b536b26195d7414f744f738b` | 临时 DSH_HOME + 当前捆绑 Node/DSH 真实 ACP 测试通过 initialize/new/mock prompt/close/list/resume/close |
-| QA-03 飞书人工验收 | in-progress | — | 已取得临时真实 App ID/Secret 并验证应用 API 返回成功；待完成 Desktop/飞书消息往返，不保存或输出凭证 |
+| QA-03 飞书人工验收 | done | 待本次验收记录提交 | 真实 App ID/Secret 仅在隔离临时目录使用；Feishu websocket 入站、cc-connect 路由、真实 DSH ACP 和 Feishu 回包通过；凭证值未输出或写入仓库/真实用户目录 |
 | DOC-01 用户文档 | done | `34e4554` | 新增飞书后台、启动/停止、Safe Mode、数据位置、脱敏日志、禁用与凭证删除指南；更新文档索引和发布说明；文档契约、全量测试、覆盖率、typecheck、site:check 通过 |
 | REL-01 最终门禁 | done | `9b9459dfa4dc8affd760b2a2cb546a4abffc4f7b` | validation.md 命令已执行；Desktop 全量、E2E、unpacked sidecar SHA/版本和双仓库干净/gitlink 可达性通过；子模块全量保留既有 web/dist 与基线测试阻塞 |
 
 ## 下一任务
 
-下一任务：`QA-03-CC-BOT`；真实飞书应用回调已不再是阻塞，仍需最后一条消息往返证据。
+下一任务：无后续任务；`QA-03-CC-BOT` 已完成。
 
 ## 每项完成后的记录格式
 
@@ -280,7 +280,7 @@
 
 - 子模块提交：`dd637656761ecaea0144bedbf3c7576e962f7da3`（复用已推送修复）
 - 父仓库提交：待本次验收记录提交
-- 行为变化：使用新的隔离临时目录重新运行 cc-connect Feishu setup；在已登录的飞书开放平台页面完成“立即创建”与“继续创建”，Desktop 回调正常退出，并在临时 `config.toml` 中确认 `app_id`、`app_secret` 均存在且文件权限为 `0600`。未输出任何凭证值，也未写入真实 `~/.cc-connect`、`~/.dsh` 或 `~/.dsh-desktop`。
-- 验证命令与退出码：临时配置存在性/权限/字段检查（0，仅输出 present/empty）；飞书 `tenant_access_token` 与 bot info API 检查（HTTP 200，业务 code 0，仅输出 bot 名称和 open_id 是否存在）；隔离 `cc-connect --config <临时配置> --force`（仍在等待入站消息）；`node --test test/cc-connect-docs.test.ts`（0，1 passed）。
-- 未覆盖项：尚未发送最后一条人工 `dsh-connect e2e ping` 消息，因此尚无 Desktop 收到事件、启动真实 DSH ACP 并回复飞书的证据；这是当前唯一需要用户在发送前确认的外部动作。模型侧真实 API 配额也未纳入本次测试。
-- 下一任务：完成最后一条测试消息后，复查临时 sidecar/ACP 状态并将 QA-03 标记为 done；若模型 API 无余额，仅记录为外部运行时限制，不回退已验证的 Feishu 回调结论。
+- 行为变化：使用新的隔离临时目录运行 cc-connect；将本机 credentials service 文件临时复制到权限为 `0600` 的隔离 `DSH_HOME`，未修改真实用户目录。确认正确的新建 Feishu bot 会话后发送 `dsh-connect e2e ping`，真实 Feishu websocket 入站经 cc-connect 路由到 DSH ACP，随后成功回包并在飞书界面显示 “Connectivity confirmed”。
+- 验证命令与退出码：临时配置存在性/权限/字段检查（0，仅输出 present/empty）；飞书 `tenant_access_token` 与 bot info API 检查（HTTP 200，业务 code 0）；隔离 cc-connect/DSH ACP 端到端进程日志与退出状态（0）；飞书界面回包检查（0）；`node --test test/cc-connect-docs.test.ts`（0，1 passed）；临时诊断目录清理（0，已删除，真实 credentials 文件仍为 `0600`）。
+- 未覆盖项：本次集成验收没有剩余项。上游子模块全量 Go gate 仍保留既有 `web/dist`、`agent/codex` 和 core workspace-skills 基线失败；模型凭证仅作为用户拥有的临时测试输入，未随代码交付。
+- 下一任务：无；计划完成。
