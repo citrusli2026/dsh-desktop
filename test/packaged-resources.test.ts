@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { parse } from 'yaml'
 // @ts-expect-error the build helper is a plain .mjs module
 import { buildLdflags, createSidecarManifest, SIDECAR_BUILD_TAGS, targetForPlatform } from '../scripts/build-cc-connect.mjs'
+import { isSmokeVersionMismatch, SMOKE_EXPECTED_VERSION_ENV } from '../src/main/smoke-protocol.ts'
 
 test('electron-builder packs the agent trash hook next to the harness', () => {
   const config = parse(readFileSync('electron-builder.yml', 'utf8')) as {
@@ -71,4 +72,14 @@ test('Windows installer verification checks the cc-connect sidecar and manifest'
   const verifier = readFileSync('scripts/verify-windows-installer.mjs', 'utf8')
   assert.match(verifier, /resources\/cc-connect\/bin\/cc-connect\.exe/)
   assert.match(verifier, /cc-connect manifest sha256 does not match the packaged sidecar/)
+})
+
+test('packaged smoke rejects a stale unpacked app before boot', () => {
+  assert.equal(SMOKE_EXPECTED_VERSION_ENV, 'DSH_SMOKE_EXPECTED_VERSION')
+  assert.equal(isSmokeVersionMismatch('0.2.1-alpha.2.shell.0', '0.2.1-alpha.2.shell.0'), false)
+  assert.equal(isSmokeVersionMismatch('0.2.1-alpha.1.shell.5', '0.2.1-alpha.2.shell.0'), true)
+  assert.equal(isSmokeVersionMismatch(undefined, '0.2.1-alpha.2.shell.0'), false)
+
+  const smoke = readFileSync('scripts/smoke-packaged.mjs', 'utf8')
+  assert.match(smoke, /SMOKE_EXPECTED_VERSION_ENV/)
 })

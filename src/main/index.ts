@@ -47,7 +47,7 @@ import { createTray, destroyTray, refreshTray, type TrayActions } from './tray.t
 import { statusLabelWithMode } from './tray-status.ts'
 import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } from './update-prompt.ts'
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, smokeVerifyClosure, verifySmokeFailureRecovery } from './smoke.ts'
-import { DEV_WEB_URL_ENV, SMOKE_CLOSURE_FLAG, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
+import { DEV_WEB_URL_ENV, isSmokeVersionMismatch, SMOKE_CLOSURE_FLAG, SMOKE_EXPECTED_VERSION_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
 import { exportDiagnosticReport, redactDiagnosticsLog } from './diagnostics.ts'
 import { clearPersistedPluginSuspects, loadPersistedPluginSuspects, persistPluginSuspects, updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, OFFICIAL_BUNDLES, classifyPluginFailureCause, type ComposedRow } from './safe-mode.ts'
 import { listTrash, moveToTrash, purgeExpiredTrash, purgeFromTrash, restoreFromTrash } from './trash.ts'
@@ -1657,6 +1657,12 @@ if (!gotLock) {
 } else {
   app.on('second-instance', () => showWindow(windowContext))
   void app.whenReady().then(async () => {
+    const expectedSmokeVersion = process.env[SMOKE_EXPECTED_VERSION_ENV]
+    if (SMOKE_TEST && isSmokeVersionMismatch(expectedSmokeVersion, app.getVersion())) {
+      console.error(`dsh-desktop: packaged version mismatch: expected ${expectedSmokeVersion}, got ${app.getVersion()}`)
+      quitGracefully(SMOKE_EXIT_FAIL)
+      return
+    }
     // Windows toasts only display when the AUMID matches the Start Menu
     // shortcut (electron-builder uses the appId); without it desktop
     // notifications silently never show.

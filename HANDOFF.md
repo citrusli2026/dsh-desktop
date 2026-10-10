@@ -1894,3 +1894,15 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alph
 Release CI：<https://github.com/citrusli2026/dsh-desktop/actions/runs/38060249915>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alpha.2.shell.0>；
 官网：<https://dsh-desktop.com>。
+
+## 75. alpha.2 发布复盘与防重复踩坑（2026-10-10）
+
+本轮发布后把以下现场问题固化到 `.agents/skills/release-dsh-desktop/SKILL.md`，并将最容易误判的 packaged smoke 变成了代码门禁：
+
+1. **内核补丁必须随精确版本重建**：`pnpm -C manifest/harness install --lockfile-only` 在内核升级后报 `ERR_PNPM_UNUSED_PATCH`，原因是 `patchedDependencies` 仍指向旧版 `dsh-client-ui-settings-account` patch。下次用 `pnpm patch <精确版本> --edit-dir <临时目录>` → 重放 `openedAttemptId` → `pnpm patch-commit --patches-dir manifest/harness/patches`，删掉旧 patch，再用 `--no-frozen-lockfile --reporter=append-only` 重生成锁文件；`bootstrap` 后必须 grep staged closure marker。
+2. **旧 dist 曾让本地 smoke 产生假阳性**：本轮第一次 `smoke:packaged` 验证的是旧 alpha.1 解包目录。现在 `scripts/smoke-packaged.mjs` 自动把源码 `package.json` 版本传给 smoke app，Electron 在启动早期比较 `app.getVersion()`，版本不一致直接失败；发布顺序固定为 `dist:dir` → `smoke:packaged` → `smoke:packaged-ui`。
+3. **GitCode 预发布数量有限制**：创建 alpha.2 预发布 Release 返回 HTTP 400「预发布版本最多标记20个」。同一 tag/commit 改为普通 Release（`release_status: 0`）后资产上传、6/6 匿名 Range GET 和官网 `gitcode_ok` 均正常；后续不要重复重建 tag 或 Release，记录 fallback 即可。
+4. **GitCode 页面不能作为唯一成功信号**：本轮直接打开 `/releases/tag/<tag>` 的 UI 曾显示“页面找不到或无权限”，但 `/releases` 列表已显示完整版本和 6 个资产，v2 API 与匿名 Range GET 均通过。后续以 release 列表/API + 稳定下载 URL Range GET 为准，不因单一详情页路由误报回滚发布。
+5. **本地 sidecar manifest 是构建期产物**：`pnpm run dist:dir` 会按本次带 build-time ldflag 的二进制重写 `resources/cc-connect/manifest.json`，因此工作树可能只出现 SHA 变化；`resources/cc-connect/bin/` 已忽略，打包命令会再次构建并校验。发布提交前检查并清理这种本地 hash-only 变更，避免把一次本机二进制摘要误带入源码提交。
+
+本轮新增回归测试：`test/packaged-resources.test.ts` 覆盖版本 mismatch 判定与 smoke wiring；实现已纳入 `src/main/smoke-protocol.ts`、`src/main/index.ts` 和 `scripts/smoke-packaged.mjs`。

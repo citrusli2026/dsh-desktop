@@ -7,11 +7,12 @@ import { join } from 'node:path'
 import { locatePackagedExecutable, packagedResourcesDir } from './packaged-locator.mjs'
 // Shared with the app's built-in smoke mode (src/main/smoke.ts) so the flag,
 // exit codes, and injection env vars cannot drift between the two sides.
-import { SMOKE_CLOSURE_FLAG, SMOKE_EXIT_FAIL, SMOKE_EXIT_OK, SMOKE_FLAG, SMOKE_SAFE_ENV, SMOKE_UI_FLAG, TEST_TAMPER_CLOSURE_ENV } from '../src/main/smoke-protocol.ts'
+import { SMOKE_CLOSURE_FLAG, SMOKE_EXPECTED_VERSION_ENV, SMOKE_EXIT_FAIL, SMOKE_EXIT_OK, SMOKE_FLAG, SMOKE_SAFE_ENV, SMOKE_UI_FLAG, TEST_TAMPER_CLOSURE_ENV } from '../src/main/smoke-protocol.ts'
 
 const distRoot = process.argv[2] ?? 'dist'
 const executable = await locatePackagedExecutable(distRoot)
 const resources = packagedResourcesDir(executable)
+const packageVersion = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')).version
 
 async function verifyBundledSidecar() {
   const binaryName = process.platform === 'win32' ? 'cc-connect.exe' : 'cc-connect'
@@ -77,7 +78,7 @@ function runSmoke({ flags = [], env = {} } = {}) {
     const args = [SMOKE_FLAG, `--user-data-dir=${userData}`, ...flags]
     if (process.platform === 'linux') args.push('--no-sandbox')
     const child = spawn(executable, args, {
-      env: { ...process.env, DSH_HOME: dshHome, ...env },
+      env: { ...process.env, DSH_HOME: dshHome, [SMOKE_EXPECTED_VERSION_ENV]: packageVersion, ...env },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     let output = ''

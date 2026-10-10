@@ -26,6 +26,14 @@ export const SMOKE_EXIT_OK = 0
 /** Exit code when any smoke assertion fails. */
 export const SMOKE_EXIT_FAIL = 1
 
+/** Environment variable carrying the source package version into packaged smoke. */
+export const SMOKE_EXPECTED_VERSION_ENV = 'DSH_SMOKE_EXPECTED_VERSION'
+
+/** Return true when a packaged app does not match the source being verified. */
+export function isSmokeVersionMismatch(expected: string | undefined, actual: string): boolean {
+  return expected !== undefined && expected !== actual
+}
+
 /** Test injection: force boot to fail as if the harness crashed. */
 export const TEST_FAIL_HARNESS_ENV = 'DSH_DESKTOP_TEST_FAIL_HARNESS'
 

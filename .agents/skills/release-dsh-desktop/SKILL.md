@@ -26,7 +26,7 @@ are all part of the release, not afterthoughts.
 1. `node scripts/version.mjs check` → exit 3 with `update available: <v>`.
 2. `node scripts/version.mjs bump dsh <v>` → prints `synced N dsh-* peer pins`.
 3. `node scripts/sync-release-age-excludes.mjs <v>` → `241 -> 229 pinned entries` (numbers vary).
-4. `pnpm -C manifest/harness install --lockfile-only` → if it exits with
+4. `pnpm -C manifest/harness install --lockfile-only --no-frozen-lockfile --reporter=append-only` → if it exits with
    `ERR_PNPM_UNUSED_PATCH`, rebuild the login patch for the new kernel
    version (see the patch-regeneration fault-table row), then re-run.
 5. `pnpm -C manifest/harness install --frozen-lockfile` → `Done`.
@@ -37,8 +37,12 @@ are all part of the release, not afterthoughts.
 8. `pnpm run verify` → exit 0 (typecheck, unit tests + coverage, site
    checks, build).
 9. `pnpm exec playwright test -g "LAN pairing"` → 2 passed. Then
-   `pnpm test:e2e:market:offline` → 1 passed, and `pnpm run smoke:packaged`
-   → `packaged smoke: OK`.
+   `pnpm test:e2e:market:offline` → 1 passed. Immediately before packaged
+   smoke, run `GOPROXY=https://goproxy.cn,direct pnpm run dist:dir`; then run
+   `pnpm run smoke:packaged` and `pnpm run smoke:packaged-ui` → both pass.
+   The smoke driver passes the source package version into the app and fails
+   early if `dist/` is stale, so never treat an old `packaged smoke: OK` as a
+   release result.
 10. `pnpm test:e2e:market:real` → 2 passed. **If it reports
     `install-failed`**, read the market fault-table row (bundled-pnpm
     publish-age window vs the new kernel's peer enforcement) before
@@ -102,6 +106,29 @@ pnpm -C manifest/harness install --frozen-lockfile
 
 pnpm may auto-add new packages to `minimumReleaseAgeExclude`
 (supply-chain policy) — that is expected, keep it.
+
+If the lockfile step reports `ERR_PNPM_UNUSED_PATCH`, the patch filename still
+targets the previous kernel version. Regenerate it against the package that is
+actually being installed; do not leave the old patch file beside the new one:
+
+```sh
+PATCH_DIR=$(mktemp -d -t dsh-account-patch.XXXXXX)
+pnpm -C manifest/harness patch \
+  @deepseek-ai/dsh-client-ui-settings-account@<new-kernel> \
+  --edit-dir "$PATCH_DIR"
+# Edit "$PATCH_DIR/lib/client.js" and re-apply the openedAttemptId auto-open effect.
+pnpm -C manifest/harness patch-commit "$PATCH_DIR" \
+  --patches-dir manifest/harness/patches
+# Update patchedDependencies to the generated <new-kernel>.patch and remove
+# the obsolete old-version patch, then regenerate the lockfile.
+pnpm -C manifest/harness install --lockfile-only --no-frozen-lockfile --reporter=append-only
+pnpm run bootstrap
+rg -c 'openedAttemptId' resources/harness/node_modules/@deepseek-ai/dsh-client-ui-settings-account/lib/client.js
+```
+
+`pnpm patch` uses the exact package version, while a leftover old patch is
+reported as unused; rebuilding the diff from the new package also catches
+upstream source-line drift before the release reaches CI.
 
 ### 2. Bootstrap the closure and fix peer gaps
 
@@ -366,12 +393,14 @@ GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-desktop \
 |---|---|
 | publish fails: `release-notes: missing docs/release-notes/v<tag>.md` | every release must write notes; scaffold with `node scripts/write-release-notes.mjs v<tag>`, fill it, commit, re-run (or re-push the tag) |
 | publish fails/ warns: `still contains placeholder <>` | fill every `<...>` in the notes file before tagging |
+| `pnpm -C manifest/harness install --lockfile-only` reports `ERR_PNPM_UNUSED_PATCH` after a kernel bump | the `patchedDependencies` key and patch filename still target the previous `dsh-client-ui-settings-account` version; use the exact `pnpm patch` → edit → `patch-commit` flow above, remove the obsolete patch, regenerate the lockfile, and verify `openedAttemptId` in the staged closure |
 | `audit-harness-peers` fails after bump | new kernel peer gap; add the package to the manifest and re-install |
 | `main` push rejected | bot sync landed; `git pull --rebase`, re-tag if the tag was already cut |
 | backfill run cancels at ~120 min with installers missing | normal; re-dispatch (idempotent), expect 2–3 runs |
 | upload API reports success + release lists assets, but anonymous Range GET 404 `NOT_PATH` on EVERY asset of a fresh release | v5 upload pipeline silently non-persisting (2026-09-20 incident): uploads via `api.gitcode.com` v5 never reach storage. Switch to the v2 browser pipeline (section 6), delete the dead attachments (`action:"delete"`), re-upload + re-link, re-verify |
 | linking a v2-uploaded asset fails with 400 `release update failed` | a link with the same filename already exists on the release; delete the old one first, then link |
 | `gitcode_ok=false` in bot sync although mirror is up | bot ran before mirror finished; regenerate locally after verifying |
+| GitCode release creation returns HTTP 400 `预发布版本最多标记20个` | GitCode has a platform-wide prerelease count limit; keep the same tag/commit and create this release as a normal release (`release_status: 0`). Asset links and website data are unaffected; record the fallback in HANDOFF |
 | CI verify fails on the dependency security audit right after a release-day advisory drop (`security:audit`, fresh GHSAs in the electron toolchain or the harness chain) | raise the **security floors** in BOTH `pnpm-workspace.yaml` override lists (root + `manifest/harness`) to the patched in-range versions, regenerate both lockfiles, re-run `pnpm security:audit` until exit 0, re-bootstrap, then **cancel the failed run, `git tag -f`, force-push the tag to both remotes** (established re-point procedure). Get patched versions from `gh api /advisories/<GHSA>` — if `first_patched_version` is missing it may just not be backfilled yet; check `gh api repos/<repo>/dependabot/alerts` for the real fix version before falling back to an audit ignore (prefer a floor whenever a patched version exists) |
 | market:real (`install-failed`) after a kernel bump that adds install-time peer enforcement | the packaged app installs plugins with the **bundled pnpm 11.11.0**, which applies a ~24h publish-age default: it resolves the newest plugin version OLDER than 24h. If that version's peers don't cover the new kernel it is rejected (clear message + `allow-version` guidance in the app's technical detail; the E2E only shows `install-failed`). Diagnose with the bundled probe: `pnpm run build && DSH_MARKET_PROBE=1 pnpm exec playwright test -g @market-probe` prints the full result (status/reason/detail) — see `e2e/market-probe.spec.ts`. Fix = wait for a peer-compatible plugin version to cross the 24h window (self-heals); do NOT downgrade the bundled pnpm or grant allow-version — both strip real safety for all users |
 | release PUT returns 200 but a link never disappears, or a same-name re-link returns 400 `release update failed` | the `action:"delete"` descriptor is missing the link row `id` (a v2 GET returns it): without the id the delete is a silent no-op that leaves a null-attachment tombstone blocking the same-name create. `scripts/mirror-gitcode-v2.mjs` carries the id — prefer it over hand-built PUTs |
@@ -382,6 +411,7 @@ GITCODE_TOKEN=$(cat ~/.gitcode-token) GITCODE_REPO=citrusli2026/dsh-desktop \
 | site-refresh fails: `SyntaxError: Identifier 'classifyPublicAsset' has already been declared` | `scripts/gen-site-data.mjs` had a duplicated local `export function classifyPublicAsset` alongside the import from `release-shape.mjs` (introduced by the architecture refactor); keep only the import, delete the local function, re-trigger the workflow |
 | packaged Windows build: `boot failed: bundled harness incomplete: node missing at ...\harness\node\bin\node.exe` | the win-x64 dist zip keeps `node.exe` at the archive root (no `bin/`); `scripts/fetch-node.mjs` now moves it to `node/bin/node.exe` after extraction — mac/linux tarballs already have `bin/node` |
 | smoke steps print `packaged smoke: OK` while the app logged a boot failure (Windows) | `app.quit()` drops `process.exitCode` as the process exit code on Windows; `quitGracefully` now forces `app.exit(code)` in `will-quit`. Never judge a gate by the script's exit code alone without a negative-path check (boot failure must exit non-zero) |
+| `pnpm run smoke:packaged` passes but the app version is from an older release | `dist/` was left over from an earlier build; run `pnpm run dist:dir` immediately before smoke. The smoke driver now injects the source version and the packaged app rejects a mismatch before boot |
 | Windows packaged E2E: native menu stays in English after writing a zh preference | directory `fs.watch` can miss content rewrites on Windows; `ShellLocaleController` re-reads `settings.yaml` every 2s as a fallback (refresh() dedupes) |
 | deb install step: `dpkg: dependency problems prevent configuration of dsh-desktop` | `dpkg -i` never resolves Depends and the bare runner lacks libnotify4/libsecret-1-0; install with `sudo apt-get install -y ./dist/<deb>` instead |
 | `RangeError [ERR_CHILD_PROCESS_STDIO_MAXBUFFER]` from `dpkg -L` | a 160 MB install lists every file, overflowing the 1 MB cap; `smoke-installed.mjs` passes a 32 MB buffer — and selects the binary by `stat` (**regular executable**, since `dpkg -L` lists the `/opt/<app>` directory before the binary inside it) |
