@@ -13,6 +13,7 @@ import { readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { defineTool } from "@deepseek-ai/dsh-tools";
+import { startSessionTrashServer } from "./trash-host.js";
 
 const CAPTURE_FALLBACKS_LINUX = [
   { command: "scrot", args: (file) => ["-o", file] },
@@ -133,6 +134,15 @@ function registerScreenCapture(ctx) {
 }
 
 export function apply(ctx) {
+  const token = process.env.DSH_DESKTOP_TRASH_TOKEN;
+  if (token) ctx.inject(["sessionController", "sessionPersistence", "workspaceRegistry"], (hostCtx) => {
+    const server = startSessionTrashServer(hostCtx, process.env.DSH_HOME, token,
+      port => console.log(`dsh-desktop-trash-ready: ${port}`));
+    hostCtx.on("dispose", () => {
+      server.closeAllConnections();
+      return new Promise(resolve => server.close(resolve));
+    });
+  });
   if (process.env.DSH_DESKTOP_SCREEN_CAPTURE !== "1") return;
   ctx.inject(["attachments"], (attachmentsCtx) => {
     registerScreenCapture(attachmentsCtx);

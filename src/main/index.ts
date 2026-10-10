@@ -52,7 +52,7 @@ import { exportDiagnosticReport, redactDiagnosticsLog } from './diagnostics.ts'
 import { clearPersistedPluginSuspects, loadPersistedPluginSuspects, persistPluginSuspects, updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, OFFICIAL_BUNDLES, classifyPluginFailureCause, type ComposedRow } from './safe-mode.ts'
 import { listTrash, moveToTrash, purgeExpiredTrash, purgeFromTrash, restoreFromTrash } from './trash.ts'
 import { writeTrashHookFiles } from './trash-hook.ts'
-import { deleteSessionToTrash, listSessions, restoreSessionFromTrash, unarchiveSession, ActiveSessionError } from './trash-sessions.ts'
+import { SessionTrashClient } from './trash-client.ts'
 import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage, removeUserPreset } from './presets.ts'
 import { ShellLocaleController, shellText, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
@@ -82,6 +82,7 @@ let closeNoticeClaimed = false
 let desktopPreferencesController: DesktopPreferencesController | undefined
 let lastPublicStatus: PublicStatusSnapshot | undefined
 let lastHarnessPhase: HarnessState['phase'] | undefined
+const sessionTrashClient = new SessionTrashClient()
 let connectSupervisor: ConnectSupervisor | undefined
 let lastConnectRuntimeState: ConnectRuntimeState | undefined
 let feishuSetupRun: FeishuSetupRun | undefined
@@ -647,7 +648,7 @@ async function safeModeOverlayPath(): Promise<string | undefined> {
 /** The shell state machine, wired to the Electron surfaces it drives. */
 const shellApp = new ShellApp({
   createSupervisor: onState => new HarnessSupervisor(
-    { onState },
+    { onState, onTrashEndpoint: port => sessionTrashClient.bind(port) },
     {
       safeMode: { enabled: safeModeActive, overlayFactory: safeModeOverlayPath },
       trashHook: {
@@ -661,6 +662,7 @@ const shellApp = new ShellApp({
       env: {
         ...harnessChildEnv,
         DSH_HOME: resolveDshHome(process.env, homedir()),
+        DSH_DESKTOP_TRASH_TOKEN: sessionTrashClient.token,
         // Screen capture model tool (decision 0027): opt-in; re-evaluated per
         // supervisor creation, i.e. per restart.
         DSH_DESKTOP_SCREEN_CAPTURE: desktopPreferencesController?.snapshot.screenCapture === true ? '1' : '0',
@@ -1536,19 +1538,31 @@ ipcMain.handle('desktop:trash:list', (event) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
   return listTrash(desktopDshHome())
 })
-ipcMain.handle('desktop:trash:restore', (event, rawId: unknown) => {
+ipcMain.handle('desktop:trash:restore', async (event, rawId: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
   if (typeof rawId !== 'string' || rawId === '') return null
-  return restoreFromTrash(desktopDshHome(), rawId)
+  const entry = (await listTrash(desktopDshHome())).find(item => item.id === rawId)
+  if (entry?.kind === 'session') {
+    const result = await sessionTrashClient.run({ action: 'restore', trashId: rawId })
+    notifyTrashChanged('restore', rawId)
+    return result === true ? entry : null
+  }
+  const restored = await restoreFromTrash(desktopDshHome(), rawId)
+  notifyTrashChanged('restore', rawId)
+  return restored
 })
-ipcMain.handle('desktop:trash:purge', (event, rawId: unknown) => {
+ipcMain.handle('desktop:trash:purge', async (event, rawId: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
   if (typeof rawId !== 'string' || rawId === '') return false
-  return purgeFromTrash(desktopDshHome(), rawId)
+  const result = await purgeFromTrash(desktopDshHome(), rawId)
+  notifyTrashChanged('purge', rawId)
+  return result
 })
-ipcMain.handle('desktop:trash:purge-expired', (event) => {
+ipcMain.handle('desktop:trash:purge-expired', async (event) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return 0
-  return purgeExpiredTrash(desktopDshHome()).then(entries => entries.length)
+  const result = await purgeExpiredTrash(desktopDshHome())
+  notifyTrashChanged('purge-expired', '')
+  return result.length
 })
 ipcMain.handle('desktop:presets:delete', (event, rawId: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
@@ -1556,33 +1570,37 @@ ipcMain.handle('desktop:presets:delete', (event, rawId: unknown) => {
   return removeUserPreset(desktopDshHome(), rawId).then(() => true).catch(() => false)
 })
 
-// Session trash: list on-disk sessions with their archive flag, delete one
-// into the trash (live sessions are refused via the WebUI-reported ids),
-// restore a trashed session, and clear a phantom archive entry.
+function notifyTrashChanged(action: string, id: string): void {
+  windowContext.mainWindow?.webContents.send('desktop:trash:changed', { home: desktopDshHome(), action, id })
+}
+
+// Session lifecycle and archive mutations belong to the authoritative Host.
+// No stale WebUI running snapshot or raw workspace.json write can authorize removal.
 ipcMain.handle('desktop:trash:sessions', (event) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
-  return listSessions(desktopDshHome())
+  return sessionTrashClient.list()
 })
-ipcMain.handle('desktop:trash:session-delete', (event, rawProjectKey: unknown, rawSessionId: unknown) => {
+ipcMain.handle('desktop:trash:session-delete', async (event, rawProjectKey: unknown, rawSessionId: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
   if (typeof rawProjectKey !== 'string' || typeof rawSessionId !== 'string' || rawSessionId === '') return false
   if (rawProjectKey.includes('..') || rawProjectKey.includes('/') || rawProjectKey.includes('\\')) return false
-  const live = new Set((lastPublicStatus?.sessions ?? []).filter(session => session.running).map(session => session.id))
-  return deleteSessionToTrash(desktopDshHome(), rawProjectKey, rawSessionId, [...live]).then(() => true).catch((error) => {
-    if (error instanceof ActiveSessionError) return 'active'
-    console.warn(`dsh-desktop: session delete failed: ${error instanceof Error ? error.message : String(error)}`)
-    return false
-  })
+  const result = await sessionTrashClient.run({ action: 'delete', projectKey: rawProjectKey, sessionId: rawSessionId })
+  notifyTrashChanged('delete', rawSessionId)
+  return result
 })
-ipcMain.handle('desktop:trash:session-restore', (event, rawTrashId: unknown) => {
+ipcMain.handle('desktop:trash:session-restore', async (event, rawTrashId: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return null
   if (typeof rawTrashId !== 'string' || rawTrashId === '') return null
-  return restoreSessionFromTrash(desktopDshHome(), rawTrashId).then(() => true).catch(() => false)
+  const result = await sessionTrashClient.run({ action: 'restore', trashId: rawTrashId })
+  notifyTrashChanged('restore', rawTrashId)
+  return result
 })
-ipcMain.handle('desktop:trash:session-unarchive', (event, rawSessionId: unknown) => {
+ipcMain.handle('desktop:trash:session-unarchive', async (event, rawSessionId: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
   if (typeof rawSessionId !== 'string' || rawSessionId === '') return false
-  return unarchiveSession(desktopDshHome(), rawSessionId)
+  const result = await sessionTrashClient.run({ action: 'unarchive', sessionId: rawSessionId })
+  notifyTrashChanged('unarchive', rawSessionId)
+  return result
 })
 
 function verifyHarness(root: string): void {

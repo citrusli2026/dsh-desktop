@@ -1074,7 +1074,7 @@ window.__ModuleLoader__.load({
     }
 
     /* 桌面垃圾桶：与设置页同款设计体系；还原 / 确认后清除 / 保留期倒计时。 */
-    function TrashSection() {
+    function TrashSection({ sessionsService } = {}) {
       const zh = useChinese();
       const bridge = typeof window !== "undefined" ? window.dshDesktop : undefined;
       const [tab, setTab] = react.useState("items");
@@ -1084,6 +1084,8 @@ window.__ModuleLoader__.load({
       const [message, setMessage] = react.useState("");
       const [confirmId, setConfirmId] = react.useState(null);
       const [confirmExpired, setConfirmExpired] = react.useState(false);
+      const refreshVersion = react.useRef(0);
+      const mounted = react.useRef(true);
       const t = zh ? {
         title: "桌面垃圾桶",
         copy: "删除的预设与会话先进入垃圾桶，保留 30 天后自动清除；还原遇到重名会另存副本，不会覆盖新数据。",
@@ -1091,7 +1093,7 @@ window.__ModuleLoader__.load({
         purgeConfirm: "确认永久删除？此操作不可恢复。", confirm: "确认", cancel: "取消",
         purgeExpired: "清除已过期", refresh: "刷新", deletedAt: "删除于",
         origin: "原位置", active: "会话正在运行，不能删除", unarchive: "取消归档",
-        done: "已完成", failed: "操作失败", archived: "已归档",
+        done: "已完成", failed: "操作失败", syncFailed: "磁盘操作已完成，但列表同步失败；请点击刷新重试。", archived: "已归档",
         emptyTitle: "垃圾桶是空的", emptyHint: "删除的预设与会话会出现在这里，30 天内可还原。",
         daysLeft: (n) => n > 0 ? `${n} 天后自动清除` : "今日自动清除",
         expiredBadge: "已过期",
@@ -1104,7 +1106,7 @@ window.__ModuleLoader__.load({
         purgeConfirm: "Permanently delete? This cannot be undone.", confirm: "Confirm", cancel: "Cancel",
         purgeExpired: "Clear expired", refresh: "Refresh", deletedAt: "Deleted",
         origin: "From", active: "Session is running and cannot be deleted", unarchive: "Unarchive",
-        done: "Done", failed: "Action failed", archived: "Archived",
+        done: "Done", failed: "Action failed", syncFailed: "Disk action completed, but list sync failed. Click Refresh to retry.", archived: "Archived",
         emptyTitle: "The trash is empty", emptyHint: "Deleted presets and sessions appear here and stay recoverable for 30 days.",
         daysLeft: (n) => n > 0 ? `auto-clears in ${n}d` : "clears today",
         expiredBadge: "Expired",
@@ -1113,15 +1115,28 @@ window.__ModuleLoader__.load({
       };
       const refresh = async () => {
         if (typeof bridge?.listTrash !== "function") return;
-        setEntries(await bridge.listTrash() ?? []);
-        setSessions(await bridge.listTrashSessions() ?? []);
+        const version = ++refreshVersion.current;
+        const [nextEntries, nextSessions] = await Promise.all([bridge.listTrash(), bridge.listTrashSessions()]);
+        if (!mounted.current || version !== refreshVersion.current) return;
+        if (nextEntries === null || nextSessions === null) throw new Error("trash list unavailable");
+        setEntries(nextEntries);
+        setSessions(nextSessions);
       };
-      react.useEffect(() => { void refresh(); }, [bridge]);
+      const sync = async () => {
+        await sessionsService?.refresh();
+        await refresh();
+      };
+      react.useEffect(() => {
+        mounted.current = true;
+        void refresh().catch(() => { if (mounted.current) setMessage(t.failed); });
+        return () => { mounted.current = false; refreshVersion.current++; };
+      }, [bridge]);
       const act = async (action) => {
         setBusy(true);
         try {
           const outcome = await action();
-          await refresh();
+          try { await sync(); }
+          catch { setMessage(outcome === true || (outcome && typeof outcome === "object") ? t.syncFailed : t.failed); return; }
           setMessage(outcome === "active" ? t.active : outcome === false || outcome === null ? t.failed : t.done);
         }
         catch { setMessage(t.failed); }
@@ -1158,15 +1173,15 @@ window.__ModuleLoader__.load({
             onConfirm: () => { setConfirmId(null); void act(() => bridge.purgeTrash(entry.id)); },
             onCancel: () => setConfirmId(null),
             plain: react_jsx_runtime.jsxs(react.Fragment, { children: [
-              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => void act(() => bridge.restoreTrash(entry.id)), children: t.restore }),
+              react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => void act(() => entry.kind === "session" ? bridge.restoreTrashSession(entry.id) : bridge.restoreTrash(entry.id)), children: t.restore }),
               react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => setConfirmId(entry.id), children: t.purge }),
             ] }),
           }) }),
         ] }, entry.id);
       };
-      const sessionRow = (session) => react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, "data-dsh-trash-row": true, children: [
+      const sessionRow = (session) => react_jsx_runtime.jsxs("div", { "data-dsh-desktop-setting-row": true, "data-dsh-trash-row": true, "data-dsh-session-id": session.sessionId, children: [
         react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [
-          react_jsx_runtime.jsxs("span", { children: [
+          react_jsx_runtime.jsxs("span", { title: session.sessionId, children: [
             shortId(session.sessionId),
             session.archived ? react_jsx_runtime.jsx("span", { "data-dsh-trash-badge": true, children: t.archived }) : null,
           ] }),
@@ -1193,7 +1208,7 @@ window.__ModuleLoader__.load({
           tabButton("items", t.items, (entries ?? []).length),
           tabButton("sessions", t.sessions, (sessions ?? []).length),
           react_jsx_runtime.jsx("span", { "data-dsh-trash-spacer": true }),
-          react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, onClick: () => void refresh(), children: t.refresh }),
+          react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, onClick: () => void sync().then(() => setMessage(""), () => setMessage(t.syncFailed)), children: t.refresh }),
         ] }),
         tab === "items" ? react_jsx_runtime.jsxs(react.Fragment, { children: [
           loaded && (entries ?? []).length === 0 ? react_jsx_runtime.jsxs("div", { "data-dsh-trash-empty": true, children: [
@@ -2237,6 +2252,17 @@ window.__ModuleLoader__.load({
 
     const inject = ["slots", "sessions"];
     function apply(ctx) {
+      ctx.effect(() => {
+        const bridge = typeof window !== "undefined" ? window.dshDesktop : undefined;
+        let disposed = false;
+        const scope = bridge?.getStartupStatus?.();
+        const unsubscribe = bridge?.onTrashChanged?.((change) => {
+          void Promise.resolve(scope).then(status => {
+            if (!disposed && status?.dshHome === change.home) return ctx.sessions.refresh();
+          }).catch(() => {});
+        });
+        return () => { disposed = true; unsubscribe?.(); };
+      });
       ctx.slots.inject("shell.overlay", () => ctx.slots.register({
         name: "shell.overlay", id: "dsh-desktop-controls", order: 100, label: "Desktop controls",
       }, DesktopControls));
@@ -2249,7 +2275,7 @@ window.__ModuleLoader__.load({
       ctx.slots.inject("settings.section", () => ctx.slots.register({
         name: "settings.section", id: "dsh-desktop-trash", order: 21,
         label: () => document.documentElement.lang.toLowerCase().startsWith("zh") ? "垃圾桶" : "Trash",
-      }, TrashSection));
+      }, (props) => TrashSection({ ...props, sessionsService: ctx.sessions })));
     }
 
     exports.apply = apply;

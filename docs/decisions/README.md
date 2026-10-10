@@ -39,3 +39,4 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0031 | Lightweight first-success guide and local-first health check / 轻量首次成功引导与本地优先运行体检 | [EN](0031-first-success-guide-and-local-health-check.md) · [中文](0031-first-success-guide-and-local-health-check.zh.md) | Accepted / 已接受 |
 | 0033 | cc-connect as an opt-in Desktop messaging sidecar / cc-connect 作为用户主动启用的桌面消息 Sidecar | [EN](0033-cc-connect-sidecar.md) · [中文](0033-cc-connect-sidecar.zh.md) | Accepted / 已接受 |
 | 0034 | Multi-runtime Dashboard with explicit Edition adapters / 采用明确 Edition Adapter 的多 Runtime Dashboard | [EN](0034-multi-runtime-dashboard.md) · [中文](0034-multi-runtime-dashboard.zh.md) | Accepted / 已接受 |
+| 0035 | Host-owned session trash transactions / Host 权威协调的会话垃圾桶事务 | [EN](0035-host-owned-session-trash.md) · [中文](0035-host-owned-session-trash.zh.md) | Accepted / 已接受 |

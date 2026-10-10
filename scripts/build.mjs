@@ -4,9 +4,10 @@
  * dependency's postinstall swaps a JS bin for a native binary).
  * @module scripts/build
  */
-import { cpSync, existsSync, readFileSync, rmSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
 import { build } from 'esbuild'
+import { patchBundledSessionTrash } from './patch-session-trash.mjs'
 
 rmSync('lib', { recursive: true, force: true })
 
@@ -48,3 +49,23 @@ await build({
   outfile: 'lib/preload/index.cjs',
   sourcemap: true,
 })
+
+// Keep the hand-maintained client/Host plugin and its shared filesystem code
+// in the deployed closure in sync without reinstalling or upgrading packages.
+const controlsTarget = resolve('resources/harness/node_modules/dsh-desktop-controls')
+for (const relative of ['package.json', 'cordis.patch.yml', 'lib/index.js', 'lib/client.js']) {
+  const source = join('plugins/dsh-desktop-controls', relative)
+  const target = join(controlsTarget, relative)
+  if (!existsSync(target) || !readFileSync(source).equals(readFileSync(target))) {
+    // pnpm may have hard-linked unchanged files. Replace the staged file,
+    // never mutate that shared inode or copy a file onto itself.
+    mkdirSync(dirname(target), { recursive: true })
+    rmSync(target, { force: true })
+    cpSync(source, target)
+  }
+}
+await build({
+  entryPoints: ['src/main/trash-host.ts'], bundle: true, platform: 'node', format: 'esm',
+  outfile: join(controlsTarget, 'lib/trash-host.js'),
+})
+await patchBundledSessionTrash(resolve('resources/harness'), resolve('manifest/harness'))

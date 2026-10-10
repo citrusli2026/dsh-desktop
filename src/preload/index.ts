@@ -198,6 +198,12 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   openSupportIssue: (): Promise<boolean> => ipcRenderer.invoke('shell:open-support-issue'),
   /** List the desktop trash, newest first. */
   listTrash: (): Promise<DesktopTrashEntry[] | null> => ipcRenderer.invoke('desktop:trash:list'),
+  /** Resource identity is non-sensitive; handlers still enforce the Harness sender guard. */
+  onTrashChanged: (callback: (change: { home: string; action: string; id: string }) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, change: { home: string; action: string; id: string }): void => callback(change)
+    ipcRenderer.on('desktop:trash:changed', listener)
+    return () => ipcRenderer.removeListener('desktop:trash:changed', listener)
+  },
   /** Restore one trash entry to its origin (numbered sibling on conflict). */
   restoreTrash: (id: string): Promise<DesktopTrashEntry | null> => ipcRenderer.invoke('desktop:trash:restore', id),
   /** Purge one trash entry permanently. */
@@ -210,7 +216,7 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   listTrashSessions: (): Promise<DesktopTrashSession[] | null> => ipcRenderer.invoke('desktop:trash:sessions'),
   /**
    * Delete one session into the desktop trash. Resolves false for unknown
-   * errors and 'active' when the WebUI still reports the session as running.
+   * errors and 'active' when the Host refuses activity or another writer.
    */
   deleteTrashSession: (projectKey: string, sessionId: string): Promise<boolean | 'active' | null> =>
     ipcRenderer.invoke('desktop:trash:session-delete', projectKey, sessionId),

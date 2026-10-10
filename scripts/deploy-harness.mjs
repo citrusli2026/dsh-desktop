@@ -12,6 +12,7 @@ import { spawnSync } from 'node:child_process'
 import { lstat, readdir, rm } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { patchBundledSessionTrash } from './patch-session-trash.mjs'
 
 const ROOT = process.cwd()
 const MANIFEST_DIR = join(ROOT, 'manifest', 'harness')
@@ -135,6 +136,7 @@ async function main() {
 
   await assertNoSymlinks(HARNESS_ROOT)
   await pruneClosure()
+  await patchBundledSessionTrash(HARNESS_ROOT)
 
   const dshBin = join(HARNESS_ROOT, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
   const pnpmCjs = join(HARNESS_ROOT, 'node_modules', 'pnpm', 'bin', 'pnpm.cjs')

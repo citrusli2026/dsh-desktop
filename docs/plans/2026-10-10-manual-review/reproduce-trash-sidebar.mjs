@@ -77,6 +77,7 @@ try {
     sidebarRowsAfterDelete: await sidebarRow.count(),
   }))
   await expect(sidebarRow).toHaveCount(0, { timeout: 5_000 })
+  await expect(page.getByRole('paragraph').filter({ hasText: 'REVIEW-TRASH-ANSWER' })).toHaveCount(0, { timeout: 5_000 })
 } finally {
   if (app !== undefined) {
     let timeout

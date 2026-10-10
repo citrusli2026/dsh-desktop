@@ -13,6 +13,7 @@
   },
   "files": [
     "lib/index.js",
+    "lib/trash-host.js",
     "lib/client.js",
     "cordis.patch.yml",
     "package.json"

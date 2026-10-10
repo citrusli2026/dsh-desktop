@@ -65,6 +65,21 @@ test('supervisor rejects a process that exits before readiness', async () => {
   await supervisor.stop()
 })
 
+test('supervisor accepts only a bounded private endpoint and invalidates it at stop/exit', async () => {
+  const logDir = await mkdtemp(join(tmpdir(), 'dsh-trash-endpoint-'))
+  const ports: Array<number | undefined> = []
+  const supervisor = new HarnessSupervisor({ onState() {}, onTrashEndpoint: port => ports.push(port) }, {
+    command: process.execPath, args: ['-e', "console.log('dsh-desktop-trash-ready: 0');console.log('dsh-desktop-trash-ready: 65536');console.log('dsh-desktop-trash-ready: 43125');console.log('dsh web: http://127.0.0.1:43123');setInterval(()=>{},1000)"],
+    logDir, env: {},
+  })
+  try {
+    await supervisor.start()
+    assert.deepEqual(ports, [undefined, 43125])
+    await supervisor.stop()
+    assert.equal(ports.at(-1), undefined)
+  } finally { await supervisor.stop(); await rm(logDir, { recursive: true, force: true }) }
+})
+
 test('supervisor rejects when readiness exceeds the injected timeout', async () => {
   const { supervisor } = await fixture(['-e', 'setInterval(()=>{},1000)'], 40)
   await assert.rejects(supervisor.start(), /harness not ready within 40 ms/)

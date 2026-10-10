@@ -16,6 +16,8 @@ try {
   await mkdir(sessionDir, { recursive: true })
   await writeFile(join(sessionDir, 'data'), 'isolated fixture; not a kernel session')
   const state = []
+  const refs = [{ current: 0 }, { current: true }]
+  let refSlot = 0
   let slot = 0
   let plugin
   let section
@@ -25,6 +27,7 @@ try {
     listTrashSessions: () => listSessions(root),
     deleteTrashSession: async (key, id) => { await deleteSessionToTrash(root, key, id, []); return true },
     restoreTrash: id => restoreFromTrash(root, id),
+    restoreTrashSession: id => restoreFromTrash(root, id),
   }
   const react = {
     Fragment: Symbol('fragment'),
@@ -34,6 +37,7 @@ try {
       return [state[index], value => { state[index] = typeof value === 'function' ? value(state[index]) : value }]
     },
     useEffect() {},
+    useRef() { return refs[refSlot++] },
   }
   const jsx = (type, props) => ({ type, props })
   const source = new URL('../../../plugins/dsh-desktop-controls/lib/client.js', import.meta.url)
@@ -45,13 +49,14 @@ try {
     document: { documentElement: { lang: 'zh' }, querySelector: () => ({}) },
   })
   plugin.apply({
+    effect: callback => callback(),
     sessions: { refresh: async () => { refreshCalls++ } },
     slots: {
       inject: (_, callback) => callback(),
       register: (meta, component) => { if (meta.id === 'dsh-desktop-trash') section = component },
     },
   })
-  const render = () => { slot = 0; return section() }
+  const render = () => { slot = 0; refSlot = 0; return section() }
   function nodes(value) {
     if (Array.isArray(value)) return value.flatMap(nodes)
     if (!value || typeof value !== 'object') return []
