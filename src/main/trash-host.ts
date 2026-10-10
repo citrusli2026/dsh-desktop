@@ -1,8 +1,8 @@
 /** Host-side transaction: kernel owns lifecycle/archive state, shared helpers own disk layout. */
 import { createServer, type Server } from 'node:http'
 import { timingSafeEqual } from 'node:crypto'
-import { join } from 'node:path'
-import { listTrash, moveToTrash, restoreFromTrash } from './trash.ts'
+import { basename, join } from 'node:path'
+import { listTrash, moveToTrash, restoreFromTrash, SessionRestoreConflictError } from './trash.ts'
 import { listSessions } from './trash-sessions.ts'
 
 interface HostContext {
@@ -64,8 +64,13 @@ export async function runSessionTrash(ctx: HostContext, home: string, request: S
   } else if (request.action === 'restore') {
     const entry = (await listTrash(home)).find(item => item.id === request.trashId)
     if (entry?.kind !== 'session') throw new Error('not a trashed session')
-    const restored = await restoreFromTrash(home, request.trashId)
-    await ctx.workspaceRegistry.unarchiveSession(restored.name)
+    if ((await ctx.sessionController.list({}, AbortSignal.timeout(15_000))).items.some(item => item.sessionId === entry.name)) throw new SessionRestoreConflictError()
+    const restored = await restoreFromTrash(home, request.trashId, async restored => {
+      const snapshot = (await ctx.sessionPersistence.list()).find(item => item.header.id === restored.name)
+      if (snapshot === undefined || basename(restored.originPath) !== snapshot.header.id ||
+          restored.originPath !== join(home, 'sessions', sessionProjectKey(snapshot.header.cwd), snapshot.header.id)) throw new Error('restored session identity mismatch')
+      await ctx.workspaceRegistry.unarchiveSession(restored.name)
+    })
     const summary = (await ctx.sessionController.list({}, AbortSignal.timeout(15_000))).items.find(item => item.sessionId === restored.name)
     if (summary !== undefined) ctx.emit('api-session/added', summary)
   } else {
@@ -76,8 +81,8 @@ export async function runSessionTrash(ctx: HostContext, home: string, request: S
       // Verify that the caller's disk row names the same workspace as the
       // authoritative header before touching any directory.
       if (sessionProjectKey(header.cwd) !== request.projectKey) throw new Error('session workspace mismatch')
-      await moveToTrash(home, directory, { kind: 'session', name: request.sessionId, source: 'deleted from the desktop trash page' })
-      await ctx.workspaceRegistry.unarchiveSession(request.sessionId)
+      await moveToTrash(home, directory, { kind: 'session', name: request.sessionId, source: 'deleted from the desktop trash page' },
+        () => ctx.workspaceRegistry.unarchiveSession(request.sessionId))
     })
   }
   return true
@@ -109,7 +114,7 @@ export function startSessionTrashServer(ctx: HostContext, home: string, token: s
         data => response.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ok: true, data })),
         (error: unknown) => {
           const code = (error as { code?: unknown })?.code
-          response.writeHead(409, { 'content-type': 'application/json' }).end(JSON.stringify({ ok: false, reason: code === 'session/agent-busy' || (error as Error)?.name === 'SessionAlreadyOwnedError' ? 'active' : 'failed' }))
+          response.writeHead(409, { 'content-type': 'application/json' }).end(JSON.stringify({ ok: false, reason: error instanceof SessionRestoreConflictError ? 'conflict' : code === 'session/agent-busy' || (error as Error)?.name === 'SessionAlreadyOwnedError' ? 'active' : 'failed' }))
         },
       )
     })

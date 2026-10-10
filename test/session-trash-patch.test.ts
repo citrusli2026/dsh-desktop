@@ -32,7 +32,7 @@ function fixture({ status = 'idle', queued = false, owned = true, maintenance = 
     typert: { lookups: { configure() {} }, contexts: { configureHost() {} } },
     agents: { get: () => attached ? agent : undefined, list: () => attached ? [agent] : [] },
     sessions: { get: () => attached ? agent.session : undefined, flush: async () => { events.push('flush') } },
-    sessionPersistence: { open: async () => ({ header: agent.session.header, close: async () => { events.push('close') } }) },
+    sessionPersistence: { list: async (): Promise<Array<{ header: { parentSession?: string } }>> => [], open: async () => ({ header: agent.session.header, close: async () => { events.push('close') } }) },
   }
   const controller = new AgentController(ctx)
   const handle = { agent, dispose: async () => { events.push('dispose'); attached = false } }
@@ -44,6 +44,7 @@ test('pinned lifecycle patch is idempotent and fails closed on changed upstream 
   assert.equal(patchSessionTrash(patched), patched)
   assert.throws(() => patchSessionTrash(upstream.replace('async ensureSession(', 'async changedEnsureSession(')), /anchor changed/)
   assert.match(patched, /this\.agents\.keepTrashHandle\(await this\.ctx\.agents\.create/)
+  assert.match(patched, /"sessions",\s+"sessionPersistence",\s+"sessionProjections"/)
 })
 
 test('owned idle removal holds maintenance, flushes, blocks admission, then disposes the exact handle', async () => {
@@ -87,6 +88,23 @@ test('cold removal claims cross-process write ownership until disk work settles'
   }
   await assert.rejects(controller.withIdleSession('session-real', async () => { events.push('move'); throw new Error('failure') }), /failure/)
   assert.deepEqual(events, ['write-open', 'move', 'close'])
+})
+
+test('resident child sessions, even idle ones, prevent parent deletion without disposing either owner', async () => {
+  for (const status of ['idle', 'running']) {
+    const { controller, ctx, agent, events } = fixture()
+    ctx.agents.list = () => [agent, { ...agent, id: 'session-child', status, session: { header: { ...agent.session.header, parentSession: agent.id } } }]
+    await assert.rejects(controller.withIdleSession(agent.id, async () => { throw new Error('must not move parent') }), /active or owned/)
+    assert.deepEqual(events, [])
+  }
+})
+
+test('persisted child identity protects even a cold parent until children are removed first', async () => {
+  const { controller, ctx, events, detach } = fixture()
+  detach()
+  ctx.sessionPersistence.list = async () => [{ header: { parentSession: 'session-real' } }]
+  await assert.rejects(controller.withIdleSession('session-real', async () => { throw new Error('must not move parent') }), /active or owned/)
+  assert.deepEqual(events, [])
 })
 
 test('selection owner clears only a main reference explicitly marked removed', async () => {

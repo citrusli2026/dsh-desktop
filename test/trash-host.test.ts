@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
+import { existsSync } from 'node:fs'
 import { mkdtemp, mkdir, rm, readFile, writeFile, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -37,14 +38,16 @@ test('Host uses authoritative full identity/archive state and coordinates delete
   const directory = join(home, 'sessions', key, id)
   const calls: string[] = []
   const archived = [id]
+  let archiveFailure = false
+  let headerCwd = cwd
   const ctx = {
     emit: (_event: string, summary: { sessionId: string }) => { assert.equal(summary.sessionId, id); calls.push('publish') },
-    sessionPersistence: { list: async () => [{ header: { id, cwd } }] },
+    sessionPersistence: { list: async () => [{ header: { id, cwd: headerCwd } }] },
     workspaceRegistry: {
       archivedSessionIds: archived,
-      unarchiveSession: async (target: string) => { assert.equal(target, id); calls.push('unarchive'); archived.splice(0) },
+      unarchiveSession: async (target: string) => { assert.equal(target, id); calls.push('unarchive'); if (archiveFailure) throw new Error('registry write failed'); archived.splice(0) },
     },
-    sessionController: { list: async () => ({ items: [{ sessionId: id }] }), withIdleSession: async (target: string, operation: (header: { id: string; cwd?: string }) => Promise<unknown>) => {
+    sessionController: { list: async () => ({ items: existsSync(directory) ? [{ sessionId: id }] : [] }), withIdleSession: async (target: string, operation: (header: { id: string; cwd?: string }) => Promise<unknown>) => {
       assert.equal(target, id)
       calls.push('claim')
       return operation({ id, cwd })
@@ -67,6 +70,25 @@ test('Host uses authoritative full identity/archive state and coordinates delete
     assert.equal((await stat(directory)).isDirectory(), true)
     assert.deepEqual(calls.slice(-2), ['unarchive', 'publish'])
     assert.deepEqual(await listTrash(home), [])
+    archiveFailure = true
+    await assert.rejects(runSessionTrash(ctx, home, { action: 'delete', projectKey: key, sessionId: id }), /registry write failed/)
+    assert.equal(existsSync(directory), true)
+    assert.deepEqual(await listTrash(home), [])
+    archiveFailure = false
+    await runSessionTrash(ctx, home, { action: 'delete', projectKey: key, sessionId: id })
+    const [saved] = await listTrash(home)
+    headerCwd = '/different-workspace'
+    await assert.rejects(runSessionTrash(ctx, home, { action: 'restore', trashId: saved!.id }), /identity mismatch/)
+    assert.equal(existsSync(directory), false)
+    assert.deepEqual(await listTrash(home), [saved])
+    headerCwd = cwd
+    archiveFailure = true
+    await assert.rejects(runSessionTrash(ctx, home, { action: 'restore', trashId: saved!.id }), /registry write failed/)
+    assert.equal(existsSync(directory), false)
+    assert.deepEqual(await listTrash(home), [saved])
+    archiveFailure = false
+    await runSessionTrash(ctx, home, { action: 'restore', trashId: saved!.id })
+    assert.equal(existsSync(directory), true)
   } finally { await rm(home, { recursive: true, force: true }) }
 })
 

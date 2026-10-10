@@ -16,11 +16,12 @@ const lifecycle = `
 		if (this.trashBlocked.has(sessionId) || this.resumes.has(sessionId) || this.creations.has(sessionId)) throw busy();
 		this.trashBlocked.add(sessionId);
 		try {
+			if (this.ctx.agents.list().some(child => child.session.header.parentSession === sessionId) ||
+				(await this.ctx.sessionPersistence.list()).some(child => child.header.parentSession === sessionId)) throw busy();
 			const agent = this.ctx.agents.get(sessionId);
 			if (agent !== void 0) {
 				const handle = this.trashHandles.get(sessionId);
 				if (handle?.agent !== agent || agent.status !== "idle" || agent.inbox.nextTurn.length || agent.inbox.nextStep.length) throw busy();
-				if (this.ctx.agents.list().some(child => child.session.header.parentSession === sessionId)) throw busy();
 				let claimed = false;
 				try {
 					return await agent.runMaintenance(async () => {
@@ -52,6 +53,7 @@ function replaceOnce(source, before, after) {
 export function patchSessionTrash(source) {
   if (source.includes(marker)) return source
   let patched = replaceOnce(source, 'var ApiSessionAgentController = class {', 'var ApiSessionAgentController = class {' + lifecycle)
+  patched = replaceOnce(patched, '\t\t\t"sessions",\n\t\t\t"sessionProjections",', '\t\t\t"sessions",\n\t\t\t"sessionPersistence",\n\t\t\t"sessionProjections",')
   patched = replaceOnce(patched, '\tasync resolve(sessionId, observation) {', '\tasync resolve(sessionId, observation) {\n\t\tif (this.trashBlocked.has(sessionId)) return { error: new RemoteError("session/agent-busy", "session trash operation in progress", { reason: "trash operation in progress" }) };')
   patched = replaceOnce(patched, '\tasync ensureSession(sessionId, cwd, checkPersistedIdentity, presetId) {', '\tasync ensureSession(sessionId, cwd, checkPersistedIdentity, presetId) {\n\t\tif (this.trashBlocked.has(sessionId)) throw new RemoteError("session/agent-busy", "session trash operation in progress", { reason: "trash operation in progress" });')
   // Preserve disposer capabilities at the owning create/resume sites, not by

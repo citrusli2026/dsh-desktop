@@ -1088,29 +1088,31 @@ window.__ModuleLoader__.load({
       const mounted = react.useRef(true);
       const t = zh ? {
         title: "桌面垃圾桶",
-        copy: "删除的预设与会话先进入垃圾桶，保留 30 天后自动清除；还原遇到重名会另存副本，不会覆盖新数据。",
+        copy: "删除的预设与会话先进入垃圾桶，保留 30 天后自动清除；普通文件重名会另存副本，会话同名则拒绝还原并保留桶内原件。",
         items: "资源", sessions: "会话", restore: "还原", purge: "彻底删除",
         purgeConfirm: "确认永久删除？此操作不可恢复。", confirm: "确认", cancel: "取消",
         purgeExpired: "清除已过期", refresh: "刷新", deletedAt: "删除于",
         origin: "原位置", active: "会话正在运行，不能删除", unarchive: "取消归档",
         done: "已完成", failed: "操作失败", syncFailed: "磁盘操作已完成，但列表同步失败；请点击刷新重试。", archived: "已归档",
+        conflict: "同名会话已存在，未覆盖新数据；原会话仍在垃圾桶中。",
         emptyTitle: "垃圾桶是空的", emptyHint: "删除的预设与会话会出现在这里，30 天内可还原。",
         daysLeft: (n) => n > 0 ? `${n} 天后自动清除` : "今日自动清除",
         expiredBadge: "已过期",
-        sessionsNote: "此处列出本机全部会话：删除会话先移入垃圾桶（30 天内可还原），归档仅在列表中隐藏。",
+        sessionsNote: "此处列出本机全部会话：删除先移入垃圾桶，归档仅隐藏。运行、外部占用或仍有子会话时禁止删除；请先处理子会话。",
         archivedGroup: "已归档", liveGroup: "未归档", sessionDelete: "删除（入桶）",
       } : {
         title: "Desktop trash",
-        copy: "Deleted presets and sessions move to the trash first and clear automatically after 30 days; restoring never overwrites newer data — conflicts get a numbered copy.",
+        copy: "Deleted items stay recoverable for 30 days. File conflicts get a numbered copy; session conflicts refuse restore and keep the original in trash.",
         items: "Resources", sessions: "Sessions", restore: "Restore", purge: "Delete forever",
         purgeConfirm: "Permanently delete? This cannot be undone.", confirm: "Confirm", cancel: "Cancel",
         purgeExpired: "Clear expired", refresh: "Refresh", deletedAt: "Deleted",
         origin: "From", active: "Session is running and cannot be deleted", unarchive: "Unarchive",
         done: "Done", failed: "Action failed", syncFailed: "Disk action completed, but list sync failed. Click Refresh to retry.", archived: "Archived",
+        conflict: "That session already exists. Nothing was overwritten; the original remains in trash.",
         emptyTitle: "The trash is empty", emptyHint: "Deleted presets and sessions appear here and stay recoverable for 30 days.",
         daysLeft: (n) => n > 0 ? `auto-clears in ${n}d` : "clears today",
         expiredBadge: "Expired",
-        sessionsNote: "This lists every session on disk: deleting moves one to the trash (recoverable for 30 days); archiving only hides it from the list.",
+        sessionsNote: "Sessions on disk: deletion moves to trash; archiving only hides. Running, externally owned or parent sessions with children cannot be deleted. Handle children first.",
         archivedGroup: "Archived", liveGroup: "Not archived", sessionDelete: "Delete to trash",
       };
       const refresh = async () => {
@@ -1137,7 +1139,7 @@ window.__ModuleLoader__.load({
           const outcome = await action();
           try { await sync(); }
           catch { setMessage(outcome === true || (outcome && typeof outcome === "object") ? t.syncFailed : t.failed); return; }
-          setMessage(outcome === "active" ? t.active : outcome === false || outcome === null ? t.failed : t.done);
+          setMessage(outcome === "active" ? t.active : outcome === "conflict" ? t.conflict : outcome === false || outcome === null ? t.failed : t.done);
         }
         catch { setMessage(t.failed); }
         finally { setBusy(false); }
@@ -1208,7 +1210,7 @@ window.__ModuleLoader__.load({
           tabButton("items", t.items, (entries ?? []).length),
           tabButton("sessions", t.sessions, (sessions ?? []).length),
           react_jsx_runtime.jsx("span", { "data-dsh-trash-spacer": true }),
-          react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, onClick: () => void sync().then(() => setMessage(""), () => setMessage(t.syncFailed)), children: t.refresh }),
+          react_jsx_runtime.jsx("button", { type: "button", "data-dsh-desktop-lan-target": true, disabled: busy, onClick: () => void sync().then(() => setMessage(t.done), () => setMessage(t.syncFailed)), children: t.refresh }),
         ] }),
         tab === "items" ? react_jsx_runtime.jsxs(react.Fragment, { children: [
           loaded && (entries ?? []).length === 0 ? react_jsx_runtime.jsxs("div", { "data-dsh-trash-empty": true, children: [

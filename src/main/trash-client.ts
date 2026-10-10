@@ -28,9 +28,9 @@ export class SessionTrashClient {
     } catch { return undefined }
   }
 
-  async run(request: SessionTrashRequest): Promise<true | false | 'active'> {
+  async run(request: SessionTrashRequest): Promise<true | false | 'active' | 'conflict'> {
     const result = await this.call(request)
-    return result?.ok === true ? true : result?.reason === 'active' ? 'active' : false
+    return result?.ok === true ? true : result?.reason === 'active' ? 'active' : result?.reason === 'conflict' ? 'conflict' : false
   }
 
   async list(): Promise<TrashSessionInfo[] | null> {

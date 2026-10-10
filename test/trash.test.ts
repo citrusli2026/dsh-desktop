@@ -10,6 +10,9 @@ import { mkdtemp, mkdir, readFile, rm, writeFile, access } from 'node:fs/promise
 import { constants } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+import { pathToFileURL } from 'node:url'
 import {
   conflictFreeRestorePath,
   expiredTrashEntries,
@@ -19,6 +22,7 @@ import {
   purgeExpiredTrash,
   purgeFromTrash,
   restoreFromTrash,
+  SessionRestoreConflictError,
   type TrashEntry,
 } from '../src/main/trash.ts'
 
@@ -158,4 +162,101 @@ test('parseTrashIndex drops unsafe ids, relative origins, and unknown kinds', ()
     { id: 'safe-id', kind: 'file', name: 'x', originPath: '/tmp/x', deletedAt: 4 },
   ])
   assert.deepEqual(entries.map(entry => entry.id), ['safe-id'])
+})
+
+test('session conflicts preserve both identities and never create a renamed session copy', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-trash-conflict-'))
+  try {
+    const origin = join(home, 'sessions', 'project', 'session-real')
+    await mkdir(origin, { recursive: true })
+    await writeFile(join(origin, 'events'), 'original')
+    const entry = await moveToTrash(home, origin, { kind: 'session' })
+    await mkdir(origin)
+    await writeFile(join(origin, 'events'), 'new session')
+    await assert.rejects(restoreFromTrash(home, entry.id), SessionRestoreConflictError)
+    assert.equal(await readFile(join(origin, 'events'), 'utf8'), 'new session')
+    assert.equal(await readFile(join(home, 'trash', 'items', entry.id, 'events'), 'utf8'), 'original')
+    assert.equal(await exists(`${origin} (restored)`), false)
+    assert.deepEqual(await listTrash(home), [entry])
+  } finally { await rm(home, { recursive: true, force: true }) }
+})
+
+test('restore rolls back registry or index failure without losing the recoverable original', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-trash-rollback-'))
+  try {
+    const origin = join(home, 'session-real')
+    await mkdir(origin)
+    await writeFile(join(origin, 'events'), 'durable')
+    const entry = await moveToTrash(home, origin, { kind: 'session' })
+    await assert.rejects(restoreFromTrash(home, entry.id, async () => { throw new Error('registry failed') }), /registry failed/)
+    assert.equal(await exists(origin), false)
+    assert.deepEqual(await listTrash(home), [entry])
+    const index = join(home, 'trash', 'index.json')
+    const before = await readFile(index, 'utf8')
+    await assert.rejects(restoreFromTrash(home, entry.id, async () => {
+      await rm(index)
+      await mkdir(index)
+    }))
+    assert.equal(await exists(origin), false)
+    assert.equal(await readFile(join(home, 'trash', 'items', entry.id, 'events'), 'utf8'), 'durable')
+    await rm(index, { recursive: true })
+    await writeFile(index, before)
+    await restoreFromTrash(home, entry.id)
+    assert.equal(await readFile(join(origin, 'events'), 'utf8'), 'durable')
+    assert.deepEqual(await listTrash(home), [])
+  } finally { await rm(home, { recursive: true, force: true }) }
+})
+
+test('concurrent processes serialize index writes, duplicate restore and purge safely', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-trash-concurrent-'))
+  try {
+    const moduleURL = pathToFileURL(join(process.cwd(), 'src/main/trash.ts')).href
+    for (let index = 0; index < 12; index++) await writeFile(join(home, `file-${index}`), `bytes-${index}`)
+    await Promise.all([0, 6].map(start => promisify(execFile)(process.execPath, ['--input-type=module', '-e', `
+      import { moveToTrash } from ${JSON.stringify(moduleURL)};
+      for (let index = ${start}; index < ${start + 6}; index++) {
+        await moveToTrash(${JSON.stringify(home)}, ${JSON.stringify(home)} + '/file-' + index, { kind: 'file' });
+      }
+    `])))
+    const entries = await listTrash(home)
+    assert.equal(entries.length, 12, 'neither process loses the other writer’s records')
+    const entry = entries[0]!
+    const outcomes = await Promise.allSettled([restoreFromTrash(home, entry.id), restoreFromTrash(home, entry.id)])
+    assert.equal(outcomes.filter(outcome => outcome.status === 'fulfilled').length, 1)
+    assert.match(await readFile(entry.originPath, 'utf8'), /^bytes-/)
+    const remaining = (await listTrash(home))[0]!
+    let release!: () => void
+    let entered!: () => void
+    const enteredPromise = new Promise<void>(resolve => { entered = resolve })
+    const restoring = restoreFromTrash(home, remaining.id, async () => {
+      entered()
+      await new Promise<void>(resolve => { release = resolve })
+    })
+    await enteredPromise
+    const purging = purgeFromTrash(home, remaining.id)
+    release()
+    const competing = await Promise.allSettled([restoring, purging])
+    assert.equal(competing[0]!.status, 'fulfilled')
+    assert.match(await readFile(remaining.originPath, 'utf8'), /^bytes-/)
+    assert.equal((await listTrash(home)).length, 10)
+  } finally { await rm(home, { recursive: true, force: true }) }
+})
+
+test('failed deletion keeps an indexed recovery copy if the origin was recreated during the transaction', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-trash-recreated-'))
+  try {
+    const origin = join(home, 'session-real')
+    await mkdir(origin)
+    await writeFile(join(origin, 'events'), 'original')
+    await assert.rejects(moveToTrash(home, origin, { kind: 'session' }, async () => {
+      await mkdir(origin)
+      await writeFile(join(origin, 'events'), 'new')
+      throw new Error('registry failed')
+    }), /registry failed/)
+    const [entry] = await listTrash(home)
+    assert.ok(entry)
+    assert.equal(await readFile(join(home, 'trash', 'items', entry.id, 'events'), 'utf8'), 'original')
+    assert.equal(await readFile(join(origin, 'events'), 'utf8'), 'new')
+    await assert.rejects(restoreFromTrash(home, entry.id), SessionRestoreConflictError)
+  } finally { await rm(home, { recursive: true, force: true }) }
 })

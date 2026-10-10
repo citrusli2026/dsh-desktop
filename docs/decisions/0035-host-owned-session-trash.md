@@ -30,4 +30,8 @@ discard superseded panel reads. A failed sync is retryable and must not be shown
 
 Real Electron/Harness tests use temporary homes and a local mock model, check deletion/restoration/
 unarchive against actual title rows and selected details, and prove active work is refused without stopping it.
-Session restore conflicts/rollback and broader concurrency belong to the separate TR-03 transaction task.
+TR-03 adds a shared cross-process index lock and identity-preserving restores: session conflicts are
+refused, never numbered copies. Registry/index failures roll back the moved payload. Recovery metadata
+is recorded before deletion; if a new origin prevents rollback, the original remains indexed in trash.
+Parents with resident or persisted children are refused; users must handle children first. No tree is
+silently deleted, no child is forced to stop, and ordinary files retain numbered conflict recovery.

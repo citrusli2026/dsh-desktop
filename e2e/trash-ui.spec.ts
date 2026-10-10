@@ -4,7 +4,8 @@ import { existsSync } from 'node:fs'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
+import { once } from 'node:events'
 import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
 import { dismissOnboardingModals, WELCOME_ACKNOWLEDGED_YAML } from './onboarding.ts'
 import { launchTrashHarness } from './trash-harness.ts'
@@ -224,6 +225,9 @@ realTrashTest('real idle session delete, restore and unarchive refresh sidebar w
   const session = await createRealSession(harness)
   const row = page.getByRole('treeitem').filter({ hasText: 'TRASH-REAL-ANSWER' })
   await expect(row).toHaveCount(1)
+  await row.hover()
+  await row.getByRole('button', { name: '置顶会话', exact: true }).click()
+  await expect(row.getByRole('button', { name: '取消置顶', exact: true })).toHaveCount(1)
   const peerOpening = harness.app.waitForEvent('window')
   await harness.app.evaluate(({ BrowserWindow }, url) => {
     const peer = new BrowserWindow({ width: 1280, height: 900, show: true, webPreferences: { backgroundThrottling: false } })
@@ -251,6 +255,16 @@ realTrashTest('real idle session delete, restore and unarchive refresh sidebar w
   trash = await openTrashSection(page)
   await trash.getByRole('tab', { name: /^资源 / }).click()
   const savedRow = trash.locator('[data-dsh-trash-row]').filter({ hasText: session.sessionId })
+  const [saved] = await page.evaluate(() => (window as unknown as { dshDesktop: { listTrash(): Promise<Array<{ id: string; originPath: string }>> } }).dshDesktop.listTrash())
+  expect(saved!.originPath.startsWith(harness.home + '/sessions/')).toBe(true)
+  await mkdir(saved!.originPath)
+  await writeFile(join(saved!.originPath, 'new-data'), 'do not overwrite')
+  await savedRow.getByRole('button', { name: '还原', exact: true }).click()
+  await expect(trash.getByRole('status')).toHaveText('同名会话已存在，未覆盖新数据；原会话仍在垃圾桶中。')
+  await expect(savedRow).toHaveCount(1)
+  expect(await page.evaluate(id => (window as unknown as { dshDesktop: { restoreTrash(id: string): Promise<unknown> } }).dshDesktop.restoreTrash(id), saved!.id)).toBeNull()
+  expect(await readFile(join(saved!.originPath, 'new-data'), 'utf8')).toBe('do not overwrite')
+  await rm(saved!.originPath, { recursive: true }) // only the conflict directory created by this test
   await savedRow.getByRole('button', { name: '还原', exact: true }).click()
   await expect(savedRow).toHaveCount(0, { timeout: 5_000 })
   await page.keyboard.press('Escape')
@@ -264,11 +278,28 @@ realTrashTest('real idle session delete, restore and unarchive refresh sidebar w
   trash = await openTrashSection(page)
   await trash.getByRole('tab', { name: /^会话 / }).click()
   await expect(trash.locator(`[data-dsh-session-id="${session.sessionId}"]`).getByText('已归档', { exact: true })).toBeVisible()
+  await trash.locator(`[data-dsh-session-id="${session.sessionId}"]`).getByRole('button', { name: '删除（入桶）', exact: true }).click()
+  await expect(trash.locator(`[data-dsh-session-id="${session.sessionId}"]`)).toHaveCount(0, { timeout: 5_000 })
+  await trash.getByRole('tab', { name: /^资源 / }).click()
+  await savedRow.getByRole('button', { name: '还原', exact: true }).click()
+  await expect(savedRow).toHaveCount(0, { timeout: 5_000 })
+  await page.keyboard.press('Escape')
+  await expect(row).toHaveCount(1, { timeout: 5_000 })
+  await expect(peerRow).toHaveCount(1, { timeout: 5_000 })
+  await row.hover()
+  await row.getByRole('button', { name: '归档会话', exact: true }).click()
+  await expect(row).toHaveCount(0, { timeout: 5_000 })
+  trash = await openTrashSection(page)
+  await trash.getByRole('tab', { name: /^会话 / }).click()
   await trash.locator(`[data-dsh-session-id="${session.sessionId}"]`).getByRole('button', { name: '取消归档', exact: true }).click()
   await expect(trash.getByRole('status')).toHaveText('已完成')
   await page.keyboard.press('Escape')
   await expect(row).toHaveCount(1, { timeout: 5_000 })
   await expect(peerRow).toHaveCount(1, { timeout: 5_000 })
+  const restarted = await harness.restart()
+  await expect(restarted.getByRole('treeitem').filter({ hasText: 'TRASH-REAL-ANSWER' })).toHaveCount(1, { timeout: 5_000 })
+  expect(await restarted.evaluate(() => (window as unknown as { dshDesktop: { listTrash(): Promise<unknown[]> } }).dshDesktop.listTrash())).toEqual([])
+  expect(harness.requests).toBe(2) // restarting does not rerun the model turn
 })
 
 realTrashTest('Host refuses deletion during a real active turn without stopping it @smoke', async ({ harness }) => {
@@ -288,4 +319,52 @@ realTrashTest('Host refuses deletion during a real active turn without stopping 
   harness.resume()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('paragraph').filter({ hasText: 'TRASH-REAL-ANSWER' })).toHaveCount(2, { timeout: 30_000 })
+})
+
+realTrashTest('external kernel writer lease prevents cold session deletion @smoke', async ({ harness }) => {
+  const current = await createRealSession(harness)
+  const node = join(process.cwd(), 'resources/harness/node/bin', process.platform === 'win32' ? 'node.exe' : 'node')
+  execFileSync(node, ['e2e/seed-trash-sessions.mjs', harness.home, harness.workspace], { timeout: 30_000 })
+  const holder = spawn(node, ['e2e/hold-trash-session.mjs', harness.home, 'session-livesession1'], { stdio: ['pipe', 'pipe', 'pipe'] })
+  try {
+    await expect.poll(() => holder.stdout.read()?.toString() ?? '', { timeout: 15_000 }).toBe('writer-ready\n')
+    const trash = await openTrashSection(harness.page)
+    await trash.getByRole('tab', { name: /^会话 / }).click()
+    const row = trash.locator('[data-dsh-session-id="session-livesession1"]')
+    await row.getByRole('button', { name: '删除（入桶）', exact: true }).click()
+    await expect(trash.getByRole('status')).toHaveText('会话正在运行，不能删除')
+    await expect(row).toHaveCount(1)
+    const released = once(holder, 'exit')
+    holder.stdin.end()
+    await released
+    await row.getByRole('button', { name: '删除（入桶）', exact: true }).click()
+    await expect(row).toHaveCount(0, { timeout: 5_000 })
+    await expect(harness.page.getByRole('treeitem').filter({ hasText: 'TRASH-REAL-ANSWER' })).toHaveAttribute('aria-selected', 'true')
+    await trash.getByRole('tab', { name: /^资源 / }).click()
+    const item = trash.locator('[data-dsh-trash-row]').filter({ hasText: 'session-livesession1' })
+    await item.getByRole('button', { name: '彻底删除', exact: true }).click()
+    await item.getByRole('button', { name: '确认', exact: true }).click()
+    await expect(item).toHaveCount(0, { timeout: 5_000 })
+    let durableIds: string[] = []
+    const restarted = await harness.restart(async () => {
+      // Capture the full durable baseline before the new client opens a draft.
+      const root = join(harness.home, 'sessions')
+      for (const project of await readdir(root, { withFileTypes: true })) {
+        if (project.isDirectory()) durableIds.push(...(await readdir(join(root, project.name))).filter(id => id.startsWith('session-')))
+      }
+      durableIds.sort()
+      expect(durableIds).not.toContain('session-livesession1')
+      expect(durableIds).toContain(current.sessionId)
+      expect(durableIds).toContain('session-archivedsess')
+    })
+    const sessions = await restarted.evaluate(() => (window as unknown as { dshDesktop: { listTrashSessions(): Promise<Array<{ sessionId: string }>> } }).dshDesktop.listTrashSessions())
+    const ids = sessions!.map(session => session.sessionId)
+    expect(ids).not.toContain('session-livesession1')
+    expect(ids.filter(id => durableIds.includes(id)).sort()).toEqual(durableIds)
+    const newDrafts = ids.filter(id => !durableIds.includes(id))
+    expect(newDrafts).toHaveLength(1) // the kernel's new blank selected session
+    const draft = JSON.parse(execFileSync(node, ['e2e/inspect-trash-session.mjs', harness.home, newDrafts[0]!], { encoding: 'utf8', timeout: 30_000 }))
+    expect(draft).toEqual({ id: newDrafts[0], eventTypes: ['permission/preset', 'sandbox/mode', 'approval/policy'], parentSession: null })
+    expect(harness.requests).toBe(2)
+  } finally { if (holder.exitCode === null) holder.kill('SIGKILL') }
 })

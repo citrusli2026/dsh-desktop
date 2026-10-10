@@ -221,7 +221,7 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   deleteTrashSession: (projectKey: string, sessionId: string): Promise<boolean | 'active' | null> =>
     ipcRenderer.invoke('desktop:trash:session-delete', projectKey, sessionId),
   /** Restore a trashed session and clear its archive flag. */
-  restoreTrashSession: (trashId: string): Promise<boolean | null> => ipcRenderer.invoke('desktop:trash:session-restore', trashId),
+  restoreTrashSession: (trashId: string): Promise<boolean | 'conflict' | null> => ipcRenderer.invoke('desktop:trash:session-restore', trashId),
   /** Remove one session id from the workspace archive set (show it again). */
   unarchiveSession: (sessionId: string): Promise<boolean | null> => ipcRenderer.invoke('desktop:trash:session-unarchive', sessionId),
 })

@@ -34,7 +34,7 @@ export async function launchTrashHarness(packaged: boolean) {
     request.on('end', () => { requests++; if (paused) held.push(response); else reply(response) })
   })
   let app: Awaited<ReturnType<typeof electron.launch>> | undefined
-  async function close() {
+  async function stopApp() {
     if (app !== undefined) {
       let timeout: NodeJS.Timeout | undefined
       await Promise.race([
@@ -42,6 +42,9 @@ export async function launchTrashHarness(packaged: boolean) {
         new Promise<void>(resolveClose => { timeout = setTimeout(() => { app?.process().kill('SIGKILL'); resolveClose() }, 10_000) }),
       ]).finally(() => clearTimeout(timeout))
     }
+  }
+  async function close() {
+    await stopApp()
     server.closeAllConnections()
     await new Promise<void>(resolveClose => server.close(() => resolveClose()))
     await rm(root, { recursive: true, force: true })
@@ -62,13 +65,18 @@ export async function launchTrashHarness(packaged: boolean) {
     const args = [`--user-data-dir=${userData}`]
     if (!packaged) args.unshift(resolve('.'))
     if (process.platform === 'linux') args.push('--no-sandbox')
-    app = await electron.launch({ ...(packaged ? { executablePath: await locatePackagedExecutable() } : {}), args, cwd: workspace, env })
-    const page = await app.firstWindow()
-    await expect.poll(() => page.locator('[data-dsh-desktop-controls]').count(), { timeout: 90_000 }).toBe(1)
-    await dismissOnboardingModals(page)
+    async function launch() {
+      app = await electron.launch({ ...(packaged ? { executablePath: await locatePackagedExecutable() } : {}), args, cwd: workspace, env })
+      const page = await app.firstWindow()
+      await expect.poll(() => page.locator('[data-dsh-desktop-controls]').count(), { timeout: 90_000 }).toBe(1)
+      await dismissOnboardingModals(page)
+      return page
+    }
+    let page = await launch()
     expect(requests).toBe(0)
     return {
-      app, page, home, close,
+      get app() { return app! }, get page() { return page }, home, workspace, close,
+      async restart(beforeLaunch?: () => Promise<void>) { await stopApp(); await beforeLaunch?.(); page = await launch(); return page },
       get requests() { return requests },
       pause() { paused = true },
       resume() { paused = false; for (const response of held.splice(0)) reply(response) },

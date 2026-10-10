@@ -4,12 +4,12 @@
  * `storages/workspace.json` (`archivedSessionIds`). The kernel's search index
  * reconciles itself when a session directory appears or disappears, so the
  * trash can move those directories out and back without breaking the kernel.
- * Deleting a *running* session is refused; the caller (main window IPC) feeds
- * the ids the WebUI last reported.
+ * This module retains offline compatibility helpers. Production mutations
+ * use trash-host.ts and the authoritative kernel owner, not WebUI snapshots.
  * @module main/trash-sessions
  */
 import { existsSync } from 'node:fs'
-import { readdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { atomicWriteFile } from './config-file.ts'
 import { moveToTrash, restoreFromTrash } from './trash.ts'

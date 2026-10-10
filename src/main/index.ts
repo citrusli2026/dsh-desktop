@@ -1571,7 +1571,9 @@ ipcMain.handle('desktop:presets:delete', (event, rawId: unknown) => {
 })
 
 function notifyTrashChanged(action: string, id: string): void {
-  windowContext.mainWindow?.webContents.send('desktop:trash:changed', { home: desktopDshHome(), action, id })
+  if (windowContext.mainWindow && !windowContext.mainWindow.isDestroyed()) {
+    windowContext.mainWindow.webContents.send('desktop:trash:changed', { home: desktopDshHome(), action, id })
+  }
 }
 
 // Session lifecycle and archive mutations belong to the authoritative Host.
@@ -1583,7 +1585,7 @@ ipcMain.handle('desktop:trash:sessions', (event) => {
 ipcMain.handle('desktop:trash:session-delete', async (event, rawProjectKey: unknown, rawSessionId: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
   if (typeof rawProjectKey !== 'string' || typeof rawSessionId !== 'string' || rawSessionId === '') return false
-  if (rawProjectKey.includes('..') || rawProjectKey.includes('/') || rawProjectKey.includes('\\')) return false
+  if (rawProjectKey === '.' || rawProjectKey === '..' || rawProjectKey.includes('/') || rawProjectKey.includes('\\')) return false
   const result = await sessionTrashClient.run({ action: 'delete', projectKey: rawProjectKey, sessionId: rawSessionId })
   notifyTrashChanged('delete', rawSessionId)
   return result
