@@ -1,22 +1,17 @@
 import type { CredentialProtection } from './cc-connect-credentials.ts'
+import type { ConnectSettings, ConnectSettingsSource } from './cc-connect-config.ts'
 
 export type ConnectPhase = 'disabled' | 'stopped' | 'starting' | 'ready' | 'crashed' | 'degraded'
 
-export interface ConnectState {
-  enabled: boolean
+export interface ConnectState extends ConnectSettings {
   phase: ConnectPhase
-  appId: string
   secretConfigured: boolean
-  workspace: string
   credentialProtection: CredentialProtection
   lastError?: string
   restartAttempts?: number
 }
 
-export interface ConnectSettingsInput {
-  enabled: boolean
-  appId: string
-  workspace: string
+export interface ConnectSettingsInput extends ConnectSettingsSource {
   appSecret?: string
 }
 

@@ -12,11 +12,12 @@
 | TR-02 | 完成 | Host 权威生命周期、归档修改、目录广播和双客户端真实回归 |
 | TR-03 | 完成 | 会话身份冲突拒绝、事务回滚、跨进程锁、子会话保护与重启持久化 |
 | MSG-01 | 完成 | 规范化默认、显示 TOML、真实 Go loader 19 组配置 |
-| MSG-02～MSG-04 | 未完成 | IPC、UI、文档与全门禁 |
+| MSG-02 | 完成 | 实际保存/读取 IPC、偏好合并、非法输入无写入、Sidecar/Safe Mode 回归 |
+| MSG-03～MSG-04 | 未完成 | UI、文档与全门禁 |
 | FS-01～FS-04 | 未完成 | 管理契约、应用记录、生命周期、统一管理窗口 |
 | QA-01 / shell 发布 | 未完成 | 安装包、受控真实验收、发布与镜像 |
 
-下一任务：**MSG-02**。
+下一任务：**MSG-03**。
 
 ## TR-01 — 真实垃圾桶复现与契约核对
 
@@ -115,3 +116,21 @@ Go 1.25（与现有 go.mod 相同）环境，未升级依赖或修改子模块�
 旧 settings.json 不重写即读取为完整新默认值；原子写入与 0600 权限继续通过。
 未覆盖项：IPC 省略字段合并/拒绝非法输入、保存后 Sidecar 生效和 Safe Mode、UI 回显/轮询、
 实际飞书消息数量/卡片视觉效果由 MSG-02/03 和 QA-01 完成。没有真实飞书或模型调用。
+
+## MSG-02 — 主进程白名单与 IPC 回显
+
+允许范围：连接 types/main、实际 IPC 测试、Electron shell 端到端。无新通道、不改 preload
+授权或 Supervisor 分支。任务提交 SHA：提交后记录。
+
+保存新字段先白名单验证，再合并已保存设置；省略表示保留。有限整数越界由规范化钳制。
+状态完整回传合法生效设置，不回读 Secret；启用的已运行连接重新生成 TOML/重启，
+未运行、禁用和 Safe Mode 保留原有启停边界。
+
+| 命令 | 结果 | 退出码 |
+|---|---|---:|
+| `node --test test/cc-connect-ipc.test.ts test/cc-connect-lifecycle.test.ts test/cc-connect-credentials.test.ts` | 11 passed；执行真实注册 handler/临时存储，非法值不改配置和凭证、旧调用保留偏好、sender guard | 0 |
+| `pnpm exec playwright test e2e/electron-shell.spec.ts -g 'display settings IPC\|renderer bridge drives'` | 2 passed；真实 Electron IPC + 假 Sidecar，TOML 更新、Safe Mode 无隐式启动、原生命周期全程 | 0 |
+| `pnpm run verify` | 367 单测 + 1 ACP 全绿；覆盖率 89.10/80.86/85.06% | 0 |
+| `pnpm run typecheck`、`git diff --check` | 通过 | 0 |
+
+未覆盖项：设置页四组选项、双语/禁用/轮询编辑/非预设值回显交 MSG-03；实际飞书展示交 QA-01。

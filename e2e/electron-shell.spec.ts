@@ -8,6 +8,7 @@ import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
 import { dismissOnboardingModals, WELCOME_ACKNOWLEDGED_YAML } from './onboarding.ts'
+import type { ConnectSaveResult, ConnectSettingsInput, ConnectState } from '../src/main/cc-connect-types.ts'
 
 // Packaged mode runs the real bundled Harness (the dev web-URL override is
 // dev-only, src/main/index.ts boot()), so stub-only page assertions are
@@ -859,6 +860,53 @@ test.describe('environment edge paths', () => {
 
 shellTest.describe('cc-connect desktop sidecar', () => {
   shellTest.use({ connectSidecar: true })
+
+  shellTest('display settings IPC validates, persists and rerenders without breaking Safe Mode @smoke', async ({ window, dshHome, userData }) => {
+    type Bridge = {
+      saveConnectSettings(input: unknown): Promise<ConnectSaveResult | null>
+      getConnectState(): Promise<ConnectState | null>
+      startConnect(): Promise<boolean>
+      desktopAction(action: string): Promise<boolean>
+    }
+    const state = () => window.evaluate(() => (window as unknown as { dshDesktop: Bridge }).dshDesktop.getConnectState()).catch(error => {
+      if (String(error).includes('Execution context was destroyed')) return null
+      throw error
+    })
+    const save = (input: unknown) => window.evaluate(input => (window as unknown as { dshDesktop: Bridge }).dshDesktop.saveConnectSettings(input), input)
+    const base: ConnectSettingsInput = { enabled: true, appId: 'cli_display_fake', workspace: dshHome, appSecret: 'fake-display-secret' }
+    await expect.poll(state).toMatchObject({ detail: 'compact', showStreamPreview: true, streamPreviewIntervalMs: 3000, cardMode: 'legacy', progressStyle: 'legacy' })
+    expect(await save(base)).toMatchObject({ ok: true, state: { phase: 'stopped', secretConfigured: true } })
+    expect(await window.evaluate(() => (window as unknown as { dshDesktop: Bridge }).dshDesktop.startConnect())).toBe(true)
+    await expect.poll(state).toMatchObject({ phase: 'ready' })
+    const changed = { ...base, appSecret: '', detail: 'quiet', showStreamPreview: false, streamPreviewIntervalMs: 90000, cardMode: 'rich', progressStyle: 'card' }
+    expect(await save(changed)).toMatchObject({ ok: true, state: { detail: 'quiet', showStreamPreview: false, streamPreviewIntervalMs: 30000, cardMode: 'rich', progressStyle: 'card' } })
+    await expect.poll(state).toMatchObject({ phase: 'ready' })
+    const configPath = join(userData, 'cc-connect', 'config.toml')
+    const config = await readFile(configPath, 'utf8')
+    expect(config).toContain('mode = "quiet"')
+    expect(config).toContain('interval_ms = 30000')
+    expect(config).toContain('progress_style = "card"')
+    expect(config).not.toContain('fake-display-secret')
+    const settingsPath = join(userData, 'cc-connect', 'settings.json')
+    const before = await readFile(settingsPath, 'utf8')
+    const secretBefore = await readFile(join(userData, 'cc-connect', 'credentials.json'), 'utf8')
+    for (const fields of [{ detail: 'invalid' }, { cardMode: 'invalid' }, { progressStyle: 'invalid' }, { showStreamPreview: 'true' }, { streamPreviewIntervalMs: 1.5 }, { streamPreviewIntervalMs: '3000' }]) {
+      expect(await save({ ...base, ...fields })).toMatchObject({ ok: false, reason: 'invalid-input' })
+      expect(await readFile(settingsPath, 'utf8')).toBe(before)
+      expect(await readFile(join(userData, 'cc-connect', 'credentials.json'), 'utf8')).toBe(secretBefore)
+    }
+    expect(await save({ enabled: true, appId: base.appId, workspace: base.workspace, appSecret: '' })).toMatchObject({ ok: true, state: { detail: 'quiet', cardMode: 'rich', progressStyle: 'card', streamPreviewIntervalMs: 30000 } })
+    const safe = await window.evaluate(() => (window as unknown as { dshDesktop: Bridge }).dshDesktop.desktopAction('enterSafeMode')).catch(error => {
+      if (!String(error).includes('Execution context was destroyed')) throw error
+      return true
+    })
+    expect(safe).toBe(true)
+    await expect.poll(state).toMatchObject({ phase: 'stopped', enabled: true })
+    expect(await save({ ...base, appSecret: '', detail: 'full', streamPreviewIntervalMs: 8000 })).toMatchObject({ ok: true, state: { phase: 'stopped', detail: 'full', streamPreviewIntervalMs: 8000 } })
+    expect(await readFile(configPath, 'utf8')).toBe(config) // no hidden start while paused
+    expect(await save({ enabled: false, appId: base.appId, workspace: base.workspace })).toMatchObject({ ok: true, state: { phase: 'disabled', detail: 'full', streamPreviewIntervalMs: 8000 } })
+    expect(JSON.stringify(await state())).not.toContain('fake-display-secret')
+  })
 
   shellTest('renderer bridge drives a fake sidecar through ready, crash, stop, and Safe Mode', async ({ window, dshHome, userData, connectModePath }) => {
     type ConnectState = { enabled: boolean; phase: string; appId: string; secretConfigured: boolean; workspace: string; lastError?: string }

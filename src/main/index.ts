@@ -343,6 +343,11 @@ function connectStateFromRuntime(
     secretConfigured: credentials.secretConfigured,
     workspace: settings.workspace,
     credentialProtection: credentials.credentialProtection,
+    detail: settings.detail,
+    showStreamPreview: settings.showStreamPreview,
+    streamPreviewIntervalMs: settings.streamPreviewIntervalMs,
+    cardMode: settings.cardMode,
+    progressStyle: settings.progressStyle,
   }
   if (credentialError) state.lastError = 'credential storage unavailable'
   if (runtime !== undefined) {
@@ -368,9 +373,30 @@ function parseConnectSettingsInput(raw: unknown): ConnectSettingsInput | undefin
   const value = raw as Record<string, unknown>
   if (typeof value.enabled !== 'boolean' || typeof value.appId !== 'string' || typeof value.workspace !== 'string') return undefined
   if (value.appSecret !== undefined && typeof value.appSecret !== 'string') return undefined
-  return value.appSecret === undefined
+  const input: ConnectSettingsInput = value.appSecret === undefined
     ? { enabled: value.enabled, appId: value.appId, workspace: value.workspace }
     : { enabled: value.enabled, appId: value.appId, workspace: value.workspace, appSecret: value.appSecret }
+  if (value.detail !== undefined) {
+    if (value.detail !== 'full' && value.detail !== 'compact' && value.detail !== 'quiet') return undefined
+    input.detail = value.detail
+  }
+  if (value.showStreamPreview !== undefined) {
+    if (typeof value.showStreamPreview !== 'boolean') return undefined
+    input.showStreamPreview = value.showStreamPreview
+  }
+  if (value.streamPreviewIntervalMs !== undefined) {
+    if (typeof value.streamPreviewIntervalMs !== 'number' || !Number.isFinite(value.streamPreviewIntervalMs) || !Number.isInteger(value.streamPreviewIntervalMs)) return undefined
+    input.streamPreviewIntervalMs = value.streamPreviewIntervalMs
+  }
+  if (value.cardMode !== undefined) {
+    if (value.cardMode !== 'legacy' && value.cardMode !== 'rich') return undefined
+    input.cardMode = value.cardMode
+  }
+  if (value.progressStyle !== undefined) {
+    if (value.progressStyle !== 'legacy' && value.progressStyle !== 'compact' && value.progressStyle !== 'card') return undefined
+    input.progressStyle = value.progressStyle
+  }
+  return input
 }
 
 async function validConnectWorkspace(workspace: string): Promise<boolean> {
@@ -391,11 +417,12 @@ async function saveConnectSettings(raw: unknown): Promise<ConnectSaveResult> {
   if (input.enabled && input.workspace === '') return { ok: false, reason: 'invalid-workspace', state: current }
 
   const userData = app.getPath('userData')
+  const { appSecret, ...settingsInput } = input
   try {
-    if (input.appSecret !== undefined && input.appSecret !== '') {
-      await new ConnectCredentials(credentialsPath(userData)).setSecret(input.appSecret)
+    if (appSecret !== undefined && appSecret !== '') {
+      await new ConnectCredentials(credentialsPath(userData)).setSecret(appSecret)
     }
-    await writeConnectSettings(userData, { enabled: input.enabled, appId: input.appId, workspace: input.workspace })
+    await writeConnectSettings(userData, { ...await readConnectSettings(userData), ...settingsInput })
     if (!input.enabled) await stopConnectSupervisor()
     else if (connectSupervisor !== undefined) await restartConnectForCurrentKernel()
     return { ok: true, state: await readConnectState() }
