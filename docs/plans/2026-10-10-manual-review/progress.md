@@ -120,7 +120,7 @@ Go 1.25（与现有 go.mod 相同）环境，未升级依赖或修改子模块�
 ## MSG-02 — 主进程白名单与 IPC 回显
 
 允许范围：连接 types/main、实际 IPC 测试、Electron shell 端到端。无新通道、不改 preload
-授权或 Supervisor 分支。任务提交 SHA：提交后记录。
+授权或 Supervisor 分支。任务提交 SHA：`a5d2f58964c2fadf85d75b6016e34cad99d276e2`。
 
 保存新字段先白名单验证，再合并已保存设置；省略表示保留。有限整数越界由规范化钳制。
 状态完整回传合法生效设置，不回读 Secret；启用的已运行连接重新生成 TOML/重启，
