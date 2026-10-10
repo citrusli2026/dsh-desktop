@@ -45,7 +45,7 @@
 
 允许范围：Host/client 插件、垃圾桶 IPC/preload、Supervisor 私有端点、可重复构建的版本绑定
 生命周期/选中回退补丁、对应测试及 ADR 0035。没有升级依赖、修改用户 overlay 或子模块。
-任务提交 SHA：提交后记录。
+任务提交 SHA：`f20861b74cc7c2deed54392852ff8946495333db`。
 
 内核创建方保存自己的 AgentHandle，空闲维护区内 flush/移动，再释放；运行、排队、其他所有者
 以及驻留子任务拒绝删除。冷会话持有持久化 writer lease。归档修改走 workspaceRegistry，恢复
