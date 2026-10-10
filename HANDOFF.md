@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-10-05。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-10-10。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | ✅ `0.2.1-alpha.1.shell.3`（2026-10-05 已发布；内核 `0.2.1-alpha.1`，见 §72） |
-| 已发布 | ✅ `0.2.1-alpha.1.shell.3`（Linux deb、macOS dmg、Windows exe；8 个 GitHub Release 资产） |
-| 本地门禁 | ✅ `pnpm run verify`（305 项单测；双树安全审计 0 漏洞）、dev E2E 16/16、packaged E2E 7/7、LAN QR 2/2、market offline 1/1、real 2/2、dist:dir、两种 packaged smoke 通过；AVD 因无 `adb` 未运行（§72） |
-| 核心发布 | ✅ `v0.2.1-alpha.1.shell.3` Release run `37178869197` 全绿：verify + Linux/macOS/Windows 构建 + publish；8 资产与构建来源证明齐全，tag peeled commit `b45baab`（§72） |
-| 官网数据 | ✅ 镜像后 `GH_CLI=1` 重生成并提交 `6a2d59d`；线上 `/data/release.json` 指向 shell.3 且 6/6 `gitcode_ok=true`（§72） |
-| 国内镜像 | ✅ shell.3 走 GitCode v2 管道 6/6 匿名可下；tag 对齐 `b45baab`，deb 全量回读 222,883,576 字节、SHA-256 一致（§72） |
-| 实时下载统计 | ✅ `/api/downloads` HTTP 200；累计 5056（mac 633 / Windows 3925 / Linux 498，67 个版本） |
+| 最新代码基线 | ✅ `0.2.1-alpha.2.shell.0`（2026-10-10 已发布；内核 `0.2.1-alpha.2`，见 §74） |
+| 已发布 | ✅ `0.2.1-alpha.2.shell.0`（Linux deb、macOS dmg、Windows exe；8 个 GitHub Release 资产） |
+| 本地门禁 | ✅ `pnpm run verify`（341 项单测；双树安全审计 0 新漏洞）、LAN QR 2/2、market offline 1/1、real 2/2、当前版本 `dist:dir`、两种 packaged smoke 通过 |
+| 核心发布 | ✅ `v0.2.1-alpha.2.shell.0` Release run `38060249915` 全绿：verify + Linux/macOS/Windows 构建 + publish；8 资产与构建来源证明齐全，tag peeled commit `8c84333`（§74） |
+| 官网数据 | ✅ Site Data Refresh run `38062336615` 成功，bot 提交 `3b077a9`；线上 `/data/release.json` 指向 alpha.2 且 6/6 `gitcode_ok=true`（§74） |
+| 国内镜像 | ✅ alpha.2 走 GitCode v2 管道 6/6 匿名可下；tag 对齐 `8c84333`，GitCode 因预发布数量超过 20 限制创建为普通 Release（§74） |
+| 实时下载统计 | ✅ `/api/downloads` HTTP 200；线上统计累计 6409（mac 740 / Windows 5047 / Linux 622，70 个版本） |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -1878,4 +1878,19 @@ GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alph
 发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alpha.1.shell.5>；
 Release CI：<https://github.com/citrusli2026/dsh-desktop/actions/runs/37821983420>；
 GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alpha.1.shell.5>；
+官网：<https://dsh-desktop.com>。
+
+## 74. v0.2.1-alpha.2.shell.0 内核升级与 cc-connect 集成发布（2026-10-10）
+
+1. **内核与闭包**：`@deepseek-ai/dsh` 从 `0.2.1-alpha.1` 升级到 `0.2.1-alpha.2`；同步 32 个 `dsh-*` peer pin、release-age 豁免和登录自动打开补丁。`pnpm -C manifest/harness install --frozen-lockfile`、`pnpm run bootstrap` 均通过，peer 闭包报告 `closure satisfied`。
+2. **本版功能**：包含 cc-connect × DSH Desktop 完整集成、原生扩展二维码配置菜单、飞书设置页、官方 Lark CLI 一键入口/skills、多运行时 Dashboard，以及隔离 Secret 和 Sidecar 生命周期保护。真实飞书 websocket → cc-connect → DSH ACP → 飞书回包链路已在前版验收并随本版交付。
+3. **本地门禁**：`pnpm run verify` 通过（341 tests；覆盖率 88.84% 行 / 80.03% 分支 / 84.29% 函数）；双树 `security:audit` 通过；LAN pairing 2/2、market offline 1/1、market real 2/2；当前 alpha.2 `dist:dir`、`smoke:packaged`、`smoke:packaged-ui` 和版本/sidecar SHA 校验通过。
+4. **发布**：tag `v0.2.1-alpha.2.shell.0` → `8c8433317d646bebbd5b621daafaf605baa2d6fd`；Release run `38060249915` 全绿，verify 15 passed/12 skipped，Linux/macOS/Windows 构建、Windows NSIS residue、真实 Harness/packaged E2E、silent install、attestation 和 publish 全部通过；GitHub Release 有 8 个资产。
+5. **GitCode 镜像**：tag 对齐 `8c84333`；v2 浏览器授权管道上传 deb/dmg/exe 与 3×sha256，GitCode release id `56421`，匿名 Range GET `6/6` 通过。由于 GitCode 预发布版本超过 20 个，本版 GitCode release 按平台限制创建为普通 release；`latest.yml` 和 `.blockmap` 保留 GitHub。
+6. **官网数据**：Site Data Refresh run `38062336615` 成功，bot 提交 `3b077a9`；本地站点数据提交 `24dba62` 已推送双远端。线上 `/data/release.json` 已指向 alpha.2、6/6 `gitcode_ok=true`、生成时间 `2026-10-10T15:22:55.165Z`；`/api/downloads` HTTP 200，统计累计 6409（mac 740 / Windows 5047 / Linux 622，70 个版本）。
+7. **安全与遗留**：本次不写入真实用户目录或凭证；GitHub 推送仍提示默认分支存在 5 个 Dependabot 漏洞告警，属于既有依赖风险，与本版发布门禁无关。上游 cc-connect 全量 Go gate 的既有 `web/dist`、`agent/codex` Skills EOF 和 workspace-skills 基线失败仍未修改。
+
+发布：<https://github.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alpha.2.shell.0>；
+Release CI：<https://github.com/citrusli2026/dsh-desktop/actions/runs/38060249915>；
+GitCode：<https://gitcode.com/citrusli2026/dsh-desktop/releases/tag/v0.2.1-alpha.2.shell.0>；
 官网：<https://dsh-desktop.com>。
