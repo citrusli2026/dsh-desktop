@@ -1,5 +1,5 @@
 diff --git a/lib/client.js b/lib/client.js
-index 82741de3a2636b78d98c999e7add80a398b7f964..f99639d04b765c37e2a809c24c6a1d1017320b2a 100644
+index 8fe69a84363bb8517410534c79090b479260c466..5f9faca2590c995adf2f048f160dc1d5e285ad5 100644
 --- a/lib/client.js
 +++ b/lib/client.js
 @@ -998,6 +998,7 @@
