@@ -19,7 +19,7 @@
 ## TR-01 — 真实垃圾桶复现与契约核对
 
 允许范围：本计划文档、隔离诊断脚本、文档索引；没有产品代码改动。
-任务提交 SHA 在提交后补记。
+任务提交 SHA：`8161ef4cfc10888591b8314e12f861c447606c58`。
 
 | 命令 | 结果 | 退出码 |
 |---|---|---:|
@@ -27,6 +27,7 @@
 | `node docs/plans/2026-10-10-manual-review/reproduce-trash-sidebar.mjs`（两次） | 真实会话已删除，磁盘 0、侧栏 1；5 秒后仍在。修复前预期失败，不计作功能验收通过 | 1 / 1 |
 | `node --check docs/plans/2026-10-10-manual-review/reproduce-trash-sidebar.mjs` | 语法通过 | 0 |
 | `git diff --check` | 通过 | 0 |
+| `pnpm run site:check` | 站点与下载 API 全部通过；既存 MODULE_TYPELESS 警告未改动 | 0 |
 
 夹具：临时 `DSH_HOME` / Electron userData / 工作区，本地 SSE 模拟模型、假 key；模拟答复与标题生成
 共两次请求，真实模型/飞书请求为 0。实际点击设置中的删除按钮，以真实会话标题定位侧栏。
