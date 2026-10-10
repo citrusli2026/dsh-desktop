@@ -12,6 +12,8 @@ jobs:
       DSH_MOBILE_SHELL_WEB_ROOT: ${{ github.workspace }}/dsh-mobile-shell/dist/web
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: recursive
       - uses: actions/checkout@v7
         with:
           repository: citrusli2026/dsh-mobile-shell
@@ -24,6 +26,9 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
       - run: pnpm install --frozen-lockfile
       - name: Dependency security audit (official npm registry)
         run: pnpm run security:audit
