@@ -56,7 +56,7 @@
     "dist:dir": "pnpm run build && pnpm run cc-connect:build && electron-builder --dir"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.64.0",
     "@types/node": "^24.0.0",
     "electron": "^44.7.0",
     "electron-builder": "^26.17.0",
