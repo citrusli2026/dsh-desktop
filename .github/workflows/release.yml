@@ -261,6 +261,22 @@ jobs:
           name: windows-installer-timings
           path: test-results/nsis-benchmark.json
           if-no-files-found: warn
+      # Native-visual evidence: the packaged @smoke run above renders the real
+      # app on this platform's own desktop stack and writes screenshots into
+      # test-results/. Those used to be discarded, which left Windows/Linux
+      # native appearance reviewable only on physical machines; uploading them
+      # (failures included) turns that review into an artifact download.
+      - name: Upload packaged native-visual evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: packaged-visuals-${{ matrix.os }}
+          path: |
+            test-results/**/*.png
+            test-results/**/*.json
+            test-results/**/*.txt
+          if-no-files-found: warn
+          retention-days: 30
       - name: Write installer SHA-256
         run: node scripts/write-release-checksum.mjs dist
       - name: Attest macOS installer (build provenance)
