@@ -117,6 +117,22 @@ test.describe('installed plugin companion windows', () => {
         return pet?.isVisible() ?? false
       }), { timeout: 15_000 }).toBe(true)
 
+      // The real user path: open the desktop-tools panel and click the action.
+      await page.locator('[data-dsh-controls-trigger]').click()
+      const companionGroup = page.locator('[data-dsh-controls-group="companions"]')
+      await expect(companionGroup).toBeVisible()
+      const companionAction = companionGroup.getByRole('button', { name: /Companion Fixture/ })
+      await companionAction.click()
+      await expect.poll(() => app.evaluate(({ BrowserWindow }) => {
+        const pet = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('__companion-fixture'))
+        return pet?.isVisible() ?? false
+      }), { timeout: 15_000 }).toBe(false)
+      await companionAction.click()
+      await expect.poll(() => app.evaluate(({ BrowserWindow }) => {
+        const pet = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('__companion-fixture'))
+        return pet?.isVisible() ?? false
+      }), { timeout: 15_000 }).toBe(true)
+
       // No window ever appears for the unprobed route.
       expect(app.windows().some(win => win.url().includes('__companion-missing'))).toBe(false)
     } finally {
