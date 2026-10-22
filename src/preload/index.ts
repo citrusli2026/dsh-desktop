@@ -16,6 +16,7 @@ import type { EditionManifest } from '../main/edition-catalog.ts'
 import type { MarketInstallProgress, MarketInstallResult } from '../main/market-install.ts'
 import type { DesktopHealthReport } from '../main/health-check.ts'
 import type { ConnectSaveResult, ConnectSettingsInput, ConnectState, WorkspacePickResult } from '../main/cc-connect-types.ts'
+import type { CompanionDescriptor } from '../main/companion-policy.ts'
 
 export interface DesktopTrashSession {
   projectKey: string
@@ -230,4 +231,8 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   restoreTrashSession: (trashId: string): Promise<boolean | 'conflict' | null> => ipcRenderer.invoke('desktop:trash:session-restore', trashId),
   /** Remove one session id from the workspace archive set (show it again). */
   unarchiveSession: (sessionId: string): Promise<boolean | null> => ipcRenderer.invoke('desktop:trash:session-unarchive', sessionId),
+  /** Installed plugins that declared a companion window (ADR 0043). */
+  listCompanions: (): Promise<CompanionDescriptor[]> => ipcRenderer.invoke('companion:list'),
+  /** Toggle one declared companion window; resolves whether it is now open. */
+  toggleCompanion: (id: string): Promise<boolean> => ipcRenderer.invoke('companion:toggle', id),
 })

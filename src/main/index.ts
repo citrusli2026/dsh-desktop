@@ -122,6 +122,7 @@ const lanService = new LanService({
 const windowContext: WindowContext = {
   quitInProgress: false,
   getLocale: () => currentLocale,
+  getDshHome: () => desktopDshHome(),
   onVisibilityChanged: refreshTray,
   onShowAbout: () => { void showAboutDialog(currentLocale, aboutMaintenance()) },
   lan: {

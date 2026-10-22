@@ -10,6 +10,7 @@ import { hiddenTitleBarOptions } from './window-chrome.ts'
 import { ConfigFile } from './config-file.ts'
 import { MAX_RENDERER_RECOVERIES, recordRendererError, recordRendererRecovery } from './renderer-recovery.ts'
 import { buildLanMenuItems, buildSafeModeMenuItems, type LanMenuActions, type LanMenuState } from './menu-template.ts'
+import { attachCompanionWindows } from './companion.ts'
 
 type BuiltInPage =
   | { kind: 'loading'; stage: HarnessStartupStage; retryDelayMs: number }
@@ -51,6 +52,8 @@ export interface WindowContext {
   harness?: WindowHarnessApi
   /** Open the About dialog from the window context menu. */
   onShowAbout?(): void
+  /** DSH_HOME used for read-only plugin companion discovery (ADR 0043). */
+  getDshHome(): string
 }
 
 const windowStateFile = new ConfigFile<unknown>(
@@ -103,6 +106,7 @@ export function createMainWindow(context: WindowContext): BrowserWindow {
     },
   })
   context.mainWindow = window
+  attachCompanionWindows(context, window)
   if (state.isMaximized === true) window.maximize()
   window.once('ready-to-show', () => {
     if (context.startHidden === true) {

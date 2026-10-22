@@ -376,3 +376,27 @@ test('desktop tools dismiss on outside pointerdown and surface failed actions (#
   assert.match(client, /"data-dsh-connect-workspace-error": true, role: "alert"/)
   assert.match(client, /"aria-invalid": connectMessage === copy\.connectInvalidWorkspace/)
 })
+
+test('plugin-declared companion windows are listed and toggled from the panel (ADR 0043)', async () => {
+  const client = await readFile(join(pluginRoot, 'lib/client.js'), 'utf8')
+  const companion = await readFile(resolve('src/main/companion.ts'), 'utf8')
+  const preload = await readFile(resolve('src/preload/index.ts'), 'utf8')
+  const policy = await readFile(resolve('src/main/companion-policy.ts'), 'utf8')
+  // Panel group only renders when a plugin declared one; it never connects.
+  assert.match(client, /"data-dsh-controls-group": "companions"/)
+  assert.match(client, /listCompanions/)
+  assert.match(client, /toggleCompanion/)
+  assert.match(client, /companionHint/)
+  // The bridge is narrow: list + toggle, no DOM or approval channel.
+  assert.match(preload, /listCompanions: \(\): Promise<CompanionDescriptor\[\]> => ipcRenderer\.invoke\('companion:list'\)/)
+  assert.match(preload, /toggleCompanion: \(id: string\): Promise<boolean> => ipcRenderer\.invoke\('companion:toggle', id\)/)
+  assert.match(companion, /ipcMain\.handle\('companion:list'/)
+  assert.match(companion, /ipcMain\.handle\('companion:toggle'/)
+  assert.doesNotMatch(companion, /executeJavaScript/)
+  // Same-origin path + probe + sandbox are part of the contract.
+  assert.match(policy, /isCompanionRoute/)
+  assert.match(policy, /text\\\/html/)
+  assert.match(companion, /sandbox: true/)
+  assert.match(companion, /will-navigate/)
+  assert.match(companion, /AbortSignal\.timeout/)
+})

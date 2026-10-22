@@ -1030,6 +1030,8 @@ window.__ModuleLoader__.load({
         actionFailed: "操作未完成",
         actionFailedSeparator: "：",
         actionBridgeUnavailable: "桌面桥不可用；请从系统托盘重试或重新打开桌面设置。",
+        companionGroup: "伴随窗口",
+        companionHint: "由已安装插件声明；显示在桌面右下角",
         settingsTitle: "桌面设置", settingsCopy: "连接设备、调整桌面习惯；需要时可从这里体检、恢复或维护 Harness。",
         guideEyebrow: "第一次使用", guideTitle: "从这里开始", guideClose: "关闭首次使用引导", guideIntro: "无需先安装插件，完成下面四步即可开始。",
         guideRuntime: "运行环境就绪", guideWorkspace: "选择工作区", guideModel: "配置模型", guideTask: "完成第一条任务", guideDone: "完成", guidePending: "待完成", guideMarketOptional: "插件市场是可选项，不影响你先完成第一条任务。",
@@ -1107,6 +1109,8 @@ window.__ModuleLoader__.load({
         actionFailed: "Action did not complete",
         actionFailedSeparator: ": ",
         actionBridgeUnavailable: "The desktop bridge is unavailable; retry from the system tray or reopen Desktop settings.",
+        companionGroup: "Companion windows",
+        companionHint: "Declared by an installed plugin; opens at the bottom-right of the desktop",
         settingsTitle: "Desktop settings", settingsCopy: "Connect devices and tune desktop habits; inspect, recover, or maintain Harness when needed.",
         guideEyebrow: "FIRST RUN", guideTitle: "Start here", guideClose: "Dismiss first-run guide", guideIntro: "No plugin is required. Complete these four steps to get started.",
         guideRuntime: "Runtime ready", guideWorkspace: "Choose a workspace", guideModel: "Configure a model", guideTask: "Complete your first task", guideDone: "Done", guidePending: "To do", guideMarketOptional: "The plugin market is optional and never blocks your first task.",
@@ -2364,6 +2368,8 @@ window.__ModuleLoader__.load({
       // One status line for every extension action in the panel (#125/#128):
       // failures must be visible where the action was taken, never silent.
       const [actionError, setActionError] = react.useState("");
+      // Installed plugins that declared a companion window (ADR 0043).
+      const [companions, setCompanions] = react.useState([]);
       const suppressClickRef = react.useRef(false);
       const [startup, setStartup] = react.useState(null);
       const sessionState = useSessions((state) => state);
@@ -2503,6 +2509,33 @@ window.__ModuleLoader__.load({
         } catch {
           setActionError(`${copy.actionFailed}${copy.actionFailedSeparator}${actionLabel(action)}`);
           return false;
+        } finally {
+          setBusy("");
+        }
+      };
+
+      react.useEffect(() => {
+        if (!open || typeof bridge?.listCompanions !== "function") { setCompanions([]); return undefined; }
+        let mounted = true;
+        void bridge.listCompanions().then((list) => {
+          if (mounted && Array.isArray(list)) setCompanions(list);
+        }).catch(() => { if (mounted) setCompanions([]); });
+        return () => { mounted = false; };
+      }, [open, bridge]);
+
+      const toggleCompanion = async (id) => {
+        if (typeof bridge?.toggleCompanion !== "function") {
+          setActionError(copy.actionBridgeUnavailable);
+          return;
+        }
+        setBusy("companion:" + id);
+        setActionError("");
+        try {
+          if (await bridge.toggleCompanion(id) !== true) {
+            setActionError(`${copy.actionFailed}${copy.actionFailedSeparator}${copy.companionGroup}`);
+          }
+        } catch {
+          setActionError(`${copy.actionFailed}${copy.actionFailedSeparator}${copy.companionGroup}`);
         } finally {
           setBusy("");
         }
@@ -2704,6 +2737,10 @@ window.__ModuleLoader__.load({
                   react_jsx_runtime.jsx(PanelAction, { mark: "LOG", label: copy.openLogs, detail: copy.openLogsDetail, disabled: busy !== "", onClick: () => void invoke("openLogs") }),
                   react_jsx_runtime.jsx(PanelAction, { mark: "TXT", label: copy.exportDiagnostics, detail: copy.exportDiagnosticsDetail, disabled: busy !== "", onClick: () => void invoke("exportDiagnostics") }),
                 ] }),
+              ] }),
+              companions.length === 0 ? null : react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "companions", children: [
+                react_jsx_runtime.jsx("h3", { "data-dsh-controls-group-label": true, children: copy.companionGroup }),
+                react_jsx_runtime.jsx("div", { "data-dsh-controls-actions": true, children: companions.map((item) => react_jsx_runtime.jsx(PanelAction, { mark: "◎", label: item.title, detail: copy.companionHint, disabled: busy !== "", onClick: () => void toggleCompanion(item.id) }, item.id)) }),
               ] }),
               react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "info", children: [
                 react_jsx_runtime.jsx("h3", { "data-dsh-controls-group-label": true, children: copy.panelInfo }),

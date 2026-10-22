@@ -47,3 +47,4 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0040 | Terminal host shutdown preempts start / 应用退出抢占未完成启动 | [EN](0040-terminal-shutdown-preempts-start.md) · [中文](0040-terminal-shutdown-preempts-start.zh.md) | Accepted / 已接受 |
 | 0041 | Rich Card 2.0 cards and structured progress as the display defaults / 默认卡片升级为 Card 2.0 富卡片与结构化进度卡片 | [EN](0041-rich-card-defaults.md) · [中文](0041-rich-card-defaults.zh.md) | Accepted / 已接受 |
 | 0042 | Every extension action surfaces its failure where it was triggered / 每个扩展动作都在触发处暴露失败 | [EN](0042-extension-failure-feedback.md) · [中文](0042-extension-failure-feedback.zh.md) | Accepted / 已接受 |
+| 0043 | Companion windows declared by installed plugins / 由已安装插件声明的伴随窗口 | [EN](0043-plugin-companion-windows.md) · [中文](0043-plugin-companion-windows.zh.md) | Accepted / 已接受 |

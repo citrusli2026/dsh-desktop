@@ -2847,3 +2847,27 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    （mac 840 / win 5806 / linux 742）、83 版本。
 6. **已知未覆盖**：面板点外关闭与系统通知没有进入打包截图门禁（仅单元/静态断言 + 人工验收）；
    四端视觉门禁的 22 个 surface 未新增“失败态”画面。真实飞书收发与托盘通知观感仍需人工确认。
+
+## 95. 插件伴随窗口能力（ADR 0043，2026-10-23，未发布）
+
+1. **背景**：#130 的鲸鱼桌宠补丁技术上可用，但把 `/dsh-whale/pet` 路由与 `.dshwv-*` 类名硬编码进壳，
+   且分发依赖替换 `app.asar`、关闭自动更新，与 ADR 0030 的「桌面宠物非目标」和可靠壳的更新/完整性契约
+   冲突。评估结论是不内置该补丁（issue 以 `wontfix` 关闭）。
+2. **设计**：改为通用能力——插件在自己的 `package.json` 声明
+   `dsh.companion { route, width, height, title, showOnMinimize }`；壳只读扫描当前 Web profile 的
+   `node_modules/*/package.json`，不执行插件代码；显示前要求路由 4s 内返回 2xx `text/html`；窗口
+   `sandbox` + `contextIsolation` + 同源路径锁定 + 拒绝 `window.open`；主窗口最小化时按声明出现、
+   恢复/显示/隐藏/关闭时收起；跟随 `display-metrics-changed` 定位；桌面工具面板新增「伴随窗口」分组
+   可手动开关。**不提供** DOM 访问、`executeJavaScript` 或审批桥，审批仍只在主窗口。ADR 0043 仅在此
+   能力范围内取代 0030 的桌宠排除。
+3. **实现**：`src/main/companion.ts`（发现/窗口/生命周期/IPC）、`companion-policy.ts`（纯策略）、
+   `companion-discovery.ts`（只读扫描）、`src/preload/companion.ts`（仅 hide/focusMain）、
+   `window.ts` 挂载、`preload/index.ts` 暴露 list/toggle、`scripts/build.mjs` 增加 preload 入口、
+   面板分组与文案；无平台环境变量，跨平台。
+4. **验证**：policy 4 条 + discovery 2 条单测（越权路由、尺寸边界、token 转发、注入 ID、损坏清单）；
+   面板静态回归；`pnpm verify` 通过；打包 E2E **25/25**，其中新增用例用 fixture 插件声明一条有页面、
+   一条缺路由：最小化后只出现有页面的窗口、`focusMain` 恢复主窗口、面板可再次打开、缺路由不产生透明
+   残窗。
+5. **对 #130 的答复**：窗口部分由通用能力承接，鲸鱼插件侧只需增加 `dsh.companion` 声明与
+   `/dsh-whale/pet` 路由，无需改壳或替换 `app.asar`；审批泡泡仍不在壳能力内。
+6. **未发布**：本能力在 `v0.2.1-rc.2.shell.4` 之后合入，随下个 shell 版本发布。
