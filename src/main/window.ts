@@ -10,6 +10,7 @@ import { hiddenTitleBarOptions } from './window-chrome.ts'
 import { ConfigFile } from './config-file.ts'
 import { MAX_RENDERER_RECOVERIES, recordRendererError, recordRendererRecovery } from './renderer-recovery.ts'
 import { buildLanMenuItems, buildSafeModeMenuItems, type LanMenuActions, type LanMenuState } from './menu-template.ts'
+import { attachWhalePet, reloadWhalePet, hideWhalePet } from './whale-pet.ts'
 
 type BuiltInPage =
   | { kind: 'loading'; stage: HarnessStartupStage; retryDelayMs: number }
@@ -103,6 +104,7 @@ export function createMainWindow(context: WindowContext): BrowserWindow {
     },
   })
   context.mainWindow = window
+  attachWhalePet(context, window, () => showWindow(context))
   if (state.isMaximized === true) window.maximize()
   window.once('ready-to-show', () => {
     if (context.startHidden === true) {
@@ -304,6 +306,7 @@ export async function loadHarnessUrl(context: WindowContext, url: string): Promi
   context.allowedOrigin = new URL(url).origin
   context.harnessUrl = url
   context.builtInPage = undefined
+  reloadWhalePet(context, url)
   await navigateWindow(context, url)
 }
 
@@ -313,11 +316,13 @@ export async function loadLoadingPage(
   retryDelayMs = 0,
 ): Promise<void> {
   context.builtInPage = { kind: 'loading', stage, retryDelayMs }
+  hideWhalePet(context)
   await navigateWindow(context, loadingPageHtml(context.getLocale(), stage, retryDelayMs))
 }
 
 export async function loadErrorPage(context: WindowContext, attempts: number, logTail: string, safeMode = false, suspects: ComposedRow[] = [], cause: PluginFailureCause = 'unknown'): Promise<void> {
   context.builtInPage = { kind: 'error', attempts, logTail, safeMode, suspects, cause }
+  hideWhalePet(context)
   await navigateWindow(context, errorPageHtml(attempts, logTail, safeMode, suspects, context.getLocale(), cause))
 }
 
