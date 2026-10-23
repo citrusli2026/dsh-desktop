@@ -5,7 +5,7 @@
  * HTML probe, in a sandboxed frameless window. It never executes plugin code,
  * never reads the Harness DOM and deliberately offers no approval bridge.
  */
-import { app, BrowserWindow, ipcMain, screen, type IpcMainInvokeEvent, type Rectangle } from 'electron'
+import { app, BrowserWindow, ipcMain, screen, type IpcMainInvokeEvent, type Rectangle, type Session } from 'electron'
 import { join } from 'node:path'
 import {
   companionPosition,
@@ -69,9 +69,11 @@ function companionFor(event: IpcMainInvokeEvent): Entry | undefined {
   return undefined
 }
 
-async function probe(url: string): Promise<boolean> {
+async function probe(url: string, session: Session): Promise<boolean> {
   try {
-    const response = await fetch(url, {
+    // Use the main window's session: the Harness auth fence rejects a bare
+    // Node fetch (401) even when the same route serves the logged-in window.
+    const response = await session.fetch(url, {
       redirect: 'manual',
       signal: AbortSignal.timeout(4000),
       headers: { accept: 'text/html' },
@@ -145,7 +147,7 @@ function ensureWindow(entry: Entry): BrowserWindow {
 }
 
 /** Show one declared companion; returns false when it cannot be offered. */
-export async function showCompanion(id: string): Promise<boolean> {
+export async function showCompanion(id: string, options: { onlyIfMinimized?: boolean } = {}): Promise<boolean> {
   const current = active
   const main = mainOf()
   if (current === undefined || main === undefined) return false
@@ -160,7 +162,7 @@ export async function showCompanion(id: string): Promise<boolean> {
     entries.set(id, entry)
   }
   entry.descriptor = descriptor
-  if (!(await probe(url))) {
+  if (!(await probe(url, main.webContents.session))) {
     entry.window?.destroy()
     entry.window = undefined
     return false
@@ -171,6 +173,13 @@ export async function showCompanion(id: string): Promise<boolean> {
   } catch {
     win.destroy()
     entry.window = undefined
+    return false
+  }
+  // loadURL resolves after subresources; the user may have restored the main
+  // window meanwhile. Never let a late showInactive undo that restore.
+  const stillMain = mainOf()
+  if (options.onlyIfMinimized === true && (stillMain === undefined || !stillMain.isMinimized())) {
+    win.hide()
     return false
   }
   place(win, Array.from(entries.keys()).indexOf(id))
@@ -199,7 +208,7 @@ async function showMinimized(): Promise<void> {
   if (current === undefined) return
   const descriptors = await discoverCompanions(current.context.getDshHome())
   for (const descriptor of descriptors.filter(item => item.showOnMinimize).slice(0, 3)) {
-    await showCompanion(descriptor.id)
+    await showCompanion(descriptor.id, { onlyIfMinimized: true })
   }
 }
 
