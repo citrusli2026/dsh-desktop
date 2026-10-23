@@ -63,3 +63,22 @@ DSH_E2E_PACKAGED=1 pnpm exec playwright test e2e/companion.spec.ts --grep @smoke
 
 端到端用例会用一个 fixture 插件声明两条路由（一条有页面、一条没有），验证：最小化后只出现有页面的
 窗口、`focusMain` 能恢复主窗口、面板能再次打开，以及缺路由时不会出现透明残窗。
+
+## 真实插件回归（发布门禁）
+
+默认的 `e2e/companion.spec.ts` 用 fixture 覆盖通用契约。真实鲸鱼插件是第三方代码，pet 页也还没进
+npm，所以 `e2e/whale-companion.spec.ts` 是 **opt-in** 的发布门禁，不进默认 CI：
+
+```sh
+pnpm run dist:dir
+WHALE_PLUGIN_DIR=/path/to/prepared/dsh-whale-widget pnpm run test:e2e:whale
+```
+
+准备插件目录时，除了 `dsh.companion` 声明，pet 页还需要一层很小的桥：
+
+- 加载 `widget.js` 前把 `dshwPet=1` 写进 URL，让挂件进入 pet 模式；
+- 把 `window.whalePet.minimize` / `focusMain` 映射到 `window.dshCompanion.focusMain()`；
+- 不要期待通用壳提供 `answerApproval`；审批仍在主窗口完成。
+
+用例会走一遍：发现插件 → 最小化主窗口 → 伴窗出现（标题「小鲸鱼」、`−` 按钮可见）→ 点 `−` 恢复
+主窗口并收起伴窗 → 面板「伴随窗口」再次打开/收起。截图落在 Playwright 的 `test-results/` 下。

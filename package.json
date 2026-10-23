@@ -53,7 +53,8 @@
     "cc-connect:build": "node scripts/build-cc-connect.mjs",
     "feishu:setup": "node scripts/setup-feishu-cli.mjs",
     "dist": "pnpm run build && pnpm run cc-connect:build && electron-builder",
-    "dist:dir": "pnpm run build && pnpm run cc-connect:build && electron-builder --dir"
+    "dist:dir": "pnpm run build && pnpm run cc-connect:build && electron-builder --dir",
+    "test:e2e:whale": "node scripts/run-whale-e2e.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

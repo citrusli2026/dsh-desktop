@@ -20,3 +20,6 @@ release-check/
 test-results/
 playwright-report/
 index.cjs
+
+# Local visual evidence (large videos/screenshots)
+artifacts/
