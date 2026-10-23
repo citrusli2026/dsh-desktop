@@ -9,11 +9,19 @@ import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
 const PACKAGED = process.env.DSH_E2E_PACKAGED === '1'
 
 const FIXTURE_PLUGIN = `export function apply(ctx) {
-  ctx.inject(['webServer'], (hostCtx) => {
+  // Put the fixture behind the same connection fence as real plugin routes:
+  // the companion probe must use the window session, not a bare Node fetch.
+  ctx.inject(['webServer', 'connection'], (hostCtx) => {
     ctx.effect(() => hostCtx.webServer.register({
       kind: 'prefix',
       path: '/__companion-fixture',
       handler: (req, res) => {
+        const rejection = hostCtx.connection.requestRejection(req)
+        if (rejection) {
+          res.statusCode = typeof rejection === 'number' ? rejection : 403
+          res.end()
+          return
+        }
         res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
         res.end('<!doctype html><html><head><title>Companion Fixture</title></head><body><h1 id="companion-fixture">companion ok</h1></body></html>')
       },
@@ -140,4 +148,78 @@ test.describe('installed plugin companion windows', () => {
       await rm(root, { recursive: true, force: true })
     }
   })
+})
+
+const SLOW_FIXTURE_PLUGIN = `export function apply(ctx) {
+  ctx.inject(['webServer'], (hostCtx) => {
+    ctx.effect(() => hostCtx.webServer.register({
+      kind: 'exact',
+      path: '/__companion-slow',
+      handler: async (req, res) => {
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
+        res.end('<!doctype html><html><head><title>Slow Companion</title></head><body><h1 id="slow">slow ok</h1></body></html>')
+      },
+    }))
+  })
+}
+`
+
+async function seedSlowProfile(home: string): Promise<void> {
+  const profile = join(home, 'profiles', 'web')
+  const slow = join(profile, 'node_modules', 'companion-slow')
+  await mkdir(slow, { recursive: true })
+  await writeFile(join(slow, 'package.json'), JSON.stringify({
+    name: 'companion-slow',
+    version: '1.0.0',
+    type: 'module',
+    main: 'index.js',
+    dsh: { companion: { route: '/__companion-slow', width: 360, height: 280, title: 'Slow Companion' } },
+  }))
+  await writeFile(join(slow, 'index.js'), SLOW_FIXTURE_PLUGIN)
+  await writeFile(join(profile, 'cordis.patch.yml'), '- insert:\n    - id: companion-slow\n      name: companion-slow\n')
+}
+
+test('a late companion load never covers a restored main window', async () => {
+  test.skip(!PACKAGED, 'requires the packaged build with the real Harness')
+  test.setTimeout(180_000)
+  const root = await mkdtemp(join(tmpdir(), 'dsh-companion-slow-'))
+  const home = join(root, 'home')
+  const userData = join(root, 'data')
+  await mkdir(home, { recursive: true })
+  await mkdir(userData, { recursive: true })
+  await writeFile(join(home, 'settings.yaml'), 'locale:\n  preference: en\nui-theme:\n  preference: system\n')
+  await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
+  await seedSlowProfile(home)
+
+  const app = await electron.launch({
+    executablePath: await locatePackagedExecutable(),
+    args: [`--user-data-dir=${userData}`],
+    cwd: process.cwd(),
+    env: { ...process.env, DSH_HOME: home },
+  })
+  try {
+    const page = await app.firstWindow()
+    await expect.poll(() => page.locator('[data-dsh-desktop-controls]').count(), { timeout: 180_000 }).toBe(1)
+
+    const pending = app.waitForEvent('window', { predicate: win => win.url().includes('__companion-slow'), timeout: 60_000 })
+    await minimizeMainWindow(app)
+    await pending
+
+    // Restore while loadURL is still waiting on the slow route; a late
+    // showInactive() must not bring the companion back over the main window.
+    await app.evaluate(({ BrowserWindow }) => {
+      const main = BrowserWindow.getAllWindows().sort((left, right) => right.getBounds().width - left.getBounds().width)[0]
+      main?.restore()
+      main?.show()
+      main?.focus()
+    })
+    await expect.poll(() => app.evaluate(({ BrowserWindow }) => {
+      const pet = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('__companion-slow'))
+      return pet?.isVisible() ?? false
+    }), { timeout: 15_000 }).toBe(false)
+  } finally {
+    await app.close().catch(() => {})
+    await rm(root, { recursive: true, force: true })
+  }
 })
