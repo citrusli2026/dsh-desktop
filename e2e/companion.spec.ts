@@ -204,7 +204,7 @@ test('a late companion load never covers a restored main window', async () => {
 
     const pending = app.waitForEvent('window', { predicate: win => win.url().includes('__companion-slow'), timeout: 60_000 })
     await minimizeMainWindow(app)
-    await pending
+    const pet = await pending
 
     // Restore while loadURL is still waiting on the slow route; a late
     // showInactive() must not bring the companion back over the main window.
@@ -214,10 +214,17 @@ test('a late companion load never covers a restored main window', async () => {
       main?.show()
       main?.focus()
     })
-    await expect.poll(() => app.evaluate(({ BrowserWindow }) => {
-      const pet = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('__companion-slow'))
-      return pet?.isVisible() ?? false
-    }), { timeout: 15_000 }).toBe(false)
+
+    // The window exists but is hidden while the route is still loading, so a
+    // plain poll would return false immediately and miss a late showInactive().
+    // Wait for the slow page to finish loading, then assert it stayed hidden.
+    await pet.waitForLoadState('load')
+    await expect(pet.locator('#slow')).toHaveText('slow ok')
+    await page.waitForTimeout(750)
+    expect(await app.evaluate(({ BrowserWindow }) => {
+      const petWindow = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('__companion-slow'))
+      return petWindow?.isVisible() ?? false
+    })).toBe(false)
   } finally {
     await app.close().catch(() => {})
     await rm(root, { recursive: true, force: true })
