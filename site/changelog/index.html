@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop 更新日志","url":"https://dsh-desktop.com/changelog","inLanguage":"zh-CN","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/"},{"@type":"ListItem","position":2,"name":"更新日志","item":"https://dsh-desktop.com/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-21","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.4"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-22","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.5"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.5 <small>（内核 0.2.1-rc.2）</small></h2>
+  <ul>
+    <li><strong>插件伴随窗口（ADR 0043）</strong>：已安装插件可在自己的 <code>package.json</code> 里声明 <code>dsh.companion { route, width, height, title, showOnMinimize }</code>，主窗口最小化后它的页面会作为独立桌面 窗口留在右下角，恢复主窗口时自动收起。壳只读扫描当前 Web profile 的插件清单，不执行插件代码；显示前 要求该路由 4 秒内返回 2xx <code>text/html</code>，不会留下一块透明残窗。</li>
+    <li><strong>安全边界</strong>：伴随窗口使用 <code>sandbox</code> + <code>contextIsolation</code>、无 <code>nodeIntegration</code>、拒绝 <code>window.open</code>， 导航锁定在声明路径；只转发登录 token。预加载只提供「隐藏自己 / 聚焦主窗口」，壳不读 Harness DOM、 不调用 <code>executeJavaScript</code>、不提供审批桥——审批仍只在主窗口完成。</li>
+    <li><strong>面板入口</strong>：桌面工具面板新增「伴随窗口」分组，列出已声明的伴随窗口并可手动开关；位置跟随主窗口 所在显示器的变化，多个窗口依次错开，退出时销毁。</li>
+    <li><strong>承接社区需求 #130</strong>：小鲸鱼插件只需增加上述声明与 <code>/dsh-whale/pet</code> 路由即可获得该窗口，无需替换 <code>app.asar</code>、无需关闭自动更新。契约见 <code>docs/companion-windows.md</code>。</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.4 <small>（内核 0.2.1-rc.2）</small></h2>
   <ul>
     <li><strong>桌面工具面板点空白关闭</strong>：面板打开后点击面板外任意位置即收起；触发按钮的开关与拖动语义不变（#123）。</li>
@@ -112,17 +120,6 @@
     <li><strong>垃圾桶兼容</strong>：会话控制器与工作区客户端与 alpha.5 逐字节一致，补丁锚点重新核对后版本保护 更新为 rc.1；运行中、排队中、跨客户端所有权、维护中及子会话仍拒绝删除。</li>
     <li><strong>构建可复现性</strong>：<code>pnpm run bootstrap</code> 现在固定使用仓库锁定的 pnpm 10.33.2 生成/校验锁文件， 并显式请求 hoisted 布局，不再依赖外层 pnpm 注入的环境；此前用 pnpm 11 写出的紧凑 <code>patchedDependencies</code> 形式会被 10.33.2 判为配置不匹配，导致 bootstrap 在 <code>ERR_PNPM_LOCKFILE_CONFIG_MISMATCH</code> 处中止。</li>
     <li><strong>飞书快捷控制</strong>：浮窗「连接」分组继续分开显示当前应用、桌面进程、飞书通道与 DSH 任务， 并提供显式开启、关闭、重连；打开或轮询只读，不隐式连接、不发消息、不调用模型。</li>
-  </ul>
-
-  <h2>v0.2.1-alpha.5.shell.0 <small>（内核 0.2.1-alpha.5）</small></h2>
-  <ul>
-    <li><strong>内核升级</strong>：升级到官方已发布的 alpha.5 预览版，同步内核同族直接依赖与完整锁文件闭包。 上游包含已打开会话的 <code>/</code> 技能列表随插件启停刷新、批量新建/恢复终端时减少重复查询、 Windows/Linux 右侧栏收起时输入框 Page Up 不再左移界面、PTC 指引与模型身份说明统一， 并新增 <code>conversation.input.model.label</code> Slot。</li>
-    <li><strong>供应链豁免按真实闭包补齐</strong>：新内核首次引入的传递依赖同样处于 24 小时发布窗口内； <code>sync-release-age-excludes.mjs</code> 现按新锁文件实际解析结果补齐 <code>minimumReleaseAgeExclude</code>， 纯函数回归覆盖 peer 后缀解析，避免把 peer 依赖误写成包名或让冻结安装反复失败。</li>
-    <li><strong>桌面登录兼容</strong>：账户补丁随精确版本迁移到 alpha.5，继续只在官方桌面桥具备 <code>dshOnboarding.hasApiKey</code> 能力时走内嵌登录；Electron 拒绝预开空白窗口时， 仍把实际授权 URL 一次性交给系统浏览器，不放开导航、Node 权限或外链协议。</li>
-    <li><strong>垃圾桶兼容</strong>：alpha.3 → alpha.5 的上游会话控制器与工作区客户端逐字节一致， 补丁锚点已重新核对，版本保护更新为 alpha.5；运行中、排队中、跨客户端所有权、 维护中及子会话仍拒绝删除。</li>
-    <li><strong>飞书凭据边界</strong>：ACP 组合仍加载 Models 已保存的模型凭据， headless 专用的凭据覆盖不会套用到机器人连接；飞书 App Secret 与模型 API Key 保持分离。</li>
-    <li><strong>飞书快捷控制</strong>：桌面工具浮窗的「连接」分组新增当前应用、桌面进程、飞书通道与 DSH 任务 四行只读状态，并提供显式开启、关闭、重连。打开浮窗或读取状态不会隐式连接、发消息或调用模型； 没有应用、旧凭据需重录、Safe Mode 时按钮禁用并说明原因，关闭连接仍持久保存禁用。</li>
-    <li><strong>本地门禁</strong>：438 项单测 + ACP、两项打包 smoke、24 项打包 E2E、25 次重复飞书用例全部通过后才发布。</li>
   </ul>
   <!-- changelog:auto:end -->
 

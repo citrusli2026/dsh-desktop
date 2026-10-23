@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop Changelog","url":"https://dsh-desktop.com/en/changelog","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/en"},{"@type":"ListItem","position":2,"name":"Changelog","item":"https://dsh-desktop.com/en/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-21","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.4"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-22","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.5"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,14 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.5 <small>(kernel 0.2.1-rc.2)</small></h2>
+  <ul>
+    <li><strong>Plugin companion windows (ADR 0043)</strong>: an installed plugin can declare <code>dsh.companion { route, width, height, title, showOnMinimize }</code> in its own <code>package.json</code>; the shell discovers it read-only, probes the route for a 2xx HTML response, and hosts it in a sandboxed window that appears when the main window is minimized and hides when it is restored.</li>
+    <li><strong>Security boundary</strong>: sandboxed with context isolation, no Node integration, <code>window.open</code> denied, navigation pinned to the declared path; the preload only exposes hide/focus-main. No DOM access, no <code>executeJavaScript</code>, no approval bridge — approvals stay in the main window.</li>
+    <li><strong>Panel entry</strong>: a new “Companion windows” group in the desktop-tools panel toggles declared companions; placement follows the display containing the main window and windows are destroyed on quit.</li>
+    <li><strong>Community request #130</strong>: the whale widget only needs the declaration and its <code>/dsh-whale/pet</code> route — no <code>app.asar</code> patching and no disabling auto-update.</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.4 <small>(kernel 0.2.1-rc.2)</small></h2>
   <ul>
     <li>The desktop-tools panel now closes on an outside pointerdown; the trigger toggle and drag behaviour are unchanged (#123).</li>
@@ -112,17 +120,6 @@
     <li><strong>Trash compatibility</strong>: the session controller and workspace client are byte-identical to alpha.5 and the version guard now targets rc.1 after re-checking the anchors; running, queued, cross-client-owned, maintenance and child sessions still refuse deletion.</li>
     <li><strong>Reproducible builds</strong>: <code>pnpm run bootstrap</code> now always generates and validates the lockfile with the repository-pinned pnpm 10.33.2 and explicitly requests the hoisted layout instead of inheriting the caller's pnpm environment; the compact <code>patchedDependencies</code> form written by pnpm 11 is rejected by 10.33.2 as a configuration mismatch and used to abort bootstrap with <code>ERR_PNPM_LOCKFILE_CONFIG_MISMATCH</code>.</li>
     <li><strong>Feishu quick control</strong>: the floating panel's Connect group keeps application, desktop process, Feishu channel and DSH-task states separate with explicit start, stop and reconnect; opening or polling it is read-only and never connects, sends a message or calls a model.</li>
-  </ul>
-
-  <h2>v0.2.1-alpha.5.shell.0 <small>(kernel 0.2.1-alpha.5)</small></h2>
-  <ul>
-    <li>Upgrades the bundled Harness to the published 0.2.1-alpha.5 preview and resyncs the exact closure lockfile.</li>
-    <li>Extends the release-age exemptions from the real lockfile resolution, with a pure regression test that keeps peer-suffixed keys from becoming bogus package pins.</li>
-    <li>Carries the reviewed account patch to alpha.5, preserving system-browser authorization and the official-desktop-only login capability check.</li>
-    <li>Verifies the session-trash lifecycle anchors against the new upstream bundles before updating the version guard; busy, owned, maintenance and child sessions remain protected.</li>
-    <li>Keeps the ACP saved-credential composition and the separation between Feishu secrets and model API keys.</li>
-    <li>Adds a floating Feishu quick control that shows the selected application, desktop process, Feishu channel and DSH verification separately, with explicit start/stop/reconnect; opening it never connects, sends a message or calls a model, and missing applications, legacy credentials or Safe Mode disable the actions.</li>
-    <li>Verified with 438 unit tests plus ACP, both packaged smokes, 24 packaged E2E cases, 25 repeated Feishu cases, market offline/real and packaged LAN pairing. The gated tag pipeline still owns the three-platform build/upgrade/provenance checks; live phone Feishu round trips and manual Windows/Linux native review are outside local evidence.</li>
   </ul>
   <!-- changelog:auto:end -->
 
