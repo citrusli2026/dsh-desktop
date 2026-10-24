@@ -32,6 +32,10 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-settings] button,
       [data-dsh-trash-section] button,
       [data-dsh-desktop-settings] input { font: inherit; }
+      /* The whale's decorative layer is body-level (z-index 9999); keep it
+         under the Harness overlay layer that hosts this panel so shell controls
+         stay clickable when both sit in the same corner. */
+      .dshwv-root { z-index: 10 !important; }
       [data-dsh-desktop-controls] [data-dsh-controls-trigger] {
         align-items: center;
         background: color-mix(in srgb, var(--dsh-controls-panel) 92%, transparent);
@@ -1076,7 +1080,7 @@ window.__ModuleLoader__.load({
         market: "插件市场", marketDetail: "社区插件全部由你手动安装；dsh-desktop 不会预装或静默恢复。",
         marketInstall: "安装插件市场", marketReinstall: "重新安装", marketWorking: "处理中", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketMissing: "尚未安装", marketDamaged: "安装记录或文件不完整", marketFailed: "安装未完成，请重试。", marketRestartFailed: "已安装，但重启 Harness 失败；请从恢复区重试。", marketRisk: "将从网络下载并运行第三方社区代码及其安装脚本，请确认来源后继续。", marketConfirm: "确认安装", marketCancel: "取消",
         marketPreparing: "正在准备随包 Node、pnpm 与系统代理…", marketInstalling: "正在下载并安装，可能需要几分钟…", marketVerifying: "正在验证 profile 与实际安装版本…", marketRestarting: "安装完成，正在重启 Harness…", marketSuccess: "插件市场 {version} 已安装并运行。",
-        marketNetworkFailed: "无法连接插件源，请检查网络或 registry 后重试。", marketProxyFailed: "系统代理无法连接插件源，请检查代理设置后重试。", marketTimeoutFailed: "安装等待超时，已停止本次操作；可以直接重试。", marketProfileFailed: "数据目录不可写或 profile 状态不完整，请修复后重试。", marketScriptFailed: "社区包的安装脚本失败；未把它标记为已安装。", marketSpawnFailed: "随包安装工具无法启动，请导出诊断报告。", marketUnknownFailed: "安装命令未完成；请查看技术详情后重试。",
+        marketNetworkFailed: "无法连接插件源，请检查网络或 registry 后重试。", marketProxyFailed: "系统代理无法连接插件源，请检查代理设置后重试。", marketTimeoutFailed: "安装等待超时，已停止本次操作；可以直接重试。", marketProfileFailed: "数据目录不可写或 profile 状态不完整，请修复后重试。", marketIncompatibleFailed: "已安装的插件市场版本与当前内核不兼容，Harness 启动时会跳过它；请升级内核，或按技术详情里的命令允许该版本后重试。", marketScriptFailed: "社区包的安装脚本失败；未把它标记为已安装。", marketSpawnFailed: "随包安装工具无法启动，请导出诊断报告。", marketUnknownFailed: "安装命令未完成；请查看技术详情后重试。",
         marketTechnical: "查看脱敏技术详情", marketCopy: "复制技术详情", marketCopied: "已复制",
         balance: "余额", recharge: "充值",
         kernel: "内核版本", kernelBundled: "内置", kernelOverlay: "已切换",
@@ -1157,7 +1161,7 @@ window.__ModuleLoader__.load({
         market: "Plugin market", marketDetail: "Community plugins are always installed by you; dsh-desktop never bundles or silently restores them.",
         marketInstall: "Install the market", marketReinstall: "Reinstall", marketWorking: "Working", marketInstalledHint: "Installed · open Settings → Plugin Market", marketMissing: "Not installed", marketDamaged: "Install record or files are incomplete", marketFailed: "Install did not finish; retry when ready.", marketRestartFailed: "Installed, but Harness did not restart; retry from Recovery.", marketRisk: "This downloads and runs third-party community code and install scripts. Verify the source before continuing.", marketConfirm: "Confirm install", marketCancel: "Cancel",
         marketPreparing: "Preparing the bundled Node, pnpm, and system proxy…", marketInstalling: "Downloading and installing — this can take a few minutes…", marketVerifying: "Verifying the profile and installed version…", marketRestarting: "Installed; restarting Harness…", marketSuccess: "Plugin market {version} is installed and running.",
-        marketNetworkFailed: "The plugin registry is unreachable. Check the network or registry and retry.", marketProxyFailed: "The system proxy could not reach the plugin registry. Check the proxy and retry.", marketTimeoutFailed: "The install timed out and was stopped; it is safe to retry.", marketProfileFailed: "The data directory is not writable or the profile is incomplete. Repair it and retry.", marketScriptFailed: "The community package install script failed; it was not marked installed.", marketSpawnFailed: "The bundled install tools could not start. Export a diagnostic report.", marketUnknownFailed: "The install command did not finish. Review the technical detail and retry.",
+        marketNetworkFailed: "The plugin registry is unreachable. Check the network or registry and retry.", marketProxyFailed: "The system proxy could not reach the plugin registry. Check the proxy and retry.", marketTimeoutFailed: "The install timed out and was stopped; it is safe to retry.", marketProfileFailed: "The data directory is not writable or the profile is incomplete. Repair it and retry.", marketIncompatibleFailed: "The installed market version is incompatible with this kernel, so Harness skips it at startup. Update the kernel, or allow that exact version with the command in the technical detail, then retry.", marketScriptFailed: "The community package install script failed; it was not marked installed.", marketSpawnFailed: "The bundled install tools could not start. Export a diagnostic report.", marketUnknownFailed: "The install command did not finish. Review the technical detail and retry.",
         marketTechnical: "Show sanitized technical detail", marketCopy: "Copy technical detail", marketCopied: "Copied",
         balance: "Balance", recharge: "Recharge",
         kernel: "Kernel version", kernelBundled: "bundled", kernelOverlay: "switched",
@@ -1898,6 +1902,7 @@ window.__ModuleLoader__.load({
         : marketResult?.reason === "proxy" ? copy.marketProxyFailed
         : marketResult?.reason === "timeout" ? copy.marketTimeoutFailed
         : marketResult?.reason === "profile" ? copy.marketProfileFailed
+        : marketResult?.reason === "incompatible" ? copy.marketIncompatibleFailed
         : marketResult?.reason === "install-script" ? copy.marketScriptFailed
         : marketResult?.reason === "spawn" ? copy.marketSpawnFailed
         : marketResult === null ? ""

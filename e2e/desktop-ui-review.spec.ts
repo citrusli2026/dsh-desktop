@@ -178,7 +178,9 @@ for (const locale of ['zh', 'en'] as const) for (const theme of ['light', 'dark'
       expect(box).not.toBeNull()
       await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2)
       await page.mouse.down()
-      await page.mouse.move(920, 650, { steps: 12 })
+      // Keep the drag clear of the whale widget's bottom-right corner so the
+      // follow-up click exercises the menu, not an overlapping overlay.
+      await page.mouse.move(600, 420, { steps: 12 })
       await page.mouse.up()
       await trigger.click()
       await expect(panel).toBeVisible()
