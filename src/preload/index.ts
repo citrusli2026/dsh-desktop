@@ -107,6 +107,11 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   safeModeBoot: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('harness:safe-mode', enabled),
   /** Export a local diagnostic report from the built-in error page. */
   exportDiagnostics: (): Promise<boolean> => ipcRenderer.invoke('shell:export-diagnostics'),
+  /** Create one local AI triage session for a shell failure (ADR 0046). The
+   *  report is already redacted; nothing is sent unless the user clicks. */
+  askAi: (input: { surface: 'market' | 'startup' | 'health'; code: string; detail?: string }): Promise<
+    { ok: true; sessionId: string } | { ok: false; reason: 'harness-unavailable' | 'unsupported' | 'failed'; message?: string }
+  > => ipcRenderer.invoke('desktop:ask-ai', input),
   /** Reveal the shell's local logs directory from the built-in error page. */
   openLogsFolder: (): Promise<boolean> => ipcRenderer.invoke('shell:open-logs'),
   /** Close the shell-owned LAN pairing modal. */

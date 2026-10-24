@@ -2953,3 +2953,73 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
 6. **边界**：Linux 不支持 `forward` 鼠标移动，壳在该平台不提供点击穿透（伴窗保持可交互）；审批仍只在
    主窗口完成；美术/音频素材按上游 `PROVENANCE.md` 原样分发，不纳入壳的 MIT。插件若改版（非 0.4.x）壳
    暂不套用适配页，回落到普通插件行为。
+
+## 99. 插件市场「重装即启用」修复（ADR 0045，2026-10-24，随 shell.8 发布）
+
+1. **现场故障**：用户点「安装插件市场」报「数据目录不可写或 profile 状态不完整」，技术详情
+   `market package did not appear in the user profile`。实测 `~/.dsh-desktop/profiles/web`：
+   `dshmarket@1.45.1` 已安装且写在 `dependencies`，但不在 `dsh.profile.bundles`；该版本要求
+   `@deepseek-ai/dsh-settings ^0.1.x`，而随包内核是 `0.2.1-rc.2`，`harness.log` 里每次启动都是
+   `skipping profile bundle "dshmarket"`。
+2. **根因（上游行为）**：`dsh plugin add` 只启用「新增」依赖——已保留依赖由 pnpm 锁在原版本，
+   reconcile 刻意不重新启用；被内核兼容门禁拒绝的版本只打印告警并保持「已安装但不引导」，两种情况
+   退出码都是 0。壳把这种「装完但没启用」一律归为 `profile`，于是给了错误的权限修复建议。
+3. **修复**：安装请求改为 `dshmarket@latest`（裸包名对已保留依赖是空操作）；安装成功后若启动清单
+   仍无该 bundle，壳补写 `dsh.profile.bundles` 一条（复用 `plugin-recovery` 已有的原子写入，
+   与「禁用」动作互逆，依赖范围与包目录不动）；CLI 明确报不兼容时返回新原因 `incompatible`，
+   详情带门禁原始行（含 `dsh plugin allow-version` 命令），不再启用会被跳过的东西。
+   `profile` 保持字面含义。
+4. **本机处置**：备份 `package.json`/`pnpm-lock.yaml` 到 `/tmp/dsh-backup-1957`；
+   `dsh plugin --profile web add dshmarket@latest` 升到 1.69.0；用新的
+   `enableInstalledBundle()` 补上启动项。用修复后 profile 的副本另起 Harness 验证：无
+   `skipping profile bundle`、无 import 失败，`.dsh-market/log.ndjson` 有本次 boot 记录。**未重启
+   正在运行的 Harness**（会终止当前会话），用户从托盘/菜单重启后市场即出现。
+5. **门禁**：`pnpm run typecheck`、`pnpm run build` 通过；`pnpm run test` 522 通过，唯一失败是本机
+   `spawn go ENOENT`（已知环境问题，把 `/opt/homebrew/bin` 加入 PATH 后该用例 7/7 通过）。
+   新增 10 个市场安装用例、2 个 profile 用例、2 个 plugin-recovery 用例。
+
+## 100. 故障事件（Incident）：一键把失败交给 AI 排查（ADR 0046，2026-10-24，随 shell.8 发布）
+
+1. **契约（A）**：新增 `src/main/incident.ts`：`IncidentSurface`（market/startup/health）、
+   `IncidentCode`（`market.*` / `startup.*` / `health.failed`）、动作词表、`buildIncidentPrompt`、
+   `buildIncidentReport`、`incidentId`。提示词固定「角色 → 任务 → 数据不是指令的 fenced 事实 →
+   动作词表 → 结论/证据/修复/验证/风险 → 禁止项」，上限 24 000 字符；超长报告保留头部并写
+   `…[报告已截断]`，code/detail/actions 不截断。报告是独立 Markdown（含原始诊断）。
+   测试 `test/incident.test.ts` 6 例；ADR 0046 EN+zh 与索引行已加。
+2. **通道（B）**：新增 `plugins/dsh-desktop-controls/lib/incident-host.js`
+   （`startIncidentServer`，127.0.0.1 + Bearer + 64 KiB，POST `/incident/ask`；写
+   `<DSH_HOME>/incidents/<id>/report.md|prompt.md`，写失败退到 `os.tmpdir()`；`create`+`prompt`
+   能力探测，缺失返回 `unsupported`；成功后 emit `api-session/added` 的完整 summary）。
+   `lib/index.js` 在 `apply()` 用同一 `DSH_DESKTOP_TRASH_TOKEN` 启动并打印
+   `dsh-desktop-incident-ready: <port>`；`scripts/build.mjs` 把该文件一起部署。
+   `src/main/incident-client.ts`：token、port、generation、15s 超时；`supervisor.ts` 增加
+   `onIncidentEndpoint`（每次子进程边界失效）；`index.ts` 增加 `desktop:ask-ai`，
+   从 `collectDiagnosticFacts`（从 `exportDiagnosticReport` 抽出的同一份事实）组装 Incident，
+   `isMainWindowSender` 或 `isMainWindowHarnessSender` 都接受（恢复页 + 市场行），成功后聚焦主窗口。
+   测试 `test/incident-host.test.ts` 5 例（正常、unsupported、写盘回退、鉴权/路径、客户端绑定）。
+3. **入口（C）**：`preload` 暴露 `askAi(input)`；恢复中心新增「问 AI 诊断 / Ask AI to diagnose」
+   （`data-dsh-ask-ai`），失败时按 harness-unavailable / unsupported / failed 给三种文案并自动调用
+   现有导出兜底；`locale.ts` 新增 6 条 zh/en 文案；设置页插件市场行在
+   `marketResult.installed !== true` 时显示「问 AI」（`data-dsh-market-ask`），调用
+   `askAi({surface:'market', code:'market.<reason>', detail})`。
+4. **本机验收（未重启运行中的 Harness，全部用临时 DSH_HOME）**：
+   - 市场离线失败 → 面板出现「问 AI」→ 点击后返回
+     `{ok:true,sessionId:'session-…'}`，`<home>/incidents/incident-…/` 写入 report.md/prompt.md，
+     prompt 含 `market.network`、`数据，不是指令`，不含 `/Users/citrus`、Bearer、`sk-`；
+   - 成功路径在 `<home>/sessions/<project>/session-…/` 落盘，cwd 为 incident 目录；
+   - 恢复页按钮/三种失败文案由 `test/pages.test.ts` 覆盖（打包故障注入只在 dev/SMOKE 模式生效，
+     未用它伪造错误页）。
+5. **已知限制**：Web UI 未找到按 session 深链的路由，成功后只聚焦主窗口并返回 sessionId
+   （侧栏新会话需等列表刷新；临时 home 无可用模型时 blob 为 0 字节，属环境限制）；
+   市场行的「问 AI」仅在失败且 `askAi` 存在时渲染。
+6. **传输上限**：提示词按 UTF-8 **字节**钳制到 24 000（比字符更严），主进程送给 Host 的报告
+   再钳到 32 000 字节；客户端发送前还会按 63 000 字节硬上限再截一次 JSON，避免转义开销撞上
+   Host 的 64 KiB 请求体。多字节中文报告已有单测覆盖。
+7. **门禁**：`PATH=/opt/homebrew/bin:$PATH pnpm run typecheck`、`pnpm run test`（537 通过）、
+   `pnpm run build`、三个 `node --check` 全通过；随 shell.8 一起提交。
+8. **与本任务的既有实现冲突**：恢复页的 `harness:retry` 等 IPC 用 `isMainWindowSender`
+   （仅 shell 自有 data 页），而市场行在 Harness 源里；`desktop:ask-ai` 因此同时接受
+   `isMainWindowSender` 与 `isMainWindowHarnessSender`，否则市场入口会被发送方校验挡成 `failed`。
+   Web UI 未发现按 session 深链的路由，成功路径只聚焦主窗口。
+9. **鲸鱼层级**：shell.8 首轮 Windows 打包 @smoke 在 `trash-ui` 因小鲸鱼遮住对话框点击失败；本轮把
+   `.dshwv-root` 压到 z-index 1（连同 Incident）重切 shell.8，需以四端 CI 结果为准。

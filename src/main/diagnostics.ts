@@ -245,6 +245,67 @@ export function formatDiagnosticReport(facts: DiagnosticFacts): string {
   return lines.join('\n')
 }
 
+
+/** Assemble the facts the report is made of; shared by export and incidents. */
+export async function collectDiagnosticFacts(options: {
+  state: HarnessState | undefined
+  safeMode: boolean
+  marketInstall?: MarketInstallResult
+  lan?: LanRuntimeState
+  rendererErrors?: readonly string[]
+}): Promise<DiagnosticFacts> {
+  const api = electron as unknown as typeof import('electron')
+  const logPath = join(api.app.getPath('userData'), 'logs', 'harness.log')
+  let harnessVersion = 'unknown'
+  try {
+    const harnessPackage = JSON.parse(await readFile(join(harnessRoot(), 'node_modules', '@deepseek-ai', 'dsh', 'package.json'), 'utf8')) as { version?: string }
+    harnessVersion = harnessPackage.version ?? 'unknown'
+  } catch {
+    harnessVersion = 'unknown'
+  }
+  let pluginInventory: PluginInventory | undefined
+  let profileStatus: ProfileStatus | undefined
+  let profileWrite: ProfileWriteProbe | undefined
+  const dshHome = resolveDshHome(process.env, homedir())
+  try {
+    profileStatus = await readProfileStatus(dshHome)
+    pluginInventory = await inspectPluginInventory(dshHome, WEB_PROFILE, harnessRoot())
+  } catch {
+    pluginInventory = undefined
+  }
+  try {
+    profileWrite = await probeProfileWritable(dshHome)
+  } catch {
+    profileWrite = undefined
+  }
+  const logTail = readLogTail(logPath)
+  const closureIntegrity = await verifyClosureManifest(resourcesRoot()).catch(() => undefined)
+  return {
+    createdAt: new Date().toISOString(),
+    appVersion: api.app.getVersion(),
+    electronVersion: process.versions.electron ?? 'unknown',
+    chromiumVersion: process.versions.chrome ?? 'unknown',
+    nodeVersion: process.versions.node,
+    platform: process.platform,
+    platformRelease: release(),
+    arch: process.arch,
+    harnessState: options.state,
+    logTail,
+    harnessVersion,
+    safeMode: options.safeMode,
+    profileStatus,
+    pluginInventory,
+    pluginFailures: collectPluginFailures(logTail),
+    pluginFailureCause: classifyPluginFailureCause(logTail),
+    profileWrite,
+    dshHome,
+    rendererErrors: options.rendererErrors,
+    marketInstall: options.marketInstall,
+    lan: options.lan,
+    closureIntegrity,
+  }
+}
+
 /** Ask for a destination, write a local-only report, then offer to reveal it. */
 export async function exportDiagnosticReport(
   state: HarnessState | undefined,
@@ -275,56 +336,7 @@ export async function exportDiagnosticReport(
   if (result.canceled || result.filePath === undefined) return false
 
   try {
-    const logPath = join(api.app.getPath('userData'), 'logs', 'harness.log')
-    let harnessVersion = 'unknown'
-    try {
-      const harnessPackage = JSON.parse(await readFile(join(harnessRoot(), 'node_modules', '@deepseek-ai', 'dsh', 'package.json'), 'utf8')) as { version?: string }
-      harnessVersion = harnessPackage.version ?? 'unknown'
-    } catch {
-      harnessVersion = 'unknown'
-    }
-    let pluginInventory: PluginInventory | undefined
-    let profileStatus: ProfileStatus | undefined
-    let profileWrite: ProfileWriteProbe | undefined
-    const dshHome = resolveDshHome(process.env, homedir())
-    try {
-      profileStatus = await readProfileStatus(dshHome)
-      pluginInventory = await inspectPluginInventory(dshHome, WEB_PROFILE, harnessRoot())
-    } catch {
-      pluginInventory = undefined
-    }
-    try {
-      profileWrite = await probeProfileWritable(dshHome)
-    } catch {
-      profileWrite = undefined
-    }
-    const logTail = readLogTail(logPath)
-    const closureIntegrity = await verifyClosureManifest(resourcesRoot())
-      .catch(() => undefined)
-    const report = formatDiagnosticReport({
-      createdAt: new Date().toISOString(),
-      appVersion: api.app.getVersion(),
-      electronVersion: process.versions.electron ?? 'unknown',
-      chromiumVersion: process.versions.chrome ?? 'unknown',
-      nodeVersion: process.versions.node,
-      platform: process.platform,
-      platformRelease: release(),
-      arch: process.arch,
-      harnessState: state,
-      logTail,
-      harnessVersion,
-      safeMode,
-      profileStatus,
-      pluginInventory,
-      pluginFailures: collectPluginFailures(logTail),
-      pluginFailureCause: classifyPluginFailureCause(logTail),
-      profileWrite,
-      dshHome,
-      rendererErrors,
-      marketInstall,
-      lan,
-      closureIntegrity,
-    })
+    const report = formatDiagnosticReport(await collectDiagnosticFacts({ state, safeMode, marketInstall, lan, rendererErrors }))
     await atomicWriteFile(result.filePath, report, 0o600)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

@@ -9,7 +9,7 @@ import { HarnessSupervisor, type HarnessState } from './supervisor.ts'
 import { resolveDshHome } from './dsh-home.ts'
 import { ccConnectBin, dshBin, harnessRoot, mobileShellRoot, nodeBin, resourcesRoot } from './paths.ts'
 import { readProfileStatus } from './profile.ts'
-import { readProfileManifest, writeProfileManifest, withoutBundle, withoutBundles, pickQuarantinable } from './plugin-recovery.ts'
+import { readProfileManifest, writeProfileManifest, withoutBundle, withoutBundles, pickQuarantinable, enableInstalledBundle, type BundleEnableResult } from './plugin-recovery.ts'
 import { supportIssueUrl, type SupportContext } from './support.ts'
 import { BalanceService, formatBalance, readDeepSeekApiKey, type FetchLike } from './balance.ts'
 import {
@@ -49,7 +49,9 @@ import { statusLabelWithMode } from './tray-status.ts'
 import { checkForUpdatesInteractively, checkMacUpdate, configureAutoUpdates } from './update-prompt.ts'
 import { armSmokeTimeout, quitGracefully, SMOKE_TEST, SMOKE_UI_TEST, smokeUiRender, smokeVerify, smokeVerifyClosure, verifySmokeFailureRecovery } from './smoke.ts'
 import { DEV_WEB_URL_ENV, isSmokeVersionMismatch, SMOKE_CLOSURE_FLAG, SMOKE_EXPECTED_VERSION_ENV, SMOKE_EXIT_FAIL, TEST_FAIL_HARNESS_ENV, TEST_RETRY_FAIL_ENV } from './smoke-protocol.ts'
-import { exportDiagnosticReport, redactDiagnosticsLog } from './diagnostics.ts'
+import { collectDiagnosticFacts, exportDiagnosticReport, formatDiagnosticReport, redactDiagnosticsLog } from './diagnostics.ts'
+import { buildIncidentPrompt, buildIncidentReport, incidentId, truncateUtf8, type Incident, type IncidentAction, type IncidentCode, type IncidentSurface } from './incident.ts'
+import { IncidentClient } from './incident-client.ts'
 import { clearPersistedPluginSuspects, loadPersistedPluginSuspects, persistPluginSuspects, updatePluginFailureMemory, writeSafeModeOverlay, WEB_PROFILE, OFFICIAL_BUNDLES, classifyPluginFailureCause, type ComposedRow } from './safe-mode.ts'
 import { probeProfileWritable, repairProfileWritable } from './profile-writable.ts'
 import { addQuarantinedRows, clearQuarantinedRows, ensureQuarantinePatch, loadQuarantinedRows, removeQuarantinedRows } from './plugin-quarantine.ts'
@@ -89,6 +91,7 @@ let lastPublicStatus: PublicStatusSnapshot | undefined
 let lastHarnessPhase: HarnessState['phase'] | undefined
 let shutdownComplete = false
 const sessionTrashClient = new SessionTrashClient()
+const incidentClient = new IncidentClient(sessionTrashClient.token)
 let connectController: ConnectController | undefined
 let feishuManager: FeishuManager | undefined
 let feishuSetupWindow: FeishuSetupWindowController | undefined
@@ -166,6 +169,12 @@ async function applySafeMode(enabled: boolean): Promise<boolean> {
 }
 
 const DSHMARKET_PACKAGE = 'dshmarket'
+/**
+ * Install the newest published market on purpose: `dsh plugin add dshmarket`
+ * keeps whatever version the profile already pinned, so a profile left on a
+ * build the current kernel refuses would never move forward.
+ */
+const DSHMARKET_SPEC = `${DSHMARKET_PACKAGE}@latest`
 const DSHMARKET_INSTALL_TIMEOUT_MS = 300_000
 
 /** Cached tray text for the DeepSeek balance; refreshed opportunistically. */
@@ -572,14 +581,22 @@ async function runDshMarketInstallCommand(): Promise<MarketInstallCommandResult>
   // path without allowing a developer's global metadata cache to satisfy it.
   const packageSpec = process.env.DSH_E2E_MARKET_MODE === 'offline'
     ? `dshmarket-dsh-desktop-offline-e2e-${process.pid}`
-    : DSHMARKET_PACKAGE
+    : DSHMARKET_SPEC
   return runProfilePluginAdd(packageSpec, DSHMARKET_INSTALL_TIMEOUT_MS)
+}
+
+/** Enable an installed market package the profile no longer boots. The market
+ * is a user-owned bundle, so only the boot list changes — the dependency
+ * range and the package directory stay exactly as pnpm left them. */
+async function enableDshMarketBundle(): Promise<BundleEnableResult> {
+  return enableInstalledBundle(desktopDshHome(), DSHMARKET_PACKAGE)
 }
 
 async function installDshMarketInternal(): Promise<MarketInstallResult> {
   const result = await completeMarketInstall({
     install: runDshMarketInstallCommand,
     readStatus: async () => (await readProfileStatus(desktopDshHome())).dshMarket,
+    enable: enableDshMarketBundle,
     restart: () => shellApp.runHarnessRestart(),
     onProgress: reportMarketInstallProgress,
   })
@@ -610,7 +627,7 @@ async function safeModeOverlayPath(): Promise<string | undefined> {
 /** The shell state machine, wired to the Electron surfaces it drives. */
 const shellApp = new ShellApp({
   createSupervisor: onState => new HarnessSupervisor(
-    { onState, onTrashEndpoint: port => sessionTrashClient.bind(port) },
+    { onState, onTrashEndpoint: port => sessionTrashClient.bind(port), onIncidentEndpoint: port => incidentClient.bind(port) },
     {
       safeMode: { enabled: safeModeActive, overlayFactory: safeModeOverlayPath },
       // Persistent row quarantine (#115): rebuilt per spawn from the record the
@@ -975,6 +992,75 @@ ipcMain.handle('shell:open-logs', (event) => {
 ipcMain.handle('shell:export-diagnostics', async (event) => {
   if (!isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)) return false
   return exportDiagnosticReport(shellApp.state, currentLocale, safeModeActive(), lastMarketInstallResult, lanService.diagnosticState, windowContext.rendererErrors)
+})
+
+/** Actions offered to the triage model; a vocabulary, not a promise. */
+const INCIDENT_ACTIONS: Record<IncidentSurface, readonly IncidentAction[]> = {
+  market: [
+    { id: 'retry-harness' }, { id: 'export-diagnostics' }, { id: 'open-logs' }, { id: 'open-issue' },
+  ],
+  startup: [
+    { id: 'retry-harness' }, { id: 'safe-mode' }, { id: 'update-plugin' }, { id: 'disable-plugin' },
+    { id: 'open-logs' }, { id: 'export-diagnostics' },
+  ],
+  health: [
+    { id: 'retry-harness' }, { id: 'open-logs' }, { id: 'export-diagnostics' }, { id: 'open-issue' },
+  ],
+}
+
+ipcMain.handle('desktop:ask-ai', async (event, raw: unknown) => {
+  // Two legitimate surfaces: the shell's recovery page (data URL) and the
+  // market row inside the Harness origin. Both are the main window, nothing else.
+  const fromRecovery = isMainWindowSender(windowContext.mainWindow, event.sender, event.senderFrame?.url)
+  const fromHarness = isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)
+  if (!fromRecovery && !fromHarness) { return { ok: false, reason: 'failed' as const } }
+  if (raw === null || typeof raw !== 'object') { return { ok: false, reason: 'failed' as const } }
+  const input = raw as { surface?: unknown; code?: unknown; detail?: unknown }
+  const surface = input.surface
+  if (surface !== 'market' && surface !== 'startup' && surface !== 'health') return { ok: false, reason: 'failed' as const }
+  if (typeof input.code !== 'string' || input.code === '' || input.code.length > 120) return { ok: false, reason: 'failed' as const }
+  if (input.detail !== undefined && (typeof input.detail !== 'string' || input.detail.length > 2_000)) return { ok: false, reason: 'failed' as const }
+  const detail = typeof input.detail === 'string' ? redactDiagnosticsLog(input.detail) : undefined
+  try {
+    const facts = await collectDiagnosticFacts({
+      state: shellApp.state,
+      safeMode: safeModeActive(),
+      marketInstall: lastMarketInstallResult,
+      lan: lanService.diagnosticState,
+      rendererErrors: windowContext.rendererErrors,
+    })
+    const at = new Date()
+    const incident: Incident = {
+      id: incidentId(at, surface),
+      at: at.toISOString(),
+      surface,
+      code: input.code as IncidentCode,
+      locale: currentLocale,
+      appVersion: facts.appVersion,
+      kernelVersion: facts.harnessVersion,
+      ...(detail === undefined ? {} : { detail }),
+      actions: [...INCIDENT_ACTIONS[surface]],
+      report: formatDiagnosticReport(facts),
+    }
+    const result = await incidentClient.ask({
+      id: incident.id,
+      title: incident.code,
+      prompt: buildIncidentPrompt(incident),
+      // The Host caps a request at 64 KiB; the prompt (≤24 KiB) plus this
+      // bounded artifact must always fit, even with multi-byte Chinese text.
+      report: truncateUtf8(buildIncidentReport(incident), 32_000),
+    })
+    if (result === undefined) return { ok: false, reason: 'harness-unavailable' as const }
+    if (result.ok) {
+      showMainWindow()
+      windowContext.mainWindow?.focus()
+      return result
+    }
+    return result
+  } catch (error) {
+    console.warn(`dsh-desktop: incident creation failed: ${error instanceof Error ? error.message : String(error)}`)
+    return { ok: false, reason: 'failed' as const }
+  }
 })
 
 ipcMain.handle('shell:close-lan-pairing', (event) => {

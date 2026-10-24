@@ -11,10 +11,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   compareSemver,
+  enableInstalledBundle,
   latestVersions,
   pluginUpdateInfos,
   readProfileManifest,
   pickQuarantinable,
+  withBundle,
   withoutBundle,
   withoutBundles,
   writeProfileManifest,
@@ -124,4 +126,56 @@ test('pickQuarantinable selects only listed, non-official, de-duplicated suspect
   // Already-removed suspects (loop guard) and official names never qualify.
   assert.deepEqual(pickQuarantinable(['dshmarket', '@deepseek-ai/dsh-base'], ['official'], official), [])
   assert.deepEqual(pickQuarantinable(['', 'never-installed'], bundles, official), [])
+})
+
+test('withBundle restores a boot entry without touching the dependency range', () => {
+  const manifest = {
+    dependencies: { dshmarket: '^1.45.1' },
+    dsh: { profile: { bundles: ['@deepseek-ai/dsh-base'] } },
+  }
+  const next = withBundle(manifest, 'dshmarket')
+  assert.deepEqual(next.dsh?.profile?.bundles, ['@deepseek-ai/dsh-base', 'dshmarket'])
+  assert.equal(next.dependencies?.dshmarket, '^1.45.1')
+  // Idempotent, and the input manifest is never mutated.
+  assert.deepEqual(withBundle(next, 'dshmarket').dsh?.profile?.bundles, ['@deepseek-ai/dsh-base', 'dshmarket'])
+  assert.deepEqual(manifest.dsh?.profile?.bundles, ['@deepseek-ai/dsh-base'])
+})
+
+test('enableInstalledBundle enables a present dependency and names why it cannot', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-bundle-enable-'))
+  try {
+    const packageDir = join(home, 'profiles', 'web', 'node_modules', 'dshmarket')
+    await mkdir(packageDir, { recursive: true })
+    await writeFile(join(packageDir, 'package.json'), JSON.stringify({ version: '1.69.0', dsh: { bundle: { patch: './cordis.patch.yml' } } }))
+    await writeProfileManifest(home, {
+      dependencies: { dshmarket: '^1.45.1' },
+      dsh: { profile: { bundles: ['@deepseek-ai/dsh-base'] } },
+    })
+
+    assert.deepEqual(await enableInstalledBundle(home, 'dshmarket'), { enabled: true, version: '1.69.0' })
+    const enabled = await readProfileManifest(home)
+    assert.deepEqual(enabled.dsh?.profile?.bundles, ['@deepseek-ai/dsh-base', 'dshmarket'])
+    assert.equal(enabled.dependencies?.dshmarket, '^1.45.1')
+    // Running it again is a no-op that still reports the enabled version.
+    assert.deepEqual(await enableInstalledBundle(home, 'dshmarket'), { enabled: true, version: '1.69.0' })
+
+    const absent = await enableInstalledBundle(home, 'never-installed')
+    assert.equal(absent.enabled, false)
+    assert.equal(absent.failure, 'missing')
+
+    // A package without dsh.bundle cannot become a profile layer.
+    await writeFile(join(packageDir, 'package.json'), JSON.stringify({ version: '1.69.0' }))
+    const notBundle = await enableInstalledBundle(home, 'dshmarket')
+    assert.equal(notBundle.enabled, false)
+    assert.equal(notBundle.failure, 'damaged')
+    assert.match(notBundle.detail ?? '', /declares no dsh\.bundle/)
+
+    // A dependency whose directory disappeared is repairable, not enabled.
+    await rm(packageDir, { recursive: true, force: true })
+    const missingDir = await enableInstalledBundle(home, 'dshmarket')
+    assert.equal(missingDir.failure, 'missing')
+    assert.match(missingDir.detail ?? '', /not installed/)
+  } finally {
+    await rm(home, { recursive: true, force: true })
+  }
 })

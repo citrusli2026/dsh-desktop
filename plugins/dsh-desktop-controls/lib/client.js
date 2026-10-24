@@ -35,7 +35,7 @@ window.__ModuleLoader__.load({
       /* The whale's decorative layer is body-level (z-index 9999); keep it
          under the Harness overlay layer that hosts this panel so shell controls
          stay clickable when both sit in the same corner. */
-      .dshwv-root { z-index: 10 !important; }
+      .dshwv-root { z-index: 1 !important; }
       [data-dsh-desktop-controls] [data-dsh-controls-trigger] {
         align-items: center;
         background: color-mix(in srgb, var(--dsh-controls-panel) 92%, transparent);
@@ -1081,7 +1081,7 @@ window.__ModuleLoader__.load({
         marketInstall: "安装插件市场", marketReinstall: "重新安装", marketWorking: "处理中", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketMissing: "尚未安装", marketDamaged: "安装记录或文件不完整", marketFailed: "安装未完成，请重试。", marketRestartFailed: "已安装，但重启 Harness 失败；请从恢复区重试。", marketRisk: "将从网络下载并运行第三方社区代码及其安装脚本，请确认来源后继续。", marketConfirm: "确认安装", marketCancel: "取消",
         marketPreparing: "正在准备随包 Node、pnpm 与系统代理…", marketInstalling: "正在下载并安装，可能需要几分钟…", marketVerifying: "正在验证 profile 与实际安装版本…", marketRestarting: "安装完成，正在重启 Harness…", marketSuccess: "插件市场 {version} 已安装并运行。",
         marketNetworkFailed: "无法连接插件源，请检查网络或 registry 后重试。", marketProxyFailed: "系统代理无法连接插件源，请检查代理设置后重试。", marketTimeoutFailed: "安装等待超时，已停止本次操作；可以直接重试。", marketProfileFailed: "数据目录不可写或 profile 状态不完整，请修复后重试。", marketIncompatibleFailed: "已安装的插件市场版本与当前内核不兼容，Harness 启动时会跳过它；请升级内核，或按技术详情里的命令允许该版本后重试。", marketScriptFailed: "社区包的安装脚本失败；未把它标记为已安装。", marketSpawnFailed: "随包安装工具无法启动，请导出诊断报告。", marketUnknownFailed: "安装命令未完成；请查看技术详情后重试。",
-        marketTechnical: "查看脱敏技术详情", marketCopy: "复制技术详情", marketCopied: "已复制",
+        marketTechnical: "查看脱敏技术详情", marketCopy: "复制技术详情", marketCopied: "已复制", marketAsk: "问 AI", marketAskBusy: "创建中…", marketAskCreated: "已创建诊断会话，可在侧栏打开。", marketAskUnavailable: "Harness 不可用，请先重启或导出诊断。", marketAskUnsupported: "当前内核不支持自动建会话，请导出诊断。", marketAskFailed: "诊断会话创建失败，请导出诊断。",
         balance: "余额", recharge: "充值",
         kernel: "内核版本", kernelBundled: "内置", kernelOverlay: "已切换",
         runtimeManager: "多版本运行环境", runtimeManagerDetail: "安装多个官方 dsh 版本；每个环境拥有独立数据目录，可同时运行。", runtimeCatalog: "版本目录", runtimeSource: "来源", runtimeOfficial: "官方", runtimeCommunity: "社区", runtimeOpen: "查看发布页", runtimeVersionPlaceholder: "版本号，例如 0.1.1-rc.3", runtimeInstall: "安装版本", runtimeNamePlaceholder: "环境名称", runtimeCreate: "创建环境", runtimeEmpty: "先安装一个官方版本", runtimeStart: "启动", runtimeStop: "停止", runtimeUninstall: "卸载 runtime", runtimeMissing: "runtime 已卸载，环境数据仍保留", runtimeStopped: "已停止", runtimeStarting: "启动中", runtimeRunning: "运行中", runtimeFailed: "启动失败", runtimeUninstallConfirm: "卸载 runtime {version}？该环境的数据会保留。",
@@ -1162,7 +1162,7 @@ window.__ModuleLoader__.load({
         marketInstall: "Install the market", marketReinstall: "Reinstall", marketWorking: "Working", marketInstalledHint: "Installed · open Settings → Plugin Market", marketMissing: "Not installed", marketDamaged: "Install record or files are incomplete", marketFailed: "Install did not finish; retry when ready.", marketRestartFailed: "Installed, but Harness did not restart; retry from Recovery.", marketRisk: "This downloads and runs third-party community code and install scripts. Verify the source before continuing.", marketConfirm: "Confirm install", marketCancel: "Cancel",
         marketPreparing: "Preparing the bundled Node, pnpm, and system proxy…", marketInstalling: "Downloading and installing — this can take a few minutes…", marketVerifying: "Verifying the profile and installed version…", marketRestarting: "Installed; restarting Harness…", marketSuccess: "Plugin market {version} is installed and running.",
         marketNetworkFailed: "The plugin registry is unreachable. Check the network or registry and retry.", marketProxyFailed: "The system proxy could not reach the plugin registry. Check the proxy and retry.", marketTimeoutFailed: "The install timed out and was stopped; it is safe to retry.", marketProfileFailed: "The data directory is not writable or the profile is incomplete. Repair it and retry.", marketIncompatibleFailed: "The installed market version is incompatible with this kernel, so Harness skips it at startup. Update the kernel, or allow that exact version with the command in the technical detail, then retry.", marketScriptFailed: "The community package install script failed; it was not marked installed.", marketSpawnFailed: "The bundled install tools could not start. Export a diagnostic report.", marketUnknownFailed: "The install command did not finish. Review the technical detail and retry.",
-        marketTechnical: "Show sanitized technical detail", marketCopy: "Copy technical detail", marketCopied: "Copied",
+        marketTechnical: "Show sanitized technical detail", marketCopy: "Copy technical detail", marketCopied: "Copied", marketAsk: "Ask AI", marketAskBusy: "Creating…", marketAskCreated: "Triage session created; open it from the sidebar.", marketAskUnavailable: "Harness is unavailable; restart it or export the report.", marketAskUnsupported: "This kernel cannot create a session; export the report.", marketAskFailed: "The triage session could not be created; export the report.",
         balance: "Balance", recharge: "Recharge",
         kernel: "Kernel version", kernelBundled: "bundled", kernelOverlay: "switched",
         runtimeManager: "Multi-version environments", runtimeManagerDetail: "Install official dsh versions side by side; each environment keeps isolated data and can run concurrently.", runtimeCatalog: "Edition catalog", runtimeSource: "Source", runtimeOfficial: "Official", runtimeCommunity: "Community", runtimeOpen: "Open release page", runtimeVersionPlaceholder: "Version, e.g. 0.1.1-rc.3", runtimeInstall: "Install version", runtimeNamePlaceholder: "Environment name", runtimeCreate: "Create environment", runtimeEmpty: "Install an official version first", runtimeStart: "Start", runtimeStop: "Stop", runtimeUninstall: "Uninstall runtime", runtimeMissing: "Runtime uninstalled; environment data is kept", runtimeStopped: "Stopped", runtimeStarting: "Starting", runtimeRunning: "Running", runtimeFailed: "Failed to start", runtimeUninstallConfirm: "Uninstall runtime {version}? The environment data will be kept.",
@@ -1606,6 +1606,8 @@ window.__ModuleLoader__.load({
       const [marketProgress, setMarketProgress] = react.useState("");
       const [marketResult, setMarketResult] = react.useState(null);
       const [marketCopied, setMarketCopied] = react.useState(false);
+      const [marketAskBusy, setMarketAskBusy] = react.useState(false);
+      const [marketAskMessage, setMarketAskMessage] = react.useState("");
 
       react.useEffect(() => {
         if (typeof bridge?.getBundledPlugins !== "function") return;
@@ -1646,6 +1648,28 @@ window.__ModuleLoader__.load({
       };
 
       const requestMarketAction = () => setMarketConfirming(true);
+
+      const askMarketAi = async () => {
+        if (typeof bridge?.askAi !== "function" || marketAskBusy) return;
+        setMarketAskBusy(true);
+        setMarketAskMessage("");
+        try {
+          const reason = typeof marketResult?.reason === "string" ? marketResult.reason : "unknown";
+          const result = await bridge.askAi({
+            surface: "market",
+            code: `market.${reason}`,
+            ...(typeof marketResult?.detail === "string" && marketResult.detail !== "" ? { detail: marketResult.detail } : {}),
+          });
+          setMarketAskMessage(result?.ok === true ? copy.marketAskCreated
+            : result?.reason === "harness-unavailable" ? copy.marketAskUnavailable
+            : result?.reason === "unsupported" ? copy.marketAskUnsupported
+            : copy.marketAskFailed);
+        } catch {
+          setMarketAskMessage(copy.marketAskFailed);
+        } finally {
+          setMarketAskBusy(false);
+        }
+      };
 
       const copyMarketDetail = async () => {
         if (typeof marketResult?.detail !== "string" || marketResult.detail === "") return;
@@ -2098,6 +2122,10 @@ window.__ModuleLoader__.load({
               ] }),
               marketProgressText === "" && marketResultText === "" ? null : react_jsx_runtime.jsxs("span", { "data-dsh-market-operation": true, "data-state": marketBusy ? "progress" : marketResultState, role: "status", children: [
                 react_jsx_runtime.jsx("small", { "data-dsh-market-progress": marketProgress || undefined, children: marketBusy ? marketProgressText : marketResultText }),
+                !marketBusy && marketResult?.installed !== true && typeof bridge?.askAi === "function" ? react_jsx_runtime.jsxs("span", { "data-dsh-market-ask-row": true, children: [
+                  react_jsx_runtime.jsx("button", { type: "button", "data-dsh-market-ask": true, disabled: marketAskBusy, onClick: () => void askMarketAi(), children: marketAskBusy ? copy.marketAskBusy : copy.marketAsk }),
+                  marketAskMessage === "" ? null : react_jsx_runtime.jsx("small", { "data-dsh-market-ask-message": true, role: "status", children: marketAskMessage }),
+                ] }) : null,
                 !marketBusy && typeof marketResult?.detail === "string" && marketResult.detail !== "" ? react_jsx_runtime.jsxs("details", { "data-dsh-market-technical": true, children: [
                   react_jsx_runtime.jsx("summary", { children: copy.marketTechnical }),
                   react_jsx_runtime.jsx("code", { children: marketResult.detail }),

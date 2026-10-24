@@ -182,6 +182,7 @@ export function errorPageHtml(
     <div class="actions"><button type="button" onclick="retry()">${escapeHtml(retry)}</button>
     <button type="button" onclick="bootSafe()">${escapeHtml(safeModeLabel)}</button>
     ${repairButton}
+    <button type="button" data-dsh-ask-ai onclick="askAi()">${escapeHtml(shellText(locale, 'page.askAi'))}</button>
     <button type="button" class="secondary" onclick="exportReport()">${escapeHtml(shellText(locale, 'page.export'))}</button>
     <button type="button" class="secondary" onclick="openLogs()">${escapeHtml(shellText(locale, 'page.openLogs'))}</button>
     <button type="button" class="secondary" onclick="getHelp()">${escapeHtml(shellText(locale, 'page.getHelp'))}</button></div>
@@ -225,6 +226,39 @@ export function errorPageHtml(
       function exportReport() {
         var bridge = window.dshDesktop && window.dshDesktop.exportDiagnostics;
         if (bridge) bridge();
+      }
+      var ASK_AI_WORKING = ${JSON.stringify(shellText(locale, 'page.askAiWorking'))};
+      var ASK_AI_CREATED = ${JSON.stringify(shellText(locale, 'page.askAiCreated'))};
+      var ASK_AI_UNAVAILABLE = ${JSON.stringify(shellText(locale, 'page.askAiUnavailable'))};
+      var ASK_AI_UNSUPPORTED = ${JSON.stringify(shellText(locale, 'page.askAiUnsupported'))};
+      var ASK_AI_FAILED = ${JSON.stringify(shellText(locale, 'page.askAiFailed'))};
+      var INCIDENT_CODE = ${JSON.stringify(`startup.${cause}`)};
+      function askAi() {
+        var button = document.querySelector('[data-dsh-ask-ai]');
+        var hint = document.getElementById('hint');
+        if (!button || button.disabled) return;
+        var bridge = window.dshDesktop && window.dshDesktop.askAi;
+        if (!bridge) { hint.textContent = ASK_AI_UNAVAILABLE; return; }
+        var original = button.textContent;
+        button.disabled = true;
+        button.textContent = ASK_AI_WORKING;
+        // The AI path must never be the only exit: on any failure, put the
+        // button back and offer the same report through the export flow.
+        function fallback(text) {
+          button.disabled = false;
+          button.textContent = original;
+          hint.textContent = text;
+          try {
+            var exportBridge = window.dshDesktop && window.dshDesktop.exportDiagnostics;
+            if (exportBridge) exportBridge();
+          } catch (error) { /* export is best-effort */ }
+        }
+        bridge({ surface: 'startup', code: INCIDENT_CODE }).then(function (result) {
+          if (result && result.ok) { button.textContent = ASK_AI_CREATED; return; }
+          var reason = result && result.reason;
+          fallback(reason === 'harness-unavailable' ? ASK_AI_UNAVAILABLE
+            : reason === 'unsupported' ? ASK_AI_UNSUPPORTED : ASK_AI_FAILED);
+        }).catch(function () { fallback(ASK_AI_FAILED); });
       }
       function openLogs() {
         var bridge = window.dshDesktop && window.dshDesktop.openLogsFolder;

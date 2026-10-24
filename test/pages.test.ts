@@ -145,3 +145,17 @@ test('errorPageHtml offers releasing the automatic quarantine', () => {
   const clean = decodeURIComponent(errorPageHtml(0, 'tail', false, [{ id: 'preset-pentest' }]))
   assert.ok(!clean.includes('Release plugin quarantine'), 'no quarantine section without quarantined rows')
 })
+
+test('the recovery page offers AI triage and a fallback export path', () => {
+  const html = decodeURIComponent(errorPageHtml(3, 'boom', false, [], 'zh', 'kernel-api').split(',').slice(1).join(','))
+  assert.match(html, /data-dsh-ask-ai/)
+  assert.match(html, /askAi\(\)/)
+  assert.match(html, /问 AI 诊断/)
+  assert.match(html, /startup\.kernel-api/)
+  assert.match(html, /exportDiagnostics/)
+  assert.match(html, /Harness 当前不可用/)
+  const english = decodeURIComponent(errorPageHtml(3, 'boom', false, [], 'en', 'missing-package').split(',').slice(1).join(','))
+  assert.match(english, /Ask AI to diagnose/)
+  assert.match(english, /startup\.missing-package/)
+  assert.match(english, /Harness is not available/)
+})

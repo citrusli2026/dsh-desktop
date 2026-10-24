@@ -15,6 +15,9 @@ export interface ProfilePackageStatus {
   name: string
   state: ProfilePackageState
   version?: string
+  /** The package directory exists on disk even though the boot list does not
+   * name it — an installed package the user (or an upgrade) left disabled. */
+  present?: boolean
 }
 
 export interface ProfileStatus {
@@ -33,18 +36,31 @@ function packageCandidates(dshHome: string, name: string): string[] {
   ]
 }
 
-async function packageStatus(dshHome: string, name: string, listed: boolean): Promise<ProfilePackageStatus> {
-  if (!listed) return { name, state: 'missing' }
-  const packageDir = packageCandidates(dshHome, name).find(candidate => existsSync(candidate))
-  if (packageDir === undefined) return { name, state: 'damaged' }
+/** Resolve an installed package directory inside the web profile, including
+ * packages that are present but no longer on the boot list. */
+function profilePackageDir(dshHome: string, name: string): string | undefined {
+  return packageCandidates(dshHome, name).find(candidate => existsSync(candidate))
+}
+
+async function installedVersion(packageDir: string): Promise<string | undefined> {
   try {
     const packageJson = JSON.parse(await readFile(join(packageDir, 'package.json'), 'utf8')) as { version?: unknown }
-    return typeof packageJson.version === 'string' && packageJson.version !== ''
-      ? { name, state: 'installed', version: packageJson.version }
-      : { name, state: 'damaged' }
+    return typeof packageJson.version === 'string' && packageJson.version !== '' ? packageJson.version : undefined
   } catch {
-    return { name, state: 'damaged' }
+    return undefined
   }
+}
+
+async function packageStatus(dshHome: string, name: string, listed: boolean): Promise<ProfilePackageStatus> {
+  const packageDir = profilePackageDir(dshHome, name)
+  if (packageDir === undefined) return { name, state: listed ? 'damaged' : 'missing', present: false }
+  const version = await installedVersion(packageDir)
+  // A disabled package with an unreadable manifest stays "missing" for the
+  // boot list's purposes; only a listed one is damaged.
+  if (version === undefined) return { name, state: listed ? 'damaged' : 'missing', present: true }
+  return listed
+    ? { name, state: 'installed', version, present: true }
+    : { name, state: 'missing', version, present: true }
 }
 
 /** Read the user profile state without changing any profile files. */
@@ -57,7 +73,7 @@ export async function readProfileStatus(dshHome: string): Promise<ProfileStatus>
       manifest: 'missing',
       bundles: [],
       userBundles: [],
-      dshMarket: { name: DSHMARKET_PACKAGE, state: 'missing' },
+      dshMarket: { name: DSHMARKET_PACKAGE, state: 'missing', present: false },
     }
   }
   try {
@@ -76,7 +92,7 @@ export async function readProfileStatus(dshHome: string): Promise<ProfileStatus>
       manifest: 'damaged',
       bundles: [],
       userBundles: [],
-      dshMarket: { name: DSHMARKET_PACKAGE, state: 'damaged' },
+      dshMarket: { name: DSHMARKET_PACKAGE, state: 'damaged', present: false },
     }
   }
 }

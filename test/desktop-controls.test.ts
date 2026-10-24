@@ -61,6 +61,10 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /data-dsh-whale-toggle/)
   assert.match(client, /whaleWidgetEnabled/)
   assert.match(client, /openWhaleAuthor/)
+  // Incident triage entry on a failed market install (ADR 0046).
+  assert.match(client, /data-dsh-market-ask/)
+  assert.match(client, /askAi/)
+  assert.match(client, /market\.\$\{reason\}/)
   assert.match(client, /data-dsh-whale-restart/)
   assert.match(client, /id: "dsh-desktop-feishu"/)
   assert.match(client, /FeishuSettingsSection/)

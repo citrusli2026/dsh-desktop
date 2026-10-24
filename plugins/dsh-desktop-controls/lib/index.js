@@ -13,6 +13,7 @@ import { readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { defineTool } from "@deepseek-ai/dsh-tools";
+import { startIncidentServer } from "./incident-host.js";
 import { startSessionTrashServer } from "./trash-host.js";
 
 const CAPTURE_FALLBACKS_LINUX = [
@@ -215,6 +216,18 @@ export function apply(ctx) {
       server.closeAllConnections();
       return new Promise(resolve => server.close(resolve));
     });
+  });
+  if (token) ctx.inject(["sessionController"], (hostCtx) => {
+    try {
+      const server = startIncidentServer(hostCtx, process.env.DSH_HOME, token,
+        port => console.log(`dsh-desktop-incident-ready: ${port}`));
+      hostCtx.on("dispose", () => {
+        server.closeAllConnections();
+        return new Promise(resolve => server.close(resolve));
+      });
+    } catch (error) {
+      console.warn(`dsh-desktop-controls: incident host unavailable: ${String(error)}`);
+    }
   });
   if (process.env.DSH_DESKTOP_SCREEN_CAPTURE !== "1") return;
   ctx.inject(["attachments"], (attachmentsCtx) => {

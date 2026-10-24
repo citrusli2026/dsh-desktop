@@ -36,7 +36,12 @@ test('readProfileStatus distinguishes missing, installed, and damaged market pac
     assert.equal((await readProfileStatus(home)).dshMarket.state, 'damaged')
     await mkdir(join(profileRoot, 'node_modules', 'dshmarket'), { recursive: true })
     await writeFile(join(profileRoot, 'node_modules', 'dshmarket', 'package.json'), JSON.stringify({ version: '1.2.3' }))
-    assert.deepEqual((await readProfileStatus(home)).dshMarket, { name: 'dshmarket', state: 'installed', version: '1.2.3' })
+    assert.deepEqual((await readProfileStatus(home)).dshMarket, { name: 'dshmarket', state: 'installed', version: '1.2.3', present: true })
+    // A package left off the boot list is still reported as present: the
+    // market surface must tell "never installed" from "installed but
+    // disabled" before it decides whether to re-enable it.
+    await writeFile(join(profileRoot, 'package.json'), JSON.stringify({ dsh: { profile: { bundles: [] } } }))
+    assert.deepEqual((await readProfileStatus(home)).dshMarket, { name: 'dshmarket', state: 'missing', version: '1.2.3', present: true })
     await writeFile(join(profileRoot, 'package.json'), '{broken')
     assert.equal((await readProfileStatus(home)).dshMarket.state, 'damaged')
   } finally {

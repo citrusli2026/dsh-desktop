@@ -6,6 +6,7 @@
  * the `dsh.profile.bundles` entry (and its dependency entry) is removed.
  * @module main/plugin-recovery
  */
+import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { WEB_PROFILE } from './safe-mode.ts'
@@ -83,6 +84,81 @@ export function withoutBundle(manifest: ProfileManifest, name: string): ProfileM
 /** Remove several bundles from the boot list at once (reversible, files stay). */
 export function withoutBundles(manifest: ProfileManifest, names: readonly string[]): ProfileManifest {
   return names.reduce((current, name) => withoutBundle(current, name), manifest)
+}
+
+/** Put one dependency back on the boot list, keeping its dependency entry —
+ * the inverse of `withoutBundle`. Idempotent. */
+export function withBundle(manifest: ProfileManifest, name: string): ProfileManifest {
+  const bundles = manifest.dsh?.profile?.bundles ?? []
+  return {
+    ...manifest,
+    dsh: {
+      ...manifest.dsh,
+      profile: { ...manifest.dsh?.profile, bundles: bundles.includes(name) ? bundles : [...bundles, name] },
+    },
+  }
+}
+
+export type BundleEnableFailure = 'missing' | 'damaged' | 'unwritable'
+
+export interface BundleEnableResult {
+  enabled: boolean
+  failure?: BundleEnableFailure
+  version?: string
+  detail?: string
+}
+
+/** Where an installed package lives inside one profile, if anywhere. */
+function installedPackageDir(dshHome: string, profile: string, name: string): string | undefined {
+  return [
+    join(dshHome, 'profiles', profile, 'node_modules', name),
+    join(dshHome, 'profiles', 'node_modules', name),
+  ].find(candidate => existsSync(candidate))
+}
+
+/**
+ * Enable an already-installed dependency by adding it to
+ * `dsh.profile.bundles`. `dsh plugin add` only enables *newly added*
+ * dependencies (upstream reconcile never re-enables a retained one), so a
+ * market install that finds the package already pinned has to ask for the
+ * boot entry itself. Existing recovery actions already write this exact field,
+ * so the file stays user-owned: the package directory and dependency range
+ * are untouched, and disabling again reverts it.
+ */
+export async function enableInstalledBundle(
+  dshHome: string,
+  name: string,
+  profile = WEB_PROFILE,
+): Promise<BundleEnableResult> {
+  const manifest = await readProfileManifest(dshHome, profile)
+  if (manifest.dependencies?.[name] === undefined) {
+    return { enabled: false, failure: 'missing', detail: `${name} is not a dependency of the ${profile} profile` }
+  }
+  const packageDir = installedPackageDir(dshHome, profile, name)
+  if (packageDir === undefined) {
+    return { enabled: false, failure: 'missing', detail: `${name} is recorded in the profile but not installed` }
+  }
+  let packageJson: { version?: unknown; dsh?: { bundle?: unknown } }
+  try {
+    packageJson = JSON.parse(await readFile(join(packageDir, 'package.json'), 'utf8')) as typeof packageJson
+  } catch {
+    return { enabled: false, failure: 'damaged', detail: `${name} has no readable package.json` }
+  }
+  const version = typeof packageJson.version === 'string' && packageJson.version !== '' ? packageJson.version : undefined
+  if (version === undefined) return { enabled: false, failure: 'damaged', detail: `${name} has no version in its package.json` }
+  if (packageJson.dsh?.bundle === undefined) {
+    return { enabled: false, failure: 'damaged', detail: `${name}@${version} declares no dsh.bundle`, version }
+  }
+  if ((manifest.dsh?.profile?.bundles ?? []).includes(name)) return { enabled: true, version }
+  try {
+    await writeProfileManifest(dshHome, withBundle(manifest, name), profile)
+  } catch (error) {
+    return { enabled: false, failure: 'unwritable', detail: error instanceof Error ? error.message : String(error), version }
+  }
+  const applied = await readProfileManifest(dshHome, profile)
+  return (applied.dsh?.profile?.bundles ?? []).includes(name)
+    ? { enabled: true, version }
+    : { enabled: false, failure: 'unwritable', detail: 'the profile manifest did not keep the bundle entry', version }
 }
 
 /**

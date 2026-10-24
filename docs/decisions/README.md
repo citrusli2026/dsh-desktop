@@ -49,3 +49,5 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0042 | Every extension action surfaces its failure where it was triggered / 每个扩展动作都在触发处暴露失败 | [EN](0042-extension-failure-feedback.md) · [中文](0042-extension-failure-feedback.zh.md) | Accepted / 已接受 |
 | 0043 | Companion windows declared by installed plugins / 由已安装插件声明的伴随窗口 | [EN](0043-plugin-companion-windows.md) · [中文](0043-plugin-companion-windows.zh.md) | Accepted / 已接受 |
 | 0044 | Ship the whale widget as an optional built-in plugin / 把鲸鱼挂件作为可选的内置插件 | [EN](0044-builtin-whale-widget.md) · [中文](0044-builtin-whale-widget.zh.md) | Accepted / 已接受 |
+| 0045 | Reinstalling the plugin market leaves it enabled / 重装插件市场时保持已启用 | [EN](0045-market-reinstall-enables.md) · [中文](0045-market-reinstall-enables.zh.md) | Accepted / 已接受 |
+| 0046 | Failure incidents that open a triage session / 把失败变成可交给 AI 排查的故障事件 | [EN](0046-incident-ai-triage.md) · [中文](0046-incident-ai-triage.zh.md) | Accepted / 已接受 |

@@ -68,6 +68,8 @@ export interface SupervisorEvents {
   onState(state: HarnessState): void
   /** Main-only authenticated trash endpoint; invalidated at every child boundary. */
   onTrashEndpoint?(port: number | undefined): void
+  /** Main-only authenticated incident endpoint (ADR 0046); same lifecycle. */
+  onIncidentEndpoint?(port: number | undefined): void
 }
 
 /** Testable process and filesystem overrides; production uses bundled defaults. */
@@ -283,6 +285,7 @@ export class HarnessSupervisor {
 
   private spawnOnce(args: readonly string[]): ChildProcess {
     this.events.onTrashEndpoint?.(undefined)
+    this.events.onIncidentEndpoint?.(undefined)
     const child = this.managed.spawn({
       command: this.command,
       args,
@@ -302,6 +305,8 @@ export class HarnessSupervisor {
       lines.on('line', (line) => {
         const trash = /^dsh-desktop-trash-ready: (\d+)$/.exec(line)
         if (!this.stopping && this.managed.process === child && trash !== null && Number(trash[1]) > 0 && Number(trash[1]) <= 65535) this.events.onTrashEndpoint?.(Number(trash[1]))
+        const incident = /^dsh-desktop-incident-ready: (\d+)$/.exec(line)
+        if (!this.stopping && this.managed.process === child && incident !== null && Number(incident[1]) > 0 && Number(incident[1]) <= 65535) this.events.onIncidentEndpoint?.(Number(incident[1]))
         this.recordLine(line)
         const url = parseReadyUrl(line)
         if (url !== undefined) this.onReady(url)
@@ -309,7 +314,7 @@ export class HarnessSupervisor {
     }
     let spawnErrorHandled = false
     child.once('error', (error) => {
-      if (this.managed.process === child) this.events.onTrashEndpoint?.(undefined)
+      if (this.managed.process === child) { this.events.onTrashEndpoint?.(undefined); this.events.onIncidentEndpoint?.(undefined) }
       this.recordLine('supervisor: spawn error: ' + String(error))
       if (this.rejectReady !== undefined) {
         this.failStart(error)
@@ -321,7 +326,7 @@ export class HarnessSupervisor {
       this.scheduleRestart()
     })
     child.once('exit', (code, signal) => {
-      if (this.managed.process === undefined || this.managed.process === child) this.events.onTrashEndpoint?.(undefined)
+      if (this.managed.process === undefined || this.managed.process === child) { this.events.onTrashEndpoint?.(undefined); this.events.onIncidentEndpoint?.(undefined) }
       this.recordLine(`supervisor: harness exited code=${String(code)} signal=${String(signal)}`)
       if (this.stopping) return
       if (spawnErrorHandled) return
@@ -426,6 +431,7 @@ export class HarnessSupervisor {
     if (this.stopSlot.pending) return this.stopSlot.current!
     const task = (async () => {
       this.events.onTrashEndpoint?.(undefined)
+      this.events.onIncidentEndpoint?.(undefined)
       if (this.restartTimer !== undefined) clearTimeout(this.restartTimer)
       this.restartTimer = undefined
       this.stopping = true
