@@ -133,7 +133,80 @@ function registerScreenCapture(ctx) {
   }));
 }
 
+
+/**
+ * Shell-owned companion adapter for recognised third-party widgets (ADR 0044).
+ * The plugin stays unmodified: this page supplies the minimal chat shell the
+ * widget's self-check expects, the hide button, and the click-through bridge.
+ */
+const COMPANION_ADAPTER_PATH = "/__dsh-desktop/whale-pet";
+const COMPANION_ADAPTER_HTML = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>小鲸鱼</title>
+<style>
+html,body{margin:0;padding:0;background:transparent!important;overflow:hidden}
+#root{display:none!important}
+.dshwv-root{--dshw-scale:1.6!important}
+#dsh-companion-hide{position:fixed;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:0;padding:0 0 2px;background:rgba(32,49,112,.78);color:#fff;font-size:17px;line-height:1;cursor:pointer;z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:inherit}
+#dsh-companion-hide:hover{background:#203170}
+</style></head><body>
+<div id="root"><div data-composer-input="true"></div></div>
+<button id="dsh-companion-hide" type="button" title="收起小鲸鱼并打开 DSH" aria-label="收起小鲸鱼并打开 DSH">\u2212</button>
+<script>
+(function () {
+  var bridge = window.dshCompanion;
+  function interactive(on) { try { if (bridge && bridge.setInteractive) bridge.setInteractive(!!on); } catch (e) {} }
+  var hit = null;
+  function hitTest(event) {
+    var target = document.elementFromPoint(event.clientX, event.clientY);
+    var over = !!(target && target.closest && target.closest(".dshwv-root, .dshwv-menu, #dsh-companion-hide"));
+    if (over !== hit) { hit = over; interactive(over); }
+  }
+  document.addEventListener("mousemove", hitTest, { passive: true });
+  document.addEventListener("mouseleave", function () { hit = null; interactive(false); });
+  window.addEventListener("blur", function () { hit = null; interactive(false); });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && bridge && bridge.hide) bridge.hide();
+  });
+  var hide = document.getElementById("dsh-companion-hide");
+  hide.addEventListener("click", function () { if (bridge && bridge.focusMain) bridge.focusMain(); });
+  if (bridge && bridge.setInteractive) bridge.setInteractive(false);
+  // If the widget never mounts (plugin missing or disabled), do not leave a
+  // transparent window blocking the desktop.
+  setTimeout(function () {
+    if (!window.__dshWhaleWidget && bridge && bridge.hide) bridge.hide();
+  }, 6000);
+})();
+</script>
+<script src="/dsh-whale/widget.js"></script>
+</body></html>`;
+
+export function registerCompanionAdapter(ctx) {
+  const webServer = ctx.webServer;
+  if (!webServer || typeof webServer.register !== "function") return;
+  ctx.effect(() => webServer.register({
+    kind: "exact",
+    path: COMPANION_ADAPTER_PATH,
+    handler: (req, res) => {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+      res.end(COMPANION_ADAPTER_HTML);
+    },
+  }));
+}
+
 export function apply(ctx) {
+  // Served for every profile so a recognised plugin needs no code change; the
+  // page is only opened by the shell's companion controller. The web server is
+  // an optional service, so wait for it locally instead of reading ctx.webServer
+  // at apply time (it is not injected yet).
+  try {
+    ctx.inject(["webServer"], (hostCtx) => {
+      try { registerCompanionAdapter(hostCtx); } catch (error) {
+        console.warn(`dsh-desktop-controls: companion adapter unavailable: ${String(error)}`);
+      }
+    });
+  } catch (error) {
+    console.warn(`dsh-desktop-controls: companion adapter injection failed: ${String(error)}`);
+  }
   const token = process.env.DSH_DESKTOP_TRASH_TOKEN;
   if (token) ctx.inject(["sessionController", "sessionPersistence", "workspaceRegistry"], (hostCtx) => {
     const server = startSessionTrashServer(hostCtx, process.env.DSH_HOME, token,

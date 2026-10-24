@@ -133,8 +133,12 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /openEditionSource/)
   assert.match(client, /dshDesktop/)
 
-  // Host half: opt-in screen capture model tool (decision 0027, route C).
+  // Host half: opt-in screen capture model tool (decision 0027, route C) and
+  // the shell-owned companion adapter that keeps the whale plugin unmodified.
   const host = await readFile(join(pluginRoot, 'lib/index.js'), 'utf8')
+  assert.match(host, /registerCompanionAdapter/)
+  assert.match(host, /\/__dsh-desktop\/whale-pet/)
+  assert.match(host, /dsh-whale\/widget\.js/)
   assert.match(host, /DSH_DESKTOP_SCREEN_CAPTURE/)
   assert.match(host, /screen_capture/)
   assert.match(host, /saveImage/)

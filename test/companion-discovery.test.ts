@@ -42,3 +42,39 @@ test('discovery is empty when the profile has no plugins', async () => {
     await rm(home, { recursive: true, force: true })
   }
 })
+
+test('the shell supplies a companion for a reviewed, unmodified package', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-companion-'))
+  try {
+    // Upstream 0.4.2 has no dsh.companion declaration: the shell's compat map
+    // must add the adapter route without the plugin changing.
+    await packageFile(home, 'dsh-whale-widget', { name: 'dsh-whale-widget', version: '0.4.2', dsh: { bundle: { patch: './cordis.patch.yml' } } })
+    const listed = await discoverCompanions(home)
+    assert.deepEqual(listed, [{
+      id: 'dsh-whale-widget',
+      route: '/__dsh-desktop/whale-pet',
+      width: 560,
+      height: 620,
+      title: '小鲸鱼',
+      showOnMinimize: true,
+    }])
+  } finally {
+    await rm(home, { recursive: true, force: true })
+  }
+})
+
+test('a plugin declaration wins over the shell compat map, and unknown versions are left alone', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-companion-'))
+  try {
+    await packageFile(home, 'dsh-whale-widget', {
+      name: 'dsh-whale-widget', version: '0.5.0',
+      dsh: { companion: { route: '/dsh-whale/pet', width: 500, height: 500 } },
+    })
+    const declared = await discoverCompanions(home)
+    assert.equal(declared[0]?.route, '/dsh-whale/pet', 'plugin declaration wins')
+    await packageFile(home, 'dsh-whale-widget', { name: 'dsh-whale-widget', version: '0.5.0', dsh: {} })
+    assert.deepEqual(await discoverCompanions(home), [], 'unreviewed version gets no adapter')
+  } finally {
+    await rm(home, { recursive: true, force: true })
+  }
+})

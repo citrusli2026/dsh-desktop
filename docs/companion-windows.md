@@ -117,7 +117,10 @@ WHALE_PLUGIN_DIR=/path/to/prepared/dsh-whale-widget node scripts/whale-clickthro
 
 ## 内置的鲸鱼挂件（ADR 0044）
 
-壳随安装包提供一个**默认关闭**的 `dsh-whale-widget` 副本：
+壳随安装包提供一个**默认关闭、未经修改**的 `dsh-whale-widget` 0.4.2 副本。插件不需要声明
+`dsh.companion` 或提供 pet 路由：壳按已知包版本提供描述，并由 `dsh-desktop-controls` 宿主提供适配页
+（`/__dsh-desktop/whale-pet`），页面加载插件自己的 `/dsh-whale/widget.js`。插件若自己声明伴随窗口，
+声明优先。
 
 - 打开「桌面设置 → 扩展 → 小鲸鱼桌宠」，勾选后点「立即重启」；
 - 关闭后不再挂载，插件与伴窗都从列表消失；

@@ -5,9 +5,10 @@ import { tmpdir } from 'node:os'
 import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
 
 /**
- * Built-in whale widget (ADR 0044): the vendored package ships inside the app
- * and is mounted only when the desktop setting is on. Off by default, and Safe
- * Mode must keep it out entirely.
+ * Built-in whale widget (ADR 0044): the vendored, unmodified 0.4.2 package is
+ * mounted only while the desktop setting is on. The shell supplies the
+ * companion descriptor and serves the adapter page, so the plugin itself needs
+ * no `dsh.companion` field and no pet route. Safe Mode never mounts it.
  */
 const PACKAGED = process.env.DSH_E2E_PACKAGED === '1'
 
@@ -36,13 +37,41 @@ async function launch(options: { whale: boolean; safeMode?: boolean }) {
 test.describe('built-in whale widget', () => {
   test.skip(!PACKAGED, 'requires the packaged build')
 
-  test('the settings toggle installs, restarts, and keeps the pet on minimize @smoke', async ({}, info) => {
+  test('enabled mounts the unmodified widget and hosts the shell adapter @smoke', async ({}, info) => {
+    test.setTimeout(300_000)
+    const { app, root } = await launch({ whale: true })
+    try {
+      const page = await app.firstWindow()
+      await expect.poll(() => page.locator('[data-dsh-desktop-controls]').count(), { timeout: 180_000 }).toBe(1)
+      // The vendored plugin is mounted from the app's own closure.
+      await expect(page.locator('.dshwv-root')).toBeVisible({ timeout: 120_000 })
+      await page.screenshot({ path: info.outputPath('01-main-whale.png') })
+
+      const pending = app.waitForEvent('window', { predicate: win => win.url().includes('/__dsh-desktop/whale-pet'), timeout: 120_000 })
+      await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.minimize())
+      const pet = await pending
+      await expect(pet.locator('.dshwv-root')).toBeVisible({ timeout: 60_000 })
+      await expect(pet.locator('#dsh-companion-hide')).toBeVisible()
+      expect(pet.url()).toContain('dshCompanion=1')
+      await pet.screenshot({ path: info.outputPath('02-pet.png'), omitBackground: true })
+
+      await pet.locator('#dsh-companion-hide').click()
+      await expect.poll(() => app.evaluate(({ BrowserWindow }) => {
+        const main = BrowserWindow.getAllWindows().find(win => !win.webContents.getURL().includes('/__dsh-desktop/whale-pet'))
+        return main?.isMinimized() ?? true
+      }), { timeout: 20_000 }).toBe(false)
+    } finally {
+      await app.close().catch(() => {})
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('the settings toggle persists the opt-in and offers a restart @smoke', async ({}, info) => {
     test.setTimeout(300_000)
     const { app, root } = await launch({ whale: false })
     try {
       const page = await app.firstWindow()
       await expect.poll(() => page.locator('[data-dsh-desktop-controls]').count(), { timeout: 180_000 }).toBe(1)
-      // Off by default: no whale before the user opts in.
       expect(await page.locator('.dshwv-root').count()).toBe(0)
 
       await page.getByRole('button', { name: /账号菜单|Account menu/ }).click()
@@ -54,42 +83,23 @@ test.describe('built-in whale widget', () => {
       await group.scrollIntoViewIfNeeded()
       await expect(group).toContainText('小鲸鱼桌宠')
       await expect(group).toContainText('MeteorNOX')
-      await group.screenshot({ path: info.outputPath('01-settings-toggle.png') })
+      await group.screenshot({ path: info.outputPath('03-settings-toggle.png') })
 
       const toggle = group.locator('[data-dsh-whale-toggle] input')
-      await expect(toggle).not.toBeChecked()
       await toggle.click()
       await expect(toggle).toBeChecked({ timeout: 15_000 })
       await expect(group.locator('[data-dsh-whale-restart]')).toBeVisible()
-      // The restart path asks for native confirmation; accept it in-process.
-      await app.evaluate(({ dialog }) => {
-        (dialog as unknown as { showMessageBox: unknown }).showMessageBox = async () => ({ response: 0, checkboxChecked: false })
-      })
-      await group.locator('[data-dsh-whale-restart]').click()
-
-      // The restart remounts Harness with the vendored package.
-      await expect(page.locator('.dshwv-root')).toBeVisible({ timeout: 180_000 })
-      await page.screenshot({ path: info.outputPath('02-main-whale.png') })
-
-      const pending = app.waitForEvent('window', { predicate: win => win.url().includes('/dsh-whale/pet'), timeout: 120_000 })
-      await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.minimize())
-      const pet = await pending
-      await expect(pet.locator('.dshwv-pet-min')).toBeVisible({ timeout: 60_000 })
-      expect(pet.url()).toContain('dshCompanion=1')
-      await pet.screenshot({ path: info.outputPath('03-pet.png'), omitBackground: true })
-
-      await pet.locator('.dshwv-pet-min').click()
-      await expect.poll(() => app.evaluate(({ BrowserWindow }) => {
-        const main = BrowserWindow.getAllWindows().find(win => !win.webContents.getURL().includes('/dsh-whale/pet'))
-        return main?.isMinimized() ?? true
-      }), { timeout: 20_000 }).toBe(false)
+      const saved = await page.evaluate(() => (window as unknown as {
+        dshDesktop: { getDesktopPreferences(): Promise<{ whaleWidgetEnabled: boolean }> }
+      }).dshDesktop.getDesktopPreferences())
+      expect(saved.whaleWidgetEnabled).toBe(true)
     } finally {
       await app.close().catch(() => {})
       await rm(root, { recursive: true, force: true })
     }
   })
 
-  test('disabled and Safe Mode never mount it', async ({}) => {
+  test('disabled and Safe Mode never mount it @smoke', async ({}) => {
     test.setTimeout(300_000)
     for (const options of [{ whale: false }, { whale: true, safeMode: true }]) {
       const { app, root } = await launch(options)
@@ -98,7 +108,6 @@ test.describe('built-in whale widget', () => {
         await expect.poll(() => page.locator('[data-dsh-desktop-controls]').count(), { timeout: 180_000 }).toBe(1)
         await page.waitForTimeout(8_000)
         expect(await page.locator('.dshwv-root').count()).toBe(0)
-        // No companion should be offered either.
         const listed = await page.evaluate(() => (window as unknown as {
           dshDesktop: { listCompanions(): Promise<{ id: string }[]> }
         }).dshDesktop.listCompanions())

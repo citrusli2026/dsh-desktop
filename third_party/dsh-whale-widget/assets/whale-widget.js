@@ -1,13 +1,6 @@
 (function () {
 if (window.__dshWhaleWidget) return
 window.__dshWhaleWidget = true
-// 桌面桌宠窗（dsh-desktop 的透明置顶小窗）：页面地址带 dshwPet=1 时进入桌宠模式。
-// 桌宠窗里只保留鲸鱼本体与气泡（其余页面由主进程 CSS 隐藏），所以这里只做三件事：
-//   1) 位置固定右下角，不读写 dshw-pos（否则会和主窗口的鲸鱼抢位置）；
-//   2) 关闭拖拽后的锚点保存；
-//   3) 授权提示泡泡里追加「允许一次 / 拒绝」按钮。
-var WHALE_PET = false
-try { WHALE_PET = /[?&]dshwPet=1(?:&|$)/.test(location.search) } catch (err) {}
 
 // —— 页面自检：只在 DSH 主聊天界面挂载挂件 ——
 // 挂件脚本通过 tapIndex 注入 DSH 的每一个 index 页面（含插件市场等 SPA 视图）。
@@ -1279,17 +1272,7 @@ var css = [
   '.dshwv-resplay:hover{background:rgba(47,122,66,.08)}',
   '.dshwv-resimp{flex:0 0 auto;border:1px solid rgba(32,49,112,.4);border-radius:5px;background:rgba(32,49,112,.08);color:#203170;font-size:11px;padding:1px 9px;cursor:pointer}',
   '.dshwv-resimp:hover{background:rgba(32,49,112,.16)}',
-  '.dshwv-resempty{color:#9fb0d9;font-size:12px;padding:2px 6px}',
-  // ===== 桌宠模式（dshwPet=1）：固定右下角、不随拖拽移动 =====
-  WHALE_PET ? '.dshwv-root{left:auto!important;top:auto!important;right:10px!important;bottom:10px!important;transform:none!important}' : '',
-  WHALE_PET ? '.dshwv-root.dshwv-left{transform:none!important}' : '',
-  WHALE_PET ? '.dshwv-pet-min{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;padding:0 0 2px;background:rgba(32,49,112,.78);color:#fff;font-size:16px;line-height:1;cursor:pointer;pointer-events:auto;z-index:6;display:flex;align-items:center;justify-content:center;font-family:inherit}' : '',
-  WHALE_PET ? '.dshwv-pet-min:hover{background:#203170}' : '',
-  WHALE_PET ? '.dshwv-pet-actions{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:7px;pointer-events:auto;white-space:normal}' : '',
-  WHALE_PET ? '.dshwv-pet-actions button{pointer-events:auto;border:0;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;line-height:1.2;cursor:pointer;background:#203170;color:#fff;font-family:inherit}' : '',
-  WHALE_PET ? '.dshwv-pet-actions button.dshwv-pet-reject{background:#fff;color:#203170;border:1px solid #203170}' : '',
-  WHALE_PET ? '.dshwv-pet-actions button:disabled{opacity:.55;cursor:default}' : '',
-  WHALE_PET ? '.dshwv-pet-done{font-size:11px;color:#203170;margin-top:4px;white-space:nowrap}' : ''
+  '.dshwv-resempty{color:#9fb0d9;font-size:12px;padding:2px 6px}'
 ].join('\n')
 
 var styleEl = document.createElement('style')
@@ -13949,22 +13932,6 @@ body.appendChild(img)
 body.appendChild(bubbleBox)
 root.appendChild(body)
 root.appendChild(menuBtn)
-if (WHALE_PET && window.whalePet) {
-  try {
-    var petMinBtn = document.createElement('button')
-    petMinBtn.type = 'button'
-    petMinBtn.className = 'dshwv-pet-min'
-    petMinBtn.title = '收起小鲸鱼并打开 DSH'
-    petMinBtn.setAttribute('aria-label', '收起小鲸鱼并打开 DSH')
-    petMinBtn.textContent = '\u2212'
-    petMinBtn.addEventListener('pointerdown', function (e) { e.stopPropagation() })
-    petMinBtn.addEventListener('click', function (e) {
-      e.stopPropagation()
-      try { if (window.whalePet && window.whalePet.minimize) window.whalePet.minimize() } catch (err) {}
-    })
-    root.appendChild(petMinBtn)
-  } catch (err) {}
-}
 dshwBodyAppend(root)
 dshwBodyAppend(menuBox)
 
@@ -17406,55 +17373,6 @@ function bubbleRenderWaitMods(kind) {
   var cfg = {}
   try { cfg = ((usageSet || {}).events || {})[k] || {} } catch (err) { cfg = {} }
   bubbleRenderModules(usageAlertModsResolved(usageWaitLinesOf(cfg, k), null, null, null))
-  if (WHALE_PET && k === 'approval') petRenderApprovalActions()
-}
-// 桌宠窗：授权泡泡里追加「允许一次 / 拒绝」。
-// 真正点的是 DSH 主窗口里挂载的官方审批面板（主进程 IPC 转发），这里只负责触发与反馈。
-function petRenderApprovalActions() {
-  try {
-    if (!textBox) return
-    var old = textBox.querySelector('.dshwv-pet-actions')
-    if (old && old.parentNode) old.parentNode.removeChild(old)
-    var row = document.createElement('div')
-    row.className = 'dshwv-pet-actions'
-    function mk(label, cls, outcome) {
-      var b = document.createElement('button')
-      b.type = 'button'
-      b.textContent = label
-      if (cls) b.className = cls
-      b.addEventListener('pointerdown', function (e) { e.stopPropagation() })
-      b.addEventListener('click', function (e) {
-        e.stopPropagation()
-        petAnswerApproval(outcome, row, label)
-      })
-      return b
-    }
-    row.appendChild(mk('允许一次', '', 'allowed-once'))
-    row.appendChild(mk('拒绝', 'dshwv-pet-reject', 'rejected'))
-    textBox.appendChild(row)
-  } catch (err) {}
-}
-function petAnswerApproval(outcome, row, label) {
-  try {
-    if (!window.whalePet || !window.whalePet.answerApproval) return
-    var buttons = row.querySelectorAll('button')
-    for (var i = 0; i < buttons.length; i++) buttons[i].disabled = true
-    var hint = row.querySelector('.dshwv-pet-done')
-    if (!hint) { hint = document.createElement('div'); hint.className = 'dshwv-pet-done'; row.appendChild(hint) }
-    hint.textContent = '处理中…'
-    window.whalePet.answerApproval(outcome, waitPendingId).then(function (res) {
-      if (res && res.ok) {
-        hint.textContent = outcome === 'rejected' ? '已拒绝' : '已允许'
-        return
-      }
-      hint.textContent = '已打开 DSH，请在窗口里确认'
-      for (var j = 0; j < buttons.length; j++) buttons[j].disabled = false
-      try { if (window.whalePet && window.whalePet.focusMain) window.whalePet.focusMain() } catch (err) {}
-    }).catch(function () {
-      hint.textContent = '确认失败，请在 DSH 里操作'
-      for (var j = 0; j < buttons.length; j++) buttons[j].disabled = false
-    })
-  } catch (err) {}
 }
 // 并列步骤:每轮到这一步时独立按权重抽一个候选泡(不记忆上次,允许连续几轮同泡)
 function bubblePickChoiceStep(step) {
@@ -19017,13 +18935,11 @@ function hideUsageAlertBubble() {
 //    对话结束也不消失。
 function showWaitBubble(kind, p) {
   try {
-    // 桌宠窗：授权提示是"必须能看到并处理"的，不能被普通气泡开关静默关掉。
-    var petApproval = WHALE_PET && kind === 'approval'
-    if (!bubbleOn && !petApproval) return false // 全局「泡泡总开关」为假 → 一律不显示
+    if (!bubbleOn) return false // 全局「泡泡总开关」为假 → 一律不显示
     var k = (kind === 'approval') ? 'approval' : 'question'
     var cfg = waitEventCfg(k)
     // 门控：该事件总开关 + 该事件「冒泡提示」开关（任一为假都不冒泡）；pollWaitState 也会先判一次
-    if ((cfg.on === false || cfg.bubbleOn === false) && !petApproval) return false
+    if (cfg.on === false || cfg.bubbleOn === false) return false
     if (!bubbleBox || !textBox) return false
     var pid = (p && p.id) ? String(p.id) : ''
     // "正显示等待泡泡"看**场景**（权威）或已占位的队列项（次之）—— 二者取或，避免状态半同步时漏判
@@ -19501,7 +19417,6 @@ function saveConfig() {
 // 单独抽出：只写 localStorage 锚点（不碰尺寸设置）；applyAnchorPos / settle 自愈时也要用。
 // v:2 = 净距离格式（剥离避让距离），v:1 旧格式含避让距离，恢复时废弃旧格式。
 function saveAnchorPos() {
-  if (WHALE_PET) return
   try {
     var vp = viewport()
     var w = root.offsetWidth || root.getBoundingClientRect().width || 0
@@ -22101,7 +22016,6 @@ function endDrag(e, clickAllowed, cancelled) {
 // 窗口尺寸变化时：自由位置的鲸鱼按相对边框锚点重算（保持离边距离，窗口恢复原状即回原位）；
 // 贴边吸附的鲸鱼走 settle()（保持贴边）
 function applyAnchorPos() {
-  if (WHALE_PET) return false
   try {
     var a = JSON.parse(localStorage.getItem('dshw-pos') || 'null')
     if (!a || a.v !== 2 || (a.hAnchor !== 'left' && a.hAnchor !== 'right') || typeof a.hDist !== 'number' ||
@@ -22339,7 +22253,7 @@ function pollWaitState() {
         if (waitPendingId && waitPendingId === waitDismissedId) {
           // 什么都不做：既不显示，也不清 waitSeenId（同一挂起不重复响）
         } else {
-          if ((ev.bubbleOn !== false || (WHALE_PET && kind === 'approval')) && typeof showWaitBubble === 'function') showWaitBubble(kind, p)
+          if (ev.bubbleOn !== false && typeof showWaitBubble === 'function') showWaitBubble(kind, p)
         }
         // v771：**每秒都把泡泡与宿主的挂起状态对齐一次**（showWaitBubble 幂等：同类直接返回 false，
         // 不会重渲染）。旧实现只在"新 id"时才调显示，于是一旦出现瞬时不同步（换类型 / 泡泡被别的

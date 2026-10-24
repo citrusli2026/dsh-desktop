@@ -13,9 +13,12 @@ narrow:
 The shell ships a **reviewed copy of the community plugin** but mounts it only after the user enables
 "Desktop settings → Extensions → Whale companion".
 
-- **Fixed provenance**: `third_party/dsh-whale-widget` is upstream 0.4.2 plus the integration patch already
-  proposed on the upstream fork (`dsh.companion` declaration + pet-page bridge). `VENDORED.md` records the
-  branch, patch and asset terms; installers never follow npm updates for it.
+- **Upstream code untouched**: `third_party/dsh-whale-widget` is **unmodified upstream 0.4.2**. The shell
+  supplies the companion descriptor for recognised packages (`src/main/companion-compat.ts`, gated to the
+  reviewed 0.4.x line) and an adapter page served by the `dsh-desktop-controls` host
+  (`/__dsh-desktop/whale-pet`, loading the plugin's own `/dsh-whale/widget.js`). If the plugin ever declares
+  `dsh.companion` itself, that declaration wins and the adapter steps aside. `VENDORED.md` records the
+  version and asset terms; installers never follow npm updates for it.
 - **Off by default**: the `whaleWidgetEnabled` preference defaults to false. While it is off the shell does
   not hand the patch to the loader and removes the profile symlinks it owns, so the plugin manager, the
   companion list and the panel do not see it.

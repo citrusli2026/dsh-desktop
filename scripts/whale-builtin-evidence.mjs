@@ -56,10 +56,10 @@ try {
   await page.waitForTimeout(2500)
   await page.screenshot({ path: join(OUT, '03-main-whale.png') })
 
-  const pending = app.waitForEvent('window', { predicate: w => w.url().includes('/dsh-whale/pet'), timeout: 120_000 })
+  const pending = app.waitForEvent('window', { predicate: w => w.url().includes('/__dsh-desktop/whale-pet'), timeout: 120_000 })
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.minimize())
   const pet = await pending
-  await pet.locator('.dshwv-pet-min').waitFor({ state: 'visible', timeout: 60_000 })
+  await pet.locator('#dsh-companion-hide').waitFor({ state: 'visible', timeout: 60_000 })
   await pet.screenshot({ path: join(OUT, '04-pet.png'), omitBackground: true })
   const raw = await pet.screenshot({ omitBackground: true })
   const meta = await sharp(raw).metadata()

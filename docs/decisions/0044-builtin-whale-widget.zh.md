@@ -11,8 +11,11 @@
 决策：把一个**经过审阅的社区插件副本**随壳分发，但默认关闭，只在用户打开「桌面设置 → 扩展 → 小鲸鱼
 桌宠」后挂载。
 
-- **来源固定**：`third_party/dsh-whale-widget` 是上游 0.4.2 加一个已在上游 fork 提议的集成补丁
-  （`dsh.companion` 声明 + pet 页桥）；`VENDORED.md` 记录分支、补丁与素材许可，安装包不跟随 npm 更新。
+- **上游代码不改**：`third_party/dsh-whale-widget` 是**未经修改的上游 0.4.2**；壳自己提供两样东西：
+  已知包的伴随窗口描述（`src/main/companion-compat.ts`，按 0.4.x 版本门控）和由
+  `dsh-desktop-controls` 宿主提供的适配页（`/__dsh-desktop/whale-pet`，加载插件自己的
+  `/dsh-whale/widget.js`）。插件若将来自己声明 `dsh.companion`，声明优先，适配层自动让位。
+  `VENDORED.md` 记录版本与素材许可，安装包不跟随 npm 更新。
 - **默认关闭**：偏好 `whaleWidgetEnabled` 缺省 false。关闭时壳不把补丁交给加载器，并移除自己创建的
   profile 符号链接，因此插件管理器、伴随窗口与面板都看不到它。
 - **只有用户开关能挂载**：`prepareWhaleMount()` 在每次 Harness 启动时按偏好决定，**Safe Mode 一律

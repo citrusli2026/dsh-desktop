@@ -2,6 +2,7 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { COMPANION_LIMITS, parseCompanionDescriptor, type CompanionDescriptor } from './companion-policy.ts'
+import { compatCompanionDescriptor } from './companion-compat.ts'
 
 /** Package names installed directly in the active Web profile. */
 async function installedPackages(profileDir: string): Promise<string[]> {
@@ -38,9 +39,13 @@ export async function discoverCompanions(dshHome: string): Promise<CompanionDesc
   for (const name of packages) {
     try {
       const manifest = JSON.parse(await readFile(join(profileDir, 'node_modules', name, 'package.json'), 'utf8')) as {
+        version?: unknown
         dsh?: { companion?: unknown }
       }
+      // A plugin's own declaration always wins; otherwise the shell supplies
+      // one for a reviewed package version (ADR 0044).
       const descriptor = parseCompanionDescriptor(name, manifest.dsh?.companion)
+        ?? parseCompanionDescriptor(name, compatCompanionDescriptor(name, typeof manifest.version === 'string' ? manifest.version : ''))
       if (descriptor !== undefined) found.push(descriptor)
     } catch { /* missing, unreadable or damaged package */ }
   }

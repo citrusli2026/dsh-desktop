@@ -111,7 +111,10 @@ test.describe('installed plugin companion windows', () => {
         }).dshCompanion
         return [await bridge.setInteractive(false), await bridge.setInteractive(true), await bridge.setInteractive('yes' as unknown as boolean)]
       })
-      expect(interactive).toEqual([true, true, false])
+      // Linux cannot forward moves to an ignoring window, so the shell keeps
+      // the companion interactive there instead of offering click-through.
+      const clickThrough = process.platform === 'linux' ? false : true
+      expect(interactive).toEqual([clickThrough, true, false])
 
       // The bridge hides the companion and restores the main window.
       await companion.evaluate(() => (window as unknown as { dshCompanion: { focusMain(): Promise<boolean> } }).dshCompanion.focusMain())

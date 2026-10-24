@@ -1,0 +1,4926 @@
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import dns from 'node:dns'
+import { fileURLToPath } from 'node:url'
+import { createHash } from 'node:crypto'
+import https from 'node:https'
+import { exec } from 'node:child_process'
+import {
+  preciseMoney, addMoney, sumMoney, beijingDay, dayOffset,
+  observeBalance, balanceSummary, daySummary, accountingDays, reconcileBalance,
+} from './accounting.mjs'
+
+// Node 的 fetch(undici) 可能优先 IPv6：个别域名(如 open.bigmodel.cn)有 AAAA 记录但本机 IPv6 不通，
+// 会直接报 "fetch failed"（curl 会自动回退 IPv4，所以看起来正常）。统一改为 IPv4 优先。
+try { dns.setDefaultResultOrder('ipv4first') } catch (err) {}
+
+// Package root: lib/index.js -> package root. Keeps the bundle relocatable
+// when installed as a normal DSH npm plugin (node_modules or a local link).
+const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+
+// DSH home: used for the widget memory/role/audio files, since node_modules may
+// be read-only or cleaned on update.
+const DSH_HOME = process.env.DSH_HOME || path.join(os.homedir(), '.dsh')
+
+// Whale image: package-relative first (ship DSniang1/DSniang02.png in assets/),
+// legacy absolute paths as fallback.
+const IMAGE_CANDIDATES = [
+  path.join(PACKAGE_ROOT, 'assets', 'DSniang1.png'),
+  path.join(PACKAGE_ROOT, 'assets', 'DSniang02.png'),
+]
+// 自定义角色图片存放目录（第一个可写的会被使用；roles.json 存角色元数据）
+// ⭐ 2026-10-02（用户要求"并成一份"）：**用户数据的候选表一律 $DSH_HOME 优先**，开发机路径降级为兜底。
+//   原因：桌面客户端加载的是 strip 过的发布副本（只认 $DSH_HOME），而开发版宿主原先把开发机路径排在第一位
+//   ⇒ 本机上网页端与桌面端**各写各的**（实测两端同时各写一份 .dshw-usage.json / .dshw-bubble.json），
+//   互相看不到对方的改动 —— 表现就是"删掉的模块又冒出来""记账数对不上"。
+//   ⚠️ 这个常量必须在**所有**用到它的候选表之前定义（const 有 TDZ），所以放在最前面。
+//   ⚠️ `_strip-dev-paths.mjs` 会把发布副本里含开发机路径的行删掉，发布版只剩前两条 $DSH_HOME ✓
+const DATA_CANDIDATES_TAIL = [
+]
+// v790（用户要求）：菜单底部那行小字显示什么版本。
+//   · 发布版：显示当前版本（= package.json 的 version）
+//   · 开发版：显示**下一个补丁号 + beta**（例如 0.3.18 的开发版显示 0.3.19-beta），
+//     因为开发版里的改动属于"将要发布的那一版"。
+//   ⚠️ BUILD_VERSION 与下面 payload 里两处 `version: '…'` 一起由 `_bump-version.mjs` 更新；
+//   ⚠️ BUILD_CHANNEL 由 `_strip-dev-paths.mjs` 在生成发布副本时改成 'release'（发布副本不带 dev 标记）。
+const BUILD_VERSION = '0.4.2'
+const BUILD_CHANNEL = 'release'
+function versionLabelOf(version, channel) {
+  const s = String(version == null ? '' : version)
+  if (String(channel) !== 'dev') return s
+  const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(s)
+  if (!m) return s ? s + '-beta' : ''
+  return m[1] + '.' + m[2] + '.' + (Number(m[3]) + 1) + '-beta'
+}
+const VERSION_LABEL = versionLabelOf(BUILD_VERSION, BUILD_CHANNEL)
+// v793（用户要求）：点菜单底部的版号 → 「关于 / 自检」面板。这一层配套的敏感信息处理：
+//   面板与「复制诊断信息」只允许出现**白名单字段**；任何路径都先脱敏（用户名 → %USERPROFILE%、DSH 目录 → $DSH_HOME），
+//   **绝不包含** API key、账号 id、账本明细、会话内容。所有字段的组装集中在 aboutPayload()，便于审计。
+function maskPath(input) {
+  let s = String(input == null ? '' : input)
+  try {
+    // ⚠️ 顺序要紧：先替换**更长的、更具体的** DSH_HOME，再替换家目录。
+    //    反过来的话 `C:\Users\x\.dsh\...` 会先被压成 `%USERPROFILE%\.dsh\...`，$DSH_HOME 就再也匹配不到了（探针抓到过）。
+    if (DSH_HOME) {
+      s = s.split(DSH_HOME).join('$DSH_HOME')
+      s = s.split(String(DSH_HOME).replace(/\\/g, '/')).join('$DSH_HOME')
+    }
+    const home = os.homedir()
+    if (home) {
+      s = s.split(home).join('%USERPROFILE%')
+      s = s.split(home.replace(/\\/g, '/')).join('%USERPROFILE%')
+    }
+    // 兜底：任何盘符/家目录形态的用户名段
+    s = s.replace(/[A-Za-z]:\\Users\\[^\\/]+/g, '%USERPROFILE%')
+    s = s.replace(/\/(Users|home)\/[^\/]+/g, '%USERPROFILE%')
+  } catch (err) {}
+  return s
+}
+function fileFacts(file) {
+  try {
+    const st = fs.statSync(file)
+    return { bytes: st.size, mtime: st.mtimeMs }
+  } catch (err) { return null }
+}
+function firstExisting(list) {
+  for (const p of (list || [])) {
+    try { if (fs.existsSync(p)) return p } catch (err) {}
+  }
+  return ''
+}
+// ⭐ 2026-10-02（用户要求"并成一份"）：**角色图库目录也 $DSH_HOME 优先**（开发机路径降级为兜底）。
+const ROLE_DIR_CANDIDATES = [
+  path.join(DSH_HOME, 'whale-roles'),
+  path.join(DSH_HOME, 'profiles', 'web', 'whale-roles'),
+  DATA_CANDIDATES_TAIL[0] + 'whale-roles/',
+  DATA_CANDIDATES_TAIL[1] + 'whale-roles/',
+]
+const ROLE_INDEX_NAME = 'roles.json'
+const ROLE_DEFAULT_ID = 'default'
+// 自定义音频片段存放目录（每个片段一个 <id>.wav + audio.json 索引）
+const AUDIO_DIR_CANDIDATES = [
+  path.join(DSH_HOME, 'whale-audio'),
+  path.join(DSH_HOME, 'profiles', 'web', 'whale-audio'),
+  DATA_CANDIDATES_TAIL[0] + 'whale-audio/',
+  DATA_CANDIDATES_TAIL[1] + 'whale-audio/',
+]
+const AUDIO_INDEX_NAME = 'audio.json'
+// 内置预设音效组（不可删、不可改），对应 assets 里的 Ya/D 系列
+const PRESET_GROUPS = {
+  duck: { id: 'duck', name: '小黄鸭', press: 'ya1', release: 'ya2', preset: true },
+  fx1: { id: 'fx1', name: '音效1', press: 'd1', release: 'd2', preset: true },
+}
+// 内置预设片段（不可删）：传统 4 个映射到 SOUND_SETS 的 mp3，exp_orb / end_a 映射到随包发布的 wav。
+// mime 必须与文件字节一致（音频路由按它下发 Content-Type，不匹配会导致解码/听感异常）。
+const PRESET_FRAGMENTS = {
+  ya1: { id: 'ya1', name: '小黄鸭·按下', preset: true, mime: 'audio/mpeg' },
+  ya2: { id: 'ya2', name: '小黄鸭·松开', preset: true, mime: 'audio/mpeg' },
+  d1: { id: 'd1', name: '音效1·按下', preset: true, mime: 'audio/mpeg' },
+  d2: { id: 'd2', name: '音效1·松开', preset: true, mime: 'audio/mpeg' },
+  // 任务结束音的内置默认音效(随包资源,用户库缺失时回退内置文件)
+  exp_orb: { id: 'exp_orb', name: 'Minecraft·经验球', preset: true, mime: 'audio/wav' },
+  // 任务结束音 A(随包资源):原为用户音效库里的自导入片段，现作为内置预设随包发布。
+  // 显示名与用户库里同名片段一致时，前端下拉按显示名去重（内置与前端的同名条目只出现一条）。
+  end_a: { id: 'end_a', name: 'A', preset: true, mime: 'audio/wav' },
+  // v859（用户要求）：把"当前正在使用的"三个音效固化为**新的出厂默认**（随包发布，新装即此体验）
+  //   · cost_a    = 每轮消耗提示（走 taskEnd.sel）
+  //   · ask_a     = 提问提示（走 events.question.sel）
+  //   · approve_a = 授权提示（走 events.approval.sel）
+  //   与 end_a 同一套做法：原为用户音效库里的自导入片段，现作为内置预设随包发布。
+  cost_a: { id: 'cost_a', name: '每轮消耗·默认', preset: true, mime: 'audio/wav' },
+  ask_a: { id: 'ask_a', name: '提问·默认', preset: true, mime: 'audio/wav' },
+  approve_a: { id: 'approve_a', name: '授权·默认', preset: true, mime: 'audio/wav' },
+}
+// 内置片段的音频文件：包内 assets 优先，开发环境回退到 skin 目录
+const BUILTIN_FRAGMENT_FILES = {
+  exp_orb: [
+    path.join(PACKAGE_ROOT, 'assets', 'minecraft-exp-orb.wav'),
+  ],
+  // 任务结束音 A：随包发布 assets/task-end-a.wav（1.81s / 48kHz / 立体声 / 16bit PCM）
+  end_a: [
+    path.join(PACKAGE_ROOT, 'assets', 'task-end-a.wav'),
+  ],
+  // v859：三个新的出厂默认音效（随包 assets；开发环境回退到 skin 目录）
+  cost_a: [
+    path.join(PACKAGE_ROOT, 'assets', 'cost-default.wav'),
+  ],
+  ask_a: [
+    path.join(PACKAGE_ROOT, 'assets', 'ask-default.wav'),
+  ],
+  approve_a: [
+    path.join(PACKAGE_ROOT, 'assets', 'approve-default.wav'),
+  ],
+}
+// —— 自定义 API 模型（v655）：非 DeepSeek 厂商的余额 / 用量 / 提醒 ——
+// 注册表落在 $DSH_HOME/.dshw-api.json；密钥走 DSH 官方凭据（ctx.credentials），本文件不存明文。
+// ⭐ 2026-10-02（用户要求"并成一份"）：$DSH_HOME 优先（自定义 API 模型清单也属于用户数据，原先两端各存一份）。
+const API_FILE_CANDIDATES = [
+  path.join(DSH_HOME, '.dshw-api.json'),
+  path.join(DSH_HOME, 'profiles', 'web', '.dshw-api.json'),
+  DATA_CANDIDATES_TAIL[0] + '.dshw-api.json',
+  DATA_CANDIDATES_TAIL[1] + '.dshw-api.json',
+]
+const API_BUILTIN_ID = 'deepseek'
+// 「充值 / 余额校正」只属于固定的 DeepSeek（内置）：模型条目下发 canAdjustBalance，路由层再校验一次。
+// 新增厂商模板 / 手动新增的同名模型 / Kimi 等其它厂商都不会继承这个能力。
+function canAdjustBuiltinBalance(model) {
+  return !!(model && model.id === API_BUILTIN_ID && model.builtin === true && model.provider === 'deepseek')
+}
+// 内置厂商模板：balance 描述「怎么取余额」。json 路径支持 a.b[0].c；scale 为取值后的乘数。
+// 余额接口已按官方文档 / 社区参考核对（DeepSeek、OpenRouter、Kimi、阶跃、Novita、OpenAI 兼容中转站）；
+// 硅基流动的余额接口已官方下线（410），故改为「无余额接口 + /v1/models 探活」；
+// 火山方舟同理（余额/用量属火山引擎 AK/SK 签名的 OpenAPI）。其余厂商可选用 custom 手填 URL 与字段路径。
+// 厂商模板下拉的排序键（v726）：英文名直接用；中文名取首字的拼音，让中英文按 A→Z **混排**。
+// 为什么不用 localeCompare：ICU 默认把汉字排到拉丁字母之后，中文厂商会被整段甩到列表末尾。
+// 新增中文厂商时在下面补一行（键 = 厂商名首字）。
+const TPL_PINYIN_INITIAL = { 阿: 'a', 百: 'bai', 本: 'ben', 硅: 'gui', 火: 'huo', 阶: 'jie', 魔: 'mo', 腾: 'teng', 讯: 'xun', 智: 'zhi', 自: 'zi' }
+function tplSortKey(name) {
+  const s = String(name || '').trim()
+  if (!s) return ''
+  const py = TPL_PINYIN_INITIAL[s.slice(0, 1)]
+  return py || s.toLowerCase()
+}
+const API_TEMPLATES = {
+  deepseek: {
+    name: 'DeepSeek', currency: 'CNY', keyRef: 'DEEPSEEK_API_KEY', builtin: true,
+    balance: { url: 'https://api.deepseek.com/user/balance', auth: 'Bearer {key}', json: { remaining: 'balance_infos[0].total_balance' } },
+  },
+  openrouter: {
+    name: 'OpenRouter', currency: 'USD', keyRef: 'OPENROUTER_API_KEY',
+    balance: { url: 'https://openrouter.ai/api/v1/credits', auth: 'Bearer {key}', json: { total: 'data.total_credits', used: 'data.total_usage' } },
+  },
+  siliconflow_cn: {
+    name: '硅基流动（CN）', currency: 'CNY', keyRef: 'SILICONFLOW_API_KEY', noBalanceApi: true,
+    // ⚠️ 官方已下线余额接口（不是"暂时故障"）——2026-08-11 更新公告《【接口服务调整】/user/info 接口将停止服务》：
+    //   「/user/info 已无法适配平台用户账户体系，该 API 将于 2026-08-14 正式停止服务，届时接口将不再可用」，
+    //   并称「后续将适时提供账户层面的替代 API，新接口上线后将在本页面另行通知」。
+    //   截至 2026-09-14，公告页最新条目（2026.09.09）**仍未见替代 API**；CN 文档「平台系列」也只剩「获取用户模型列表」。
+    //   v724 路由实测：/v1 下未知路径 404、而 /v1/user/info 仍返 401（鉴权层）→ 路由没被摘掉，但按公告已不可用。
+    //   → 日后官方恢复或上线替代接口：把 url 与 json 字段路径填回来即可（模板只是默认值，用户可覆盖）。
+    apiNote: '官方已下线 /user/info 余额接口（2026-08-14 起停止服务；公告称后续会提供替代 API，暂未上线）→ 余额显示「—」，今日已用按会话事件估算；「测试连通性」用 /v1/models 验证 key',
+    matchIds: ['siliconflow', 'Qwen', 'deepseek-ai'],
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+    probeUrl: 'https://api.siliconflow.cn/v1/models',
+  },
+  siliconflow_en: {
+    name: '硅基流动（EN）', currency: 'USD', keyRef: 'SILICONFLOW_API_KEY', noBalanceApi: true,
+    // 同国内站：余额接口已停止服务。注意国际站文档 docs.siliconflow.com 至今仍挂着 Retrieve user info 页
+    //（文档未同步），不能据此认为接口可用 —— 以国内官方公告为准。
+    apiNote: '同国内站：/user/info 余额接口已停止服务（国际站文档尚未同步）→ 余额「—」，今日已用按会话事件估算',
+    matchIds: ['siliconflow', 'Qwen', 'deepseek-ai'],
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+    probeUrl: 'https://api.siliconflow.com/v1/models',
+  },
+  moonshot: {
+    // 大陆站：api.moonshot.cn，余额为人民币（充值 + 代金券合计）。v724 实测：200 且字段命中 ✓
+    name: 'Kimi / Moonshot（CN）', currency: 'CNY', keyRef: 'MOONSHOT_API_KEY', matchIds: ['moonshot', 'kimi'],
+    balance: { url: 'https://api.moonshot.cn/v1/users/me/balance', auth: 'Bearer {key}', json: { remaining: 'data.available_balance' } },
+    probeUrl: 'https://api.moonshot.cn/v1/models',
+  },
+  moonshot_intl: {
+    // 国际站是独立账号体系（key 不通用），余额按美元计
+    name: 'Kimi / Moonshot（国际）', currency: 'USD', keyRef: 'MOONSHOT_INTL_API_KEY',
+    balance: { url: 'https://api.moonshot.ai/v1/users/me/balance', auth: 'Bearer {key}', json: { remaining: 'data.available_balance' } },
+    probeUrl: 'https://api.moonshot.ai/v1/models',
+  },
+  stepfun: {
+    name: '阶跃星辰 StepFun', currency: 'CNY', keyRef: 'STEPFUN_API_KEY', matchIds: ['stepfun', 'step-'],
+    balance: { url: 'https://api.stepfun.com/v1/accounts', auth: 'Bearer {key}', json: { remaining: 'balance' } },
+  },
+  novita: {
+    name: 'Novita AI', currency: 'USD', keyRef: 'NOVITA_API_KEY', matchIds: ['novita'],
+    balance: { url: 'https://api.novita.ai/v3/user/balance', auth: 'Bearer {key}', json: { remaining: 'availableBalance', scale: 0.0001 } },
+  },
+  volcengine_ark: {
+    name: '火山方舟 Ark', currency: 'CNY', keyRef: 'ARK_API_KEY', noBalanceApi: true,
+    // 方舟没有「用 API key 查余额」的接口（余额/用量属于火山引擎 AK/SK 签名的 OpenAPI）。
+    // v724 实测：/api/v3/models → 200（探活可用）；/api/v3/balance → 404（无余额接口，确认）。
+    apiNote: '余额/用量需火山引擎 AK/SK 签名的 OpenAPI（或控制台）→ 余额「—」，今日已用按会话事件估算；探活用 /api/v3/models（实测可用）',
+    matchIds: ['doubao', 'ep-'],
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+    probeUrl: 'https://ark.cn-beijing.volces.com/api/v3/models',
+  },
+  // —— 订阅额度（Coding Plan）模板：kind='quota'，语义是"窗口用量% + 重置时间"，不是钱 ——
+  // 注意：这些接口只对「订阅套餐」账号有效。买 Token 包（资源包）的账号查不到额度
+  // （智谱会返回「当前用户不存在coding plan」），那种情况用模型菜单里的
+  // 「额度（订阅/资源包）」按会话 token 自动统计。
+  zhipu_glm_coding: {
+    name: '智谱 GLM Coding Plan（订阅）', currency: 'CNY', keyRef: 'ZHIPU_API_KEY', kind: 'quota',
+    quota: {
+      url: 'https://open.bigmodel.cn/api/monitor/usage/quota/limit',
+      auth: '{key}', // 智谱此接口不带 Bearer
+      // v789（issue #180/#181 修）：`data.limits[]` 是扁平条目数组，`TOKENS_LIMIT` 是条目的 `type` **值**，
+      //   且 5h 窗口不保证排在 [0]（pro 账号 [0] 是 TIME_LIMIT、max 账号 [0] 才是 TOKENS_LIMIT）
+      //   ⇒ 一律按 type(+unit) 选条目：unit=3 = 5 小时窗口、unit=6 = 周窗口；
+      //   新注册/credit 制账号的 type 是 CREDIT_LIMIT ⇒ 一并兼容。
+      json: {
+        level: 'data.level',
+        windows: [
+          { key: 'rolling', label: '5h', pick: { list: 'data.limits', types: ['TOKENS_LIMIT', 'CREDIT_LIMIT'], unit: 3 }, percent: 'percentage', resetAt: 'nextResetTime' },
+          { key: 'weekly', label: '周', pick: { list: 'data.limits', types: ['TOKENS_LIMIT', 'CREDIT_LIMIT'], unit: 6 }, percent: 'percentage', resetAt: 'nextResetTime' },
+        ],
+      },
+    },
+    probeUrl: 'https://open.bigmodel.cn/api/monitor/usage/quota/limit',
+  },
+  kimi_coding: {
+    name: 'Kimi Coding（订阅）', currency: 'CNY', keyRef: 'KIMI_CODING_KEY', kind: 'quota',
+    quota: {
+      url: 'https://api.kimi.com/coding/v1/usages',
+      auth: 'Bearer {key}',
+      json: { remain: 'usage.remaining', total: 'usage.limit', resetAt: 'usage.resetTime' },
+    },
+    probeUrl: 'https://api.kimi.com/coding/v1/usages',
+  },
+  minimax_coding: {
+    name: 'MiniMax Coding（订阅）', currency: 'CNY', keyRef: 'MINIMAX_API_KEY', kind: 'quota',
+    quota: {
+      url: 'https://api.minimaxi.com/v1/api/openplatform/coding_plan/remains',
+      auth: 'Bearer {key}',
+      json: {
+        remainPct: 'model_remains[0].current_interval_remaining_percent',
+        weeklyRemainPct: 'model_remains[0].current_weekly_remaining_percent',
+        resetAtMs: 'model_remains[0].end_time',
+      },
+    },
+    probeUrl: 'https://api.minimaxi.com/v1/api/openplatform/coding_plan/remains',
+  },
+  // OpenCode Go（订阅）：一次返回 rolling / weekly / monthly 三个窗口，值为「已用% + 重置时间」
+  // （usage.rolling|weekly|monthly.{percent,resetsAt}）。走多窗口路径 json.windows，见 fetchModelQuota。
+  // 鉴权只需 Authorization: Bearer <key>（2026-09 实测：x-api-key 单独使用返回 401，无需额外请求头）。
+  opencode_go: {
+    name: 'OpenCode Go（订阅）', currency: 'USD', keyRef: 'OPENCODE_GO_API_KEY', kind: 'quota',
+    quota: {
+      url: 'https://opencode.ai/zen/go/v1/usage',
+      auth: 'Bearer {key}',
+      json: {
+        windows: [
+          { key: 'rolling', label: '5h', percent: 'usage.rolling.percent', resetAt: 'usage.rolling.resetsAt' },
+          { key: 'weekly', label: '周', percent: 'usage.weekly.percent', resetAt: 'usage.weekly.resetsAt' },
+          { key: 'monthly', label: '月', percent: 'usage.monthly.percent', resetAt: 'usage.monthly.resetsAt' },
+        ],
+      },
+    },
+    probeUrl: 'https://opencode.ai/zen/go/v1/usage',
+  },
+  openai_compat: {
+    name: 'OpenAI 兼容中转站', currency: 'USD', keyRef: 'CUSTOM_API_KEY', needsBaseUrl: true,
+    // OneAPI / New API 一类网关的经典账单接口：额度(美元) + 已用(美分)
+    balance: {
+      url: '{base}/v1/dashboard/billing/subscription', auth: 'Bearer {key}', json: { total: 'hard_limit_usd' },
+      usage: { url: '{base}/v1/dashboard/billing/usage', auth: 'Bearer {key}', json: { used: 'total_usage', scale: 0.01 } },
+    },
+  },
+  custom: {
+    name: '自定义 HTTP', currency: 'CNY', keyRef: 'CUSTOM_API_KEY',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  // —— Codex 模式（第一期：本地会话统计）——
+  // 不查余额、不联网、不用凭据：直接读 ~/.codex/sessions 的 rollout-*.jsonl 统计 token。
+  // 好处：能覆盖「不在 DSH 里跑」的 Codex 使用；坏处：只有 token，没有金额（费用另由余额/额度口径处理）。
+  codex: {
+    name: 'Codex（本地会话）', currency: 'CNY', keyRef: '', kind: 'codex',
+    balance: { url: '', auth: '', json: { remaining: '' } },
+  },
+  // ================= v724：补齐「官方没有用 API key 查余额的接口」的常用厂商 =================
+  // 作用：① 选完自动填好 凭据名 / 币种 / 事件匹配(matchIds) / 探活地址 ②「测试连通性」可验证 key
+  // ③ 余额显示「—」，今日已用按本机会话事件估算（noBalanceApi + apiNote 会显示在面板提示里）。
+  // 说明：probeUrl 一律用各家的 OpenAI 兼容 /v1/models（官方文档形态，能否通过取决于 key 权限）。
+  openai: {
+    name: 'OpenAI', currency: 'USD', keyRef: 'OPENAI_API_KEY', noBalanceApi: true,
+    apiNote: '官方已下线 billing 余额接口，没有「用 API key 查余额」的公开接口（只能看控制台）→ 余额「—」，今日已用按会话事件估算',
+    matchIds: ['gpt', 'o1-', 'o3-', 'o4-', 'chatgpt'],
+    probeUrl: 'https://api.openai.com/v1/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  anthropic: {
+    name: 'Anthropic Claude', currency: 'USD', keyRef: 'ANTHROPIC_API_KEY', noBalanceApi: true,
+    // v791：请求头支持「分号分隔列表」后，探活这条路终于能走了 —— Anthropic 要求 x-api-key + anthropic-version 两个头。
+    //   官方**没有余额接口**（余额/用量只能去控制台或 Admin API），所以这里只提供探活与模型列表。
+    apiNote: '官方无余额接口（余额/用量见控制台，或按会话 token 估算）。探活走 /v1/models：需要 x-api-key + anthropic-version 两个请求头（v791 起支持，模板已预置）',
+    matchIds: ['claude'],
+    balance: { url: '', auth: 'x-api-key:{key};anthropic-version:2023-06-01', json: { remaining: '' } },
+    probeUrl: 'https://api.anthropic.com/v1/models',
+  },
+  gemini: {
+    name: 'Google Gemini', currency: 'USD', keyRef: 'GEMINI_API_KEY', noBalanceApi: true,
+    apiNote: '官方无余额接口（配额只在 AI Studio / Cloud 控制台）→ 余额「—」，今日已用按会话事件估算；探活用 ?key= 形式',
+    matchIds: ['gemini'],
+    probeUrl: 'https://generativelanguage.googleapis.com/v1beta/models?key={key}',
+    balance: { url: '', auth: '', json: { remaining: '' } },
+  },
+  xai: {
+    name: 'xAI Grok', currency: 'USD', keyRef: 'XAI_API_KEY', noBalanceApi: true,
+    apiNote: '官方无公开的余额查询接口（额度在 console.x.ai）→ 余额「—」，今日已用按会话事件估算',
+    matchIds: ['grok'],
+    probeUrl: 'https://api.x.ai/v1/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  groq: {
+    name: 'Groq', currency: 'USD', keyRef: 'GROQ_API_KEY', noBalanceApi: true,
+    apiNote: '官方无余额接口（免费额度/速率在控制台看）→ 余额「—」，今日已用按会话事件估算',
+    matchIds: ['llama', 'mixtral', 'qwen', 'deepseek', 'gemma', 'whisper'],
+    probeUrl: 'https://api.groq.com/openai/v1/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  mistral: {
+    name: 'Mistral AI', currency: 'USD', keyRef: 'MISTRAL_API_KEY', noBalanceApi: true,
+    apiNote: '官方无余额接口 → 余额「—」，今日已用按会话事件估算',
+    matchIds: ['mistral', 'codestral', 'magistral', 'pixtral', 'ministral'],
+    probeUrl: 'https://api.mistral.ai/v1/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  together: {
+    name: 'Together AI', currency: 'USD', keyRef: 'TOGETHER_API_KEY', noBalanceApi: true,
+    apiNote: '官方无余额接口 → 余额「—」，今日已用按会话事件估算',
+    matchIds: ['meta-llama', 'Qwen', 'deepseek', 'mistralai', 'nvidia'],
+    probeUrl: 'https://api.together.xyz/v1/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  fireworks: {
+    name: 'Fireworks AI', currency: 'USD', keyRef: 'FIREWORKS_API_KEY', noBalanceApi: true,
+    apiNote: '官方无余额接口 → 余额「—」，今日已用按会话事件估算',
+    matchIds: ['accounts/fireworks', 'llama-v3', 'qwen'],
+    probeUrl: 'https://api.fireworks.ai/inference/v1/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  deepinfra: {
+    name: 'DeepInfra', currency: 'USD', keyRef: 'DEEPINFRA_API_KEY', noBalanceApi: true,
+    apiNote: '官方无余额接口 → 余额「—」，今日已用按会话事件估算',
+    matchIds: ['meta-llama', 'Qwen', 'deepseek'],
+    probeUrl: 'https://api.deepinfra.com/v1/openai/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  cerebras: {
+    name: 'Cerebras', currency: 'USD', keyRef: 'CEREBRAS_API_KEY', noBalanceApi: true,
+    apiNote: '官方无余额接口 → 余额「—」，今日已用按会话事件估算',
+    matchIds: ['llama', 'qwen'],
+    probeUrl: 'https://api.cerebras.ai/v1/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  dashscope: {
+    name: '阿里云百炼（通义千问）', currency: 'CNY', keyRef: 'DASHSCOPE_API_KEY', noBalanceApi: true,
+    apiNote: '云厂商：余额/账单要走阿里云 AK/SK 的 OpenAPI（或控制台），API key 查不到 → 余额「—」，今日已用按会话事件估算',
+    matchIds: ['qwen', 'qwq', 'qvq'],
+    probeUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  qianfan: {
+    name: '百度千帆（文心）', currency: 'CNY', keyRef: 'QIANFAN_API_KEY', noBalanceApi: true,
+    apiNote: '云厂商：余额/账单要走百度云 AK/SK（或控制台），API key 查不到 → 余额「—」，今日已用按会话事件估算',
+    matchIds: ['ernie'],
+    probeUrl: 'https://qianfan.baidubce.com/v2/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  hunyuan: {
+    name: '腾讯混元', currency: 'CNY', keyRef: 'HUNYUAN_API_KEY', noBalanceApi: true,
+    apiNote: '云厂商：余额/账单要走腾讯云 SecretId/Key（或控制台），API key 查不到 → 余额「—」，今日已用按会话事件估算',
+    matchIds: ['hunyuan'],
+    probeUrl: 'https://api.hunyuan.cloud.tencent.com/v1/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  spark: {
+    name: '讯飞星火', currency: 'CNY', keyRef: 'SPARK_API_KEY', noBalanceApi: true,
+    apiNote: '官方无余额接口（额度在控制台）→ 余额「—」，今日已用按会话事件估算',
+    matchIds: ['spark', 'generalv', '4.0ultra'],
+    probeUrl: 'https://spark-api-open.xf-yun.com/v1/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  modelscope: {
+    name: '魔搭 ModelScope', currency: 'CNY', keyRef: 'MODELSCOPE_API_KEY', noBalanceApi: true,
+    apiNote: '官方无余额接口 → 余额「—」，今日已用按会话事件估算',
+    matchIds: ['Qwen', 'deepseek', 'MiniMax', 'glm'],
+    probeUrl: 'https://api-inference.modelscope.cn/v1/models',
+    balance: { url: '', auth: 'Bearer {key}', json: { remaining: '' } },
+  },
+  ollama: {
+    name: '本地模型（Ollama / LM Studio）', currency: 'CNY', keyRef: '', noBalanceApi: true, needsBaseUrl: true,
+    apiNote: '本地推理没有余额概念 → 余额「—」；填好 Base URL（如 http://127.0.0.1:11434/v1）后按会话事件统计 token',
+    matchIds: ['llama', 'qwen', 'gemma', 'deepseek', 'mistral', 'phi'],
+    probeUrl: '{base}/v1/models',
+    balance: { url: '', auth: '', json: { remaining: '' } },
+  },
+  zhipu_glm_coding_intl: {
+    name: '智谱 GLM Coding Plan（国际 z.ai）', currency: 'USD', keyRef: 'ZHIPU_INTL_API_KEY', kind: 'quota',
+    quota: {
+      url: 'https://api.z.ai/api/monitor/usage/quota/limit',
+      auth: '{key}', // 与国内站一样不带 Bearer
+      // v789：与国内站同一套 `data.limits[]` 结构（见 zhipu_glm_coding 的注释），一并按 type+unit 选条目
+      json: {
+        level: 'data.level',
+        windows: [
+          { key: 'rolling', label: '5h', pick: { list: 'data.limits', types: ['TOKENS_LIMIT', 'CREDIT_LIMIT'], unit: 3 }, percent: 'percentage', resetAt: 'nextResetTime' },
+          { key: 'weekly', label: '周', pick: { list: 'data.limits', types: ['TOKENS_LIMIT', 'CREDIT_LIMIT'], unit: 6 }, percent: 'percentage', resetAt: 'nextResetTime' },
+        ],
+      },
+    },
+    probeUrl: 'https://api.z.ai/api/monitor/usage/quota/limit',
+  },
+  minimax_coding_intl: {
+    name: 'MiniMax Coding（国际）', currency: 'USD', keyRef: 'MINIMAX_INTL_API_KEY', kind: 'quota',
+    quota: {
+      url: 'https://api.minimax.io/v1/api/openplatform/coding_plan/remains',
+      auth: 'Bearer {key}',
+      json: {
+        remainPct: 'model_remains[0].current_interval_remaining_percent',
+        weeklyRemainPct: 'model_remains[0].current_weekly_remaining_percent',
+        resetAtMs: 'model_remains[0].end_time',
+      },
+    },
+    probeUrl: 'https://api.minimax.io/v1/api/openplatform/coding_plan/remains',
+  },
+}
+
+// ⭐ 2026-10-02（用户要求"并成一份"）：这些**用户数据文件一律 $DSH_HOME 优先**，开发机路径降级为只读兜底。
+//   原因见上方 AUDIO_DIR_CANDIDATES 的说明（桌面端只认 $DSH_HOME，两端原先各写各的）。
+// Size memory file: prefer writable DSH home locations, then legacy fallbacks.
+const SIZE_FILE_CANDIDATES = [
+  path.join(DSH_HOME, '.dshw-size.json'),
+  path.join(DSH_HOME, 'profiles', 'web', '.dshw-size.json'),
+  DATA_CANDIDATES_TAIL[0] + '.dshw-size.json',
+  DATA_CANDIDATES_TAIL[1] + '.dshw-size.json',
+]
+// Usage ledger file (小鲸鱼记账 mode): same policy as the size file.
+const USAGE_FILE_CANDIDATES = [
+  path.join(DSH_HOME, '.dshw-usage.json'),
+  path.join(DSH_HOME, 'profiles', 'web', '.dshw-usage.json'),
+  DATA_CANDIDATES_TAIL[0] + '.dshw-usage.json',
+  DATA_CANDIDATES_TAIL[1] + '.dshw-usage.json',
+]
+// 每轮消耗 seq 持久化文件：避免插件热重载后 seq 归零导致页面把新轮次误判为旧轮次吞掉
+const TURN_FILE_CANDIDATES = [
+  path.join(DSH_HOME, '.dshw-turn.json'),
+  path.join(DSH_HOME, 'profiles', 'web', '.dshw-turn.json'),
+  DATA_CANDIDATES_TAIL[0] + '.dshw-turn.json',
+  DATA_CANDIDATES_TAIL[1] + '.dshw-turn.json',
+]
+// Sound assets: package-relative first (ship Ya1/Ya2/D1/D2.mp3 in assets/),
+// legacy absolute paths as fallback.
+const BUBBLE_FILE_CANDIDATES = [
+  // v728：发布版会删掉开发机路径（§9.4），所以这里必须有 $DSH_HOME 兜底 ——
+  // 否则清完这个数组会变成空的：泡泡配置读不了也存不了（自定义泡泡整体失效）。
+  path.join(DSH_HOME, '.dshw-bubble.json'),
+  path.join(DSH_HOME, 'profiles', 'web', '.dshw-bubble.json'),
+  DATA_CANDIDATES_TAIL[0] + '.dshw-bubble.json',
+  DATA_CANDIDATES_TAIL[1] + '.dshw-bubble.json',
+]
+// 泡泡图库(独立于角色图库):图片文件目录 + 索引
+const BUBBLE_IMG_DIR_CANDIDATES = [
+  // v728：同理必须有 $DSH_HOME 兜底 —— pickBubbleImgDir() 遍历失败还会取 [0]，
+  // 空数组会让图库上传直接报错。
+  path.join(DSH_HOME, 'whale-bubble-imgs'),
+  path.join(DSH_HOME, 'profiles', 'web', 'whale-bubble-imgs'),
+  DATA_CANDIDATES_TAIL[0] + 'whale-bubble-imgs/',
+  DATA_CANDIDATES_TAIL[1] + 'whale-bubble-imgs/',
+]
+const BUBBLE_IMG_INDEX_NAME = 'bubble-imgs.json'
+// 内置默认泡泡图(语义 id → assets 文件):面板常驻可选;全新安装无用户图库时
+// bubble-img.png 从内置清单回退加载。文件同时位于 package assets/ 与开发回退目录。
+const DEFAULT_BUBBLE_IMGS = [
+  { id: 'bimg_petpet', name: 'petpet', file: 'bubble-petpet.gif', format: 'gif' },
+  { id: 'bimg_money1', name: 'money1', file: 'bubble-money1.gif', format: 'gif' },
+]
+function bubbleImgFileCandidates(file) {
+  return [
+    path.join(PACKAGE_ROOT, 'assets', file),
+  ]
+}
+function loadBuiltinBubbleImgBytes(def) {
+  if (!def || !def.file) return null
+  for (const p of bubbleImgFileCandidates(def.file)) {
+    try {
+      const bytes = fs.readFileSync(p)
+      if (bytes && bytes.length > 0) return bytes
+    } catch (err) {}
+  }
+  return null
+}
+const SOUND_SETS = {
+  duck: { press: [path.join(PACKAGE_ROOT, 'assets', 'Ya1.mp3')], release: [path.join(PACKAGE_ROOT, 'assets', 'Ya2.mp3')] },
+  fx1: { press: [path.join(PACKAGE_ROOT, 'assets', 'D1.mp3')], release: [path.join(PACKAGE_ROOT, 'assets', 'D2.mp3')] },
+}
+function soundSetFromUrl(url) {
+  try {
+    const q = String(url || '').split('?')[1] || ''
+    const m = /(?:^|&)set=([^&]+)/.exec(q)
+    return m ? decodeURIComponent(m[1]) : ''
+  } catch (err) { return '' }
+}
+const BALANCE_URL = 'https://api.deepseek.com/user/balance'
+const BALANCE_TTL_MS = 25000
+// v781：账号登录路的兜底超时（毫秒）。DSH 账号服务自身默认 30s，太长会把前端 FETCH_TIMEOUT_MS(25s) 先耗掉。
+const ACCOUNT_FALLBACK_MS = 5000
+const RUA_GIF_CANDIDATES = [
+  path.join(PACKAGE_ROOT, 'assets', 'rua.gif'),
+]
+// DeepSeek CNY prices per million tokens: [空闲时段价, 高峰时段价].
+// 高峰时段（官方 2026-09-19 说明，见 docs 脚注 (2)）：**北京时间周一至周五（不含中国法定节假日）
+// 9:00–12:00、14:00–18:00**；其余时段 —— 包括**周末、调休上班的周末、以及中国法定节假日全天** ——
+// 一律按空闲时段计费。
+//   时间线：2026-08-17 峰谷定价正式实施 → 2026-08-23 00:00 起周末全天谷价 →
+//           2026-09-19 明确「调休上班的周末 + 法定节假日全天」也按空闲计。
+// 价格来源：官方 https://api-docs.deepseek.com/zh-cn/quick_start/pricing
+// 2026-09-10 起 Flash 系列降价：缓存命中 0.05→0.02、未命中 1.5→1、输出 4.5→4（高峰=空闲×2）。
+// 2026-09-19 复核：价格数字与上表一致（Flash 0.02/1/4 与 0.04/2/8；Pro 0.15/4.5/13.5 与 0.30/9/27），
+//           峰谷规则新增「法定节假日全天谷价」这一条，见下方 HOLIDAY_VALLEY。
+const PEAK_HOURS = [
+  [9, 12],
+  [14, 18],
+]
+// Flash（正式模型名 deepseek-flash = DeepSeek-V4.1-Flash）
+const BASE_PRICE = { hit: [0.02, 0.04], miss: [1, 2], out: [4, 8] }
+// Pro 为 Flash 的 3 倍价（官方 2026-08-17 生效）。官方 2026-09-14 公告：V4 Pro 继续提供 API 服务、
+// 计费方式保持不变——此前"9/14 12:00 起 pro 请求路由到 V4.1 Flash 并按 Flash 价计费"的安排已取消，
+// 因此这里不做按日期的降级切换。
+const PRO_PRICE = { hit: [0.15, 0.3], miss: [4.5, 9.0], out: [13.5, 27.0] }
+const PRICING = {
+  'deepseek-flash': BASE_PRICE,
+  'deepseek-v4-flash-vision-exp': BASE_PRICE, // 旧名已下线,请求由 V4.1-Flash 提供,按 Flash 价计费
+  'deepseek-v4-flash': BASE_PRICE, // 同上
+  'deepseek-v4-pro': PRO_PRICE,
+  _default: BASE_PRICE,
+}
+// 用户自定义单价（自定义 API 模型面板里填的「元/百万 token」），按 matchIds 子串匹配，优先于内置价目表
+let CUSTOM_PRICES = {}
+// 自定义单价的币种/汇率（与 CUSTOM_PRICES 同键）：单价若按美元填写，记账时按用户填的汇率换算成人民币
+let CUSTOM_PRICE_META = {}
+function customPriceMetaFor(model) {
+  const m = String(model || '').toLowerCase()
+  // 按键长降序：最长命中优先，避免短关键字（如 pro）误伤别的模型
+  for (const key of Object.keys(CUSTOM_PRICE_META).sort((a, b) => b.length - a.length)) {
+    if (key && m.indexOf(key) !== -1) return CUSTOM_PRICE_META[key]
+  }
+  return null
+}
+function priceFor(model) {
+  const m = String(model || '').toLowerCase()
+  // 自定义单价同样按键长降序匹配（与 customPriceMetaFor 保持一致）
+  for (const key of Object.keys(CUSTOM_PRICES).sort((a, b) => b.length - a.length)) {
+    if (key && m.indexOf(key) !== -1) return CUSTOM_PRICES[key]
+  }
+  for (const key of Object.keys(PRICING)) {
+    if (key === '_default') continue
+    if (m.indexOf(key) !== -1) return PRICING[key]
+  }
+  return PRICING._default
+}
+// bucket time is an epoch second; derive the Beijing local hour to pick peak vs off-peak price.
+// 2026-08-23 起（北京时间）周末（周六/周日）全天按谷价；生效时刻之前的历史
+// 分桶仍按旧规则计价，所以周末判定带生效分界。
+const WEEKEND_VALLEY_FROM_SEC = Math.floor(Date.UTC(2026, 7, 22, 16, 0, 0) / 1000) // = 北京时间 2026-08-23 00:00
+// ===== 法定节假日全天谷价（官方 2026-09-19 说明）=====
+// 依据：《国务院办公厅关于 2026 年部分节假日安排的通知》（国办发明电〔2025〕7 号，2025-11-04）
+//       + DeepSeek API 官方计费脚注「周一至周五（不含中国法定节假日）…其余时段，包括周末及
+//       中国法定节假日全天均为空闲时段」。
+// 只需列**放假**的日期：调休上班日全部落在周末（2026 年为 1/4、2/14、2/28、5/9、9/20、10/10），
+// 按"周末也算谷价"的规则本来就是谷价，无需单列。
+// ⚠️ **每年 11 月国务院发布次年安排后，必须在这里补下一年的日期**（探针 `_peak-holiday-check.mjs`
+// 会检查当年是否已覆盖并给出提醒）。
+const HOLIDAY_VALLEY = {
+  '2026-01-01': 1, '2026-01-02': 1, '2026-01-03': 1, // 元旦 1/1–1/3（1/4 周日上班）
+  '2026-02-15': 1, '2026-02-16': 1, '2026-02-17': 1, '2026-02-18': 1, '2026-02-19': 1, // 春节 2/15–2/23（9 天）
+  '2026-02-20': 1, '2026-02-21': 1, '2026-02-22': 1, '2026-02-23': 1,
+  '2026-04-04': 1, '2026-04-05': 1, '2026-04-06': 1, // 清明 4/4–4/6
+  '2026-05-01': 1, '2026-05-02': 1, '2026-05-03': 1, '2026-05-04': 1, '2026-05-05': 1, // 劳动节 5/1–5/5（5/9 周六上班）
+  '2026-06-19': 1, '2026-06-20': 1, '2026-06-21': 1, // 端午 6/19–6/21
+  '2026-09-25': 1, '2026-09-26': 1, '2026-09-27': 1, // 中秋 9/25–9/27
+  '2026-10-01': 1, '2026-10-02': 1, '2026-10-03': 1, '2026-10-04': 1, // 国庆 10/1–10/7（9/20 周日、10/10 周六上班）
+  '2026-10-05': 1, '2026-10-06': 1, '2026-10-07': 1,
+}
+// 这条规则自 2026-09-19 起生效（此前历史分桶按旧规则计价）。2026 年内落在 8/17（峰谷机制实施）
+// 与 9/19 之间没有任何"工作日的法定节假日"，所以对 2026 年的账目没有影响；次年（2027）之后
+// 整年的节假日都会走到这个分支。
+const HOLIDAY_VALLEY_FROM_SEC = Math.floor(Date.UTC(2026, 8, 18, 16, 0, 0) / 1000) // = 北京时间 2026-09-19 00:00
+// 下发给前端（挂件）的节假日清单：前端「时段倒计时」也要按节假日算下一切换点，
+// 而前端无法自己知道法定安排，所以由宿主单一来源下发。每次 /dsh-whale/balance 都会带上。
+const HOLIDAY_VALLEY_LIST = Object.keys(HOLIDAY_VALLEY).sort()
+function isHolidayValley(bjDate) {
+  try {
+    return !!HOLIDAY_VALLEY[bjDate.toISOString().slice(0, 10)]
+  } catch (err) { return false }
+}
+function isPeakTime(timeSec) {
+  if (!isFinite(Number(timeSec))) return false
+  const n = Number(timeSec)
+  const bj = new Date(n * 1000 + 8 * 3600 * 1000)
+  if (n >= WEEKEND_VALLEY_FROM_SEC) {
+    const dow = bj.getUTCDay() // 0=周日 6=周六（bj 按 UTC 读即为北京日历日）
+    if (dow === 0 || dow === 6) return false
+  }
+  // 法定节假日全天谷价（含调休放假的工作日）
+  if (n >= HOLIDAY_VALLEY_FROM_SEC && isHolidayValley(bj)) return false
+  const hour = bj.getUTCHours()
+  for (const [start, end] of PEAK_HOURS) {
+    if (hour >= start && hour < end) return true
+  }
+  return false
+}
+// 下一个峰谷切换时刻（epoch 秒）：与 isPeakTime 完全同源（含周末 + 法定节假日规则）。
+// 只需扫北京时间的小时边界 0/9/12/14/18 点；最长假期（春节 9 天）也只到第 9 天，
+// 这里扫 12 天留足余量。返回 null 表示 12 天内没有切换点（当前规则下不会发生），
+// 由前端回退到自己的本地推算。
+function nextPeakChangeAt(timeSec) {
+  const n = Number(timeSec)
+  if (!isFinite(n)) return null
+  const cur = isPeakTime(n)
+  const day0 = Math.floor((n + 8 * 3600) / 86400) * 86400 // 北京当日 00:00（在 +8h 平移坐标系里）
+  for (let d = 0; d <= 12; d++) {
+    for (const edge of [0, 9, 12, 14, 18]) {
+      const cand = day0 + d * 86400 + edge * 3600 - 8 * 3600
+      if (cand <= n + 1) continue
+      if (isPeakTime(cand) !== cur) return cand
+    }
+  }
+  return null
+}
+
+const JSON_HEADERS = {
+  'Content-Type': 'application/json; charset=utf-8',
+  'Access-Control-Allow-Origin': '*',
+  'Cache-Control': 'no-store',
+}
+
+// 浏览器端挂件代码已拆分为独立文件 whale-widget.js(与本文件同目录),
+// 不再内嵌模板字面量:可直接 node --check / IDE 高亮,改 widget 后硬刷新页面即生效(无需重启 DSH)。
+// 每次请求按 mtime 判断是否需要重读,避免常驻缓存导致改了不生效。
+const WIDGET_FILE_CANDIDATES = [
+  path.join(path.dirname(fileURLToPath(import.meta.url)), 'whale-widget.js'),
+  path.join(PACKAGE_ROOT, 'whale-widget.js'),
+  path.join(PACKAGE_ROOT, 'assets', 'whale-widget.js'),
+]
+let widgetJsCache = null // { text, mtimeMs }
+function loadWidgetJs() {
+  for (const p of WIDGET_FILE_CANDIDATES) {
+    try {
+      const st = fs.statSync(p)
+      if (widgetJsCache && widgetJsCache.mtimeMs === st.mtimeMs) return widgetJsCache.text
+      const text = fs.readFileSync(p, 'utf8')
+      widgetJsCache = { text, mtimeMs: st.mtimeMs }
+      return text
+    } catch (err) {}
+  }
+  return widgetJsCache ? widgetJsCache.text : ''
+}
+
+// —— 桌面端（Electron）结构化注入行：**内联 script 行**，不是 script-src 行（issue #154）——
+// 桌面壳的 index.html 从安装包静态 dist 直出，`tapIndex`（函数变换）永远过不去；唯一通道是
+// `webserver/index-inject` 推的结构化行，经 IPC 交给页面侧解释器逐行应用。
+// 但解释器对两种 script 行的处理**不对称**（desktop 前端 `web-boot`）：
+//   case "script":     createElement + textContent + append   —— 没有 await，**不可能"加载失败"**
+//   case "script-src": await loadScript(src)                   —— 失败即 reject，而那个 reject 会
+//                                                                reject 掉 __DSH_BOOT_READY__ ⇒ **应用起不来**
+// 再加一层：外壳把这张表在**宿主启动时收集一次**后缓存，**没有任何刷新路径** ⇒ 插件在运行期被关掉时，
+// 表里仍留着这一行，而 `/dsh-whale/*` 路由已注销 ⇒ 加载 404 ⇒ 就是 issue #154 那个
+// "desktop web: failed to load /dsh-whale/widget.js" 致命错误。
+// 所以改成内联行：由**我们自己**建 `<script src=…>` 并**吞掉** onerror —— 路由在就正常加载，
+// 路由不在就静默失败，宿主永远不会因为我们起不来。
+const DESKTOP_WIDGET_ROW_TEXT =
+  '(function(){try{var d=document.body||document.head||document.documentElement;if(!d)return;' +
+  'var s=document.createElement("script");s.src="/dsh-whale/widget.js";' +
+  's.onerror=function(){};d.appendChild(s)}catch(e){}})()'
+
+export default {
+  name: 'whale-balance-widget',
+  // v758：**有意去掉对象级 `inject: ['webServer','credentials','connection']`**（issue #154 的隐患面）。
+  // 对象级 inject 会把整个 apply() 推迟到三个服务就绪之后；而桌面端的注入表是**宿主启动时一次性
+  // 收集**的（`dsh-desktop-host`：`collectIndexInjections()` → IPC → 渲染层），订阅一旦晚于那次收集，
+  // 这一行就永远进不了表 = 桌面端挂件完全不出现（#152/#153 那位报告人无法稳定复现的正是这个竞态）。
+  // 现在 apply() 立刻执行、**第一件事就是注册注入行**（它不依赖任何服务），其余逻辑原样放进
+  // `root.inject([...], cb)` 局部等待 —— 语义与原来的对象级 inject 等价，但行的注册不再被推迟。
+  apply(root) {
+    const rowDisposers = []
+    root.effect(() => () => { for (const d of rowDisposers) { try { d() } catch (err) {} } })
+    // ① 结构化注入行：桌面端唯一能生效的通道（web 形态另有 tapIndex，两条并存、各自去重）
+    rowDisposers.push(root.on('webserver/index-inject', (table) => {
+      try {
+        if (!Array.isArray(table)) return
+        for (const row of table) {
+          if (!row) continue
+          if (row.kind === 'script-src' && row.src === '/dsh-whale/widget.js') return // 旧版本推过 → 不重复
+          if (row.kind === 'script' && typeof row.text === 'string'
+            && row.text.indexOf('/dsh-whale/widget.js') >= 0) return
+        }
+        table.push({ kind: 'script', placement: 'body', text: DESKTOP_WIDGET_ROW_TEXT })
+      } catch (err) {}
+    }))
+
+    // ② 其余逻辑：等齐三个服务后再跑（等价于原来的对象级 inject，但不再挡住 ①）
+    root.inject(['webServer', 'credentials', 'connection'], (ctx) => {
+    // —— 浏览器信任栅栏（issue #92 建立，issue #136 补 fail-closed）——
+    // dsh 的 connection 服务提供 requestRejection(req)：Host/Origin 被伪造（DNS 重绑定）或未认证的
+    // 请求必须被拒。**但这个方法在较老的 dsh 上不存在**（#136 实测：0.1.5-rc.2/rc.3 有、0.1.0-rc.3 没有），
+    // 而旧实现在"服务缺失"与"栅栏自己抛异常"两条路径上都是 fail-open（放行）—— 于是 22 条 /dsh-whale/*
+    // 路由会**集体**失去校验：伪造 Host 可读写、普通跨站 POST 可直接写配置，而 api-models.json 还连着
+    // ctx.credentials（可 set/delete key）。现在改成三层：
+    //   ① **插件自己的轻量校验**（永远先跑；正常浏览器与本地脚本都不受影响）：
+    //      Host 必须是回环权威或 DSHW_TRUSTED_HOSTS 里显式声明的，`Sec-Fetch-Site: cross-site` 一律拒，
+    //      带 Origin 时必须与 Host 同源；
+    //   ② 宿主栅栏可用 → **委托**它（不重写它的语义：它里面还有一层浏览器鉴权 401），返回码照用；
+    //      **它抛异常则按拒绝处理**（旧实现这条路径静默放行，且连 warn 都没有）；
+    //   ③ 宿主栅栏不可用 → 只靠 ①，并在**插件加载时**就打一条醒目 warn（不是等第一次请求才打）。
+    const TRUSTED_AUTHORITIES = String(process.env.DSHW_TRUSTED_HOSTS || '')
+      .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+    // 只认回环：localhost / *.localhost / 127.0.0.0/8（逐段校验，防 `127.0.0.1.evil.com` 这类相似域名）/ ::1
+    function isLoopbackHostname(hn) {
+      const h = String(hn || '').toLowerCase().replace(/^\[/, '').replace(/\]$/, '')
+      if (!h) return false
+      if (h === 'localhost' || h.endsWith('.localhost')) return true
+      if (h === '::1') return true
+      const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h)
+      if (!m) return false
+      if (Number(m[1]) !== 127) return false
+      return [m[2], m[3], m[4]].every((x) => Number(x) <= 255)
+    }
+    // 通过 → null；否则返回应当拒绝的状态码。
+    // opts.fenceAvailable：宿主栅栏此刻可用时，**非回环 Host 交给它判** —— 它知道 dsh 自己的
+    // `--trusted-host` 声明了谁；我们只在"确实没有栅栏"时才回落到 DSHW_TRUSTED_HOSTS。
+    // （0.3.11 把自校验放在委托之前，导致宿主已信任的权威在插件这边被 403，见 issue #136 后续的 A/B。）
+    function selfRejection(req, opts) {
+      try {
+        const headers = (req && req.headers) || {}
+        let hostUrl = null
+        try { hostUrl = new URL('http://' + String(headers.host || '')) } catch (err) { return 403 } // 缺 Host / 畸形 → 拒
+        const hostname = hostUrl.hostname
+        const authority = hostUrl.host
+        if (!isLoopbackHostname(hostname)) {
+          const listed = TRUSTED_AUTHORITIES.some((e) => (e.indexOf(':') >= 0 ? e === authority.toLowerCase() : e === hostname.toLowerCase()))
+          const fenceAvailable = !!(opts && opts.fenceAvailable)
+          if (!listed && !fenceAvailable) return 403
+        }
+        // 下面两条与"信任列表"无关，任何情况下都执行：跨站标记、Origin 与 Host 不同源。
+        const site = String(headers['sec-fetch-site'] || '').toLowerCase()
+        if (site === 'cross-site') return 403
+        const origin = headers.origin
+        if (typeof origin === 'string' && origin && origin !== 'null') {
+          let originUrl = null
+          try { originUrl = new URL(origin) } catch (err) { return 403 }
+          if (originUrl.host.toLowerCase() !== authority.toLowerCase()) return 403
+        }
+        return null
+      } catch (err) { return 403 } // 校验器自身出错 → 拒绝（fail-closed）
+    }
+    function connectionFence() {
+      try {
+        const conn = ctx.get('connection') || ctx.connection
+        return conn && typeof conn.requestRejection === 'function' ? conn : null
+      } catch (err) { return null }
+    }
+    if (!connectionFence()) {
+      try {
+        console.warn('[whale-balance] 宿主信任栅栏不可用（connection.requestRejection 缺失）：已启用插件自带的回环/同源校验，'
+          + '所有路由（含写接口）仍受它保护；若本机 dsh 部署在非回环地址（反代/局域网），请用环境变量 '
+          + 'DSHW_TRUSTED_HOSTS 声明允许的 Host（逗号分隔，可带端口）。')
+      } catch (err) {}
+    }
+    // v761（安全修复 S1）：**写请求（POST/PUT/PATCH/DELETE）必须来自本机（回环）**。
+    // 为什么：任意持有 DSH Web 会话的人都能 `POST /dsh-whale/api-models.json` 写一个自定义模型，
+    // 而余额 / 探活 / 额度会**带着解析出来的真实凭据**去请求模型里那个 URL ⇒ 凭据外带。
+    // 「改配置」等于「决定把凭据发往哪里」，所以它必须与"坐在这台机器前"绑定；
+    // **只读接口不受影响**（局域网里仍能正常看挂件）。
+    // 运维若确实需要远端管理，显式声明 DSHW_ADMIN_HOSTS（逗号分隔，可带端口），默认为空。
+    const ADMIN_AUTHORITIES = String(process.env.DSHW_ADMIN_HOSTS || '')
+      .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+    const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+    function writeRejection(req) {
+      try {
+        const method = String((req && req.method) || 'GET').toUpperCase()
+        if (!WRITE_METHODS.has(method)) return null
+        const headers = (req && req.headers) || {}
+        let hostUrl = null
+        try { hostUrl = new URL('http://' + String(headers.host || '')) } catch (err) { return 403 }
+        if (isLoopbackHostname(hostUrl.hostname)) return null
+        const authority = hostUrl.host.toLowerCase()
+        const hostname = hostUrl.hostname.toLowerCase()
+        if (ADMIN_AUTHORITIES.some((e) => (e.indexOf(':') >= 0 ? e === authority : e === hostname))) return null
+        if (!writeRejection.warned) {
+          writeRejection.warned = true
+          try {
+            console.warn('[whale-balance] 已拒绝一个来自非本机的**写请求**（Host=' + authority + '）。'
+              + '自 0.3.15 起，配置与凭据的改动只能在**本机**（回环地址）打开界面进行 —— '
+              + '否则任何拿到 Web 会话的人都能把凭据改指向自己的服务器，从而把真实 API key 带走。'
+              + '确需远端管理，请用环境变量 DSHW_ADMIN_HOSTS 声明允许的管理主机。')
+          } catch (err) {}
+        }
+        return 403
+      } catch (err) { return 403 } // 自身出错 → 拒绝（fail-closed）
+    }
+    function rejected(req, res) {
+      const deny = (code) => {
+        try { res.statusCode = code || 403; res.end() } catch (err) {}
+        return true
+      }
+      const conn = connectionFence()
+      // 先算栅栏可用性，再自校验：非回环 Host 在"栅栏可用"时交给栅栏判（它知道 --trusted-host）
+      const self = selfRejection(req, { fenceAvailable: !!conn })
+      if (self !== null) return deny(self)
+      // v761（安全修复 S1）：写完再放行 —— 读请求不受影响
+      const write = writeRejection(req)
+      if (write !== null) return deny(write)
+      if (!conn) return false // 已通过自校验；此刻没有宿主栅栏可委托（加载时已 warn）
+      let code
+      try {
+        code = conn.requestRejection(req)
+      } catch (err) {
+        // 旧实现这里是 `return false`：栅栏自己抛异常被当成"没被拒"而静默放行（#136 的第二条路径）
+        if (!rejected.warned) {
+          rejected.warned = true
+          try { console.warn('[whale-balance] 信任栅栏抛异常，已按拒绝处理：' + String((err && err.message) || err)) } catch (e2) {}
+        }
+        return deny(403)
+      }
+      if (code === undefined || code === null || code === false) return false
+      return deny(typeof code === 'number' ? code : 403)
+    }
+    // 统一注册入口：所有路由自动套上信任栅栏
+    function registerRoute(route) {
+      const inner = route && route.handler
+      const wrapped = Object.assign({}, route, {
+        handler: async (req, res) => {
+          if (rejected(req, res)) return
+          return inner(req, res)
+        },
+      })
+      return ctx.webServer.register(wrapped)
+    }
+    let imageBytes = null
+    let balanceCache = null
+    let balanceInFlight = null
+    let gifBytes = null
+    // 每轮对话消耗统计：按 (session.id, turn) 分桶聚合，完成后写入 lastTurn。
+    // 用 Map 分桶避免主会话与子代理（spawn/fork）并行时串账。
+    let turnAggs = new Map() // sessionId -> { turn, cost, tokens, byModel, byModelTokens, lastTs }
+    let lastTurn = null // { turn, amount, tokens, ts }
+    let lastTurnSeq = 0
+    const disposers = []
+
+    // 持久化 seq：热重载/重启后 seq 继续递增，前端不会把新轮次误判为旧轮次
+    function readTurnSeq() {
+      for (const p of TURN_FILE_CANDIDATES) {
+        try {
+          const parsed = JSON.parse(fs.readFileSync(p, 'utf8'))
+          if (parsed && typeof parsed.seq === 'number' && parsed.seq >= 0) return parsed.seq
+        } catch (err) {}
+      }
+      return 0
+    }
+    function writeTurnSeq(seq) {
+      const body = JSON.stringify({ seq, updatedAt: new Date().toISOString() })
+      for (const p of TURN_FILE_CANDIDATES) {
+        try { fs.writeFileSync(p, body, 'utf8'); return } catch (err) {}
+      }
+    }
+    lastTurnSeq = readTurnSeq()
+
+    function finalizeTurn(sessionId) {
+      const agg = turnAggs.get(sessionId)
+      if (agg && agg.cost > 0) {
+        // v862/v862b：子智能体的会话**照常记账**（金额与用量事件都写），
+        //   只在「子智能体完成时不提示」开着时跳过 lastTurnSeq ⇒ 前端不会因为它响提示音。
+        const isSub = subagentSessions.has(String(sessionId || '')) && subagentMuteOn()
+        lastTurn = { turn: agg.turn, amount: agg.cost, tokens: agg.tokens, ts: agg.lastTs }
+        if (!isSub) {
+          lastTurnSeq++
+          writeTurnSeq(lastTurnSeq)
+        }
+        // 按模型拆分写入用量事件(模型明细的唯一来源)
+        const byModel = agg.byModel || {}
+        const byModelTokens = agg.byModelTokens || {}
+        const modelNames = Object.keys(byModel)
+        if (modelNames.length) {
+          for (const mname of modelNames) {
+            appendUsageEvent({ ts: agg.lastTs, model: mname, cost: byModel[mname], tokens: byModelTokens[mname] || 0 })
+            // 自定义模型：按 matchIds 归属到注册表里的模型（余额差不可用时作为该模型的今日已用兜底）
+            apiAttributeEvent(mname, byModel[mname], byModelTokens[mname] || 0)
+          }
+        } else {
+          appendUsageEvent({ ts: agg.lastTs, model: '未知', cost: agg.cost, tokens: agg.tokens })
+        }
+      }
+      turnAggs.delete(sessionId)
+    }
+    // 监听会话事件流：assistant/message 携带每步真实 usage，按 (session,turn) 聚合；
+    // turn/end 时结算该会话本轮并写入 lastTurn
+    function handleSessionEvent(sessionId, event) {
+      try {
+        const type = event && event.type
+        const d = event && event.data
+        if (!d || typeof d !== 'object') return
+        if (type === 'turn/end') {
+          finalizeTurn(sessionId)
+          return
+        }
+        if (type !== 'assistant/message') return
+        const turn = Number(d.turn)
+        const usage = d.usage
+        if (!usage || typeof usage !== 'object' || !isFinite(turn)) return
+        let agg = turnAggs.get(sessionId)
+        if (!agg || agg.turn !== turn) {
+          if (agg) finalizeTurn(sessionId)
+          agg = { turn, cost: 0, tokens: 0, byModel: {}, byModelTokens: {}, lastTs: Date.now() }
+          turnAggs.set(sessionId, agg)
+        }
+        const input = Number(usage.inputTokens) || 0
+        const cache = Number(usage.cacheReadTokens) || 0
+        const output = Number(usage.outputTokens) || 0
+        // 口径修正（issue #89 / PR #83）：dsh 保证 reasoningTokens ⊆ outputTokens
+        // （见 dsh-token-meter 的校验 reasoningTokens > outputTokens 即判非法），
+        // 所以 reasoning 不能再单独累加 —— 否则输出侧按输出价被重复计费（实测偏高约一倍）。
+        const outputBilled = output // DSH outputTokens already includes reasoningTokens.
+        const toks = input + cache + outputBilled
+        agg.tokens += toks
+        // 定价换算（CNY/百万 token；缓存命中=输入价，其余按各自档位），并按模型拆分
+        const model = d.message && d.message.source ? d.message.source.model : ''
+        // 每轮结算前刷新一次自定义单价（10 秒节流），让自定义 API 模型用用户填的价格计费
+        try { refreshCustomPrices() } catch (err) {}
+        const p = priceFor(model)
+        const off = isPeakTime(Math.floor(Date.now() / 1000)) ? 1 : 0
+        let costMsg = (cache / 1e6) * p.hit[off] + (input / 1e6) * p.miss[off] + (outputBilled / 1e6) * p.out[off]
+        // 自定义单价若按美元填写，按用户填的汇率换算成人民币（账本统一按 CNY 记账）
+        try {
+          const meta = customPriceMetaFor(model)
+          if (meta && meta.cur === 'USD' && Number(meta.rate) > 0) costMsg = costMsg * Number(meta.rate)
+        } catch (err) {}
+        agg.cost = addMoney(agg.cost, costMsg)
+        if (model) {
+          agg.byModel[model] = addMoney(agg.byModel[model] || 0, costMsg)
+          agg.byModelTokens[model] = (agg.byModelTokens[model] || 0) + toks
+        }
+        agg.lastTs = Date.now()
+      } catch (err) {}
+    }
+
+    // v761（issue #161 / 全局音效设置）：**等待用户交互**的挂起状态。
+    // 为什么需要它：`ask_user_question` 是一次**挂起**的工具调用 —— 模型发出后 DSH 追加 `tool/call`
+    // 然后等你点，等待期间 `last-turn.json` 的 `seq` 不变、`turn/end` 也不会来，所以「任务结束音」
+    // 覆盖不到这两个时刻；`turn/end.reason` 里也没有可用信号（`blocked` 是 agent-loop preStep 被 reject，
+    // 与用户提问无关）。只保留**最新**一条挂起，不做多会话队列（子代理不允许提问，授权并发极少）。
+    const waitState = { pending: null, sessionName: "" }
+    const WAIT_QUESTION_TOOL = 'ask_user_question'
+    // v761：对话名的**权威来源** —— DSH 的 `sessionTitle` 服务。
+    // `sessionTitle.get(session)` 是「折叠会话日志」得来的（其文档原话：Read the latest folded title
+    // from one live or replayed session）⇒ **对本插件启动之前就已写入的标题同样有效**，
+    // 而只监听 `session/title` 事件只能拿到"启动之后新增/更新"的标题。
+    // 全程判空 + try/catch：老宿主没有这个服务时静默回落，绝不因此影响挂起跟踪。
+    function titleFromService(session) {
+      try {
+        const svc = typeof ctx.get === 'function' ? ctx.get('sessionTitle') : null
+        if (!svc || typeof svc.get !== 'function' || !session) return ''
+        const snap = svc.get(session)
+        const ti = typeof snap === 'string' ? snap : (snap && (snap.title || snap.text))
+        return String(ti == null ? '' : ti).trim().slice(0, 120)
+      } catch (err) { return '' }
+    }
+
+    function pickSessionName(session) {
+      try {
+        if (!session || typeof session !== 'object') return ''
+        const cands = [session.name, session.title, session.label,
+          session.summary && session.summary.title, session.summary && session.summary.name,
+          session.meta && session.meta.title, session.meta && session.meta.name]
+        for (const c of cands) { const s = String(c == null ? '' : c).trim(); if (s) return s.slice(0, 120) }
+      } catch (err) {}
+      return ''
+    }
+    // 提取 callId / approval id（字段位置随 DSH 版本略有差异，全都兜一遍）
+    function eventCallId(event) {
+      try {
+        const d = (event && event.data) || {}
+        const msg = d.message || {}
+        const list = Array.isArray(msg.content) ? msg.content : []
+        for (const c of list) if (c && (c.toolCallId || c.tool_call_id)) return String(c.toolCallId || c.tool_call_id)
+        // DSH 实际把 callId 放在 event.data.message.callId 上（tool/result 的 payload 是 {turn,step,message}）。
+        // 读出它能让「按 callId 精确解除」生效；读不到时下面的兜底逻辑仍会清空挂起
+        // （挂起期间那一轮正卡在等用户回答，不会有别的 tool/result）。
+        if (msg && (msg.callId || msg.toolCallId || msg.tool_call_id)) return String(msg.callId || msg.toolCallId || msg.tool_call_id)
+        return String(d.callId || d.call_id || d.toolCallId || d.id || '')
+      } catch (err) { return '' }
+    }
+    function notePendingEvent(sid, event, session) {
+      try {
+        const type = String((event && event.type) || '')
+        const data = (event && event.data) || {}
+        const now = Date.now()
+        // v761：**对话名**有两个来源 —— ① `session/title` 事件（DSH 会话标题本身就是一条日志事件：
+        //   `session.append("session/title", { title, messageSeqs, source })`，投影键 title 由它折叠而来；
+        //   本插件已监听 session/event ⇒ 直接取 event.data.title，不需要任何新服务）；
+        //   ② `session` 对象上的 name/title 等字段（不同 DSH 版本可能有、也可能没有）。
+        //   ⚠️ 必须放在 type/data 声明**之后** —— 放前面会撞 const 的暂时性死区（TDZ），
+        //   抛 ReferenceError 后被外层 try/catch 静默吞掉 ⇒ 整个挂起跟踪失效（本批真踩过）。
+        if (type === 'session/title') {
+          const ti = String(data.title == null ? '' : data.title).trim()
+          if (ti) waitState.sessionName = ti.slice(0, 120)
+          return
+        }
+        // 三个来源，按可靠性排序：① sessionTitle 服务（可折叠日志，含启动前的标题）
+        // ② session/title 事件（启动后新增/更新）③ session 对象字段（版本相关，兜底）
+        const svcName = titleFromService(session)
+        if (svcName) waitState.sessionName = svcName
+        else {
+          const name = pickSessionName(session)
+          if (name) waitState.sessionName = name
+        }
+        if (type === 'tool/call' && String(data.name || data.toolName || '') === WAIT_QUESTION_TOOL) {
+          waitState.pending = { kind: 'question', id: eventCallId(event) || ('q' + now), ts: now, session: sid }
+          return
+        }
+        if (type === 'tool/result') {
+          if (waitState.pending && waitState.pending.kind === 'question') {
+            const cid = eventCallId(event)
+            if (!cid || cid === waitState.pending.id) waitState.pending = null
+          }
+          return
+        }
+        if (type === 'approval/asked') {
+          waitState.pending = { kind: 'approval', id: String(data.id || ('a' + now)), ts: now, session: sid }
+          return
+        }
+        if (type.indexOf('approval/') === 0) {
+          if (waitState.pending && waitState.pending.kind === 'approval') {
+            const id2 = String(data.id || '')
+            if (!id2 || id2 === waitState.pending.id) waitState.pending = null
+          }
+          return
+        }
+        if (type === 'turn/end' || type === 'turn/start') waitState.pending = null
+      } catch (err) {}
+    }
+
+    // v862（用户实测确认：跑一次子智能体，last-turn 的 seq 会 +1 ⇒ 前端跟着响"任务结束音"）——
+    //   机制：finalizeTurn(sessionId) 对**每个 session 的 turn/end** 都推进 lastTurnSeq，
+    //   子智能体跑完自己的 turn 同样让 seq 变大 ⇒ 响。实测：seq 362 →（子智能体跑完）→ 363。
+    //   区分依据（DSH Host Event 契约，已用 Inspector 核对）：
+    //     'subagent/start'(info: SubagentRunInfo)   info = { runId, provider, id: SessionId, local }
+    //     'subagent/end'(info: SubagentRunEndInfo)  info = { runId, provider, id, local, stopReason, … }
+    //   ⇒ 子会话 id = info.id。
+    // v862b（用户要求）：做成**设置项**「子智能体完成时不提示」（键 = settings.subagent.mute，默认 true）。
+    let subagentMuteCache = { at: 0, val: true }
+    function subagentMuteOn() {
+      try {
+        const now = Date.now()
+        if (now - subagentMuteCache.at < 2000) return subagentMuteCache.val
+        const s = readUsageSettings() || {}
+        const sg = (s && typeof s.subagent === 'object' && s.subagent) ? s.subagent : {}
+        subagentMuteCache = { at: now, val: sg.mute !== false } // 缺省 = 不提示
+      } catch (err) {
+        subagentMuteCache = { at: Date.now(), val: true }
+      }
+      return subagentMuteCache.val
+    }
+    const subagentSessions = new Set()
+    const SUBAGENT_ID_MAX = 500
+    function rememberSubagentSession(info) {
+      try {
+        const id = info && info.id ? String(info.id) : ''
+        if (!id || subagentSessions.has(id)) return
+        if (subagentSessions.size >= SUBAGENT_ID_MAX) {
+          const keep = Array.from(subagentSessions).slice(-Math.floor(SUBAGENT_ID_MAX / 2))
+          subagentSessions.clear()
+          for (const k of keep) subagentSessions.add(k)
+        }
+        subagentSessions.add(id)
+      } catch (err) {}
+    }
+    try { disposers.push(ctx.on('subagent/start', (info) => rememberSubagentSession(info))) } catch (err) {}
+    try { disposers.push(ctx.on('subagent/end', (info) => rememberSubagentSession(info))) } catch (err) {}
+
+    // 监听所有会话的追加事件；按会话 id 分桶，turn/end 时结算该会话本轮
+    disposers.push(ctx.on('session/event', (session, event) => {
+      const sid = session && session.id ? session.id : 'default'
+      handleSessionEvent(sid, event)
+      notePendingEvent(sid, event, session)
+    }))
+    // 会话销毁时清理残留聚合，避免内存泄漏
+    disposers.push(ctx.on('session/disposed', (session) => {
+      if (session && session.id) turnAggs.delete(session.id)
+    }))
+
+    function loadGif() {
+      if (gifBytes) return gifBytes
+      for (const p of RUA_GIF_CANDIDATES) {
+        try {
+          const bytes = fs.readFileSync(p)
+          if (bytes && bytes.length > 0) {
+            gifBytes = bytes
+            return bytes
+          }
+        } catch (err) {}
+      }
+      throw new Error('rua gif not found')
+    }
+
+    function loadImage() {
+      if (imageBytes) return imageBytes
+      for (const p of IMAGE_CANDIDATES) {
+        try {
+          const bytes = fs.readFileSync(p)
+          if (bytes && bytes.length > 0) {
+            imageBytes = bytes
+            return bytes
+          }
+        } catch (err) {}
+      }
+      throw new Error('whale image not found')
+    }
+
+    function pickBalanceInfo(infos) {
+      if (!Array.isArray(infos) || infos.length === 0) return null
+      const num = (x) => (x && x.total_balance !== undefined ? Number(x.total_balance) : NaN)
+      return (
+        infos.find((x) => x && x.currency === 'CNY' && num(x) > 0) ||
+        infos.find((x) => num(x) > 0) ||
+        infos.find((x) => x && x.currency === 'CNY') ||
+        infos[0]
+      )
+    }
+
+    // v759（issue #157）：**DSH 账号登录态**的余额路径。
+    // 只通过 DSH 账号登录的用户没有 API key，余额在 DeepSeek 平台的账号接口上。
+    // **不要自己拼 HTTP**：token 注入、5 个 `x-client-*` 头、401/`40003` 失效清理全部由 DSH 的
+    // `deepseekAccount` 服务负责（DSH 自己的「账号与余额」设置卡片就是 `ctx.deepseekAccount.getBalance(client)`）。
+    // ⚠️ 必须用 `ctx.get('deepseekAccount')` 读**可选服务**，**绝不能写进 inject** —— 老宿主根本没有这个服务，
+    //    一旦进 inject，整个插件会永远等不到服务而**完全不 apply**（比没有这个功能严重得多）。
+    // ⚠️ 与 API key 路径**互不干扰**（API key 永远优先；DSH 自己的注释也是 "Neither route falls back to the other"）。
+    // v781：账号余额路的失败原因（只用于错误文案，不参与任何判定）。fetchAccountBalance 每次开头清空。
+    let accountDiag = ''
+    async function fetchAccountBalance() {
+      let account = null
+      accountDiag = ''
+      try { account = typeof ctx.get === 'function' ? ctx.get('deepseekAccount') : null } catch (err) { account = null }
+      if (!account || typeof account.getBalance !== 'function') { accountDiag = '当前 DSH 没有账号服务'; return null }
+      // 账户标识：优先用账号服务给的稳定 id（不同账号 → 不同账本 scope）；取不到就退回固定标识。
+      // 一律 sha256[:24] 十六进制 —— accounting.mjs 校验 scope 必须匹配 /^[a-zA-Z0-9_-]{1,80}$/
+      // （带冒号这种可读写法会直接抛「账户标识无效」，见 issue #157 报告人踩的坑 1）。
+      let accountId = null
+      try {
+        const state = typeof account.getState === 'function' ? account.getState() : null
+        accountId = (state && (state.userId || (state.profile && state.profile.userId))) || null
+      } catch (err) { accountId = null }
+      let result
+      try {
+        result = await account.getBalance({
+          version: String(process.env.DSH_CLIENT_VERSION || process.env.DSH_VERSION || '') || 'unknown',
+          locale: String(process.env.DSH_LOCALE || '') || 'zh_CN',
+          timezoneOffsetSeconds: -new Date().getTimezoneOffset() * 60, // 东为正的整秒
+        })
+      } catch (err) {
+        accountDiag = '账号余额接口调用失败: ' + String((err && err.message) || err).slice(0, 120)
+        return null
+      }
+      // 未登录 / 没有 grant / 平台失败 → 一律返回 null，让调用方退回原来的文案（**不缓存错误**）
+      // v781：失败时记下**原因**（accountDiag），供 fetchBalance 把两条路的原因一起报给界面 ——
+      //   以前只有一个笼统的"账号余额不可用"，用户/支持方分不清"没登录"和"接口失败"。
+      if (!result) { accountDiag = '未登录 DeepSeek 账号（没有账号凭据）'; return null }
+      if (result.status !== 'ready') { accountDiag = '账号余额接口未就绪（' + String(result.status || 'unknown') + '）'; return null }
+      const accNum = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null }
+      // v781：**"充值钱包为空、只有赠金"必须算成功** —— 这是"只登录客户端读不到余额"的主因。
+      //   平台把钱包拆成 `normal_wallets`（充值）与 `bonus_wallets`（赠金）；新用户/没充过值的用户
+      //   常常**只有赠金**（甚至 normal_wallets 是空数组）⇒ 旧代码要求 `result.value` 非空，
+      //   直接把这类账号判成"没有余额钱包"，界面就只显示"读取不到余额"。
+      //   判据对齐 DSH 自己的账号卡片（dsh-client-ui-settings-account）：
+      //     `[...balance.value, ...balance.bonusWallets].some(w => new Big(w.balance).gt(0))`
+      //   —— 两个钱包一起看，不再单看充值钱包。
+      const normRaw = Array.isArray(result.value) ? result.value : []
+      const bonusRaw = Array.isArray(result.bonusWallets) ? result.bonusWallets : []
+      const usable = (list) => list.filter((w) => w && accNum(w.balance) !== null)
+      const normWallets = usable(normRaw)
+      const bonusWallets = usable(bonusRaw)
+      const allWallets = normWallets.concat(bonusWallets)
+      if (allWallets.length === 0) {
+        // 两边都没有可用钱包 = 真的没有数据（未激活/账号没有任何钱包），不是"余额 0"
+        accountDiag = normRaw.length || bonusRaw.length ? '钱包字段不可用' : '账号没有余额钱包'
+        return null
+      }
+      // 币种：优先「有余额的那个钱包」的币种（CNY 优先），其次任何 CNY 钱包，最后第一个
+      const curOf = (w) => String((w && w.currency) || 'CNY').toUpperCase()
+      const nonzero = allWallets.filter((w) => Number(w.balance) > 0)
+      const curPick = nonzero.find((w) => curOf(w) === 'CNY') || nonzero[0]
+        || allWallets.find((w) => curOf(w) === 'CNY') || allWallets[0]
+      const currency = curOf(curPick)
+      const sumOf = (list) => list
+        .filter((w) => w && curOf(w) === currency && accNum(w.balance) !== null)
+        .reduce((s, w) => s + Number(w.balance), 0)
+      const recharge = sumOf(normWallets)
+      const bonus = sumOf(bonusWallets)
+      accountDiag = ''
+      return {
+        ok: true,
+        // 充值 + 赠金：与 API key 路径的 `total_balance` 同口径（那个字段本身也是两者相加），
+        // 否则"按余额差"推算的今日已用会偏小（issue #157 报告人的坑 2）。
+        totalBalance: Number((recharge + bonus).toFixed(6)),
+        // v781：两个分量单独下发，供「赠金 / 账户余额」两个自定义模块使用（见 SPEC §25）
+        rechargeBalance: Number(recharge.toFixed(6)),
+        bonusBalance: Number(bonus.toFixed(6)),
+        currency,
+        balanceSource: 'account',
+        accountTag: createHash('sha256').update('dsh-account:' + (accountId === null ? 'default' : String(accountId))).digest('hex').slice(0, 24),
+        updatedAt: new Date().toISOString(),
+      }
+    }
+
+    // v781：账号路的兜底（**两条路都失败才报错，并把两条路的原因都带上**）。
+    //   为什么需要它：旧实现只在"完全没有 API key"时才试账号路 ⇒ 曾经配过 key（过期/写错/被删）
+    //   但现在只用客户端登录的用户，余额**永远读不到**（"只登录客户端读不到余额"报告里的另一大类）。
+    //   ⚠️ 超时上限：账号路走 DSH 自己的服务（默认 30s）⇒ 我们用 ACCOUNT_FALLBACK_MS 截断，
+    //   保证"API key 两次 8s + 退避"之后仍在**前端的 25s** 之内回来，不让界面先 abort。
+    async function accountFallback(keyErr) {
+      let acc = null
+      try {
+        acc = await Promise.race([
+          fetchAccountBalance(),
+          new Promise((r) => setTimeout(() => { accountDiag = '账号余额请求超时'; r(null) }, ACCOUNT_FALLBACK_MS)),
+        ])
+      } catch (err) {
+        acc = null
+        accountDiag = accountDiag || ('账号余额异常: ' + String((err && err.message) || err).slice(0, 120))
+      }
+      if (acc) return acc
+      const keyPart = keyErr
+        ? ('API key 路：' + String((keyErr.error || keyErr.code || '失败')).slice(0, 160))
+        : '未配置 DEEPSEEK_API_KEY'
+      return {
+        ok: false,
+        code: keyErr ? 'BOTH_FAILED' : 'NO_KEY',
+        error: keyPart + '；账号登录路：' + (accountDiag || '拿不到余额'),
+      }
+    }
+    async function fetchBalance() {
+      // v739（用户反馈「每次新实例的第一次余额请求都失败」）：
+      // ① 冷启动时凭据服务可能尚未就绪（resolve 抛错），这与「确实没配置」不同 → 短延迟重试一次；
+      // ② 单次超时从 20s 收到 8s，保证「2 次尝试 + 退避」明显短于前端 FETCH_TIMEOUT_MS(25s) ——
+      //    否则前端先 abort，用户看到的永远是「第一次失败」，只能干等 60 秒后的下一轮。
+      let cred = null
+      let credErr = null
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          cred = await ctx.credentials.resolve('DEEPSEEK_API_KEY')
+          credErr = null
+          break
+        } catch (err) {
+          credErr = err
+          if (attempt === 0) { await new Promise((r) => setTimeout(r, 700)); continue }
+          // v781：凭据服务报错时**也要试账号路**（以前直接 return，登录态用户就被这条挡住）
+          return await accountFallback({ code: 'NO_KEY', error: '凭据读取失败: ' + String((err && err.message) || err).slice(0, 160) })
+        }
+      }
+      if (!cred) {
+        // v759（issue #157）：没有 API key 时退回 DSH 账号登录态；两条路互不干扰，API key 始终第一优先。
+        return await accountFallback(null)
+      }
+      const apiFail = await fetchApiKeyBalance(cred)
+      if (apiFail.ok) return apiFail
+      // v781：key 路**任何**失败都再试一次账号路（401/结构异常/超时都算）
+      void credErr
+      return await accountFallback(apiFail)
+    }
+
+    // API key 路（原 fetchBalance 的主体，v781 抽出来以便"失败后回退账号路"）
+    async function fetchApiKeyBalance(cred) {
+      let lastErr = null
+      for (let attempt = 0; attempt < 2; attempt++) {
+        let res
+        try {
+          res = await fetch(BALANCE_URL, {
+            headers: { Authorization: 'Bearer ' + cred.value },
+            signal: AbortSignal.timeout(8000),
+          })
+        } catch (err) {
+          lastErr = err
+          if (attempt === 0) await new Promise((r) => setTimeout(r, 500))
+          continue
+        }
+        if (!res.ok) {
+          lastErr = new Error('HTTP ' + res.status)
+          if (res.status < 500) break
+          if (attempt === 0) await new Promise((r) => setTimeout(r, 500))
+          continue
+        }
+        let data
+        try {
+          data = await res.json()
+        } catch (err) {
+          return { ok: false, code: 'PARSE', error: '余额接口返回不是合法 JSON' }
+        }
+        const info = pickBalanceInfo(data && data.balance_infos)
+        if (!info || info.total_balance === undefined || !Number.isFinite(Number(info.total_balance))) {
+          return { ok: false, code: 'SHAPE', error: '余额接口返回结构异常' }
+        }
+        const numOr = (x) => { const n = Number(x); return Number.isFinite(n) ? n : null }
+        return {
+          ok: true,
+          totalBalance: Number(info.total_balance),
+          // v781：官方 /user/balance 除 total_balance 外还给了 granted_balance（**未过期**赠金）与
+          //   topped_up_balance（充值）。取不到就是 null（界面显示 —，**不臆造 0** —— 0 会被记账
+          //   当成"余额真的见底"，那是另一种语义）。两个分量供自定义模块里的「赠金 / 账户余额」使用。
+          bonusBalance: numOr(info.granted_balance),
+          rechargeBalance: numOr(info.topped_up_balance),
+          accountTag: createHash('sha256').update(String(cred.value)).digest('hex').slice(0, 24),
+          currency: String(info.currency || 'CNY'),
+          balanceSource: 'apikey',
+          updatedAt: new Date().toISOString(),
+        }
+      }
+      const transient = !(lastErr && /^HTTP 4\d\d/.test(lastErr.message))
+      return {
+        ok: false,
+        code: 'HTTP',
+        transient: transient,
+        error: '余额接口请求失败: ' + String((lastErr && lastErr.message) || lastErr).slice(0, 200),
+      }
+    }
+
+    function todayKey() { return beijingDay() }
+    // Windows indexers can briefly hold a just-written file. Retry sharing
+    // conflicts; never treat an unreadable existing ledger as an empty ledger.
+    function ledgerIo(operation) {
+      for (let attempt = 0; ; attempt++) {
+        try { return operation() } catch (err) {
+          if (attempt >= 5 || !['EBUSY', 'EPERM', 'EACCES'].includes(err.code)) throw err
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20 * (attempt + 1))
+        }
+      }
+    }
+    // v860（issue #232 / #225）：账本文件损坏时**不再抛错锁死**。
+    //   旧行为：JSON 解析失败或结构不对就 throw ⇒ 一个坏文件让"读不了、写不了、不自愈"，
+    //   余额/今日已用/额度/音效设置一起失效，只能用户手删文件。
+    //   新行为：把坏文件**改名备份**（.corrupt-<时间戳>.bak，数据不丢）→ 用默认结构继续跑，
+    //   插件立刻恢复可用；控制台留一条 message 方便排查。
+    function freshUsageLedger() {
+      return { date: todayKey(), lastBalance: null, todayUsage: 0, history: {} }
+    }
+    function ledgerBackupCorrupt(p, why) {
+      try {
+        const bak = p + '.corrupt-' + Date.now() + '.bak'
+        ledgerIo(() => fs.renameSync(p, bak))
+        console.error('[whale-ledger] 账本损坏（' + why + '）→ 已备份为 ' + bak + '，并用默认结构重建（原文件未删除）')
+      } catch (err) {
+        console.error('[whale-ledger] 账本损坏（' + why + '）且备份失败：', (err && err.code) || (err && err.message)) 
+      }
+    }
+    function readUsageLedger() {
+      for (const p of USAGE_FILE_CANDIDATES) {
+        let raw = null
+        try {
+          raw = ledgerIo(() => fs.readFileSync(p, 'utf8'))
+        } catch (err) {
+          if (err.code === 'ENOENT') continue // 该候选路径没有文件：试下一个（正常情况）
+          ledgerBackupCorrupt(p, (err && err.code) || 'read-error')
+          return freshUsageLedger()
+        }
+        try {
+          const parsed = JSON.parse(raw)
+          if (parsed && typeof parsed === 'object' && typeof parsed.date === 'string') return parsed
+          ledgerBackupCorrupt(p, 'bad-structure')
+          return freshUsageLedger()
+        } catch (err) {
+          ledgerBackupCorrupt(p, 'bad-json')
+          return freshUsageLedger()
+        }
+      }
+      return freshUsageLedger()
+    }
+    function writeUsageLedger(led) {
+      const body = JSON.stringify(led)
+      for (const p of USAGE_FILE_CANDIDATES) {
+        const temp = p + '.tmp-' + process.pid
+        try {
+          if (fs.existsSync(p)) {
+            const existing = JSON.parse(ledgerIo(() => fs.readFileSync(p, 'utf8')))
+            if (!existing.accounting || existing.accounting.version !== 1) {
+              try { ledgerIo(() => fs.copyFileSync(p, p + '.before-recharge-fix.bak', fs.constants.COPYFILE_EXCL)) }
+              catch (err) { if (err.code !== 'EEXIST') throw err }
+            }
+          }
+          ledgerIo(() => fs.writeFileSync(temp, body, 'utf8'))
+          ledgerIo(() => fs.renameSync(temp, p))
+          return true
+        } catch (err) {
+          try { if (fs.existsSync(temp)) fs.unlinkSync(temp) } catch (cleanupErr) {}
+          if (err.code !== 'ENOENT') console.error('[whale-ledger] 账本保存失败:', err.code || err.message)
+        }
+      }
+      return false
+    }
+    // —— 账本保留策略（v700）：events 保留 90 天或最多 2 万条；history 保留 365 天；
+    //    超期部分归档到 .dshw-usage-archive.json（不丢历史，只是移出主账本，避免账本无限膨胀）——
+    function usageArchivePath() {
+      for (const p of USAGE_FILE_CANDIDATES) {
+        try {
+          fs.accessSync(path.dirname(p), fs.constants.W_OK)
+          return path.join(path.dirname(p), '.dshw-usage-archive.json')
+        } catch (err) {}
+      }
+      return path.join(DSH_HOME, '.dshw-usage-archive.json')
+    }
+    function readUsageArchive() {
+      try {
+        const j = JSON.parse(fs.readFileSync(usageArchivePath(), 'utf8'))
+        if (j && typeof j === 'object') return j
+      } catch (err) {}
+      return { version: 1, events: [], history: {} }
+    }
+    // 返回 true 表示账本被裁剪过（调用方随后写盘即可）
+    function pruneLedgerUsage(led) {
+      try {
+        const ev = Array.isArray(led.events) ? led.events : []
+        const hist = (led.history && typeof led.history === 'object') ? led.history : {}
+        const dateCut90 = dayAdd(todayKey(), -90)
+        const dateCut365 = dayAdd(todayKey(), -365)
+        const keepEv = []
+        const dropEv = []
+        for (const e of ev) {
+          const day = String((e && e.day) || '')
+          if (day && day < dateCut90) dropEv.push(e)
+          else keepEv.push(e)
+        }
+        if (keepEv.length > 20000) {
+          const extra = keepEv.length - 20000
+          for (const e of keepEv.splice(0, extra)) dropEv.push(e)
+        }
+        const dropHist = {}
+        let histDropped = 0
+        for (const day of Object.keys(hist)) {
+          if (String(day) < dateCut365) {
+            dropHist[day] = hist[day]
+            delete hist[day]
+            histDropped++
+          }
+        }
+        if (!dropEv.length && !histDropped) return false
+        const ar = readUsageArchive()
+        ar.events = Array.isArray(ar.events) ? ar.events : []
+        for (const e of dropEv) ar.events.push(e)
+        if (ar.events.length > 200000) ar.events.splice(0, ar.events.length - 200000)
+        ar.history = Object.assign({}, ar.history || {}, dropHist)
+        ar.updatedAt = new Date().toISOString()
+        ar.note = '小鲸鱼记账归档：events 超 90 天或超 2 万条、history 超 365 天的部分'
+        try { fs.writeFileSync(usageArchivePath(), JSON.stringify(ar), 'utf8') } catch (err) { return false }
+        led.events = keepEv
+        led.history = hist
+        return true
+      } catch (err) { return false }
+    }
+    function dayKeyOfDate(d) { return beijingDay(d.getTime()) }
+    function dayKeyFromTs(ts) { return beijingDay(Number(ts)) }
+    function dayAdd(baseDayStr, delta) { return dayOffset(baseDayStr, delta) }
+    // 每轮结算后追加一条用量事件(模型明细/7天/全部记录的来源;上限 8000 条)
+    function appendUsageEvent(ev) {
+      const led = readUsageLedger()
+      led.events = Array.isArray(led.events) ? led.events : []
+      led.events.push({
+        ts: Number(ev.ts) || Date.now(),
+        day: dayKeyFromTs(Number(ev.ts) || Date.now()),
+        model: String(ev.model || '未知'),
+        cost: preciseMoney(Number(ev.cost) || 0),
+        tokens: Math.round(Number(ev.tokens) || 0),
+      })
+      // 保留策略：events 90 天 / 最多 2 万条（超期或超量归档到 .dshw-usage-archive.json）
+      pruneLedgerUsage(led)
+      writeUsageLedger(led)
+    }
+    // 供面板/窗口使用的汇总:今日(按模型降序)、近7天、7天合计、全部记录
+    function usageRecordsPayload() {
+      const led = readUsageLedger()
+      const events = Array.isArray(led.events) ? led.events : []
+      const today = todayKey()
+      function modelsFor(day) {
+        const map = new Map()
+        for (const e of events) {
+          if (e.day !== day) continue
+          const name = String(e.model || '未知')
+          map.set(name, addMoney(map.get(name) || 0, Number(e.cost) || 0))
+        }
+        return Array.from(map, ([model, cost]) => ({ model, cost, source: 'events', currency: 'CNY' }))
+          .sort((a, b) => b.cost - a.cost)
+      }
+      function forDay(date) {
+        const summary = daySummary(led, date)
+        const models = modelsFor(date)
+        return {
+          ...summary, date, total: summary.amount, models,
+          modelTotal: sumMoney(models.map(m => m.cost)), modelCurrency: 'CNY',
+        }
+      }
+      const todayData = forDay(today)
+      const days7 = Array.from({ length: 7 }, (_, i) => forDay(dayAdd(today, -i)))
+      const total7ByCurrency = {}
+      for (const d of days7) total7ByCurrency[d.currency] = addMoney(total7ByCurrency[d.currency] || 0, d.total)
+      const days = new Set([today, ...Object.keys(led.history || {}), ...accountingDays(led)])
+      for (const e of events) if (/^\d{4}-\d{2}-\d{2}$/.test(e.day)) days.add(e.day)
+      return {
+        ok: true, version: '0.4.2', versionLabel: VERSION_LABEL, today: todayData, days7,
+        total7: total7ByCurrency[todayData.currency] || 0, total7Currency: todayData.currency, total7ByCurrency,
+        all: {
+          days: Array.from(days).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort().reverse().map(forDay),
+          events: events.slice().sort((a, b) => b.ts - a.ts).slice(0, 500),
+        },
+        settings: readUsageSettings(),
+      }
+    }
+    // 用量相关设置(任务结束音 / 余额预警 / 今日预算)存于用量账本 settings
+    // v761（全局音效设置面板 / issue #161）：每个事件的音效 + 冒泡配置。
+    // 命名沿用既有约定：`sel` 音效绑定（'' = 静音）、`lines` 泡泡内容模块列表（与 alert / turnCost 同构）、
+    // `bubbleOn` 是否冒泡、`vol` 该事件独立音量；提问/授权另有 `autoClose` + `ttlSec`（与 alert 同名）。
+    // ⚠️ v764：`events.turnCost` **不再有** `autoClose`/`ttlSec` —— 它们从来没有消费方，② 区「自动关闭」
+    //    的真实落点是 `.dshw-size.json` 的 `turnCostCloseMs`（默认 5000ms，见 readSizeConfig）。
+    // ⚠️ 这里的 question/approval 默认内容与前端 `usageWaitDefaultLines()` **必须逐字段一致**
+    //    （同 alert/turnCost 的既有约定：host = 新用户默认；前端 = 编辑器「恢复默认」的目标）。
+    function waitDefaultLines(kind) {
+      // v774：出厂默认内容 = 作者当前实际使用的那一套（对话名模块 + 一句提示语，都带跑马灯配色）。
+      // ⚠️ 必须与前端 whale-widget.js 的 usageWaitDefaultLines() 逐字段一致（有跨端一致性探针钉住）。
+      const isApproval = kind === 'approval'
+      return [
+        { type: 'session', size: 10, bold: true, tpl: '[ {session} ]', len: 5, rgb: 'champagne', color: '' },
+        { type: 'text', text: isApproval ? '正在等待老大授权' : '正在等待老大回答', size: 7, bold: true, bgRgb: '', bg: '', rgb: 'indigo', color: '' },
+      ]
+    }
+    function soundEventsDefaults() {
+      return {
+        // 按压音效（按压 + 松开）：音量与音效组仍在 .dshw-size.json（vol / soundSet），
+        // 这里只占位，便于面板把四个事件写成同一结构。
+        press: { vol: 1 },
+        // ⚠️ turnCost **不带** soundOn：它的"这个音效播不播"就是既有的 `taskEnd.on`。
+        //    提问/授权用 soundOn；v774 起它俩的出厂默认 = 作者当前用法：事件**开**着、但音效**不响**
+        //    （只冒泡）—— 要响就把音效行的 [✓] 勾上。
+        // v764：turnCost **刻意不带** autoClose / ttlSec —— 自动关闭的真实来源是 .dshw-size.json 的
+        //    turnCostCloseMs，留着这两个键会让同一个设置有两个来源（其中一个永远是假的）。
+        // v778：`volSet` = 用户**显式**调过②区「提示音量」没有（默认 false = 跟随①区按压音量）。
+        //    没有它就无法区分"默认 100%"与"用户设了 100%"，前端 soundVolumeOf() 靠它决定优先级。
+        //    ⚠️ 与前端 soundEventDefaults().turnCost **必须逐字段一致**（探针 §⑥ 跨端一致钉住）。
+        turnCost: { vol: 1, volSet: false, bubbleOn: true },
+        // v859：提问/授权的出厂默认音效改为随包内置的 ask_a / approve_a（= 当前正在用的那两个）
+        question: { on: true, soundOn: false, sel: 'frag:ask_a', vol: 1, autoClose: true, ttlSec: 180, bubbleOn: true, lines: waitDefaultLines('question') },
+        approval: { on: true, soundOn: false, sel: 'frag:approve_a', vol: 1, autoClose: true, ttlSec: 180, bubbleOn: true, lines: waitDefaultLines('approval') },
+      }
+    }
+    function usageSettingsDefaults() {
+      return {        // 任务结束音：v774 起出厂默认 = **开**（作者当前用法），默认音 = 内置 A（end_a）
+        // v859：任务结束/每轮消耗音的出厂默认改为随包内置的 cost_a（= 当前正在用的那一个）
+        taskEnd: { on: true, sel: 'frag:cost_a' },
+        // v863：子智能体完成是否提示（默认 true = 不提示；键 = settings.subagent.mute）
+        subagent: { mute: true },
+        // v777：「等待交互提示」的交互开关（用户 2026-09-26 要求）
+        //   charClose=false（出厂默认）＝ 只有**点泡泡**能收起等待提示；true ＝ **点角色**也能收起。
+        //   两种情况下"点掉的那条挂起"都不会再被每秒轮询自动弹回（前端 waitDismissedId）。
+        wait: { charClose: false },
+        // v761：四个事件的音效/自动关闭/冒泡配置（面板「全局音效设置」）
+        events: soundEventsDefaults(),
+        // 默认固化自开发环境当前 usage.json 设置(全新安装即此体验)
+        // ⚠️ 这里的 alert / budget / turnCost 内容与前端 whale-widget.js 的
+        //    usageRemindDefaultLines() / usageTurnCostDefaultLines() **必须逐字段一致**
+        //    (host = 新用户默认内容；前端 = 编辑器里「恢复默认」的目标内容)。改一处必须同步另一处。
+        alert: {
+          on: true, below: 5,
+          msg: '余额预警:当前余额已低于设定值 {below}',
+          lines: [
+            { type: 'text', text: '老大~你的DS余额', size: 5, bold: true },
+            { type: 'text', text: '已经不足', size: 5, bold: true, row: 2 },
+            { type: 'text', text: '¥{below}', size: 5, bold: true, rgb: 'rouge', color: '', bgRgb: '', bg: '', row: 2 },
+            { type: 'text', text: '啦~', size: 5, bold: true, row: 2 },
+            { type: 'image', imgId: 'bimg_money1', size: 6, imgScale: 0.4 },
+            { type: 'link', text: '>> 喂 点 米 <<', url: 'https://platform.deepseek.com/top_up', size: 1, color: '#ffffff', rgb: '', bgRgb: 'indigo', bg: '', bold: true, ul: false },
+          ],
+          autoClose: false, ttlSec: 6,
+        },
+        budget: {
+          on: true, amount: 10,
+          msg: '今日已用已达预算 ¥{amount}',
+          lines: [
+            { type: 'text', text: '老大，今天花销已经超过', size: 6, bold: true, row: 1 },
+            { type: 'text', text: '¥{amount}', size: 7, bold: true, row: 1, rgb: 'rouge', color: '', italic: false, bgRgb: '', bg: '' },
+            { type: 'text', text: '啦，再花要变成穷光蛋啦...', size: 6, bold: true, row: 1 },
+          ],
+          autoClose: false, ttlSec: 6,
+        },
+        // 每轮消耗提示内容(自定义提示窗口):与预警/预算同一套模块化内容,{cost} = 本轮消耗金额。
+        // 内容 = 冻结的当前生效快照(与前端 usageTurnCostDefaultLines() 一致)；
+        // 开关/自动关闭秒数仍存 .dshw-size.json(不迁移),这里只放内容。
+        turnCost: {
+          lines: [
+            { type: 'text', text: '上一轮对话消耗:', size: 8, bold: true },
+            { type: 'text', text: '¥ {cost}', size: 24, bold: true, color: '#e0433f' },
+            { type: 'today', size: 2, tpl: '今日已用 {expense_ds}', bold: false, rgb: '', color: '#ffffff', bgRgb: 'indigo', bg: '' },
+          ],
+        },
+      }
+    }
+    function readUsageSettings() {
+      const led = readUsageLedger()
+      const d = usageSettingsDefaults()
+      const s = led && led.settings && typeof led.settings === 'object' ? led.settings : {}
+      if (s.taskEnd && typeof s.taskEnd === 'object') d.taskEnd = Object.assign({}, d.taskEnd, s.taskEnd)
+      if (s.alert && typeof s.alert === 'object') d.alert = Object.assign({}, d.alert, s.alert)
+      if (s.budget && typeof s.budget === 'object') d.budget = Object.assign({}, d.budget, s.budget)
+      if (s.turnCost && typeof s.turnCost === 'object') d.turnCost = Object.assign({}, d.turnCost, s.turnCost)
+      // v812（用户报"点按角色关闭提示气泡不会被保存"）：这一项**写进去了却读不回来** ——
+      //   写侧一直有（writeUsageSettings 的 `p.wait` 分支，磁盘上确实存着 {"charClose":true}），
+      //   但读侧漏了 ⇒ GET 永远下发默认 false ⇒ 面板显示与运行期行为都被"打回默认"，看着就像没保存。
+      //   ⚠️ 凡是 writeUsageSettings 支持的键，这里都必须有对应的读回分支（本轮核对过：
+      //   taskEnd / alert / budget / turnCost / wait / events / models —— 当时只漏了 wait）。
+      if (s.wait && typeof s.wait === 'object') d.wait = Object.assign({}, d.wait, { charClose: !!s.wait.charClose })
+      // v863：子智能体完成是否提示（默认 true = 不提示）。写侧有分支、读侧也必须合并，
+      //   否则刷新后前端读回的是默认值（"保存了但不生效"的经典半截活）。
+      if (s.subagent && typeof s.subagent === 'object') d.subagent = Object.assign({}, d.subagent, { mute: s.subagent.mute !== false })
+      // v761（全局音效设置）：四个事件逐个合并（缺字段回落到默认，不整块替换）
+      if (s.events && typeof s.events === 'object') {
+        for (const k of Object.keys(d.events)) {
+          if (s.events[k] && typeof s.events[k] === 'object') d.events[k] = Object.assign({}, d.events[k], s.events[k])
+        }
+        // v764：老数据里若还留着 events.turnCost.autoClose / ttlSec（已摘除的死键），读的时候就丢掉，
+        // 免得它们继续随 settings 下发给前端（真实来源是 .dshw-size.json 的 turnCostCloseMs）。
+        if (d.events.turnCost) { delete d.events.turnCost.autoClose; delete d.events.turnCost.ttlSec }
+      }      // 每个模型各自的提醒/预算：内置 DeepSeek 沿用顶层 alert/budget（旧配置零迁移）
+      const byModel = s.models && typeof s.models === 'object' ? s.models : {}
+      // 手动额度默认值：资源包/订阅制厂商没有额度接口时，总量与已用由用户在面板里手填
+      const qDef = () => ({ on: false, mode: 'auto', total: 0, unit: 'tokens', used: 0, reset: 'none', baseAt: 0 })
+      d.models = { [API_BUILTIN_ID]: { alert: d.alert, budget: d.budget, quota: Object.assign(qDef(), (byModel[API_BUILTIN_ID] && byModel[API_BUILTIN_ID].quota) || {}) } }
+      for (const m of readApiRegistry().models) {
+        if (!m || !m.id || m.id === API_BUILTIN_ID) continue
+        const st = byModel[m.id] && typeof byModel[m.id] === 'object' ? byModel[m.id] : {}
+        d.models[m.id] = {
+          alert: Object.assign({}, usageSettingsDefaults().alert, st.alert || {}),
+          budget: Object.assign({}, usageSettingsDefaults().budget, st.budget || {}),
+          quota: Object.assign(qDef(), st.quota || {}),
+        }
+      }
+      return d
+    }
+    function writeUsageSettings(patch) {
+      const led = readUsageLedger()
+      led.settings = led.settings && typeof led.settings === 'object' ? led.settings : {}
+      const p = patch || {}
+      if (p.taskEnd && typeof p.taskEnd === 'object') led.settings.taskEnd = Object.assign({}, led.settings.taskEnd || {}, p.taskEnd)
+      if (p.alert && typeof p.alert === 'object') led.settings.alert = Object.assign({}, led.settings.alert || {}, p.alert)
+      if (p.budget && typeof p.budget === 'object') led.settings.budget = Object.assign({}, led.settings.budget || {}, p.budget)
+      // 每轮消耗提示内容(自定义提示窗口)
+      if (p.turnCost && typeof p.turnCost === 'object') led.settings.turnCost = Object.assign({}, led.settings.turnCost || {}, p.turnCost)
+      // v777：「等待交互提示」的交互开关（点角色是否也能关闭等待提示气泡）
+      if (p.wait && typeof p.wait === 'object') led.settings.wait = Object.assign({}, led.settings.wait || {}, p.wait)
+      // v863（用户报"取消勾选保存后重开仍是勾选"）：**写侧原来没有 subagent 分支** ⇒
+      //   前端 PUT 的 { subagent: { mute:false } } 被静默丢掉，重开只能读到默认值(true=不提示)。
+      //   这里只放行 mute 一个键（与其它分支一样，白名单式合并）。
+      if (p.subagent && typeof p.subagent === 'object') {
+        led.settings.subagent = Object.assign({}, led.settings.subagent || {}, { mute: p.subagent.mute !== false })
+      }
+      // v761（全局音效设置）：events 补丁逐事件合并（前端只发改动的那几个字段）
+      if (p.events && typeof p.events === 'object') {
+        led.settings.events = led.settings.events && typeof led.settings.events === 'object' ? led.settings.events : {}
+        for (const k of Object.keys(p.events)) {
+          if (!p.events[k] || typeof p.events[k] !== 'object') continue
+          led.settings.events[k] = Object.assign({}, led.settings.events[k] || {}, p.events[k])
+        }
+        // v764：events.turnCost 的 autoClose / ttlSec 已摘除（真实来源是 .dshw-size.json 的
+        // turnCostCloseMs）—— 老数据里若还留着，借着这次保存删掉；老前端若还发这两个键也一并丢掉。
+        const tcEv = led.settings.events.turnCost
+        if (tcEv && typeof tcEv === 'object') { delete tcEv.autoClose; delete tcEv.ttlSec }
+      }
+      // 「恢复默认」：只重置音效/提示类键（不动外观、位置、账本、角色与泡泡自定义）
+      if (p.resetEvents === true) {
+        led.settings.events = soundEventsDefaults()
+        // v777：等待提示的交互开关也属于"提示类键" ⇒ 一起恢复出厂默认（charClose=false）
+        led.settings.wait = { charClose: false }
+        // 任务结束音也属于「音效类键」：宿主重置与面板显示必须口径一致（否则面板显示与真实状态撕裂）
+        // v774：重置目标 = 新的出厂默认（开 + 内置 A）
+        led.settings.taskEnd = { on: true, sel: 'frag:cost_a' }
+      }      // 按模型保存提醒/预算：{ modelId, alert?, budget? }
+      if (p.modelSettings && p.modelSettings.id) {
+        const mid = String(p.modelSettings.id)
+        led.settings.models = led.settings.models && typeof led.settings.models === 'object' ? led.settings.models : {}
+        const cur = led.settings.models[mid] && typeof led.settings.models[mid] === 'object' ? led.settings.models[mid] : {}
+        if (p.modelSettings.alert && typeof p.modelSettings.alert === 'object') cur.alert = Object.assign({}, cur.alert || {}, p.modelSettings.alert)
+        if (p.modelSettings.budget && typeof p.modelSettings.budget === 'object') cur.budget = Object.assign({}, cur.budget || {}, p.modelSettings.budget)
+        // 手动额度：整体覆盖（总量/单位/已用/重置周期/统计模式/开关）
+        if (p.modelSettings.quota && typeof p.modelSettings.quota === 'object') {
+          const q = Object.assign({}, p.modelSettings.quota)
+          const wantReset = !!q.resetBase
+          delete q.resetBase
+          // 「重置基准」：把累计 token 的基准点设为当前值 → 已用从 0 重新计
+          if (wantReset) {
+            const u = apiUsageRaw(mid)
+            q.baseAt = Number(u && u.tokensTotal) || 0
+          }
+          cur.quota = Object.assign({}, cur.quota || {}, q)
+        }
+        led.settings.models[mid] = cur
+        // 内置 DeepSeek：同步回写顶层字段，旧读取方（泡泡提醒）不受影响
+        if (mid === API_BUILTIN_ID) {
+          if (cur.alert) led.settings.alert = cur.alert
+          if (cur.budget) led.settings.budget = cur.budget
+        }
+      }
+      if (!writeUsageLedger(led)) return { ok: false, error: '保存失败' }
+      return { ok: true, settings: readUsageSettings() }
+    }
+    // ===== Codex 本地会话统计（Codex 适配 · 第一期）=====
+    // 数据源：$CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl 与 archived_sessions/*.jsonl（明文 JSONL）
+    //   每行：{ type, timestamp, ordinal, payload }
+    //   逐轮用量：type=token_count 的 payload.info.last_token_usage / total_token_usage
+    //   模型归属：type=turn_context 的 payload.model
+    // 口径：优先用「累计量的差值」（total_token_usage 单调递增，天然免疫一次轮次多条 token_count 的重复），
+    //       用量拆分按该事件的 last_token_usage 比例缩放；累计缺失时退回 last_token_usage。
+    // 缓存：$DSH_HOME/.dshw-codex.json（只存各文件聚合与 size/mtime，不存任何凭据，也不写 ~/.codex）
+    function codexHome() {
+      const env = String(process.env.CODEX_HOME || '').trim()
+      for (const c of [env, path.join(os.homedir(), '.codex')]) {
+        try { if (c && fs.existsSync(c)) return c } catch (err) {}
+      }
+      return ''
+    }
+    function readCodexCache() {
+      try {
+        const j = JSON.parse(fs.readFileSync(path.join(DSH_HOME, '.dshw-codex.json'), 'utf8'))
+        if (j && j.files && typeof j.files === 'object') return j
+      } catch (err) {}
+      return { version: 1, files: {} }
+    }
+    function writeCodexCache(c) {
+      try { fs.writeFileSync(path.join(DSH_HOME, '.dshw-codex.json'), JSON.stringify(c), 'utf8'); return true } catch (err) { return false }
+    }
+    function listCodexSessionFiles(root) {
+      const out = []
+      const walk = (dir, depth) => {
+        if (depth > 6) return
+        let ents = []
+        try { ents = fs.readdirSync(dir, { withFileTypes: true }) } catch (err) { return }
+        for (const e of ents) {
+          const p = path.join(dir, e.name)
+          if (e.isDirectory()) walk(p, depth + 1)
+          else if (/^rollout-.*\.jsonl$/i.test(e.name)) out.push(p)
+        }
+      }
+      walk(path.join(root, 'sessions'), 0)
+      walk(path.join(root, 'archived_sessions'), 0)
+      return out
+    }
+    // 解析单个会话文件的**文本** → { days, rl, rlTs }
+    // issue #116：读取改由调用方异步完成（先判大小、读完让出事件循环），这里只做纯解析。
+    function parseCodexFileText(text) {
+      const days = {}
+      let model = 'codex'
+      let prevTotal = null
+      let lastRl = null, rlTs = 0
+      if (typeof text !== 'string' || !text) return { days, rl: null, rlTs: 0 }
+      const bump = (day, mk, v) => {
+        days[day] = days[day] || {}
+        const cur = days[day][mk] || { in: 0, cached: 0, cwrite: 0, out: 0, reason: 0, total: 0, turns: 0 }
+        cur.in += v.in; cur.cached += v.cached; cur.cwrite += v.cwrite
+        cur.out += v.out; cur.reason += v.reason; cur.total += v.total; cur.turns += v.turns
+        days[day][mk] = cur
+      }
+      for (const line of text.split('\n')) {
+        if (!line || line.charCodeAt(0) !== 123) continue // 只处理 '{' 开头的行
+        let o = null
+        try { o = JSON.parse(line) } catch (err) { continue }
+        const p = o && o.payload
+        if (!p) continue
+        if (o.type === 'turn_context') {
+          if (p.model) model = String(p.model)
+          continue
+        }
+        if (o.type !== 'event_msg' || p.type !== 'token_count') continue
+        const info = p.info
+        if (!info || typeof info !== 'object') continue
+        const last = info.last_token_usage || null
+        const tot = info.total_token_usage || null
+        const ts = Date.parse(String(o.timestamp || '')) || 0
+        if (!ts) continue
+        const day = dayKeyFromTs(ts)
+        // 该次增量
+        let delta = null
+        const totAll = tot ? Number(tot.total_tokens) || 0 : 0
+        if (totAll > 0) {
+          if (prevTotal === null || totAll < prevTotal) delta = totAll
+          else delta = totAll - prevTotal
+          prevTotal = totAll
+        }
+        if (delta === null || delta <= 0) {
+          if (!last) continue
+          delta = Number(last.total_tokens) || 0
+        }
+        if (delta <= 0) continue
+        // 拆分：按 last_token_usage 的比例缩放到 delta
+        const lTotal = last ? Number(last.total_tokens) || 0 : 0
+        const k = (lTotal > 0 && last) ? delta / lTotal : 0
+        const v = last && k > 0
+          ? {
+            in: Math.round((Number(last.input_tokens) || 0) * k),
+            cached: Math.round((Number(last.cached_input_tokens) || 0) * k),
+            cwrite: Math.round((Number(last.cache_write_input_tokens) || 0) * k),
+            out: Math.round((Number(last.output_tokens) || 0) * k),
+            reason: Math.round((Number(last.reasoning_output_tokens) || 0) * k),
+          }
+          : { in: 0, cached: 0, cwrite: 0, out: 0, reason: 0 }
+        bump(day, model, { in: v.in, cached: v.cached, cwrite: v.cwrite, out: v.out, reason: v.reason, total: delta, turns: 1 })
+        // 订阅窗口快照：Codex 在 token_count 事件里带 rate_limits（ChatGPT 订阅 provider 才有值，
+        // DeepSeek 这类 API-key provider 是 null）。保留最新的非空快照，供第二期展示。
+        const rl = p.rate_limits
+        if (rl && typeof rl === 'object' && (rl.primary || rl.secondary || rl.plan_type || rl.credits)) {
+          if (ts >= rlTs) { lastRl = rl; rlTs = ts }
+        }
+      }
+      return { days, rl: lastRl, rlTs }
+    }
+    // rate_limits 字段名在不同 Codex 版本里不一致 → 多候选键容错，换算成「已用% + 重置时间戳」
+    function normalizeCodexWindow(w) {
+      if (!w || typeof w !== 'object') return null
+      const pick = (keys) => {
+        for (const k of keys) {
+          const raw = w[k]
+          if (raw === null || raw === undefined || raw === '') continue
+          const n = Number(raw)
+          if (isFinite(n)) return n
+        }
+        return null
+      }
+      let usedPct = pick(['used_percent', 'usedPercent', 'percent', 'used_pct', 'usage_percent', 'usagePercent'])
+      const remainPct = pick(['remaining_percent', 'remainingPercent', 'left_percent', 'remaining_pct'])
+      if (usedPct === null && remainPct !== null) usedPct = Math.max(0, 100 - remainPct)
+      let resetAt = null
+      const secs = pick(['resets_in_seconds', 'resetsInSeconds', 'reset_after_seconds', 'reset_in_seconds', 'seconds_until_reset'])
+      if (secs !== null && secs >= 0) resetAt = Date.now() + secs * 1000
+      else {
+        const abs = w.resets_at || w.reset_at || w.reset_time || w.next_reset || w.resetAt || w.nextResetTime
+        if (typeof abs === 'number' && isFinite(abs)) resetAt = abs < 1e12 ? abs * 1000 : abs
+        else if (typeof abs === 'string' && abs) { const t = Date.parse(abs); if (isFinite(t)) resetAt = t }
+      }
+      const windowMinutes = pick(['window_minutes', 'windowMinutes', 'window', 'period_minutes'])
+      const label = String(w.limit_name || w.name || w.label || w.window_name || '')
+      if (usedPct === null && resetAt === null) return null
+      return { usedPct, resetAt, windowMinutes, label }
+    }
+    function normalizeCodexRateLimits(rl) {
+      if (!rl || typeof rl !== 'object') return null
+      const primary = normalizeCodexWindow(rl.primary)
+      const secondary = normalizeCodexWindow(rl.secondary)
+      if (!primary && !secondary) return null
+      return {
+        primary, secondary,
+        planType: rl.plan_type ? String(rl.plan_type) : '',
+        limitName: rl.limit_name ? String(rl.limit_name) : (rl.limit_id ? String(rl.limit_id) : ''),
+        reached: rl.rate_limit_reached_type ? String(rl.rate_limit_reached_type) : '',
+      }
+    }
+    // 汇总（带增量缓存：只有变化的文件才重新解析）
+    // ===== issue #116：Codex 本地统计的护栏 =====
+    // 旧实现是「启动 1.5s + 每 5 分钟」在事件循环上做**同步**全量扫描：递归遍历
+    // ~/.codex/sessions，对每个过期文件 readFileSync + split('\n') + 逐行 JSON.parse。
+    // 会话攒多之后，一轮扫描能冻结事件循环数分钟（整个 dsh web 不响应、满核 CPU），
+    // 而且单个超过 V8 字符串上限（约 512MB）的 rollout 会抛 ERR_STRING_TOO_LONG ——
+    // 由于是在写缓存之前就抛出，那个文件每轮都会被重读，size/mtime 又一直在变，永久复发。
+    // 现在三条护栏：
+    //   ① 单文件上限：超过 CODEX_MAX_FILE_BYTES 直接跳过（结果记进缓存，不再重读），
+    //      并在汇总里报 skipped / skippedBytes，界面上能看出"有文件被跳过"；
+    //   ② 单轮预算：一轮最多读 CODEX_BUDGET_FILES 个 / CODEX_BUDGET_BYTES 字节，超了就
+    //      带 deferred 出结果，本轮立刻返回、稍后再刷新 —— 绝不长时间占住事件循环；
+    //   ③ 全程异步（fs.promises）＋ 每个文件处理后让出一次事件循环（await setImmediate）。
+    const CODEX_MAX_FILE_BYTES = 32 * 1024 * 1024
+    const CODEX_BUDGET_FILES = 400
+    const CODEX_BUDGET_BYTES = 96 * 1024 * 1024
+    const CODEX_SNAP_TTL = 60 * 1000
+    const yieldLoop = () => new Promise((r) => setImmediate(r))
+
+    // 汇总（带增量缓存：只有变化的文件才重新解析）。异步、受预算约束。
+    async function codexScan() {
+      const home = codexHome()
+      if (!home) return { ok: false, error: '未找到 Codex 目录（$CODEX_HOME 或 ~/.codex）' }
+      const cache = readCodexCache()
+      const files = listCodexSessionFiles(home)
+      const keep = {}
+      let changed = 0, skipped = 0, skippedBytes = 0, deferred = 0, readBytes = 0, parsedCount = 0
+      for (const f of files) {
+        let st = null
+        try { st = await fs.promises.stat(f) } catch (err) { continue }
+        const prev = cache.files[f]
+        if (prev && prev.size === st.size && prev.mtimeMs === st.mtimeMs && prev.days) {
+          keep[f] = prev
+          if (prev.skip === 'too-big') { skipped++; skippedBytes += Number(st.size) || 0 }
+          continue
+        }
+        // ① 单文件上限：跳过超大文件（errno 不再产生，也不再每轮重读）
+        if (st.size > CODEX_MAX_FILE_BYTES) {
+          keep[f] = { size: st.size, mtimeMs: st.mtimeMs, days: {}, rl: null, rlTs: 0, skip: 'too-big' }
+          skipped++; skippedBytes += st.size; changed++
+          continue
+        }
+        // ② 单轮预算：本轮读够了就停，剩下的留到下一次刷新
+        if (readBytes + st.size > CODEX_BUDGET_BYTES || parsedCount >= CODEX_BUDGET_FILES) { deferred++; continue }
+        let text = ''
+        try { text = await fs.promises.readFile(f, 'utf8') } catch (err) { text = '' }
+        readBytes += st.size
+        const parsed = parseCodexFileText(text)
+        keep[f] = { size: st.size, mtimeMs: st.mtimeMs, days: parsed.days, rl: parsed.rl || null, rlTs: parsed.rlTs || 0 }
+        changed++
+        parsedCount++
+        await yieldLoop() // ③ 每个文件让出一次，HTTP 请求不会被整轮扫描堵住
+      }
+      if (changed > 0 || Object.keys(cache.files).length !== Object.keys(keep).length) {
+        writeCodexCache({ version: 1, files: keep, builtAt: Date.now() })
+      }
+      const today = dayKeyFromTs(Date.now())
+      const month = today.slice(0, 7)
+      const byDay = {}
+      const byModel = {}
+      let totalTokens = 0, todayTokens = 0, monthTokens = 0, outTokens = 0, reasonTokens = 0, cachedTokens = 0
+      let bestRl = null, bestRlTs = -1
+      for (const f of Object.keys(keep)) {
+        if (keep[f].rl && (keep[f].rlTs || 0) >= bestRlTs) { bestRl = keep[f].rl; bestRlTs = keep[f].rlTs || 0 }
+        const days = keep[f].days || {}
+        for (const d of Object.keys(days)) {
+          const day0 = byDay[d] || (byDay[d] = { tokens: 0, turns: 0, models: {} })
+          for (const m of Object.keys(days[d])) {
+            const v = days[d][m] || {}
+            day0.tokens += Number(v.total) || 0
+            day0.turns += Number(v.turns) || 0
+            day0.models[m] = (day0.models[m] || 0) + (Number(v.total) || 0)
+            const bm = byModel[m] || (byModel[m] = { tokens: 0, out: 0, reason: 0, cached: 0, turns: 0 })
+            bm.tokens += Number(v.total) || 0
+            bm.out += Number(v.out) || 0
+            bm.reason += Number(v.reason) || 0
+            bm.cached += Number(v.cached) || 0
+            bm.turns += Number(v.turns) || 0
+            totalTokens += Number(v.total) || 0
+            outTokens += Number(v.out) || 0
+            reasonTokens += Number(v.reason) || 0
+            cachedTokens += Number(v.cached) || 0
+            if (d === today) todayTokens += Number(v.total) || 0
+            if (d.slice(0, 7) === month) monthTokens += Number(v.total) || 0
+          }
+        }
+      }
+      const days7 = []
+      for (let i = 0; i < 7; i++) {
+        const d = dayAdd(today, -i)
+        days7.push({ date: d, tokens: (byDay[d] && byDay[d].tokens) || 0, turns: (byDay[d] && byDay[d].turns) || 0 })
+      }
+      return {
+        ok: true, home, sessions: files.length, changed,
+        // issue #116：把护栏的实际情况报出来，界面/日志能看出"有文件被跳过或本轮没扫完"
+        skipped, skippedBytes, deferred, readBytes,
+        maxFileBytes: CODEX_MAX_FILE_BYTES,
+        todayTokens, monthTokens, totalTokens,
+        outTokens, reasonTokens, cachedTokens,
+        days7, byModel,
+        // 第二期：订阅窗口（5h / 周）。仅当日志里带着带值的 rate_limits（ChatGPT 订阅 provider）时才有内容
+        rateLimits: bestRl,
+        windows: normalizeCodexRateLimits(bestRl),
+        rateLimitsTs: bestRlTs > 0 ? bestRlTs : 0,
+      }
+    }
+    // ===== 汇总快照（issue #116）=====
+    // 关键变化：**任何调用方都不会再触发同步扫描**。
+    //   · codexSummaryCached()：同步、永不阻塞 —— 直接返回上一次快照；快照过期时
+    //     「顺手发起」一次后台刷新（不等待），所以同步调用点（额度计算）也一样安全；
+    //   · codexSummaryEnsured(ms)：需要尽量新的地方（探活 / 模型列表）用，等在途扫描，
+    //     最多等 ms 毫秒，超时就用当前快照，绝不无限等；
+    //   · 同一时刻只允许一次扫描在跑（去重），预算用完时安排一次稍后的补扫。
+    let codexSnap = null
+    let codexSnapAt = 0
+    let codexScanP = null
+    let codexCatchupT = null
+    // 配置变更（例如用户在设置里关掉 Codex 统计）后必须让快照失效，
+    // 否则下一次请求还会命中关闭前的旧快照、开关看起来"没生效"。
+    function codexInvalidate() {
+      codexSnap = null; codexSnapAt = 0; codexStatsOnV = null; codexStatsOnAt = 0
+      // v792：设置/注册表一变，**立刻**按新状态装载或摘掉预热定时器
+      // （开关打开 ⇒ 马上挂上并预热；关掉 / 删掉 Codex 模型 ⇒ 一个定时器都不留）。
+      // try/catch 是必要的：初始化期若在 `let codexPrewarmT` 求值之前走到这里，会撞 const/let 的 TDZ。
+      try { codexRearmPrewarm(true) } catch (err) {}
+    }
+    // 开关读取加 2 秒缓存：codexBackgroundRefresh 可能被高频调用（快照过期时每次 payload
+    // 构建都会试一次），而 readSizeConfig() 是同步文件读 —— 不能放在热路径上。
+    // 用户改设置时 codexInvalidate() 会清掉缓存，所以开关仍然是"立刻生效"。
+    let codexStatsOnV = null, codexStatsOnAt = 0
+    // v748：**没配置 Codex 模型时「本机统计」默认不启用** —— 完全不去读 ~/.codex/sessions
+    // （用户没加 Codex 模型时那些日志与他无关，白扫一遍既费磁盘又占事件循环）。
+    // 判定按模板 kind === 'codex'（与模型列表里"Codex 用量"那一行的判定同源）。
+    function hasCodexModel() {
+      try {
+        for (const m of readApiRegistry().models) {
+          const tpl = apiTemplateOf(m && m.provider)
+          if (tpl && tpl.kind === 'codex') return true
+        }
+      } catch (err) {}
+      return false
+    }
+    function codexStatsEnabledFresh() {
+      try {
+        if (!hasCodexModel()) return false // 没有 Codex 模型 → 默认关闭（不是"用户关掉的"，见下面的提示文案）
+        const cfg = readSizeConfig()
+        return !cfg || cfg.codexStatsOn !== false
+      } catch (err) { return false }
+    }
+    function codexStatsOn() {
+      const now = Date.now()
+      if (codexStatsOnV !== null && now - codexStatsOnAt < 2000) return codexStatsOnV
+      const v = codexStatsEnabledFresh()
+      codexStatsOnV = v
+      codexStatsOnAt = now
+      return v
+    }
+    // 关闭原因的文案：区分「用户自己关的」与「压根没配 Codex 模型（默认关）」
+    function codexDisabledReason() {
+      try { return hasCodexModel() ? 'Codex 统计已在设置里关闭' : '未添加 Codex 模型，本机统计默认关闭' } catch (err) { return 'Codex 统计已关闭' }
+    }
+    function codexBackgroundRefresh(delayMs) {
+      if (codexScanP) return codexScanP // 已在扫：先返回，避免重复读配置/重复排队
+      if (!codexStatsOn()) {
+        codexSnap = { ok: false, disabled: true, error: codexDisabledReason() }
+        codexSnapAt = Date.now()
+        return null
+      }
+      if (delayMs > 0) {
+        if (codexCatchupT) return null
+        codexCatchupT = setTimeout(() => { codexCatchupT = null; codexBackgroundRefresh(0) }, delayMs)
+        try { if (codexCatchupT.unref) codexCatchupT.unref() } catch (err) {}
+        return null
+      }
+      codexScanP = codexScan()
+        .then((s) => {
+          codexSnap = s
+          codexSnapAt = Date.now()
+          // 本轮没扫完（预算用尽）→ 稍后补扫，逐步把统计补齐，而不是一次占满事件循环
+          if (s && s.ok && s.deferred > 0) codexBackgroundRefresh(5000)
+        })
+        .catch((err) => {
+          codexSnap = { ok: false, error: String((err && err.message) || err) }
+          codexSnapAt = Date.now()
+        })
+        .finally(() => { codexScanP = null })
+      return codexScanP
+    }
+    function codexSummaryCached() {
+      const now = Date.now()
+      if (!codexSnap || now - codexSnapAt > CODEX_SNAP_TTL) codexBackgroundRefresh(0)
+      return codexSnap
+    }
+    async function codexSummaryEnsured(maxWaitMs) {
+      const stale = !codexSnap || Date.now() - codexSnapAt > CODEX_SNAP_TTL
+      const p = codexScanP || (stale ? codexBackgroundRefresh(0) : null)
+      if (!p) return codexSnap
+      try { await Promise.race([p, new Promise((r) => setTimeout(r, Math.max(200, maxWaitMs || 2500)))]) } catch (err) {}
+      return codexSnap
+    }
+    // 后台预热：**只在真的配了 Codex 时才挂定时器**（v792，用户要求"没设置 Codex 就完全禁用扫描"）。
+    //   背景：真正读盘的 `codexScan()` 早已被 `codexStatsOn()` 拦住（没 Codex 模型 ⇒ 直接返回，一行 I/O 都不做），
+    //   但那两个定时器仍会照常触发、每次都去读一遍注册表判"有没有 Codex 模型"。既然用户明确要求"完全禁用"，
+    //   这里改成**惰性装载**：启动时没有 Codex 模型 ⇒ **连定时器都不挂**；之后用户添加/删除 Codex 模型时由
+    //   `codexRearmPrewarm()` 按需挂上/摘掉（见模型保存路径）。
+    let codexPrewarmT = null, codexPrewarmI = null
+    function codexPrewarmArmed() { return codexPrewarmT !== null || codexPrewarmI !== null }
+    function codexDisarmPrewarm() {
+      try { if (codexPrewarmT !== null) { clearTimeout(codexPrewarmT); codexPrewarmT = null } } catch (err) {}
+      try { if (codexPrewarmI !== null) { clearInterval(codexPrewarmI); codexPrewarmI = null } } catch (err) {}
+      try { if (codexCatchupT !== null) { clearTimeout(codexCatchupT); codexCatchupT = null } } catch (err) {}
+    }
+    function codexRearmPrewarm(immediate) {
+      // ⚠️ 这里用**不带 memo** 的 fresh 判断：装载/改设置都要立刻生效，
+      //    也不能把结果写进 `codexStatsOnV` 那份 2 秒记忆（否则刚改完设置会被旧值挡住，v792 踩过）。
+      const on = codexStatsEnabledFresh()
+      if (!on) { codexDisarmPrewarm(); return false }
+      // 已经挂着就什么都不做（避免每次保存模型都触发一次扫描；5 分钟轮询 + 按需 codexSummaryEnsured 已够）
+      if (codexPrewarmArmed()) return true
+      try {
+        codexPrewarmT = setTimeout(function () { codexPrewarmT = null; try { codexBackgroundRefresh(0) } catch (err) {} }, immediate ? 0 : 1500)
+        codexPrewarmI = setInterval(function () { try { codexBackgroundRefresh(0) } catch (err) {} }, 5 * 60 * 1000)
+        // issue #109：句柄必须存下并进 disposers，否则插件 dispose 后 interval 仍在引用事件循环（退出 dsh 卡住）。
+        try { if (codexPrewarmT && codexPrewarmT.unref) codexPrewarmT.unref() } catch (err) {}
+        try { if (codexPrewarmI && codexPrewarmI.unref) codexPrewarmI.unref() } catch (err) {}
+      } catch (err) {}
+      return true
+    }
+    try {
+      // 启动时按需装载：没配 Codex ⇒ 一个定时器都不建（这就是"完全禁用"）
+      codexRearmPrewarm(false)
+      disposers.push(function () { codexDisarmPrewarm() })
+    } catch (err) {}
+    // ===== 自定义 API 模型注册表（v655）=====
+    // 文件：$DSH_HOME/.dshw-api.json → { version, models:[…], usage:{ [id]:{day,dayStart,lastBalance,delta,eventCost} } }
+    // 密钥不落此文件：写入 DSH 官方凭据（ctx.credentials.set），读取走 credentials.resolve(keyRef)。
+    function defaultApiRegistry() { return { version: 1, models: [], usage: {} } }
+    function readApiRegistry() {
+      for (const p of API_FILE_CANDIDATES) {
+        try {
+          const parsed = JSON.parse(fs.readFileSync(p, 'utf8'))
+          if (parsed && Array.isArray(parsed.models)) {
+            if (!parsed.usage || typeof parsed.usage !== 'object') parsed.usage = {}
+            return parsed
+          }
+        } catch (err) {}
+      }
+      return defaultApiRegistry()
+    }
+    function writeApiRegistry(reg) {
+      const body = JSON.stringify(reg, null, 2)
+      let ok = false
+      for (const p of API_FILE_CANDIDATES) {
+        try { fs.writeFileSync(p, body, 'utf8'); ok = true; break } catch (err) {}
+      }
+      // v792（用户要求）：注册表变了 ⇒ 重新评估要不要挂 Codex 预热。
+      //   加了 Codex 模型 → 立刻挂上（并马上预热一次）；删掉了 / 用户关了开关 → 摘掉定时器（连定时器都不留）。
+      try { if (ok) codexRearmPrewarm(true) } catch (err) {}
+      return ok
+    }
+    function apiTemplateOf(provider) {
+      return API_TEMPLATES[String(provider || '')] || null
+    }
+    // 内置 DeepSeek 永远存在（不进注册表文件），其余来自注册表
+    function apiBuiltinModel() {
+      const t = API_TEMPLATES.deepseek
+      return { id: API_BUILTIN_ID, name: t.name, provider: 'deepseek', currency: t.currency, keyRef: t.keyRef, builtin: true, matchIds: ['deepseek'] }
+    }
+    function apiAllModels() {
+      const custom = readApiRegistry().models.filter((m) => m && m.id && m.id !== API_BUILTIN_ID)
+      return [apiBuiltinModel()].concat(custom)
+    }
+    function apiModelById(id) {
+      if (String(id || '') === API_BUILTIN_ID) return apiBuiltinModel()
+      return readApiRegistry().models.find((m) => m && m.id === id) || null
+    }
+    // JSON 取值：支持 a.b[0].c
+    function pickJsonPath(obj, pathStr) {
+      try {
+        const parts = String(pathStr || '').replace(/\[(\d+)\]/g, '.$1').split('.').filter((x) => x.length > 0)
+        let cur = obj
+        for (const p of parts) {
+          if (cur === null || cur === undefined) return undefined
+          cur = cur[p]
+        }
+        return cur
+      } catch (err) { return undefined }
+    }
+    function apiNum(v, scale) {
+      const n = Number(v)
+      if (!isFinite(n)) return null
+      const s = isFinite(Number(scale)) && Number(scale) > 0 ? Number(scale) : 1
+      return n * s
+    }
+    // v724 非空合并：over 里的空串 / undefined / null **不覆盖** base。
+    // 为什么需要：新建模型时表单里没填的字段会存成空串，若直接 Object.assign，
+    // 空串会把模板自带的接口地址 / 字段路径"盖掉"，余额就永远查不到（会报「未配置余额接口地址」）。
+    function mergeNonEmpty(base, over) {
+      const out = Object.assign({}, base || {})
+      const o = over && typeof over === 'object' ? over : {}
+      for (const k of Object.keys(o)) {
+        const v = o[k]
+        if (v === undefined || v === null || v === '') continue
+        if (v && typeof v === 'object' && !Array.isArray(v)) { out[k] = mergeNonEmpty(out[k], v); continue }
+        out[k] = v
+      }
+      return out
+    }
+    // v724 递归去空：写注册表时用。让"没填的字段"根本不存在 → 模板默认值继续生效（配合 mergeNonEmpty）
+    function stripEmptyDeep(o) {
+      if (Array.isArray(o)) return o
+      if (!o || typeof o !== 'object') return o
+      const out = {}
+      for (const k of Object.keys(o)) {
+        const v = stripEmptyDeep(o[k])
+        if (v === undefined || v === null || v === '') continue
+        if (v && typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length) continue
+        out[k] = v
+      }
+      return out
+    }
+    // PR #104（收窄版）：只放行 http/https，并挡掉云厂商元数据与 link-local 地址。
+    // 关键取舍：**不拦回环与内网** —— 我们内置的 ollama 模板就推荐用户填
+    // http://127.0.0.1:11434/v1（本地 Ollama / LM Studio），自建网关（New API 之类，
+    // 见 issue #53）也跑在本机；拦掉它们会把正当用法一起打死。接口地址由用户自己在面板/
+    // 注册表里填写，且所有 /dsh-whale/* 路由都在受信任栅栏之后 —— 真正要挡的是
+    // 「被诱导去读云元数据把凭据带出来」，而不是「访问本机服务」。
+    // decimal / octal / hex 形式的 IPv4 已由 WHATWG URL 规范化成点分十进制，这里只按规范化结果判定。
+    function assertSafeApiUrl(u) {
+      let parsed
+      try { parsed = new URL(u) } catch { throw new Error('无效的接口地址') }
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('不支持的协议: ' + parsed.protocol)
+      const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+      if (host === 'metadata.google.internal' || host === 'metadata.goog' || host === '100.100.100.200') throw new Error('禁止访问云元数据地址')
+      const m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+      if (m) {
+        const [a, b] = [Number(m[1]), Number(m[2])]
+        if (a === 169 && b === 254) throw new Error('禁止访问 link-local 地址')
+        if (a === 0) throw new Error('禁止访问该地址')
+      }
+      if (/^fe[89ab][0-9a-f]:/i.test(host)) throw new Error('禁止访问 link-local 地址')
+      // v761（安全修复 S1）：URL 里不允许带 userinfo（`https://user:pass@host/`）——
+      // 它是把凭据塞进 URL 的另一种写法，也会让日志/报错里出现凭据
+      if (parsed.username || parsed.password) throw new Error('接口地址不允许携带用户名/密码')
+    }
+    // —— v761（安全修复 S1）：**凭据目的地白名单** ——
+    // 规则：只有当目标 origin **恰好等于该厂商内置模板里写死的端点**时，才允许携带凭据；
+    // 其它地址（用户自定义 URL、以及由 `{base}` 展开出来的地址）都必须带 `model.allowCustomHost === true`
+    // 才放行 —— 而该标志**只能由本机（回环）来源的写请求设置**（见 writeRejection），
+    // 因此远端会话即使改了配置，也拿不到凭据。
+    // 注意：**含 `{base}` 的模板 URL 不算可信**（base 是用户可填字段），一律按自定义地址处理。
+    function originOfUrl(u) {
+      try {
+        const p = new URL(String(u))
+        if (p.protocol !== 'http:' && p.protocol !== 'https:') return ''
+        return p.origin.toLowerCase()
+      } catch (err) { return '' }
+    }
+    function templateOrigins(tpl) {
+      const out = new Set()
+      const add = (u) => {
+        const s = String(u == null ? '' : u)
+        if (!s || s.indexOf('{base}') >= 0) return
+        const o = originOfUrl(s.replace('{key}', 'placeholder'))
+        if (o) out.add(o)
+      }
+      add(tpl && tpl.probeUrl)
+      add(tpl && tpl.balance && tpl.balance.url)
+      add(tpl && tpl.balance && tpl.balance.usage && tpl.balance.usage.url)
+      add(tpl && tpl.quota && tpl.quota.url)
+      return out
+    }
+    function credentialMayGoTo(model, tpl, url) {
+      const o = originOfUrl(url)
+      if (!o) return false
+      if (templateOrigins(tpl).has(o)) return true
+      return !!(model && model.allowCustomHost === true)
+    }
+    function warnCredDestinationOnce(url) {
+      try {
+        const o = originOfUrl(url) || '(无效地址)'
+        if (!warnCredDestinationOnce.seen) warnCredDestinationOnce.seen = new Set()
+        if (warnCredDestinationOnce.seen.has(o)) return
+        warnCredDestinationOnce.seen.add(o)
+        console.warn('[whale-balance] 已拒绝把凭据发送到非内置端点：' + o
+          + '（若这是你自建/自托管的网关，请在**本机**打开插件面板，对该模型勾选「允许把凭据发送到自定义地址」）')
+      } catch (err) {}
+    }
+    // 解析凭据 + 目的地校验：所有"带凭据发请求"的地方都必须走这里
+    async function keyForDestination(model, tpl, url) {
+      let key = ''
+      try {
+        const cred = await ctx.credentials.resolve(model.keyRef || tpl.keyRef || '')
+        key = cred && cred.value ? String(cred.value) : ''
+      } catch (err) { key = '' }
+      if (!key) return { key: '', code: 'NO_KEY', error: '未配置 ' + (model.keyRef || tpl.keyRef || 'API key') }
+      if (!credentialMayGoTo(model, tpl, url)) {
+        warnCredDestinationOnce(url)
+        return {
+          key: '', code: 'DEST_NOT_ALLOWED',
+          error: '该地址不是 ' + String((tpl && tpl.name) || model.provider || '该厂商') + ' 的内置端点，'
+            + '已拒绝把凭据发出去。若这是你自建/自托管的网关，请**在本机**打开插件面板，'
+            + '对该模型勾选「允许把凭据发送到自定义地址」后重试。',
+        }
+      }
+      return { key, code: '', error: '' }
+    }
+    // v789（issue #190）：余额/额度接口不再局限于 GET —— 模板或模型条目可声明 method / body。
+    //   ① method 默认 GET；非 GET 时带 `Content-Type: application/json` 并把 body 发出去；
+    //   ② body 支持占位符：`{key}`（凭据）、`{base}`（Base URL）、以及 `model.params` 里的任意键（如 `{uuid}`）
+    //      —— 这样"POST /v1/enterprise/account {"uuid":"…"}" 这类自建网关不需要再额外挂一层转换服务；
+    //   ③ 安全边界不变：body 只来自配置（不接受请求方传入），目的地仍走 credentialMayGoTo() 白名单，
+    //      URL 仍过 assertSafeApiUrl()。
+    function bodyWithPlaceholders(body, key, base, params) {
+      let s = String(body == null ? '' : body)
+      s = s.split('{key}').join(String(key == null ? '' : key))
+      s = s.split('{base}').join(String(base == null ? '' : base))
+      if (params && typeof params === 'object') {
+        for (const k of Object.keys(params)) {
+          const v = params[k]
+          if (v === undefined || v === null || typeof v === 'object') continue
+          s = s.split('{' + k + '}').join(String(v))
+        }
+      }
+      return s
+    }
+    function httpMethodOf(cfg) {
+      const m = String((cfg && cfg.method) || 'GET').trim().toUpperCase()
+      return /^[A-Z]{3,7}$/.test(m) ? m : 'GET'
+    }
+    // v791（用户要求 + 安全加固）：请求头支持「英文分号分隔的 头名:值 列表」。
+    //   语义：`auth` 从"Authorization 头的值"升级为**请求头列表**，例如
+    //     x-api-key:{key};anthropic-version:2023-06-01
+    //   向后兼容：**不带冒号**的写法（`Bearer {key}` / `{key}`）仍按 **Authorization 头**处理
+    //   ⇒ 30 个内置模板与所有老用户配置一个字都不用改。
+    //   ⚠️ 安全（这是本能力最容易出事的地方，逐条设防）：
+    //     ① 头名必须匹配 RFC7230 的 token 字符集（杜绝 `X: a` 这类含空格/控制字符的名字）；
+    //     ② **禁** Host / Content-Length / Connection / Transfer-Encoding / TE / Upgrade / Cookie /
+    //        Proxy-* / Keep-Alive —— 这些能绕过宿主的 Host 信任栅栏（`DSHW_TRUSTED_HOSTS`）、
+    //        或制造请求走私；被忽略的头会在日志里提示一次（不静默）；
+    //     ③ 头值去掉 CR/LF（防头注入）并限长；单次最多 10 个头；整串限长 2000；
+    //     ④ `{key}` 只在**值**里替换（头名不参与），且密钥永不回显/打日志。
+    const HEADER_NAME_RE = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/
+    const HEADER_DENY = new Set(['host', 'content-length', 'connection', 'transfer-encoding', 'te', 'upgrade',
+      'cookie', 'proxy-authorization', 'proxy-connection', 'keep-alive'])
+    const HEADER_MAX_COUNT = 10
+    const HEADER_NAME_MAX = 64
+    const HEADER_VALUE_MAX = 1000
+    const HEADER_RAW_MAX = 2000
+    const headerWarned = new Set()
+    function headerWarnOnce(name) {
+      const k = String(name)
+      if (headerWarned.has(k)) return
+      headerWarned.add(k)
+      try { console.warn('[dsh-whale] 已忽略请求头「' + k + '」（安全策略：非法头名或禁止的头）') } catch (err) {}
+    }
+    function headersFromAuth(auth, key) {
+      const out = {}
+      let raw = String(auth == null ? 'Bearer {key}' : auth)
+      if (raw.length > HEADER_RAW_MAX) raw = raw.slice(0, HEADER_RAW_MAX)
+      let count = 0
+      for (const seg of raw.split(';')) {
+        const s = seg.trim()
+        if (!s) continue
+        const i = s.indexOf(':')
+        if (i === 0) continue // 「:xxx」没有头名 → 跳过
+        const name = (i > 0 ? s.slice(0, i) : 'Authorization').trim()
+        let value = (i > 0 ? s.slice(i + 1) : s).trim()
+        if (!name || !value) continue
+        if (name.length > HEADER_NAME_MAX || !HEADER_NAME_RE.test(name)) { headerWarnOnce(name); continue }
+        if (HEADER_DENY.has(name.toLowerCase())) { headerWarnOnce(name); continue }
+        if (!Object.prototype.hasOwnProperty.call(out, name) && count >= HEADER_MAX_COUNT) continue
+        value = value.replace(/[\r\n]+/g, ' ').slice(0, HEADER_VALUE_MAX).replace('{key}', String(key == null ? '' : key))
+        out[name] = value
+        count++
+      }
+      return out
+    }
+    function headerNameExists(headers, lowerName) {
+      for (const k of Object.keys(headers)) if (k.toLowerCase() === lowerName) return true
+      return false
+    }
+    async function apiFetchJson(url, auth, key, opts) {
+      const o = opts || {}
+      // v791：头列表（默认值仍是单个 Authorization，与老行为逐字节一致）
+      const headers = headersFromAuth(auth, key)
+      // v724：URL 里也支持 {key}（如 Gemini 的 ?key=… 形式；auth 传空串时不带 Authorization 头）
+      const u = String(url).replace('{key}', key)
+      assertSafeApiUrl(u)
+      const init = { headers, signal: AbortSignal.timeout(15000) }
+      const method = httpMethodOf(o)
+      if (method !== 'GET') {
+        init.method = method
+        const raw = o.body
+        if (raw !== undefined && raw !== null && String(raw).length) {
+          // 用户自己在头列表里写了 Content-Type 就用他的（不覆盖）
+          if (!headerNameExists(headers, 'content-type')) headers['Content-Type'] = 'application/json'
+          init.body = bodyWithPlaceholders(raw, key, o.base, o.params)
+        }
+      }
+      const res = await fetch(u, init)
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      return await res.json()
+    }
+    // 测试连通性：优先模板的 probeUrl（如方舟 /api/v3/models），否则用余额接口/Base URL
+    // 从响应体里提炼「业务层错误」：有些接口（如智谱额度）key 不对也返回 HTTP 200，
+    // 真正的问题在 body 的 code/msg（例如「当前用户不存在coding plan」），必须报出来
+    function apiBusinessError(data) {
+      if (!data || typeof data !== 'object') return ''
+      if (data.success === false || data.ok === false) {
+        return String(data.msg || data.message || data.error || 'success=false').slice(0, 120)
+      }
+      const code = Number(data.code)
+      if (isFinite(code) && code !== 0 && code !== 200 && data.msg) return String(data.msg).slice(0, 120)
+      if (typeof data.error === 'string' && data.error) return data.error.slice(0, 120)
+      if (data.error && typeof data.error === 'object' && data.error.message) return String(data.error.message).slice(0, 120)
+      return ''
+    }
+    async function apiProbeModel(model) {
+      if (!model) return { ok: false, error: '模型不存在' }
+      const tpl = apiTemplateOf(model.provider) || {}
+      if (model.id === API_BUILTIN_ID) {
+        const r = await fetchBalance()
+        return r.ok ? { ok: true, detail: '余额 ' + r.totalBalance + ' ' + (r.currency || 'CNY') } : { ok: false, error: r.error || r.code }
+      }
+      // Codex 模式：本地会话统计即「探活结果」，不需要网络与密钥
+      if (tpl.kind === 'codex') {
+        const cs = await codexSummaryEnsured(2500)
+        const f = (n) => (n >= 100000000 ? (n / 100000000).toFixed(2) + '亿' : (n >= 10000 ? (n / 10000).toFixed(1).replace(/\.0$/, '') + '万' : String(Math.round(Number(n) || 0))))
+        if (cs && cs.ok) {
+          return { ok: true, detail: 'Codex 本地会话：今日 ' + f(cs.todayTokens) + ' · 本月 ' + f(cs.monthTokens) + ' · 累计 ' + f(cs.totalTokens) + ' tokens（' + cs.sessions + ' 个会话文件）' }
+        }
+        return { ok: false, error: (cs && cs.error) || '未找到 Codex 会话目录' }
+      }
+      const b = mergeNonEmpty(tpl.balance, model.balance) // v724：模型侧空串不再覆盖模板
+      const base = String(model.baseUrl || '').replace(/\/+$/, '')
+      // v789（issue #190）：声明了 POST 等非 GET 方法时，测试就直接打**用户配置的余额接口**（带同一个 body）——
+      // 否则会拿 GET 去打一个只支持 POST 的地址、误报"测试失败"（probeUrl 多是 models 列表，body 不通用）。
+      const nonGet = httpMethodOf(b) !== 'GET'
+      const url = String(nonGet ? (b.url || tpl.probeUrl || '') : (tpl.probeUrl || b.url || (base ? base + '/v1/models' : ''))).replace('{base}', base)
+      if (!url) return { ok: false, error: '没有可测试的接口（请填余额接口或 Base URL）' }
+      // v761（安全修复 S1）：只在目的地可信时才带上凭据
+      const k = await keyForDestination(model, tpl, url)
+      if (!k.key) return { ok: false, code: k.code, error: k.error }
+      const key = k.key
+      try {
+        const data = await apiFetchJson(url, b.auth, key, { method: b.method, body: b.body, base: base, params: model.params })
+        const bizErr = apiBusinessError(data)
+        if (bizErr) return { ok: false, error: '测试失败: ' + bizErr }
+        let detail = 'HTTP 200'
+        if (data && Array.isArray(data.data)) detail = '可用模型 ' + data.data.length + ' 个'
+        else if (data && data.data && Array.isArray(data.data.models)) detail = '可用模型 ' + data.data.models.length + ' 个'
+        return { ok: true, detail: detail }
+      } catch (err) {
+        return { ok: false, error: '测试失败: ' + String((err && err.message) || err).slice(0, 140) }
+      }
+    }
+    // v789（issue #180/#181）：额度接口里"多窗口 + 数组顺序不保证"的通用取数。
+    //   智谱 `GET /api/monitor/usage/quota/limit` 返回的 `data.limits[]` 是**扁平条目数组**：
+    //   `TOKENS_LIMIT` 是每条的 `type` 字段值（不是 `limits[0]` 的子对象），5h 窗口不保证排在 `[0]`
+    //   （实测：pro 账号 `limits[0]` 是 TIME_LIMIT，max 账号 `limits[0]` 是 TOKENS_LIMIT ⇒ 按位置取数必然出错过），
+    //   而且新注册/credit 制账号把 `type` 改成了 `CREDIT_LIMIT`。
+    //   所以模板可以声明 `pick: { list, type/types, unit, number }`：先选中**那一条**，再把它的字段当作取数根。
+    function pickQuotaEntry(data, pick) {
+      try {
+        if (!pick || !pick.list) return null
+        const arr = pickJsonPath(data, pick.list)
+        if (!Array.isArray(arr)) return null
+        const types = []
+        if (pick.type) types.push(String(pick.type))
+        if (Array.isArray(pick.types)) for (const t of pick.types) types.push(String(t))
+        const unit = (pick.unit === undefined || pick.unit === null) ? null : Number(pick.unit)
+        const number = (pick.number === undefined || pick.number === null) ? null : Number(pick.number)
+        for (const it of arr) {
+          if (!it || typeof it !== 'object') continue
+          if (types.length && types.indexOf(String(it.type)) < 0) continue
+          if (unit !== null && Number(it.unit) !== unit) continue
+          if (number !== null && Number(it.number) !== number) continue
+          return it
+        }
+        return null
+      } catch (err) { return null }
+    }
+    // 订阅额度（Coding Plan）解析：各厂商字段不同，统一归一成「已用% + 重置时间 + 档位」
+    //   zhipu:    data.limits[] 里 type=TOKENS_LIMIT/CREDIT_LIMIT + unit=3(5h)/6(周) 的条目（v789 起按 pick 选）
+    //   kimi:     usage.remaining / usage.limit（剩余/总量）
+    //   minimax:  model_remains[0].current_interval_remaining_percent（剩余%）+ end_time(ms)
+    async function fetchModelQuota(model) {
+      if (!model) return { ok: false, error: '模型不存在' }
+      const tpl = apiTemplateOf(model.provider) || {}
+      // v789（issue #180 建议 3）：模型条目也能覆盖额度配置 —— 厂商接口变动时用户可自救（不留空即覆盖）
+      const q = mergeNonEmpty(tpl.quota, model.quota)
+      if (!q || !q.url) return { ok: false, code: 'NO_QUOTA', error: '该厂商没有订阅额度接口' }
+      const base = String(model.baseUrl || '').replace(/\/+$/, '')
+      const url = String(q.url).replace('{base}', base)
+      // v761（安全修复 S1）：额度 URL 虽来自模板，但 `{base}` 会被用户字段改写，同样要校验目的地
+      const k = await keyForDestination(model, tpl, url)
+      if (!k.key) return { ok: false, code: k.code, error: k.error }
+      const key = k.key
+      try {
+        const data = await apiFetchJson(url, q.auth, key, { method: q.method, body: q.body, base: base, params: model.params })
+        const bizErr = apiBusinessError(data)
+        if (bizErr) return { ok: false, code: 'BIZ', error: bizErr }
+        const j = q.json || {}
+        const num = (v) => { const n = Number(v); return isFinite(n) ? n : null }
+        // v789：若模板声明了顶层 pick（单窗口 + 数组筛选），先把取数根换成选中的那条
+        const jroot = j.pick ? (pickQuotaEntry(data, j.pick) || {}) : data
+        let usedPct = null, remainPct = null, resetAt = null, level = '', weeklyUsedPct = null
+        if (j.percent) { const p = num(pickJsonPath(jroot, j.percent)); if (p !== null) usedPct = p }
+        if (j.remainPct) {
+          const p = num(pickJsonPath(jroot, j.remainPct))
+          if (p !== null) { remainPct = p; if (usedPct === null) usedPct = Math.max(0, 100 - p) }
+        }
+        if (j.weeklyRemainPct) {
+          const p = num(pickJsonPath(jroot, j.weeklyRemainPct))
+          if (p !== null) weeklyUsedPct = Math.max(0, 100 - p)
+        }
+        if (j.remain && j.total) {
+          const r0 = num(pickJsonPath(jroot, j.remain))
+          const t0 = num(pickJsonPath(jroot, j.total))
+          if (r0 !== null && t0) {
+            remainPct = Math.max(0, Math.min(100, r0 / t0 * 100))
+            usedPct = Math.max(0, 100 - remainPct)
+          }
+        }
+        if (j.resetAt) resetAt = pickJsonPath(jroot, j.resetAt)
+        if (j.resetAtMs) { const ms = num(pickJsonPath(jroot, j.resetAtMs)); if (ms !== null) resetAt = ms }
+        if (j.level) level = String(pickJsonPath(data, j.level) || '')
+        // v0.3.1：多窗口额度 —— 有些订阅额度接口一次返回多个窗口（如 OpenCode Go 的
+        // rolling / weekly / monthly），每个窗口各有「已用% + 重置时间」。模板用
+        // json.windows: [{ key, label, percent, resetAt }] 描述；这里归一成 windows 数组，
+        // 并把第一个窗口回填成主窗口 usedPct / resetAt，保持原有单窗口链路的兼容。
+        let windows = null
+        if (Array.isArray(j.windows)) {
+          const list = []
+          for (const w of j.windows) {
+            if (!w) continue
+            // v789：每个窗口可以各自 pick 一条（智谱 5h=unit3 / 周=unit6），选中后以该条为取数根
+            const wroot = w.pick ? (pickQuotaEntry(data, w.pick) || {}) : data
+            let wp = w.percent ? num(pickJsonPath(wroot, w.percent)) : null
+            if (wp !== null) wp = Math.max(0, Math.min(100, wp))
+            let wr = null
+            if (w.resetAt) {
+              const rv = pickJsonPath(wroot, w.resetAt)
+              if (rv !== undefined && rv !== null && rv !== '') wr = rv
+            }
+            if (wp === null && wr === null) continue
+            list.push({ key: String(w.key || ''), label: String(w.label || ''), usedPct: wp, resetAt: wr })
+          }
+          if (list.length) windows = list
+        }
+        if (windows) {
+          const w0 = windows[0]
+          if (usedPct === null && w0.usedPct !== null) usedPct = w0.usedPct
+          if (!resetAt && w0.resetAt !== null) resetAt = w0.resetAt
+          if (weeklyUsedPct === null) {
+            for (const w of windows) {
+              if ((w.key === 'weekly' || w.label === '周') && w.usedPct !== null) { weeklyUsedPct = w.usedPct; break }
+            }
+          }
+        }
+        if (usedPct === null && remainPct === null && !resetAt && !windows) {
+          return { ok: false, code: 'PARSE', error: '额度接口返回无法解析（字段路径不匹配）' }
+        }
+        return { ok: true, usedPct, remainPct, resetAt, level, weeklyUsedPct, windows }
+      } catch (err) {
+        return { ok: false, code: 'HTTP', error: '额度接口请求失败: ' + String((err && err.message) || err).slice(0, 140) }
+      }
+    }
+    // 厂商回报「账号没有该订阅套餐」（如智谱的「当前用户不存在coding plan」）：
+    // 对没订阅的用户这行没意义，标记 hide 让前端不显示（真正的网络/密钥错误不隐藏）
+    function apiPlanNoPlan(msg) {
+      const s = String(msg || '').toLowerCase()
+      if (!s) return false
+      return s.indexOf('coding plan') >= 0 || s.indexOf('不存在') >= 0 || s.indexOf('未订阅') >= 0 ||
+        s.indexOf('not subscribed') >= 0 || s.indexOf('no plan') >= 0 || s.indexOf('no active') >= 0 ||
+        s.indexOf('subscription') >= 0
+    }
+    // 取某模型余额：DeepSeek 复用既有官方链路；其余按模板/自定义描述请求并解析
+    async function fetchModelBalance(model) {
+      if (!model) return { ok: false, code: 'NO_MODEL', error: '模型不存在' }
+      if (model.id === API_BUILTIN_ID) {
+        const r = await fetchBalance()
+        if (!r.ok) return r
+        return { ok: true, remaining: Number(r.totalBalance), currency: r.currency || 'CNY' }
+      }
+      const tpl = apiTemplateOf(model.provider) || {}
+      const b = mergeNonEmpty(tpl.balance, model.balance) // v724：模型侧空串不再覆盖模板
+      if (!b.url) return { ok: false, code: 'NO_URL', error: '未配置余额接口地址' }
+      const base = String(model.baseUrl || '').replace(/\/+$/, '')
+      const url = String(b.url).replace('{base}', base)
+      // v761（安全修复 S1）：凭据只在目的地可信（厂商内置端点 / 本机确认过的自定义地址）时才带上
+      const k = await keyForDestination(model, tpl, url)
+      if (!k.key) return { ok: false, code: k.code, error: k.error }
+      const key = k.key
+      try {
+        // v789（issue #190）：把 method / body / params 一并交给取数层（默认 GET，与以前完全一致）
+        const data = await apiFetchJson(url, b.auth, key, { method: b.method, body: b.body, base: base, params: model.params })
+        const j = b.json || {}
+        let remaining = null
+        let total = null
+        let used = 0
+        if (j.remaining) { const v = apiNum(pickJsonPath(data, j.remaining), j.scale); if (v !== null) remaining = v }
+        if (j.total) { const v = apiNum(pickJsonPath(data, j.total), j.scale); if (v !== null) total = v }
+        if (j.used) { const v = apiNum(pickJsonPath(data, j.used), j.scale); if (v !== null) used += v }
+        if (b.usage && b.usage.url) {
+          const u = b.usage
+          // v761（安全修复 S1）：usage 是可选增强 —— 目的地不可信就跳过，绝不把凭据发出去
+          const usageUrl = String(u.url).replace('{base}', base)
+          if (credentialMayGoTo(model, tpl, usageUrl)) {
+          const d2 = await apiFetchJson(usageUrl, u.auth || b.auth, key)
+          const j2 = u.json || {}
+          if (j2.used) { const v = apiNum(pickJsonPath(d2, j2.used), j2.scale); if (v !== null) used += v }
+          } else { warnCredDestinationOnce(usageUrl) }
+        }
+        if (remaining === null && total !== null) remaining = total - used
+        if (remaining === null) return { ok: false, code: 'SHAPE', error: '接口返回里没找到配置的字段（检查 JSON 路径）' }
+        return { ok: true, remaining, total, used, currency: model.currency || tpl.currency || 'CNY' }
+      } catch (err) {
+        return { ok: false, code: 'HTTP', error: '余额接口请求失败: ' + String((err && err.message) || err).slice(0, 160) }
+      }
+    }
+    // 逐模型记录的骨架：跨天只重置「当日」字段，累计量（tokensTotal/tokensMonth）保留
+    function apiUsageNewDay(cur, day, dayKey) {
+      const prev = cur && typeof cur === 'object' ? cur : {}
+      const mk = String(dayKey || '').slice(0, 7)
+      return {
+        day: day, dayStart: null, lastBalance: null, delta: 0, eventCost: 0, eventTokens: 0, currency: '',
+        tokensTotal: Number(prev.tokensTotal) || 0,
+        month: mk,
+        tokensMonth: prev.month === mk ? (Number(prev.tokensMonth) || 0) : 0,
+      }
+    }
+    // 逐模型余额差记账（与 DeepSeek 账本同口径：当天首次观测为基准，之后累加下降额）
+    function apiRecordBalance(id, remaining) {
+      try {
+        const reg = readApiRegistry()
+        reg.usage = reg.usage && typeof reg.usage === 'object' ? reg.usage : {}
+        const day = todayKey()
+        let cur = reg.usage[id]
+        if (!cur || cur.day !== day) cur = apiUsageNewDay(cur, day, todayKey())
+        if (typeof remaining === 'number' && isFinite(remaining)) {
+          if (cur.dayStart === null || cur.dayStart === undefined) cur.dayStart = remaining
+          if (typeof cur.lastBalance === 'number' && remaining < cur.lastBalance) cur.delta = addMoney(cur.delta, cur.lastBalance - remaining)
+          cur.lastBalance = remaining
+        }
+        reg.usage[id] = cur
+        writeApiRegistry(reg)
+        return cur
+      } catch (err) { return null }
+    }
+    // 今日已用：来源可能是「余额差」（厂商币种）或「会话事件金额」（已按自定义单价折算成人民币）。
+    // 两种来源币种不同 → 返回值必须带上 currency，前端显示与阈值比较都按它走，
+    // 否则 USD 单价的模型会把人民币数额渲染成 $、或拿两种单位直接比大小。
+    function apiTodayUsage(id, modelCurrency) {
+      const mcur = String(modelCurrency || 'CNY').toUpperCase() || 'CNY'
+      try {
+        const reg = readApiRegistry()
+        const cur = reg.usage && reg.usage[id]
+        if (!cur || cur.day !== todayKey()) return { amount: 0, source: 'none', currency: mcur }
+        if (typeof cur.lastBalance === 'number' && isFinite(cur.lastBalance)) return { amount: preciseMoney(cur.delta || 0), source: 'balance', currency: mcur }
+        return { amount: preciseMoney(Number(cur.eventCost) || 0), source: 'events', currency: 'CNY' }
+      } catch (err) { return { amount: 0, source: 'none', currency: mcur } }
+    }
+    function apiUsageRaw(id) {
+      try {
+        const reg = readApiRegistry()
+        return (reg.usage && reg.usage[id]) || null
+      } catch (err) { return null }
+    }
+    // 额度「已用」：自动模式用会话 token 统计（不重置=累计-基准，每日=今日，每月=本月）
+    function apiQuotaAutoUsed(id, q) {
+      const u = apiUsageRaw(id) || {}
+      const reset = (q && q.reset) || 'none'
+      // 单位是「金额（元）」时自动统计意义不成立：自动累计的是 token，不是钱。
+      // 这里直接回退成手动值（q.used），避免把 token 数当金额显示；界面上也约束为只能手动填写。
+      if (q && q.unit === 'money' && (q.mode === 'auto' || q.mode === 'codex')) {
+        return Math.round(Number(q.used) || 0)
+      }
+      // Codex 模式：已用 = Codex 本地会话统计的 token（按重置口径取今日/本月/累计）
+      if (q && q.mode === 'codex') {
+        const cs = codexSummaryCached()
+        const base = Number(q.used) || 0
+        if (!cs || !cs.ok) return base
+        if (reset === 'daily') return Math.round(Number(cs.todayTokens) || 0)
+        if (reset === 'monthly') return Math.round(Number(cs.monthTokens) || 0)
+        const baseAt = Number(q.baseAt) || 0
+        return Math.round(base + Math.max(0, (Number(cs.totalTokens) || 0) - baseAt))
+      }
+      if (reset === 'daily') return Math.round(Number(u.eventTokens) || 0)
+      if (reset === 'monthly') return Math.round(Number(u.tokensMonth) || 0)
+      const total = Number(u.tokensTotal) || 0
+      const baseAt = Number(q && q.baseAt) || 0
+      // used 在自动模式下表示「起始已用」（装机前已经用掉的部分）
+      return Math.round((Number(q && q.used) || 0) + Math.max(0, total - baseAt))
+    }
+    // 会话事件归属：把某模型的 token 花费累加到注册表里匹配的模型（matchIds 子串匹配）
+    function apiAttributeEvent(modelName, cost, tokens) {
+      try {
+        const name = String(modelName || '').toLowerCase()
+        if (!name) return false
+        const reg = readApiRegistry()
+        let hit = null
+        for (const m of reg.models) {
+          if (!m || !m.id) continue
+          const ids = Array.isArray(m.matchIds) && m.matchIds.length ? m.matchIds : [m.name, m.id]
+          for (const s of ids) {
+            const k = String(s || '').toLowerCase().trim()
+            if (k && name.indexOf(k) >= 0) { hit = m; break }
+          }
+          if (hit) break
+        }
+        if (!hit) return false
+        reg.usage = reg.usage && typeof reg.usage === 'object' ? reg.usage : {}
+        const day = todayKey()
+        let cur = reg.usage[hit.id]
+        if (!cur || cur.day !== day) cur = apiUsageNewDay(cur, day, todayKey())
+        cur.eventCost = addMoney(Number(cur.eventCost) || 0, Number(cost) || 0)
+        cur.eventTokens = (Number(cur.eventTokens) || 0) + (Number(tokens) || 0)
+        // 累计量：额度（资源包/订阅）按它算已用；跨天不清零
+        const tk = Number(tokens) || 0
+        cur.tokensTotal = (Number(cur.tokensTotal) || 0) + tk
+        const mk = todayKey().slice(0, 7)
+        if (cur.month !== mk) { cur.month = mk; cur.tokensMonth = 0 }
+        cur.tokensMonth = (Number(cur.tokensMonth) || 0) + tk
+        reg.usage[hit.id] = cur
+        writeApiRegistry(reg)
+        return true
+      } catch (err) { return false }
+    }
+    // 删除模型：注册表 + 逐模型设置 + 所有泡泡里引用该模型的模块（含并列 A/B 与模块库）
+    function apiDeleteModel(id) {
+      const mid = String(id || '')
+      if (!mid || mid === API_BUILTIN_ID) return { ok: false, error: '内置模型不可删除' }
+      const reg = readApiRegistry()
+      reg.models = reg.models.filter((m) => !(m && m.id === mid))
+      if (reg.usage) delete reg.usage[mid]
+      writeApiRegistry(reg)
+      // 删除模型后同样失效单价缓存（它可能带着自定义单价）
+      customPriceAt = 0
+      let removed = 0
+      try {
+        const led = readUsageLedger()
+        if (led.settings && led.settings.models && led.settings.models[mid]) {
+          delete led.settings.models[mid]
+          writeUsageLedger(led)
+        }
+      } catch (err) {}
+      try {
+        const cfg = loadBubbleConfig()
+        let changed = false
+        const stripItem = (obj) => {
+          if (!obj || typeof obj !== 'object') return
+          if (Array.isArray(obj.modules)) {
+            const before = obj.modules.length
+            obj.modules = obj.modules.filter((m) => !(m && m.modelId === mid))
+            removed += before - obj.modules.length
+            if (obj.modules.length !== before) changed = true
+          }
+          if (Array.isArray(obj.options)) {
+            for (const o of obj.options) if (o && o.item) stripItem(o.item)
+          }
+        }
+        // 泡泡步骤（含并列 A/B）
+        if (Array.isArray(cfg.items)) for (const it of cfg.items) stripItem(it)
+        // 模块库条目形态为 {id,name,module}
+        if (Array.isArray(cfg.lib)) {
+          for (let i = cfg.lib.length - 1; i >= 0; i--) {
+            const lb = cfg.lib[i]
+            if (lb && lb.module && lb.module.modelId === mid) { cfg.lib.splice(i, 1); changed = true; removed++; continue }
+            if (lb && lb.module) stripItem(lb.module)
+          }
+        }
+        if (changed) writeBubbleConfig(cfg)
+      } catch (err) {}
+      // v748：删掉的可能是最后一个 Codex 模型 → 立即重算「本机统计」是否启用（含清掉 2s 开关缓存）
+      try { codexInvalidate() } catch (err) {}
+      return { ok: true, removedModules: removed }
+    }
+    // 新增/更新模型；密钥（keyValue）若提供则写入 DSH 官方凭据
+    // 自定义单价表刷新：把每个自定义 API 模型的 matchIds → 价格表映射进来，供 module 级 priceFor 使用
+    // （priceFor 在模块作用域，读不到插件内的注册表，所以这里把结果写进 CUSTOM_PRICES）
+    let customPriceAt = 0
+    function refreshCustomPrices() {
+      const now = Date.now()
+      if (now - customPriceAt < 10000) return
+      customPriceAt = now
+      try {
+        const map = {}
+        const metaMap = {}
+        for (const m of readApiRegistry().models) {
+          // 内置模型（DeepSeek）跳过：它有自己的峰谷价表，不能被自定义单价覆盖
+          if (!m || m.id === API_BUILTIN_ID) continue
+          const pr = m && m.price
+          if (!pr) continue
+          const hit = Number(pr.hit), miss = Number(pr.miss), out = Number(pr.out)
+          const ok = (v) => (isFinite(v) ? v : 0)
+          if (!isFinite(hit) && !isFinite(miss) && !isFinite(out)) continue
+          const table = { hit: [ok(hit), ok(hit)], miss: [ok(miss), ok(miss)], out: [ok(out), ok(out)] }
+          const meta = { cur: String(pr.cur || 'CNY').toUpperCase(), rate: isFinite(Number(pr.rate)) ? Number(pr.rate) : 0 }
+          const ids = Array.isArray(m.matchIds) && m.matchIds.length ? m.matchIds : [m.name, m.id]
+          for (const s of ids) {
+            const k = String(s || '').toLowerCase().trim()
+            // 关键字过短（< 3 字符，如 pro/flash）极易误伤其它模型，直接忽略
+            if (k && k.length >= 3) { map[k] = table; metaMap[k] = meta }
+          }
+        }
+        CUSTOM_PRICES = map
+        CUSTOM_PRICE_META = metaMap
+      } catch (err) {}
+    }
+    async function apiSaveModel(input) {
+      const p = input || {}
+      const tpl = apiTemplateOf(p.provider)
+      if (!tpl) return { ok: false, error: '未知的厂商模板' }
+      const name = String(p.name || '').trim().slice(0, 30) || tpl.name
+      const keyRef = String(p.keyRef || tpl.keyRef || '').trim().slice(0, 64) || tpl.keyRef
+      // v761（安全修复 S1）：凭据名加白名单 —— 原实现接受任意字符串，理论上能写到别的键名上
+      if (!/^[A-Za-z0-9_]{1,64}$/.test(keyRef)) return { ok: false, error: '凭据名只能包含字母、数字与下划线（≤64 字符）' }
+      const id = p.id ? String(p.id) : ('api_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7))
+      const reg = readApiRegistry()
+      let model = reg.models.find((m) => m && m.id === id)
+      if (!model) {
+        model = { id, createdAt: Date.now() }
+        reg.models.push(model)
+      }
+      model.name = name
+      model.provider = p.provider
+      model.currency = String(p.currency || tpl.currency || 'CNY').toUpperCase().slice(0, 8)
+      model.keyRef = keyRef
+      // v761（安全修复 S1）：**允许把凭据发往自定义地址**（自建/自托管网关需要）。
+      // 该标志是"凭据目的地白名单"的唯一例外，而所有写请求都被限制为**本机来源**（见 writeRejection），
+      // 所以远端会话即使能改配置，也无法给自己开这个口子。缺省不动（前端局部更新不会误抹）。
+      if (p.allowCustomHost === true) model.allowCustomHost = true
+      else if (p.allowCustomHost === false) delete model.allowCustomHost
+      if (p.baseUrl !== undefined) model.baseUrl = String(p.baseUrl || '').slice(0, 300)
+      // v789（issue #190）：请求体里可用的 `{占位符}`（如 {uuid}）—— 只允许标量，键名受限
+      if (p.params && typeof p.params === 'object') {
+        const pr = {}
+        for (const k of Object.keys(p.params)) {
+          if (!/^[A-Za-z_][A-Za-z0-9_]{0,30}$/.test(k)) continue
+          const v = p.params[k]
+          if (v === undefined || v === null || typeof v === 'object') continue
+          pr[k] = String(v).slice(0, 300)
+        }
+        if (Object.keys(pr).length) model.params = pr
+        else delete model.params
+      }
+      if (p.quota && typeof p.quota === 'object' && p.quota.json && typeof p.quota.json === 'object') {
+        // v789（issue #180 建议 3）：允许模型条目覆盖额度配置（厂商接口变动时用户可自救）。
+        // 只收 JSON-safe 的形状，且路径字符串限长 —— 与模板同构，不做二次校验的滥用面。
+        const qj = {}
+        const pathOf = (v) => String(v || '').slice(0, 200)
+        if (p.quota.url) qj.url = String(p.quota.url).slice(0, 500)
+        if (p.quota.auth !== undefined) qj.auth = String(p.quota.auth || '').slice(0, 1000)
+        const jin = p.quota.json
+        for (const k of ['percent', 'remainPct', 'weeklyRemainPct', 'remain', 'total', 'resetAt', 'resetAtMs', 'level']) {
+          if (jin[k]) qj[k] = pathOf(jin[k])
+        }
+        if (Array.isArray(jin.windows)) {
+          qj.windows = jin.windows.slice(0, 6).map((w) => {
+            const o = { key: String((w && w.key) || '').slice(0, 20), label: String((w && w.label) || '').slice(0, 20) }
+            if (w && w.percent) o.percent = pathOf(w.percent)
+            if (w && w.resetAt) o.resetAt = pathOf(w.resetAt)
+            if (w && w.pick && typeof w.pick === 'object') {
+              const pk = { list: pathOf(w.pick.list) }
+              if (w.pick.type) pk.type = String(w.pick.type).slice(0, 40)
+              if (Array.isArray(w.pick.types)) pk.types = w.pick.types.slice(0, 4).map((t) => String(t).slice(0, 40))
+              if (w.pick.unit !== undefined) pk.unit = Number(w.pick.unit)
+              if (w.pick.number !== undefined) pk.number = Number(w.pick.number)
+              o.pick = pk
+            }
+            return o
+          })
+        }
+        if (qj.url && (Object.keys(qj).length > 1)) model.quota = qj
+      }
+      if (p.balance && typeof p.balance === 'object') {
+        // v724：空字段不写入（stripEmptyDeep）→ 模板默认值继续生效；
+        // 全部为空时直接删掉 model.balance，等于"完全用模板"
+        const balIn = stripEmptyDeep({
+          url: String(p.balance.url || '').slice(0, 500),
+          // v791：auth 现在是「头名:值」列表，比单个 Authorization 值长 ⇒ 上限 200 → 1000
+          auth: String(p.balance.auth || '').slice(0, 1000),
+          // v789（issue #190）：可选的请求方法与请求体（留空 ⇒ 沿用模板/GET）
+          method: String(p.balance.method || '').slice(0, 8).toUpperCase(),
+          body: String(p.balance.body || '').slice(0, 4000),
+          json: {
+            remaining: String((p.balance.json && p.balance.json.remaining) || '').slice(0, 200),
+            total: String((p.balance.json && p.balance.json.total) || '').slice(0, 200),
+            used: String((p.balance.json && p.balance.json.used) || '').slice(0, 200),
+            scale: isFinite(Number(p.balance.json && p.balance.json.scale)) ? Number(p.balance.json.scale) : undefined,
+          },
+        })
+        if (balIn && Object.keys(balIn).length) model.balance = balIn
+        else delete model.balance
+        if (p.balance.usage && p.balance.usage.url) {
+          model.balance = model.balance || {}
+          model.balance.usage = stripEmptyDeep({
+            url: String(p.balance.usage.url).slice(0, 500),
+            auth: String(p.balance.usage.auth == null ? '' : p.balance.usage.auth).slice(0, 1000),
+            json: { used: String((p.balance.usage.json && p.balance.usage.json.used) || '').slice(0, 200), scale: isFinite(Number(p.balance.usage.json && p.balance.usage.json.scale)) ? Number(p.balance.usage.json.scale) : undefined },
+          })
+        }
+      }
+      // 会话事件归属：默认用「模型名」和「id」做子串匹配，用户可另填
+      // 自定义单价（元/百万 token）：缓存命中 / 未命中输入 / 输出。留空则沿用内置价目表
+      if (p.price && typeof p.price === 'object') {
+        const num = (v) => {
+          const s = String(v === undefined || v === null ? '' : v).trim()
+          if (s === '') return undefined
+          return isFinite(Number(s)) ? Number(s) : undefined
+        }
+        const pr = { hit: num(p.price.hit), miss: num(p.price.miss), out: num(p.price.out) }
+        const cur0 = String(p.price.cur || '').trim().toUpperCase().slice(0, 8)
+        const rate0 = num(p.price.rate)
+        const anyPrice = pr.hit !== undefined || pr.miss !== undefined || pr.out !== undefined
+        // 校验（为什么：不校验的话，负数/超大值会算出荒谬金额；USD 缺汇率会被静默当人民币记账）
+        const inRange = (v, max) => v === undefined || (v >= 0 && v <= max)
+        if (!inRange(pr.hit, 1000000) || !inRange(pr.miss, 1000000) || !inRange(pr.out, 1000000)) {
+          return { ok: false, error: '单价必须是 0–1000000 之间的数字（单位：币种/百万 token）' }
+        }
+        if (rate0 !== undefined && !(rate0 > 0 && rate0 <= 1000)) {
+          return { ok: false, error: '汇率必须是 0–1000 之间的正数（元/USD）' }
+        }
+        if (anyPrice && cur0 === 'USD' && !(rate0 > 0)) {
+          return { ok: false, error: '单价币种为美元时必须填写汇率（元/USD）' }
+        }
+        if (cur0) pr.cur = cur0
+        if (rate0 !== undefined) pr.rate = rate0
+        if (pr.hit === undefined && pr.miss === undefined && pr.out === undefined) delete model.price
+        else model.price = pr
+      } else if (p.price === null) {
+        delete model.price
+      }
+      writeApiRegistry(reg)
+      // 改完单价立即失效缓存：否则 refreshCustomPrices 的 10 秒节流会让新价最坏 10 秒后才生效
+      customPriceAt = 0
+      // v748：新增/编辑模型可能改变"有没有 Codex 模型"，让 Codex 统计开关与快照立刻重算
+      try { codexInvalidate() } catch (err) {}
+      let keySaved = false
+      if (p.keyValue !== undefined && String(p.keyValue).length) {
+        try {
+          await ctx.credentials.set(keyRef, String(p.keyValue))
+          keySaved = true
+        } catch (err) {}
+      }
+      return { ok: true, id, keySaved }
+    }
+    // 列表（含实时余额与各模型提醒/预算）：余额并发取，失败只影响该项
+    async function apiModelsPayload() {
+      const models = apiAllModels()
+      const settings = readUsageSettings()
+      const out = []
+      let codexStats = null // Codex 本地会话统计（机器级，多个 codex 模型共享，算一次）
+      for (const m of models) {
+        let entry = {
+          id: m.id, name: m.name, provider: m.provider, currency: m.currency,
+          keyRef: m.keyRef, builtin: !!m.builtin, baseUrl: m.baseUrl || '',
+          // v761（安全修复 S1）：该模型当前的目的地拿不到凭据（非厂商内置端点且未在本机确认过），
+          // 前端据此提示用户"要去本机面板确认"，而不是让余额莫名其妙地空着。
+          needsHostConfirm: (() => {
+            try {
+              const tpl2 = apiTemplateOf(m.provider) || {}
+              const b2 = mergeNonEmpty(tpl2.balance, m.balance) || {}
+              const base2 = String(m.baseUrl || "").replace(/\/+$/, "")
+              const u2 = String(tpl2.probeUrl || b2.url || "").replace("{base}", base2)
+              return !!u2 && !credentialMayGoTo(m, tpl2, u2)
+            } catch (err) { return false }
+          })(),
+          canAdjustBalance: canAdjustBuiltinBalance(m),
+          matchIds: m.matchIds || [], settings: settings.models && settings.models[m.id] ? settings.models[m.id] : null,
+          price: m.price || null,
+          // 手动额度（订阅/资源包）：总量、单位、已用、重置周期；前端据此显示额度模块
+          quota: (settings.models && settings.models[m.id] && settings.models[m.id].quota)
+            ? Object.assign({}, settings.models[m.id].quota) : null,
+          balance: null, todayUsage: null, todayUsageCurrency: null, usageSource: 'none', error: null,
+        }
+        // 自动模式的「已用」由 host 按会话 token 统计（前端不自己算）
+        if (entry.quota) {
+          entry.quota.autoUsed = apiQuotaAutoUsed(m.id, entry.quota)
+          entry.quota.autoToday = Math.round(Number((apiUsageRaw(m.id) || {}).eventTokens) || 0)
+        }
+        // 把「接口描述」（url/请求头/字段）单独下发，供前端面板回填；
+        // entry.balance 是数值，不能当描述用（否则面板保存会用空值覆盖描述）
+        const tplE = apiTemplateOf(m.provider) || {}
+        entry.balanceDesc = mergeNonEmpty(tplE.balance, m.balance) // v724：空串不覆盖模板
+        // v789（issue #189）：把当前的凭据放行标志也下发 —— 前端勾选框要能**显示现状**，
+        //   否则"看不到 → 保存时显式传 false"会把用户手改文件开的口子又关掉（反而更糟）。
+        entry.allowCustomHost = m.allowCustomHost === true
+        entry.params = (m.params && typeof m.params === 'object') ? m.params : null
+        if (m.id === API_BUILTIN_ID) {
+          entry.balanceMode = 'api'
+          entry.hasBalanceApi = true
+          try {
+            const cred = await ctx.credentials.resolve(m.keyRef || 'DEEPSEEK_API_KEY')
+            entry.hasKey = !!(cred && cred.value)
+          } catch (err) {}
+          try {
+            const p = await getBalance()
+            if (p && p.ok) {
+              entry.balance = Number(p.totalBalance)
+              const summary = daySummary(readUsageLedger(), todayKey())
+              entry.currency = p.currency
+              entry.todayUsage = summary.amount
+              entry.todayUsageCurrency = summary.currency
+              entry.usageSource = summary.source
+              entry.usageLabel = summary.label
+              entry.accounting = balanceSummary(readUsageLedger(), todayKey())
+            } else if (p) entry.error = p.error || p.code || '余额获取失败'
+          } catch (err) { entry.error = String((err && err.message) || err) }
+        } else {
+          let hasKey = false
+          try {
+            const cred = await ctx.credentials.resolve(m.keyRef || '')
+            hasKey = !!(cred && cred.value)
+          } catch (err) {}
+          entry.hasKey = hasKey
+          // 该模型实际生效的余额描述：模板默认 + 用户覆盖
+          const tplM = apiTemplateOf(m.provider) || {}
+          const balDesc = Object.assign({}, tplM.balance || {}, m.balance || {})
+          const hasBalanceApi = !!String(balDesc.url || '').trim()
+          entry.hasBalanceApi = hasBalanceApi
+          entry.probeUrl = String(tplM.probeUrl || '')
+          // 订阅额度（kind='quota' 的模板，如智谱/Kimi/MiniMax Coding）：前端据此显示额度行与模块
+          entry.planSupport = !!tplM.quota
+          // Codex 模式：不查余额、不需要密钥，直接给本地会话统计（今日/本月/累计/近7天）
+          if (tplM.kind === 'codex') {
+            // 这里能等：模型列表请求可以稍等一下在途扫描（最多 2.5s），但绝不触发同步扫描
+            if (!codexStats) codexStats = await codexSummaryEnsured(2500)
+            entry.codex = codexStats
+            entry.hasKey = true
+            entry.error = codexStats && codexStats.ok ? null
+              : (codexStats && codexStats.disabled ? null : ((codexStats && codexStats.error) || '未找到 Codex 会话目录'))
+          }
+          // 没有余额接口的厂商（如火山方舟）：余额显示「—」，只用会话事件估算
+          entry.balanceMode = hasBalanceApi ? 'api' : 'events'
+          if (hasBalanceApi && hasKey) {
+            const r = await fetchModelBalance(m)
+            if (r && r.ok) {
+              entry.balance = r.remaining
+              if (r.currency) entry.currency = r.currency
+              apiRecordBalance(m.id, r.remaining)
+              const u = apiTodayUsage(m.id, entry.currency || m.currency)
+              entry.todayUsage = u.amount
+              entry.usageSource = u.source
+              entry.todayUsageCurrency = u.currency
+            } else if (r) {
+              entry.error = r.error || r.code || '余额获取失败'
+            }
+          } else if (!hasBalanceApi) {
+            entry.error = null // 无余额接口不算错误
+          } else {
+            entry.error = '未配置 ' + (m.keyRef || 'API key')
+          }
+          // 订阅额度：有额度接口 + 有 key 才请求；失败只影响 plan 字段
+          if (tplM.quota && hasKey) {
+            try {
+              entry.plan = await fetchModelQuota(m)
+              if (entry.plan && !entry.plan.ok && apiPlanNoPlan(entry.plan.error)) entry.plan.hide = true
+            } catch (err) { entry.plan = { ok: false, error: String((err && err.message) || err) } }
+          }
+          if (entry.todayUsage === null) {
+            const u2 = apiTodayUsage(m.id, entry.currency || m.currency)
+            entry.todayUsage = u2.amount
+            entry.usageSource = u2.source
+            entry.todayUsageCurrency = u2.currency
+          }
+        }
+        out.push(entry)
+      }
+      return {
+        ok: true,
+        builtinId: API_BUILTIN_ID,
+        // v724：把模板的接口描述也下发（B 方案：前端选模板后直接回填这些字段）
+        templates: Object.keys(API_TEMPLATES).map((k) => ({
+          id: k, name: API_TEMPLATES[k].name, currency: API_TEMPLATES[k].currency,
+          keyRef: API_TEMPLATES[k].keyRef, builtin: !!API_TEMPLATES[k].builtin,
+          needsBaseUrl: !!API_TEMPLATES[k].needsBaseUrl,
+          hasBalance: !!String((API_TEMPLATES[k].balance || {}).url || '').trim(),
+          probeUrl: String(API_TEMPLATES[k].probeUrl || ''),
+          kind: String(API_TEMPLATES[k].kind || 'balance'),
+          balance: API_TEMPLATES[k].balance ? JSON.parse(JSON.stringify(API_TEMPLATES[k].balance)) : null,
+          quota: API_TEMPLATES[k].quota ? JSON.parse(JSON.stringify(API_TEMPLATES[k].quota)) : null,
+          matchIds: Array.isArray(API_TEMPLATES[k].matchIds) ? API_TEMPLATES[k].matchIds.slice(0, 12) : [],
+          noBalanceApi: !!API_TEMPLATES[k].noBalanceApi,
+          apiNote: String(API_TEMPLATES[k].apiNote || ''),
+          sortKey: tplSortKey(API_TEMPLATES[k].name), // v726：下拉排序键（前端按它排）
+        })),
+        models: out,
+      }
+    }
+
+    // Each currency/key has its own timed observation window. An increase is
+    // recorded separately and never subtracts previously observed consumption.
+    function recordLedgerUsage(currentBalance, currency, scope, at) {
+      const led = readUsageLedger()
+      observeBalance(led, { balance: currentBalance, currency, scope, at })
+      pruneLedgerUsage(led)
+      if (!writeUsageLedger(led)) throw new Error('账本保存失败，请检查 DSH 数据目录写入权限')
+      return led
+    }
+    function normalizeUsageMode() {
+      return 'ledger' // 小鲸鱼记账为唯一记账方式
+    }
+    function ledgerTodayTotal(led) { return daySummary(led, todayKey()).amount }
+
+    function publicBalance(payload) {
+      const { accountTag, ...visible } = payload
+      const led = readUsageLedger()
+      const summary = daySummary(led, todayKey())
+      const nowSec = Math.floor(Date.now() / 1000)
+      return {
+        ...visible, version: '0.4.2', versionLabel: VERSION_LABEL, isPeak: isPeakTime(nowSec),
+        // 峰谷切换点与节假日清单：前端倒计时要与宿主同源（否则法定节假日会算错切换点）
+        peakNextChangeAt: nextPeakChangeAt(nowSec),
+        peakHolidays: HOLIDAY_VALLEY_LIST,
+        todayUsage: summary.amount, todayUsageCurrency: summary.currency,
+        usageSource: summary.source, usageLabel: summary.label, usageMode: 'ledger',
+        accounting: balanceSummary(led, todayKey()),
+      }
+    }
+
+    function getBalance(force = false) {
+      const now = Date.now()
+      if (!force && balanceCache && now - balanceCache.at < BALANCE_TTL_MS) {
+        return Promise.resolve(publicBalance(balanceCache.payload))
+      }
+      if (balanceInFlight) return balanceInFlight
+      balanceInFlight = fetchBalance()
+        .then((payload) => {
+          if (payload.ok) {
+            // v759（issue #157 报告人踩到）：**"记不了账"不该吞掉已经拿到的余额**。
+            // 以前 recordLedgerUsage 抛错会被最外层 .catch 包成「余额服务异常: …」，
+            // 界面看起来像"接口没通"，其实余额已经拿到了（accountTag/币种不合法就会这样）。
+            // 但要与"**账本整个读不出来**"区分开：那种情况必须保持 fail-closed（见下面的 rethrow）——
+            // 一边是"余额拿到了、只是没记上账"，一边是"账本已经坏了、连今日已用都算不出来"，
+            // 后者若也回 ok:true，用户会以为一切正常，而账本其实不可用。
+            let ledgerError = ''
+            try {
+              recordLedgerUsage(payload.totalBalance, payload.currency, payload.accountTag, Date.parse(payload.updatedAt))
+            } catch (err) {
+              ledgerError = String((err && err.message) || err).slice(0, 160)
+            }
+            let visible
+            try {
+              visible = publicBalance(payload) // 读账本算今日已用/近 7 天
+            } catch (err) {
+              throw err // 账本读不出来（结构损坏等）→ 交给最外层 .catch，报 ok:false 并保留原记录
+            }
+            balanceCache = { at: Date.now(), payload } // 先缓存：之后即使记账失败，余额也继续显示
+            return ledgerError ? { ...visible, ledgerError } : visible
+          }
+          if (payload.transient && balanceCache) {
+            return { ...publicBalance(balanceCache.payload), stale: true, error: payload.error }
+          }
+          return publicBalance(payload)
+        })
+        .catch((err) => ({
+          ok: false, code: 'ERROR',
+          error: '余额服务异常: ' + String((err && err.message) || err).slice(0, 200),
+        }))
+        .finally(() => { balanceInFlight = null })
+      return balanceInFlight
+    }
+
+    function readSizeConfig() {
+      for (const p of SIZE_FILE_CANDIDATES) {
+        try {
+          const parsed = JSON.parse(fs.readFileSync(p, 'utf8'))
+          if (parsed && typeof parsed.scale === 'number') {
+            return {
+              scale: parsed.scale,
+              sound: parsed.sound !== false,
+              vol: typeof parsed.vol === 'number' ? parsed.vol : 0.9,
+              soundSet: typeof parsed.soundSet === 'string' && parsed.soundSet ? parsed.soundSet : 'duck',
+              usageMode: normalizeUsageMode(parsed.usageMode),
+              peakMode: parsed.peakMode === 'liangwen' || parsed.peakMode === 'qiangqiang' ? parsed.peakMode : 'default',
+              bubbleOn: parsed.bubbleOn !== false,
+              // v866（用户要求）：按压/松开音的**独立**开关（原来是全局 soundOn 兼着当它用）
+              pressOn: parsed.pressOn !== false,
+              turnCostOn: parsed.turnCostOn !== false,
+              turnCostCloseMs: typeof parsed.turnCostCloseMs === 'number' ? parsed.turnCostCloseMs : 5000,
+              scrollGapOn: parsed.scrollGapOn === true,
+              scrollGapPx: typeof parsed.scrollGapPx === 'number' ? Math.round(parsed.scrollGapPx) : 17,
+              menuBtnHide: parsed.menuBtnHide === true,
+              // issue #116：Codex 本地统计可以在设置里关掉（默认开）。关掉后宿主完全不扫
+              // ~/.codex/sessions，也不做后台预热。
+              codexStatsOn: parsed.codexStatsOn !== false,
+            }
+          }
+        } catch (err) {}
+      }
+      return null
+    }
+
+    function writeSizeConfig(scale, sound, vol, soundSet, usageMode, peakMode, bubbleOn, pressOnArg, turnCostOn, turnCostCloseMs, scrollGapOn, scrollGapPx, menuBtnHide, codexStatsOnArg) {
+      const um = normalizeUsageMode(usageMode)
+      const pm = peakMode === 'liangwen' || peakMode === 'qiangqiang' ? peakMode : 'default'
+      const bo = bubbleOn !== false
+      const po = pressOnArg !== false // v866：按压/松开音独立开关（默认开）
+      const tco = turnCostOn !== false
+      const tcc = typeof turnCostCloseMs === 'number' ? (turnCostCloseMs > 0 ? turnCostCloseMs : 0) : 5000
+      const sgo = scrollGapOn === true
+      const sgp = typeof scrollGapPx === 'number' && scrollGapPx > 0 ? Math.round(scrollGapPx) : 0
+      const mbh = menuBtnHide === true
+      const cso = codexStatsOnArg !== false
+      const body = JSON.stringify({
+        scale: scale,
+        sound: sound !== false,
+        vol: typeof vol === 'number' ? vol : 0.9,
+        soundSet: typeof soundSet === 'string' && soundSet ? soundSet : 'duck',
+        usageMode: um,
+        peakMode: pm,
+        bubbleOn: bo,
+        pressOn: po,
+        turnCostOn: tco,
+        turnCostCloseMs: tcc,
+        scrollGapOn: sgo,
+        scrollGapPx: sgp,
+        menuBtnHide: mbh,
+        codexStatsOn: cso,
+        updatedAt: new Date().toISOString(),
+      })
+      let lastSizeErr = null
+      for (const p of SIZE_FILE_CANDIDATES) {
+        try {
+          fs.writeFileSync(p, body, 'utf8')
+          return {
+            ok: true,
+            scale: scale,
+            sound: sound !== false,
+            vol: typeof vol === 'number' ? vol : 0.9,
+            soundSet: typeof soundSet === 'string' && soundSet ? soundSet : 'duck',
+            usageMode: um,
+            peakMode: pm,
+            bubbleOn: bo,
+            pressOn: po,
+            turnCostOn: tco,
+            turnCostCloseMs: tcc,
+            scrollGapOn: sgo,
+            scrollGapPx: sgp,
+            menuBtnHide: mbh,
+            codexStatsOn: cso,
+          }
+        } catch (err) { lastSizeErr = err }
+      }
+      // #88 / #97 报告者建议：把底层原因（EPERM / EACCES / 路径问题…）带出去。
+      // 原先无论哪个候选路径失败，返回的都是同一句固定文案，即使前端检查了响应也定位不到原因。
+      return { ok: false, error: '无法持久化挂件尺寸' + (lastSizeErr && lastSizeErr.message ? '：' + lastSizeErr.message : '') }
+    }
+
+    function readBody(req) {
+      return new Promise((resolve, reject) => {
+        const chunks = []
+        let size = 0
+        req.on('data', (c) => {
+          size += c.length
+          if (size > 8192) {
+            reject(new Error('body too large'))
+            req.destroy()
+            return
+          }
+          chunks.push(c)
+        })
+        req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+        req.on('error', reject)
+      })
+    }
+
+    function readBodyMax(req, maxBytes) {
+      return new Promise((resolve, reject) => {
+        const chunks = []
+        let size = 0
+        req.on('data', (c) => {
+          size += c.length
+          if (size > maxBytes) {
+            reject(new Error('body too large'))
+            req.destroy()
+            return
+          }
+          chunks.push(c)
+        })
+        req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+        req.on('error', reject)
+      })
+    }
+
+    // —— 自定义角色存储：whale-roles/ 目录，每个角色一个 <id>.png + roles.json 索引 ——
+    function pickRoleDir() {
+      for (const p of ROLE_DIR_CANDIDATES) {
+        try {
+          fs.mkdirSync(p, { recursive: true })
+          fs.accessSync(p, fs.constants.W_OK)
+          return p
+        } catch (err) {}
+      }
+      return ROLE_DIR_CANDIDATES[0]
+    }
+
+    function defaultRolesIndex() {
+      return {
+        version: 1,
+        roles: [
+          // 默认小鲸鱼初始置顶；pinnedAt=1 作为基线，任何新置顶（Date.now()）都会排在它上面
+          { id: ROLE_DEFAULT_ID, name: '小鲸鱼', pinnedAt: 1, createdAt: 0 },
+        ],
+      }
+    }
+
+    function readRolesIndex() {
+      const dir = pickRoleDir()
+      try {
+        const parsed = JSON.parse(fs.readFileSync(path.join(dir, ROLE_INDEX_NAME), 'utf8'))
+        if (parsed && Array.isArray(parsed.roles)) {
+          if (!parsed.roles.some((r) => r && r.id === ROLE_DEFAULT_ID)) {
+            parsed.roles.unshift(defaultRolesIndex().roles[0])
+          }
+          return parsed
+        }
+      } catch (err) {}
+      return defaultRolesIndex()
+    }
+
+    function writeRolesIndex(index) {
+      const dir = pickRoleDir()
+      try {
+        fs.writeFileSync(path.join(dir, ROLE_INDEX_NAME), JSON.stringify(index, null, 2), 'utf8')
+        return true
+      } catch (err) {
+        return false
+      }
+    }
+
+    // 排序：置顶的在前（pinnedAt 大者先，即最新置顶在最上面），未置顶按创建时间倒序
+    function sortRoles(roles) {
+      return roles.slice().sort((a, b) => {
+        const ap = a.pinnedAt && a.pinnedAt > 0 ? a.pinnedAt : 0
+        const bp = b.pinnedAt && b.pinnedAt > 0 ? b.pinnedAt : 0
+        if (ap && bp) return bp - ap
+        if (ap) return -1
+        if (bp) return 1
+        return (b.createdAt || 0) - (a.createdAt || 0)
+      })
+    }
+
+    function rolesPayload() {
+      const index = readRolesIndex()
+      return {
+        ok: true,
+        roles: sortRoles(index.roles).map((r) => ({
+          id: r.id,
+          name: String(r.name || r.id),
+          url: r.id === ROLE_DEFAULT_ID ? '/dsh-whale/image.png' : '/dsh-whale/role-image.png?id=' + encodeURIComponent(r.id),
+          pinned: !!(r.pinnedAt && r.pinnedAt > 0),
+          pinnedAt: r.pinnedAt || null,
+          createdAt: r.createdAt || null,
+          // format: 'png' | 'gif' | 'apng'（旧角色无 format 字段 → png）
+          format: r.format === 'gif' || r.format === 'apng' ? r.format : 'png',
+        })),
+      }
+    }
+
+    // 角色文件按格式映射扩展名：gif→.gif，apng/png→.png（APNG 文件仍是 PNG 容器）
+    function roleFileExt(format) {
+      return format === 'gif' ? 'gif' : 'png'
+    }
+
+    function roleFilePath(id, format) {
+      if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(id) || id === ROLE_DEFAULT_ID) return null
+      return path.join(pickRoleDir(), id + '.' + roleFileExt(format))
+    }
+
+    function roleImagePath(id) {
+      // 查找角色元数据确定扩展名；找不到默认 png
+      const { role } = roleIndexFind(id)
+      const format = role && (role.format === 'gif' || role.format === 'apng') ? role.format : 'png'
+      const p = roleFilePath(id, format)
+      return p
+    }
+
+    function roleIdFromUrl(url) {
+      try {
+        const q = String(url || '').split('?')[1] || ''
+        const m = /(?:^|&)id=([^&]+)/.exec(q)
+        return m ? decodeURIComponent(m[1]) : ''
+      } catch (err) { return '' }
+    }
+
+    function roleIndexFind(id) {
+      const index = readRolesIndex()
+      const role = index.roles.find((r) => r && r.id === id)
+      return { index, role }
+    }
+
+    // —— 自定义音频：whale-audio/ 目录，片段 <id>.wav + audio.json 索引 ——
+    function pickAudioDir() {
+      for (const p of AUDIO_DIR_CANDIDATES) {
+        try {
+          fs.mkdirSync(p, { recursive: true })
+          fs.accessSync(p, fs.constants.W_OK)
+          return p
+        } catch (err) {}
+      }
+      return AUDIO_DIR_CANDIDATES[0]
+    }
+
+    function defaultAudioIndex() {
+      return { version: 1, groups: [], fragments: [] }
+    }
+
+    function readAudioIndex() {
+      const dir = pickAudioDir()
+      try {
+        const parsed = JSON.parse(fs.readFileSync(path.join(dir, AUDIO_INDEX_NAME), 'utf8'))
+        if (parsed && Array.isArray(parsed.groups) && Array.isArray(parsed.fragments)) {
+          return parsed
+        }
+      } catch (err) {}
+      return defaultAudioIndex()
+    }
+
+    function writeAudioIndex(index) {
+      const dir = pickAudioDir()
+      try {
+        fs.writeFileSync(path.join(dir, AUDIO_INDEX_NAME), JSON.stringify(index, null, 2), 'utf8')
+        return true
+      } catch (err) {
+        return false
+      }
+    }
+
+    // 自定义片段 id -> 文件路径；预设片段无文件
+    function audioFragmentPath(id) {
+      if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(id)) return null
+      if (PRESET_FRAGMENTS[id]) return null
+      return path.join(pickAudioDir(), id + '.wav')
+    }
+
+    function audioIdFromUrl(url) {
+      try {
+        const q = String(url || '').split('?')[1] || ''
+        const m = /(?:^|&)id=([^&]+)/.exec(q)
+        return m ? decodeURIComponent(m[1]) : ''
+      } catch (err) { return '' }
+    }
+
+    // 片段列表：预设片段 + 用户自定义片段
+    function audioFragmentsPayload() {
+      const index = readAudioIndex()
+      const presets = Object.keys(PRESET_FRAGMENTS).map((k) => ({
+        id: k,
+        name: PRESET_FRAGMENTS[k].name,
+        preset: true,
+      }))
+      const custom = index.fragments.map((f) => ({
+        id: f.id,
+        name: String(f.name || f.id),
+        preset: false,
+        createdAt: f.createdAt || null,
+      }))
+      return presets.concat(custom)
+    }
+
+    // 音效组列表：预设组 + 用户自定义组（置顶优先，组内按创建时间倒序）
+    function audioGroupsPayload() {
+      const index = readAudioIndex()
+      // 排序：置顶的自定义组最前，其次预设组，最后未置顶的自定义组（按创建时间倒序）
+      const customs = index.groups.slice().map((g) => ({
+        id: g.id,
+        name: String(g.name || g.id),
+        press: typeof g.press === 'string' ? g.press : null,
+        release: typeof g.release === 'string' ? g.release : null,
+        preset: false,
+        pinned: !!(g.pinnedAt && g.pinnedAt > 0),
+        pinnedAt: g.pinnedAt || null,
+        createdAt: g.createdAt || 0,
+      }))
+      const pinned = customs.filter((g) => g.pinned).sort((a, b) => b.pinnedAt - a.pinnedAt)
+      const unpinned = customs.filter((g) => !g.pinned).sort((a, b) => b.createdAt - a.createdAt)
+      const presets = Object.keys(PRESET_GROUPS).map((k) => {
+        const g = PRESET_GROUPS[k]
+        return { id: g.id, name: g.name, press: g.press, release: g.release, preset: true, pinned: false, pinnedAt: null, createdAt: 0 }
+      })
+      return pinned.concat(presets, unpinned)
+    }
+
+    function audioPayload() {
+      return {
+        ok: true,
+        groups: audioGroupsPayload(),
+        fragments: audioFragmentsPayload(),
+      }
+    }
+
+    // 取片段音频字节：内置随包片段 → 预设(SOUND_SETS) → 自定义 whale-audio/<id>.wav
+    function loadAudioFragmentBytes(fragId) {
+      if (BUILTIN_FRAGMENT_FILES[fragId]) {
+        return loadSound(BUILTIN_FRAGMENT_FILES[fragId])
+      }
+      if (PRESET_FRAGMENTS[fragId]) {
+        // 预设片段映射到对应音效文件：ya1->duck.press, ya2->duck.release, d1->fx1.press, d2->fx1.release
+        const map = { ya1: ['duck', 'press'], ya2: ['duck', 'release'], d1: ['fx1', 'press'], d2: ['fx1', 'release'] }
+        const [setName, slot] = map[fragId]
+        const set = SOUND_SETS[setName]
+        if (!set) return null
+        return loadSound(set[slot])
+      }
+      const p = audioFragmentPath(fragId)
+      if (!p) return null
+      try {
+        const bytes = fs.readFileSync(p)
+        if (bytes && bytes.length > 0) return bytes
+      } catch (err) {}
+      return null
+    }
+
+    // 组内实际使用的片段：若自定义组引用的片段被删，回退到预设
+    // 返回 '' 表示该槽显式留空（该事件静音），调用方应据此不发音频
+    function groupFragmentId(groupId, slot) {
+      const custom = readAudioIndex().groups.find((g) => g && g.id === groupId)
+      if (custom) {
+        const fid = custom[slot]
+        if (fid === '') return ''
+        if (fid) {
+          if (PRESET_FRAGMENTS[fid]) return fid
+          if (customFragExists(fid)) return fid
+        }
+        // 无字段/引用失效 → 回退预设：新组无引用时用 duck
+        return slot === 'press' ? PRESET_GROUPS.duck.press : PRESET_GROUPS.duck.release
+      }
+      const preset = PRESET_GROUPS[groupId]
+      if (preset) return preset[slot]
+      return slot === 'press' ? PRESET_GROUPS.duck.press : PRESET_GROUPS.duck.release
+    }
+
+    function customFragExists(id) {
+      try {
+        const p = audioFragmentPath(id)
+        if (!p) return false
+        const st = fs.statSync(p)
+        return st.isFile()
+      } catch (err) { return false }
+    }
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/image.png',
+      handler: (req, res) => {
+        try {
+          const bytes = loadImage()
+          res.writeHead(200, {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'no-store',
+            'Content-Length': String(bytes.length),
+          })
+          res.end(bytes)
+        } catch (err) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+          res.end('whale image unavailable: ' + String((err && err.message) || err))
+        }
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/rua.gif',
+      handler: (req, res) => {
+        try {
+          const bytes = loadGif()
+          res.writeHead(200, {
+            'Content-Type': 'image/gif',
+            'Cache-Control': 'no-store',
+            'Content-Length': String(bytes.length),
+          })
+          res.end(bytes)
+        } catch (err) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+          res.end('rua gif unavailable: ' + String((err && err.message) || err))
+        }
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/balance.json',
+      handler: async (req, res) => {
+        const t0 = Date.now()
+        try {
+          const refresh = new URL(req.url || '/', 'http://localhost').searchParams.get('refresh') === '1'
+          const payload = await getBalance(refresh)
+          // v793：给「关于/自检」面板留一条最近的取数结果（只记状态与耗时，不记任何凭据）
+          try {
+            balanceLast = {
+              at: Date.now(),
+              ms: Date.now() - t0,
+              ok: !!payload.ok,
+              code: String(payload.code || ''),
+              error: payload.ok ? '' : String(payload.error || '').slice(0, 160),
+              hasBalance: payload.totalBalance !== null && payload.totalBalance !== undefined,
+              currency: String(payload.currency || ''),
+            }
+          } catch (err) {}
+          res.writeHead(200, JSON_HEADERS)
+          // v794：成功失败都带上版本 ⇒ 客户端不必依赖"余额成功"才拿到版号
+          res.end(JSON.stringify(Object.assign({}, payload, { version: BUILD_VERSION, versionLabel: VERSION_LABEL })))
+        } catch (err) {
+          try {
+            balanceLast = { at: Date.now(), ms: Date.now() - t0, ok: false, code: 'THROW', error: String((err && err.message) || err).slice(0, 160), hasBalance: false, currency: '' }
+          } catch (e2) {}
+          res.writeHead(200, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: false, code: 'ERROR', error: String((err && err.message) || err).slice(0, 200), version: BUILD_VERSION, versionLabel: VERSION_LABEL }))
+        }
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/last-turn.json',
+      handler: (req, res) => {
+        // 返回最近一轮已完成的对话消耗；seq 递增供前端判断「新的一轮」
+        const payload = lastTurn
+          ? { ok: true, seq: lastTurnSeq, turn: lastTurn.turn, amount: lastTurn.amount, tokens: lastTurn.tokens, ts: lastTurn.ts }
+          : { ok: true, seq: 0, turn: null, amount: null, tokens: null, ts: null }
+        res.writeHead(200, JSON_HEADERS)
+        res.end(JSON.stringify(payload))
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/size.json',
+      handler: async (req, res) => {
+        if (req.method === 'PUT' || req.method === 'POST') {
+          try {
+            const body = await readBody(req)
+            const parsed = JSON.parse(body)
+            const scale = typeof parsed.scale === 'number' ? parsed.scale : null
+            if (scale === null) {
+              res.writeHead(400, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: false, error: 'missing scale' }))
+              return
+            }
+            // issue #97：缺字段一律「沿用现有值」，绝不落默认 —— 否则任何不全的 PUT
+            // （旧客户端 / 手写 curl / 加载竞态）都会把用户的设置洗成默认值。
+            // 特别注意 scrollGapPx：读取默认是 17，而写入缺省曾是 0，会静默把避让宽度改掉。
+            const old = readSizeConfig() || {}
+            const pickB = (v, cur, dflt) => (typeof v === 'boolean' ? v : (typeof cur === 'boolean' ? cur : dflt))
+            const pickN = (v, cur, dflt) => (typeof v === 'number' ? v : (typeof cur === 'number' ? cur : dflt))
+            const pickS = (v, cur, dflt) => (typeof v === 'string' && v ? v : (typeof cur === 'string' && cur ? cur : dflt))
+            // 用量模式变化时让余额缓存失效，下次请求立即按新模式计算
+            if (typeof parsed.usageMode === 'string') {
+              if (normalizeUsageMode(old.usageMode) !== normalizeUsageMode(parsed.usageMode)) {
+                balanceCache = null
+              }
+            }
+            const result = writeSizeConfig(
+              scale,
+              pickB(parsed.sound, old.sound, true),
+              pickN(parsed.vol, old.vol, 0.9),
+              pickS(parsed.soundSet, old.soundSet, 'duck'),
+              typeof parsed.usageMode === 'string' ? parsed.usageMode : old.usageMode,
+              typeof parsed.peakMode === 'string' ? parsed.peakMode : old.peakMode,
+              pickB(parsed.bubbleOn, old.bubbleOn, true),
+              pickB(parsed.pressOn, old.pressOn, true),
+              pickB(parsed.turnCostOn, old.turnCostOn, true),
+              pickN(parsed.turnCostCloseMs, old.turnCostCloseMs, 5000),
+              pickB(parsed.scrollGapOn, old.scrollGapOn, false),
+              pickN(parsed.scrollGapPx, old.scrollGapPx, 17),
+              pickB(parsed.menuBtnHide, old.menuBtnHide, false),
+              pickB(parsed.codexStatsOn, old.codexStatsOn, true)
+            )
+            res.writeHead(result.ok ? 200 : 500, JSON_HEADERS)
+            // 配置刚变（可能刚关掉/打开 Codex 统计）→ 丢掉旧快照，让下一次请求立刻反映新设置
+            if (result.ok) { try { codexInvalidate() } catch (err) {} }
+            res.end(JSON.stringify(result))
+          } catch (err) {
+            res.writeHead(400, JSON_HEADERS)
+            res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err) }))
+          }
+          return
+        }
+        res.writeHead(200, JSON_HEADERS)
+        // v794：GET 也带上版本（客户端启动就会读这份配置 ⇒ 菜单底部那行版本小字**不必等余额请求**，
+        //   余额首次请求失败时也不会一直空着 —— 这是用户报的"刚启动时版号消失"）
+        res.end(JSON.stringify(Object.assign({}, readSizeConfig() || {}, {
+          version: BUILD_VERSION,
+          versionLabel: VERSION_LABEL,
+        })))
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/wait.json',
+      handler: (req, res) => {
+        // v761（issue #161）：等待用户交互的挂起状态（提问 / 授权）。
+        // 沿用"宿主出状态 + 前端每秒轮询"的既有模式，不引入新通道。
+        res.writeHead(200, JSON_HEADERS)
+        res.end(JSON.stringify({
+          ok: true,
+          pending: waitState.pending,
+          sessionName: waitState.sessionName || '',
+        }))
+      },
+    }))
+    // ===== v793（用户要求）：点版号 → 「关于 / 自检」面板 =====
+    // 数据来源全部是宿主已有状态；路径一律脱敏；**点开才请求，不轮询**。
+    let balanceLast = null // { at, ok, code, error, ms, hasBalance, keyRef, keyConfigured }
+    function aboutPayload(req) {
+      const client = clientKindOf(req)
+      const hostFile = (() => { try { return fileURLToPath(import.meta.url) } catch (err) { return '' } })()
+      const widgetFile = (() => {
+        for (const p of WIDGET_FILE_CANDIDATES) { try { if (fs.existsSync(p)) return p } catch (err) {} }
+        return ''
+      })()
+      const dataFiles = [
+        ['账本（记账）', USAGE_FILE_CANDIDATES],
+        ['模型注册表', API_FILE_CANDIDATES],
+        ['泡泡配置', BUBBLE_FILE_CANDIDATES],
+        ['外观/设置', SIZE_FILE_CANDIDATES],
+        ['轮次序号', TURN_FILE_CANDIDATES],
+        ['Codex 缓存', [path.join(DSH_HOME, '.dshw-codex.json')]],
+      ].map(([label, list]) => {
+        const p = firstExisting(list)
+        const f = p ? fileFacts(p) : null
+        return {
+          label: label,
+          found: !!p,
+          path: p ? maskPath(p) : '',
+          candidates: (list || []).length,
+          bytes: f ? f.bytes : null,
+          mtime: f ? f.mtime : null,
+        }
+      })
+      // 记账概览（只给统计，不给明细）
+      let ledger = null
+      try {
+        const led = readUsageLedger()
+        const today = todayKey()
+        const sum = daySummary(led, today)
+        let days = 0
+        try { days = accountingDays(led).length } catch (err) { days = Object.keys(led.history || {}).length }
+        ledger = {
+          days: days,
+          todayPartial: !!(sum && sum.partialDay),
+          todaySource: (sum && sum.source) || '',
+          lastObservedAt: (sum && sum.lastObservedAt) || null,
+          needsReview: !!(sum && sum.needsReview),
+        }
+      } catch (err) { ledger = { error: String((err && err.message) || err).slice(0, 120) } }
+      // Codex（v792 起：没配就完全禁用）
+      let codex = { enabled: false, reason: '' }
+      try {
+        codex = {
+          enabled: codexStatsOn(),
+          reason: codexStatsOn() ? '' : codexDisabledReason(),
+          snapAt: codexSnapAt || null,
+          ok: !!(codexSnap && codexSnap.ok),
+          files: (codexSnap && codexSnap.sessions) != null ? codexSnap.sessions : null,
+          skipped: (codexSnap && codexSnap.skipped) != null ? codexSnap.skipped : null,
+          deferred: (codexSnap && codexSnap.deferred) != null ? codexSnap.deferred : null,
+        }
+      } catch (err) {}
+      return {
+        ok: true,
+        plugin: {
+          name: 'dsh-whale-widget',
+          version: BUILD_VERSION,
+          channel: BUILD_CHANNEL,
+          label: VERSION_LABEL,
+          hostVersionLiterals: [...String(aboutPayloadSrc()).matchAll(/version: '([\d.]+)'/g)].map((m) => m[1]),
+        },
+        build: {
+          // v796：`found` 必须给（v795 前端简化后靠它判断"未找到"，缺了就会把宿主/前端文件误显示成"未找到"）
+          host: { found: !!hostFile, path: maskPath(hostFile), bytes: fileFacts(hostFile) ? fileFacts(hostFile).bytes : null, mtime: fileFacts(hostFile) ? fileFacts(hostFile).mtime : null },
+          widget: { found: !!widgetFile, path: maskPath(widgetFile), bytes: fileFacts(widgetFile) ? fileFacts(widgetFile).bytes : null, mtime: fileFacts(widgetFile) ? fileFacts(widgetFile).mtime : null },
+          // v819（自检发现）：这里原来写的是 `indexOf('<开发机目录名>')` —— 检测"开发版路径"的代码自己带了
+          //   那个字面量 ⇒ 发布包被 `tools/ci-audit.mjs` 判为"含开发机路径"（自己成了自己要检测的东西）。
+          //   改成**结构性判定**：宿主源码里有没有写死的绝对盘符路径（'D:/…' / "C:\\…"）。
+          //   开发版有 15+ 处（assets 兜底路径），strip 后的发布副本 0 处 ⇒ 判定更准，也不再出现那个字面量。
+          hostHasDevPaths: (() => {
+            try {
+              const src = fs.readFileSync(hostFile, 'utf8')
+              return /["'][A-Za-z]:[\\/]/.test(src)
+            } catch (err) { return null }
+          })(),
+        },
+        runtime: {
+          platform: process.platform,
+          arch: process.arch,
+          node: process.version,
+          dsh: dshVersionOf(),
+          uptimeSec: Math.round(process.uptime()),
+          dataHome: maskPath(DSH_HOME),
+          // profile 名（`profiles/web`、`profiles/desktop`…）：用来一眼看出"这份是哪个 profile 起来"的
+          profile: (() => { try { const m = /profiles[\\/]([^\\/]+)/.exec(hostFile); return m ? m[1] : '' } catch (err) { return '' } })(),
+        },
+        client: client,
+        data: dataFiles,
+        ledger: ledger,
+        balance: balanceLast,
+        codex: codex,
+      }
+    }
+    // 只用于读取源码里的两处上报版本字面量（判断"三处是否一致"）；不读敏感内容。
+    function aboutPayloadSrc() { try { return fs.readFileSync(fileURLToPath(import.meta.url), 'utf8') } catch (err) { return '' } }
+    // v796：DSH 版本**真的去读**，而不是只看环境变量（用户反馈"DSH 版本读取不到 (?)"）。
+    //   顺序：① 环境变量（部分启动方式会带）② 从 argv/execPath 往上找 `@deepseek-ai/dsh` 的 package.json
+    //   （npx 启动时 argv 就在 `_npx/<hash>/node_modules/@deepseek-ai/dsh/...` 里）③ 读不到就老实回 'unknown'。
+    //   全程 try/catch + 缓存（每个目录最多往上 8 层），绝不抛错。
+    let dshVersionCache = null
+    function dshVersionOf() {
+      if (dshVersionCache !== null) return dshVersionCache
+      let v = ''
+      try { v = String(process.env.DSH_CLIENT_VERSION || process.env.DSH_VERSION || '') } catch (err) {}
+      if (!v) {
+        try {
+          const roots = [process.argv[1], process.argv[0], process.execPath]
+          for (const r of roots) {
+            if (!r) continue
+            let dir = path.dirname(String(r))
+            for (let up = 0; up < 8; up++) {
+              try {
+                const pj = path.join(dir, 'package.json')
+                if (fs.existsSync(pj)) {
+                  const j = JSON.parse(fs.readFileSync(pj, 'utf8'))
+                  const nm = String((j && j.name) || '')
+                  if (nm === '@deepseek-ai/dsh' || nm === 'dsh' || nm === 'dsh-cli') {
+                    v = String((j && j.version) || '')
+                    if (v) break
+                  }
+                }
+              } catch (err) {}
+              const parent = path.dirname(dir)
+              if (parent === dir) break
+              dir = parent
+            }
+            if (v) break
+          }
+        } catch (err) {}
+      }
+      dshVersionCache = v || 'unknown'
+      return dshVersionCache
+    }
+    // v795（用户反馈）：客户端类型**看请求头的 UA**。前端用 `navigator.windowControlsOverlay` 判会误判 ——
+    //   Chrome 桌面浏览器也有这个 API，于是 `npx @deepseek-ai/dsh web` 起来也被认成"官方桌面客户端"。
+    //   官方桌面客户端是 Electron ⇒ UA 里必有 `Electron/`。判定只回 kind（不回完整 UA，避免带出多余指纹）。
+    function clientKindOf(req) {
+      try {
+        const ua = String((req && req.headers && (req.headers['user-agent'] || req.headers['User-Agent'])) || '')
+        const electron = /electron/i.test(ua)
+        return { kind: electron ? 'desktop' : 'web', via: electron ? 'ua-electron' : 'ua-browser' }
+      } catch (err) { return { kind: 'unknown', via: 'error' } }
+    }
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/about.json',
+      handler: (req, res) => {
+        try {
+          res.writeHead(200, JSON_HEADERS)
+          res.end(JSON.stringify(aboutPayload(req)))
+        } catch (err) {
+          res.writeHead(200, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err).slice(0, 160) }))
+        }
+      },
+    }))
+    // 检查更新：**点了才联网**。⚠️ 实测教训（用户报的 "The operation was aborted due to timeout" 就是它）：
+    //   ① 本机 Node 的 `fetch`(undici) 打 registry 会超时（npmmirror 6015ms / npmjs 6013ms 全挂），
+    //      而 `https` 模块同一时刻 244ms / 891ms 就回来了 ⇒ **这里必须用 https，而不是 fetch**；
+    //   ② 顺序上**镜像优先**；v802 再补两个 CDN 源（jsdelivr / unpkg 直接返回 package.json，同样带 version），
+    //      并把**所有失败源的原因一起报出来** —— 用户实测只看到最后一个源（`npmjs：超时`），看不出镜像也失败了。
+    // v802：跟随重定向（unpkg 的 `@latest` 会 302 到具体版本路径；实测就是这么被误判成失败的），最多 3 跳。
+    function httpsGetJson(url, timeoutMs, hop) {
+      return new Promise((resolve, reject) => {
+        let done = false
+        const finish = (err, val) => { if (done) return; done = true; if (err) reject(err); else resolve(val) }
+        try {
+          const req = https.get(url, { timeout: timeoutMs, headers: { 'user-agent': 'dsh-whale-widget', accept: 'application/json' } }, (res) => {
+            const code = res.statusCode
+            const loc = res.headers && res.headers.location
+            if (code >= 300 && code < 400 && loc && (hop || 0) < 3) {
+              try { res.resume() } catch (e) {}
+              let next = ''
+              try { next = new URL(loc, url).toString() } catch (e) { next = '' }
+              if (next) { httpsGetJson(next, timeoutMs, (hop || 0) + 1).then((v) => finish(null, v), (e) => finish(e)); return }
+            }
+            if (code !== 200) { try { res.resume() } catch (e) {} finish(new Error('HTTP ' + code)); return }
+            let body = ''
+            res.setEncoding('utf8')
+            res.on('data', (c) => {
+              body += c
+              if (body.length > 200000) { try { req.destroy() } catch (e) {} finish(new Error('响应过大')) }
+            })
+            res.on('end', () => { try { finish(null, JSON.parse(body)) } catch (e) { finish(new Error('响应不是 JSON')) } })
+          })
+          req.on('timeout', () => { try { req.destroy() } catch (e) {} finish(new Error('超时')) })
+          req.on('error', (e) => finish(e))
+        } catch (err) { finish(err) }
+      })
+    }
+    // v803：npm CLI 兜底源 —— 走 npm 自己的 registry/代理配置，在受限网络里往往比裸 https 更能出去
+    //   （实测本机 `npm view dsh-whale-widget version` 611~776ms 就回来了）。
+    //   ⚠️ 必须用**异步** exec：同步 spawnSync 会卡住宿主事件循环，把模型流一起拖住。
+    function npmCliVersion(timeoutMs) {
+      return new Promise((resolve, reject) => {
+        try {
+          exec('npm view dsh-whale-widget version', { timeout: timeoutMs, windowsHide: true }, (err, stdout) => {
+            if (err) { reject(new Error('npm 退出异常')); return }
+            const lines = String(stdout || '').trim().split(/\r?\n/).filter((x) => x.trim())
+            const v = lines.length ? lines[lines.length - 1].trim().replace(/^v/, '') : ''
+            if (!/^\d+\.\d+\.\d+/.test(v)) { reject(new Error('npm 输出里没有版本')); return }
+            resolve(v)
+          })
+        } catch (err) { reject(err) }
+      })
+    }
+    const UPDATE_SOURCES = [
+      { name: 'npmmirror', url: 'https://registry.npmmirror.com/dsh-whale-widget/latest' },
+      { name: 'jsdelivr', url: 'https://cdn.jsdelivr.net/npm/dsh-whale-widget@latest/package.json' },
+      { name: 'unpkg', url: 'https://unpkg.com/dsh-whale-widget@latest/package.json' },
+      { name: 'npmjs', url: 'https://registry.npmjs.org/dsh-whale-widget/latest' },
+      { name: 'npm-cli', cli: true },
+    ]
+    let updateCheckCache = null
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/update-check.json',
+      handler: async (req, res) => {
+        const now = Date.now()
+        try {
+          if (updateCheckCache && now - updateCheckCache.at < 10 * 60 * 1000) {
+            res.writeHead(200, JSON_HEADERS)
+            res.end(JSON.stringify(updateCheckCache.payload))
+            return
+          }
+        } catch (err) {}
+        let payload = null
+        // v802：四个源**并行**试（单个源实测很不稳：npmmirror/jsdelivr 会超时、unpkg 会 302），
+        //   并行后最坏也就 5 秒（串行会是 20 秒），谁先成功用谁，全失败就把每个源的原因都列出来。
+        const results = await Promise.all(UPDATE_SOURCES.map(async (src) => {
+          // v803：失败得**很快**（<1.5s，多为 DNS/连接抖动）就再试一次；超时那种就不重试了（不然最坏翻倍）
+          const attempt = async () => {
+            const t0 = Date.now()
+            if (src.cli) return { v: await npmCliVersion(8000), ms: Date.now() - t0 }
+            const j = await httpsGetJson(src.url, 5000, 0)
+            const latest = String((j && j.version) || '')
+            if (!latest) throw new Error('返回里没有 version')
+            return { v: latest, ms: Date.now() - t0 }
+          }
+          try {
+            const a = await attempt()
+            return { ok: true, name: src.name, latest: a.v }
+          } catch (err1) {
+            // 只在"失败得很快"（<1.5s，多为连接抖动）时重试一次；超时那种不重试，避免最坏耗时翻倍
+            const fast = !(err1 && /超时/.test(String(err1.message || '')))
+            if (!fast) return { ok: false, name: src.name, why: String((err1 && err1.message) || err1).slice(0, 40) }
+            try {
+              const a2 = await attempt()
+              return { ok: true, name: src.name, latest: a2.v }
+            } catch (err2) {
+              return { ok: false, name: src.name, why: String((err2 && err2.message) || err2).slice(0, 40) }
+            }
+          }
+        }))
+        const hit = results.filter((r) => r.ok)[0]
+        if (hit) {
+          payload = {
+            ok: true,
+            current: BUILD_VERSION,
+            channel: BUILD_CHANNEL,
+            latest: hit.latest,
+            hasUpdate: hit.latest !== BUILD_VERSION,
+            source: hit.name,
+          }
+        } else {
+          // 全失败 ⇒ 把**每一个源**的原因都列出来（只报最后一个会让人以为只有 npmjs 挂了）
+          payload = {
+            ok: false,
+            current: BUILD_VERSION,
+            error: results.map((r) => r.name + '：' + r.why).join('；'),
+            tried: UPDATE_SOURCES.map((s) => s.name),
+          }
+        }
+        try { updateCheckCache = { at: now, payload: payload } } catch (err) {}
+        res.writeHead(200, JSON_HEADERS)
+        res.end(JSON.stringify(payload))
+      },
+    }))
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/usage-records.json',
+      handler: async (req, res) => {
+        try {
+          // Reports read the committed ledger. Replaying cached balance samples
+          // here could roll back a correction or create a false midnight baseline.
+          res.writeHead(200, JSON_HEADERS)
+          res.end(JSON.stringify(usageRecordsPayload()))
+        } catch (err) {
+          res.writeHead(200, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err) }))
+        }
+      },
+    }))
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/balance-adjustments.json',
+      handler: async (req, res) => {
+        try {
+          // 先核对身份再碰余额或账本：必须是唯一且明确的 DeepSeek（内置）。
+          // 新增厂商模板不会自动继承这个能力，也拒绝其它模型读写校正。
+          const targetIds = new URL(req.url || '/', 'http://localhost').searchParams.getAll('modelId')
+          const targetModelId = targetIds.length === 1 ? targetIds[0] : null
+          if (targetModelId !== API_BUILTIN_ID || !canAdjustBuiltinBalance(apiModelById(targetModelId))) {
+            const error = new Error('余额校正仅支持 DeepSeek（内置），请从该模型的设置菜单进入')
+            error.status = 403
+            throw error
+          }
+          if (req.method === 'PUT') {
+            const input = JSON.parse(await readBodyMax(req, 8192))
+            if (!input || typeof input !== 'object') throw new Error('校正内容无效')
+            if (input.modelId !== targetModelId) {
+              const error = new Error('校正请求的模型不匹配，仅支持 DeepSeek（内置）')
+              error.status = 403
+              throw error
+            }
+            if (input.day === todayKey()) {
+              const fresh = await getBalance(true)
+              if (!fresh.ok || fresh.stale) {
+                res.writeHead(503, JSON_HEADERS)
+                res.end(JSON.stringify({ ok: false, error: '暂时无法刷新余额，请稍后再保存校正' }))
+                return
+              }
+            }
+            const led = readUsageLedger()
+            const summary = reconcileBalance(led, input)
+            if (!writeUsageLedger(led)) throw new Error('校正保存失败，请检查 DSH 数据目录写入权限')
+            balanceCache = null
+            res.writeHead(200, JSON_HEADERS)
+            res.end(JSON.stringify({ ok: true, summary }))
+            return
+          }
+          if (req.method !== 'GET' && req.method !== undefined) {
+            res.writeHead(405, { ...JSON_HEADERS, Allow: 'GET, PUT' })
+            res.end(JSON.stringify({ ok: false, error: '不支持的请求方法' }))
+            return
+          }
+          const fresh = await getBalance(true)
+          const led = readUsageLedger()
+          const days = accountingDays(led).sort().reverse().map(day => balanceSummary(led, day))
+          res.writeHead(200, JSON_HEADERS)
+          res.end(JSON.stringify({
+            ok: true, days, today: todayKey(), fresh: !!fresh.ok && !fresh.stale,
+            error: !fresh.ok || fresh.stale ? (fresh.error || '余额暂未刷新') : null,
+          }))
+        } catch (err) {
+          res.writeHead(err.status || 400, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err).slice(0, 240) }))
+        }
+      },
+    }))
+
+    // 用量设置(任务结束音/余额预警/今日预算)
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/usage-settings.json',
+      handler: async (req, res) => {
+        try {
+          if (req.method === 'PUT' || req.method === 'POST') {
+            const body = await readBody(req)
+            const parsed = JSON.parse(body || '{}')
+            if (!parsed || typeof parsed !== 'object') throw new Error('bad body')
+            const result = writeUsageSettings(parsed)
+            res.writeHead(result.ok ? 200 : 400, JSON_HEADERS)
+            res.end(JSON.stringify(result))
+            return
+          }
+          res.writeHead(200, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: true, settings: readUsageSettings() }))
+        } catch (err) {
+          res.writeHead(400, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err) }))
+        }
+      },
+    }))
+
+    // 自定义 API 模型：GET 列表（含实时余额/今日已用/各模型提醒预算）
+    // POST {action: save|delete|set-key|delete-key|model-settings}
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/api-models.json',
+      handler: async (req, res) => {
+        try {
+          if (req.method === 'PUT' || req.method === 'POST') {
+            const body = await readBody(req)
+            const parsed = JSON.parse(body || '{}')
+            const action = String((parsed && parsed.action) || 'save')
+            if (action === 'delete') {
+              const r = apiDeleteModel(parsed.id)
+              const list = await apiModelsPayload()
+              res.writeHead(r.ok ? 200 : 400, JSON_HEADERS)
+              res.end(JSON.stringify({ ...r, models: list.models }))
+              return
+            }
+            if (action === 'probe') {
+              // 只做只读连通性测试（如方舟 /api/v3/models），不消耗 token
+              const m0 = apiModelById(parsed.id)
+              const pr = await apiProbeModel(m0)
+              res.writeHead(200, JSON_HEADERS)
+              res.end(JSON.stringify(pr))
+              return
+            }
+            if (action === 'set-key' || action === 'delete-key') {
+              const ref = String(parsed.keyRef || '').trim()
+              if (!ref) throw new Error('bad keyRef')
+              const svc = ctx.credentials
+              if (action === 'set-key') {
+                await svc.set(ref, String(parsed.keyValue || ''))
+              } else if (typeof svc.unset === 'function') {
+                // 普通密钥存在凭据文档的 refs 段：必须用 unset 才能真正删除
+                // （deleteRecord 只处理 records 段的结构化记录，对 refs 会静默返回）
+                await svc.unset(ref)
+              } else {
+                await svc.deleteRecord(ref)
+              }
+              res.writeHead(200, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: true }))
+              return
+            }
+            if (action === 'model-settings') {
+              const r = writeUsageSettings({ modelSettings: { id: String(parsed.id || ''), alert: parsed.alert, budget: parsed.budget, quota: parsed.quota } })
+              res.writeHead(r.ok ? 200 : 400, JSON_HEADERS)
+              res.end(JSON.stringify(r))
+              return
+            }
+            // 注意：keyValue 在提交体上（不在 model 里），必须合并进去，
+            // 否则前端面板里填的 API key 会被丢弃（密钥永远存不进去）
+            const r = await apiSaveModel({ ...(parsed.model || parsed), keyValue: parsed.keyValue })
+            const list2 = await apiModelsPayload()
+            res.writeHead(r.ok ? 200 : 400, JSON_HEADERS)
+            res.end(JSON.stringify({ ...r, models: list2.models }))
+            return
+          }
+          const payload = await apiModelsPayload()
+          res.writeHead(200, JSON_HEADERS)
+          res.end(JSON.stringify(payload))
+        } catch (err) {
+          res.writeHead(400, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err).slice(0, 200) }))
+        }
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/roles.json',
+      handler: async (req, res) => {
+        if (req.method === 'POST' || req.method === 'PUT') {
+          try {
+            // 放宽到 30MB：支持最大 20MB 的 GIF（base64 膨胀约 1.33 倍）
+            const body = await readBodyMax(req, 30 * 1024 * 1024)
+            const parsed = JSON.parse(body)
+            const name = String(parsed.name || '').trim().slice(0, 20) || '新角色'
+            const image = String(parsed.image || '')
+            const m = /^data:image\/(png|jpeg|webp|gif);base64,([A-Za-z0-9+/=]+)$/.exec(image)
+            if (!m) {
+              res.writeHead(400, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: false, error: 'invalid image data' }))
+              return
+            }
+            const buf = Buffer.from(m[2], 'base64')
+            if (buf.length < 8 || buf.length > 20 * 1024 * 1024) {
+              res.writeHead(400, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: false, error: 'image too large' }))
+              return
+            }
+            // format：客户端显式告知 gif/apng（APNG 的 dataURL 是 image/png，需客户端区分）；
+            // 未显式给时按 dataURL 的 MIME 推断（gif→gif，其余 png）
+            const declared = parsed.format === 'gif' ? 'gif' : (parsed.format === 'apng' ? 'apng' : null)
+            const fmt = declared || (m[1] === 'gif' ? 'gif' : 'png')
+            const id = 'role_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8)
+            const dir = pickRoleDir()
+            fs.writeFileSync(path.join(dir, id + '.' + roleFileExt(fmt)), buf)
+            const index = readRolesIndex()
+            index.roles.push({ id, name, format: fmt, pinnedAt: null, createdAt: Date.now() })
+            writeRolesIndex(index)
+            res.writeHead(200, JSON_HEADERS)
+            res.end(JSON.stringify(rolesPayload()))
+          } catch (err) {
+            res.writeHead(400, JSON_HEADERS)
+            res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err).slice(0, 200) }))
+          }
+          return
+        }
+        res.writeHead(200, JSON_HEADERS)
+        res.end(JSON.stringify(rolesPayload()))
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/role-pin.json',
+      handler: async (req, res) => {
+        try {
+          const body = await readBodyMax(req, 8192)
+          const parsed = JSON.parse(body)
+          const id = String(parsed.id || '')
+          const { index, role } = roleIndexFind(id)
+          if (!role) {
+            res.writeHead(404, JSON_HEADERS)
+            res.end(JSON.stringify({ ok: false, error: 'role not found' }))
+            return
+          }
+          role.pinnedAt = parsed.pinned === true ? Date.now() : null
+          writeRolesIndex(index)
+          res.writeHead(200, JSON_HEADERS)
+          res.end(JSON.stringify(rolesPayload()))
+        } catch (err) {
+          res.writeHead(400, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err).slice(0, 200) }))
+        }
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/role-delete.json',
+      handler: async (req, res) => {
+        try {
+          const body = await readBodyMax(req, 8192)
+          const parsed = JSON.parse(body)
+          const id = String(parsed.id || '')
+          if (id === ROLE_DEFAULT_ID) {
+            res.writeHead(400, JSON_HEADERS)
+            res.end(JSON.stringify({ ok: false, error: 'cannot delete default role' }))
+            return
+          }
+          const { index, role } = roleIndexFind(id)
+          if (!role) {
+            res.writeHead(404, JSON_HEADERS)
+            res.end(JSON.stringify({ ok: false, error: 'role not found' }))
+            return
+          }
+          // 先按角色 format 确定文件路径（必须在从索引移除之前，否则查不到 format 默认成 png，删不掉 .gif）
+          const fmt = role.format === 'gif' || role.format === 'apng' ? role.format : 'png'
+          const p = roleFilePath(id, fmt)
+          index.roles = index.roles.filter((r) => r.id !== id)
+          writeRolesIndex(index)
+          if (p) { try { fs.unlinkSync(p) } catch (err) {} }
+          res.writeHead(200, JSON_HEADERS)
+          res.end(JSON.stringify(rolesPayload()))
+        } catch (err) {
+          res.writeHead(400, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err).slice(0, 200) }))
+        }
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/role-image.png',
+      handler: (req, res) => {
+        try {
+          const id = roleIdFromUrl(req.url)
+          const p = roleImagePath(id)
+          if (!p) throw new Error('bad role id')
+          const bytes = fs.readFileSync(p)
+          // 按角色格式返回对应 MIME：gif 动图 → image/gif；png/apng 都是 PNG 容器 → image/png
+          const { role } = roleIndexFind(id)
+          const mime = role && role.format === 'gif' ? 'image/gif' : 'image/png'
+          res.writeHead(200, {
+            'Content-Type': mime,
+            'Cache-Control': 'no-store',
+            'Content-Length': String(bytes.length),
+          })
+          res.end(bytes)
+        } catch (err) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+          res.end('role image unavailable')
+        }
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/audio.json',
+      handler: async (req, res) => {
+        if (req.method === 'POST' || req.method === 'PUT') {
+          try {
+            const body = await readBodyMax(req, 8 * 1024 * 1024)
+            const parsed = JSON.parse(body)
+            const action = parsed.action
+            const index = readAudioIndex()
+            if (action === 'upload-fragment') {
+              const name = String(parsed.name || '').trim().slice(0, 40) || '未命名音频'
+              const audio = String(parsed.audio || '')
+              const m = /^data:audio\/wav;base64,([A-Za-z0-9+/=]+)$/.exec(audio)
+              if (!m) {
+                res.writeHead(400, JSON_HEADERS)
+                res.end(JSON.stringify({ ok: false, error: 'invalid wav data' }))
+                return
+              }
+              const buf = Buffer.from(m[1], 'base64')
+              if (buf.length < 44 || buf.length > 8 * 1024 * 1024) {
+                res.writeHead(400, JSON_HEADERS)
+                res.end(JSON.stringify({ ok: false, error: 'audio too large' }))
+                return
+              }
+              const id = 'audio_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8)
+              fs.writeFileSync(path.join(pickAudioDir(), id + '.wav'), buf)
+              index.fragments.push({ id, name, createdAt: Date.now() })
+              writeAudioIndex(index)
+              res.writeHead(200, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: true, id, fragments: audioFragmentsPayload() }))
+              return
+            }
+            if (action === 'save-group') {
+              const id = String(parsed.id || '')
+              const name = String(parsed.name || '').trim().slice(0, 20) || '未命名音效组'
+              const press = String(parsed.press ?? '')
+              const release = String(parsed.release ?? '')
+              // 校验引用片段存在（预设或自定义）；空字符串=该槽留空(该事件静音)，允许保存
+              const frags = audioFragmentsPayload().map((f) => f.id)
+              const validPress = press === '' ? '' : (frags.includes(press) ? press : PRESET_GROUPS.duck.press)
+              const validRelease = release === '' ? '' : (frags.includes(release) ? release : PRESET_GROUPS.duck.release)
+              if (id && index.groups.some((g) => g.id === id)) {
+                const g = index.groups.find((x) => x.id === id)
+                g.name = name
+                g.press = validPress
+                g.release = validRelease
+              } else {
+                const gid = 'group_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8)
+                index.groups.push({ id: gid, name, press: validPress, release: validRelease, pinnedAt: null, createdAt: Date.now() })
+              }
+              writeAudioIndex(index)
+              res.writeHead(200, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: true, groups: audioGroupsPayload() }))
+              return
+            }
+            if (action === 'delete-group') {
+              const id = String(parsed.id || '')
+              if (PRESET_GROUPS[id]) {
+                res.writeHead(400, JSON_HEADERS)
+                res.end(JSON.stringify({ ok: false, error: 'cannot delete preset group' }))
+                return
+              }
+              index.groups = index.groups.filter((g) => g.id !== id)
+              writeAudioIndex(index)
+              res.writeHead(200, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: true, groups: audioGroupsPayload() }))
+              return
+            }
+            if (action === 'delete-fragment') {
+              const id = String(parsed.id || '')
+              if (PRESET_FRAGMENTS[id]) {
+                res.writeHead(400, JSON_HEADERS)
+                res.end(JSON.stringify({ ok: false, error: 'cannot delete preset fragment' }))
+                return
+              }
+              index.fragments = index.fragments.filter((f) => f.id !== id)
+              writeAudioIndex(index)
+              const p = audioFragmentPath(id)
+              if (p) { try { fs.unlinkSync(p) } catch (err) {} }
+              res.writeHead(200, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: true, fragments: audioFragmentsPayload(), groups: audioGroupsPayload() }))
+              return
+            }
+            if (action === 'pin-group') {
+              const id = String(parsed.id || '')
+              const g = index.groups.find((x) => x.id === id)
+              if (!g) {
+                res.writeHead(404, JSON_HEADERS)
+                res.end(JSON.stringify({ ok: false, error: 'group not found' }))
+                return
+              }
+              g.pinnedAt = parsed.pinned === true ? Date.now() : null
+              writeAudioIndex(index)
+              res.writeHead(200, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: true, groups: audioGroupsPayload() }))
+              return
+            }
+            res.writeHead(400, JSON_HEADERS)
+            res.end(JSON.stringify({ ok: false, error: 'unknown action' }))
+          } catch (err) {
+            res.writeHead(400, JSON_HEADERS)
+            res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err).slice(0, 200) }))
+          }
+          return
+        }
+        res.writeHead(200, JSON_HEADERS)
+        res.end(JSON.stringify(audioPayload()))
+      },
+    }))
+
+    // v860（issue #226）：路由**不再以 .wav 结尾** —— 带后缀的 URL 会被部分环境（下载器/扩展/反代）
+    //   当成"下载文件"劫持，导致试听与任务结束音无声。Content-Type 由 fragmentMime() 决定，
+    //   与 URL 后缀无关 ⇒ 改成无后缀路径，同时**保留旧路径作为兼容别名**（老客户端仍能用）。
+    const audioFragmentHandler = (req, res) => {
+        try {
+          const id = audioIdFromUrl(req.url)
+          const bytes = loadAudioFragmentBytes(id)
+          if (!bytes) throw new Error('bad fragment id')
+          // 预设/内置片段可能是 mp3 也可能是 wav —— Content-Type 必须与字节匹配，
+          // 否则浏览器解码路径/加载行为异常（MIME 与字节不符会导致听感差异）
+          const mime = fragmentMime(id)
+          res.writeHead(200, {
+            'Content-Type': mime,
+            'Cache-Control': 'no-store',
+            'Content-Length': String(bytes.length),
+          })
+          res.end(bytes)
+        } catch (err) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+          res.end('audio fragment unavailable')
+        }
+      }
+    disposers.push(registerRoute({ kind: 'exact', path: '/dsh-whale/audio-fragment', handler: audioFragmentHandler }))
+    disposers.push(registerRoute({ kind: 'exact', path: '/dsh-whale/audio-fragment.wav', handler: audioFragmentHandler }))
+
+    // 片段字节对应的 MIME：内置/预设片段按声明，自定义片段一律 wav
+    function fragmentMime(fragId) {
+      const f = PRESET_FRAGMENTS[fragId]
+      return (f && f.mime) || 'audio/wav'
+    }
+
+    function loadSound(candidates) {
+      for (const p of candidates) {
+        try {
+          const bytes = fs.readFileSync(p)
+          if (bytes && bytes.length > 0) return bytes
+        } catch (err) {}
+      }
+      return null
+    }
+
+    function serveSound(req, res, candidates) {
+      const bytes = loadSound(candidates)
+      if (!bytes) {
+        // v752：404 也带 no-store。原来只有 200 分支有缓存头，失败的响应可能被浏览器/中间层
+        // 缓存住，一旦缓存就会变成"永久没声音、刷新也没用"。
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' })
+        res.end('sound unavailable')
+        return
+      }
+      res.writeHead(200, {
+        'Content-Type': 'audio/mpeg',
+        'Cache-Control': 'no-store',
+        'Content-Length': String(bytes.length),
+      })
+      res.end(bytes)
+    }
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/sound/press.mp3',
+      handler: (req, res) => {
+        const set = SOUND_SETS[soundSetFromUrl(req.url)] || SOUND_SETS.duck
+        // 自定义音效组：set 为组 id 时按组内 press 片段取音频
+        const setName = soundSetFromUrl(req.url)
+        if (setName && !SOUND_SETS[setName]) {
+          const fragId = groupFragmentId(setName, 'press')
+          if (fragId === '') { res.writeHead(204, { 'Cache-Control': 'no-store' }); res.end(); return } // 留空槽：该事件静音（v752：补 no-store，空响应不允许被缓存）
+          const bytes = loadAudioFragmentBytes(fragId)
+          if (bytes) {
+            res.writeHead(200, {
+              'Content-Type': fragmentMime(fragId),
+              'Cache-Control': 'no-store',
+              'Content-Length': String(bytes.length),
+            })
+            res.end(bytes)
+            return
+          }
+        }
+        serveSound(req, res, set.press)
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/sound/release.mp3',
+      handler: (req, res) => {
+        const set = SOUND_SETS[soundSetFromUrl(req.url)] || SOUND_SETS.duck
+        const setName = soundSetFromUrl(req.url)
+        if (setName && !SOUND_SETS[setName]) {
+          const fragId = groupFragmentId(setName, 'release')
+          if (fragId === '') { res.writeHead(204, { 'Cache-Control': 'no-store' }); res.end(); return } // 留空槽：该事件静音（v752：补 no-store，空响应不允许被缓存）
+          const bytes = loadAudioFragmentBytes(fragId)
+          if (bytes) {
+            res.writeHead(200, {
+              'Content-Type': fragmentMime(fragId),
+              'Cache-Control': 'no-store',
+              'Content-Length': String(bytes.length),
+            })
+            res.end(bytes)
+            return
+          }
+        }
+        serveSound(req, res, set.release)
+      },
+    }))
+
+    function pickBubbleImgDir() {
+      for (const p of BUBBLE_IMG_DIR_CANDIDATES) {
+        try {
+          fs.mkdirSync(p, { recursive: true })
+          fs.accessSync(p, fs.constants.W_OK)
+          return p
+        } catch (err) {}
+      }
+      return BUBBLE_IMG_DIR_CANDIDATES[0]
+    }
+    function defaultBubbleImgIndex() {
+      return { version: 1, images: [] }
+    }
+    function readBubbleImgIndex() {
+      try {
+        const parsed = JSON.parse(fs.readFileSync(path.join(pickBubbleImgDir(), BUBBLE_IMG_INDEX_NAME), 'utf8'))
+        if (parsed && Array.isArray(parsed.images)) return parsed
+      } catch (err) {}
+      return defaultBubbleImgIndex()
+    }
+    function writeBubbleImgIndex(index) {
+      try {
+        fs.writeFileSync(path.join(pickBubbleImgDir(), BUBBLE_IMG_INDEX_NAME), JSON.stringify(index, null, 2), 'utf8')
+        return true
+      } catch (err) {
+        return false
+      }
+    }
+    function bubbleImgPayload() {
+      const index = readBubbleImgIndex()
+      // 内置默认图常驻(先列出,不占 createdAt 排序;用户图库含同 id 时不重复)
+      const seen = {}
+      index.images.forEach((im) => { seen[im.id] = 1 })
+      const builtins = DEFAULT_BUBBLE_IMGS.filter((d) => !seen[d.id]).map((d) => ({
+        id: d.id,
+        name: String(d.name || d.id),
+        format: d.format === 'gif' ? 'gif' : 'png',
+        url: '/dsh-whale/bubble-img.png?id=' + encodeURIComponent(d.id),
+        createdAt: null,
+        builtin: true,
+      }))
+      return {
+        ok: true,
+        images: builtins.concat(index.images.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map((im) => ({
+          id: im.id,
+          name: String(im.name || im.id),
+          format: im.format === 'gif' ? 'gif' : 'png',
+          url: '/dsh-whale/bubble-img.png?id=' + encodeURIComponent(im.id),
+          createdAt: im.createdAt || null,
+        }))),
+      }
+    }
+    function bubbleImgIdFromUrl(url) {
+      try {
+        const q = String(url || '').split('?')[1] || ''
+        const m = /(?:^|&)id=([^&]+)/.exec(q)
+        return m ? decodeURIComponent(m[1]) : ''
+      } catch (err) { return '' }
+    }
+    function loadBubbleConfig() {
+      for (const p of BUBBLE_FILE_CANDIDATES) {
+        try {
+          const parsed = JSON.parse(fs.readFileSync(p, 'utf8'))
+          if (parsed && parsed.v === 1) return parsed
+        } catch (err) {}
+      }
+      return null
+    }
+    // ===== v815：自定义泡泡框 —— 宿主侧净化 =====
+    // 用户可以在"泡泡框"里写 SVG 代码 ⇒ 这些片段最终会进 innerHTML ⇒ **必须白名单化**：
+    //   · 只放行无脚本、无外链的几何标签；
+    //   · 标签属性只放行几何/描边类；
+    //   · 直接删掉 <script>/<foreignObject>/on* 事件/href(javascript:)/style 里的 url()、expression。
+    // 探针 `_v815-frame-lib-check.mjs` 带一批负样本（见 §验证），改这里必须同步那些断言。
+    const FRAME_SVG_TAGS = ['path', 'ellipse', 'circle', 'rect', 'polygon', 'polyline', 'g']
+    // v828：补 `r`（`<circle>` 的半径）—— 标签在白名单里却漏了属性，用户写 `<circle r="30"/>` 会被剥成画不出来
+    const FRAME_SVG_ATTRS = ['d', 'points', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'width', 'height', 'fill', 'stroke',
+      'stroke-width', 'stroke-dasharray', 'stroke-linejoin', 'stroke-linecap', 'transform', 'opacity', 'fill-opacity', 'stroke-opacity']
+    function frameColorOk(v, def) {
+      const s = String(v == null ? '' : v).trim()
+      if (/^#[0-9a-fA-F]{3}$/.test(s) || /^#[0-9a-fA-F]{6}$/.test(s)) return s
+      if (/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*(0|1|0?\.\d+)\s*)?\)$/.test(s)) return s
+      if (s === 'transparent' || s === 'none') return s
+      return def
+    }
+    function frameNumIn(v, def, min, max) {
+      const n = Number(v)
+      let x = isFinite(n) ? n : def
+      if (typeof min === 'number' && x < min) x = min
+      if (typeof max === 'number' && x > max) x = max
+      return Math.round(x * 1000) / 1000
+    }
+    function frameSvgSanitize(code) {
+      let s = String(code == null ? '' : code).slice(0, 8000)
+      if (!s) return ''
+      // 整块危险元素直接删（含内容）
+      s = s.replace(/<\s*(script|foreignObject|style|iframe|image|use|animate|set)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+      s = s.replace(/<\s*(script|foreignObject|style|iframe|image|use|animate|set)\b[^>]*\/?>/gi, '')
+      // 只保留白名单标签；其它标签（含自闭合）整体删除
+      s = s.replace(/<\s*\/?\s*([A-Za-z][\w:-]*)((?:[^>"']|"[^"]*"|'[^']*')*)\/?>/g, (m0, tag, attrs) => {
+        const t = String(tag)
+        if (FRAME_SVG_TAGS.indexOf(t) < 0) return ''
+        const closing = /^<\s*\//.test(m0)
+        // v823（P2）：**保住自闭合的斜杠**。P0 首版一律重拼成 `<tag …>`，而内联 SVG 里 `<path>` 不是空元素
+        //   ⇒ HTML 解析器会把后面的兄弟塞进它里面（`<path a/><path b/>` → path a > path b，子节点不渲染）
+        //   ⇒ 用户写的多形状自定义 SVG 只有第一个能显示。P2 才引入"自定义 SVG 代码"，所以坑到这时才暴露。
+        const selfClose = /\/\s*>$/.test(m0)
+        let out = '<' + (closing ? '/' : '') + t
+        if (!closing) {
+          const re = /([A-Za-z][\w:-]*)\s*=\s*("([^"]*)"|'([^']*)')/g
+          let m
+          let kept = 0
+          while ((m = re.exec(attrs))) {
+            const name = String(m[1]).toLowerCase()
+            const val = String(m[3] !== undefined ? m[3] : m[4])
+            if (FRAME_SVG_ATTRS.indexOf(name) < 0) continue
+            // 值里也不许出现 javascript:/url(/expression
+            if (/javascript:|url\s*\(|expression\s*\(/i.test(val)) continue
+            if (/[<>]/.test(val)) continue
+            out += ' ' + name + '="' + val.replace(/"/g, '&quot;') + '"'
+            kept++
+          }
+          void kept
+        }
+        return out + ((selfClose && !closing) ? '/>' : '>')
+      })
+      // v818（自检发现）：再**清掉标签之外的所有裸文本**。为什么必须做：`<script>alert(1)`（未闭合）这类输入，
+      //   块删除与标签白名单都只处理"标签"，会留下裸文本 `alert(1)` —— 它在 SVG 里是惰性文本、不会执行，
+      //   但把与形状无关的文字塞进 innerHTML 没有意义，也少留一条"文本被解释"的可能性。
+      //   属性值里不可能含 < >（上面的属性白名单已拒），所以按 <…> 切分是安全的。
+      s = s.replace(/[^<>]+(?=<|$)/g, '')
+      return s
+    }
+    function frameSanitizeOne(raw, idx) {
+      const s = raw && typeof raw === 'object' ? raw : {}
+      let id = String(s.id == null ? '' : s.id).trim().slice(0, 64)
+      if (!id) id = 'frame_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6)
+      const slotsIn = s.slots && typeof s.slots === 'object' ? s.slots : {}
+      function slot(kind) {
+        const d = slotsIn[kind] && typeof slotsIn[kind] === 'object' ? slotsIn[kind] : {}
+        const paint = d.paint && typeof d.paint === 'object' ? d.paint : {}
+        const out = {
+          dx: frameNumIn(d.dx, 0, -1026, 1026),
+          dy: frameNumIn(d.dy, 0, -700, 700),
+          scale: frameNumIn(d.scale, 1, 0.2, 4),
+          kind: d.kind === 'image' ? 'image' : 'svg',
+          svgPreset: ['classic', 'roundrect', 'zigzag', 'custom'].indexOf(String(d.svgPreset)) >= 0 ? String(d.svgPreset) : 'classic',
+          svgCode: frameSvgSanitize(d.svgCode),
+          imgId: String(d.imgId == null ? '' : d.imgId).slice(0, 64),
+          imgScale: frameNumIn(d.imgScale, 1, 0.1, 6),
+          imgOpacity: frameNumIn(d.imgOpacity, 1, 0, 1),
+          paint: {
+            bgOn: paint.bgOn === undefined ? true : paint.bgOn !== false,
+            bg: frameColorOk(paint.bg, '#FFFFFF'),
+            bgAlpha: frameNumIn(paint.bgAlpha, 1, 0, 1),
+            lineOn: paint.lineOn === undefined ? true : paint.lineOn !== false,
+            line: frameColorOk(paint.line, '#203170'),
+            lineW: frameNumIn(paint.lineW, 18, 0, 120),
+            lineAlpha: frameNumIn(paint.lineAlpha, 1, 0, 1),
+            dashOn: paint.dashOn === true,
+            dash: /^[0-9][0-9.,\s]*$/.test(String(paint.dash == null ? '' : paint.dash).trim()) ? String(paint.dash).trim().slice(0, 40) : '0',
+            cap: ['butt', 'square', 'round'].indexOf(String(paint.cap)) >= 0 ? String(paint.cap) : 'round',
+            join: ['miter', 'bevel', 'round'].indexOf(String(paint.join)) >= 0 ? String(paint.join) : 'round',
+          },
+        }
+        if (kind === 'small1' || kind === 'small2') out.on = d.on === undefined ? true : d.on !== false
+        return out
+      }
+      const safe = s.safe && typeof s.safe === 'object' ? s.safe : {}
+      const w = frameNumIn(safe.w, 646, 40, 1026)
+      const h = frameNumIn(safe.h, 400, 40, 700)
+      return {
+        id: id,
+        name: String(s.name == null ? '' : s.name).trim().slice(0, 24) || ('泡泡框' + (idx + 1)),
+        builtin: s.builtin === true,
+        pinned: Math.round(frameNumIn(s.pinned, 0, 0, 9999)),
+        createdAt: Math.round(frameNumIn(s.createdAt, Date.now(), 0, 1e15)),
+        textColor: frameColorOk(s.textColor, ''),
+        safe: { x: frameNumIn(safe.x, 190, 0, 1026 - w), y: frameNumIn(safe.y, 90, 0, 700 - h), w: w, h: h },
+        slots: { big: slot('big'), small1: slot('small1'), small2: slot('small2') },
+      }
+    }
+    // 整份框库净化：内置框强制只读（内容还原由前端做；宿主这里只保证"不许被改成非内置"）
+    function framesSanitize(list, defId) {
+      const arr = Array.isArray(list) ? list.slice(0, 50) : []
+      const out = []
+      for (let i = 0; i < arr.length; i++) {
+        const f = frameSanitizeOne(arr[i], i)
+        if (f.id === 'frame_classic') { f.builtin = true; f.name = '经典（内置）'; continue } // 内置框不进库（前端会补）
+        out.push(f)
+      }
+      let def = String(defId == null ? '' : defId).slice(0, 64)
+      if (!out.some((x) => x.id === def)) def = 'frame_classic'
+      return { frames: out, defaultFrameId: def }
+    }
+    // items 里的"框引用 / 外观覆盖"：只保留已知形状的字段（逐字段白名单）
+    function itemsSanitizeFrames(items) {
+      const list = Array.isArray(items) ? items : []
+      const cleanOne = (obj) => {
+        if (!obj || typeof obj !== 'object') return obj
+        const out = obj
+        if (typeof out.frameId === 'string') out.frameId = out.frameId.slice(0, 64)
+        else delete out.frameId
+        const ov = out.frameOverride
+        if (ov && typeof ov === 'object') {
+          const keep = {}
+          for (const slot of ['big', 'small1', 'small2']) {
+            const raw = ov[slot]
+            if (!raw || typeof raw !== 'object') continue
+            const p = {}
+            for (const k of ['bgOn', 'bg', 'bgAlpha', 'lineOn', 'line', 'lineW', 'lineAlpha', 'dashOn', 'dash', 'cap', 'join']) {
+              if (Object.prototype.hasOwnProperty.call(raw, k)) p[k] = raw[k]
+            }
+            // 颜色/数值仍然过一遍校验，避免脏值写进配置
+            const norm = frameSanitizeOne({ slots: { [slot]: { paint: p } } }, 0).slots[slot].paint
+            const only = {}
+            for (const k of Object.keys(p)) if (Object.prototype.hasOwnProperty.call(norm, k)) only[k] = norm[k]
+            keep[slot] = only
+          }
+          if (Object.keys(keep).length) out.frameOverride = keep
+          else delete out.frameOverride
+        } else delete out.frameOverride
+        return out
+      }
+      for (const it of list) {
+        if (!it || typeof it !== 'object') continue
+        cleanOne(it)
+        if (it.kind === 'choice' && Array.isArray(it.options)) for (const o of it.options) { if (o) { cleanOne(o); if (o.item) cleanOne(o.item) } }
+      }
+      return list
+    }
+    function writeBubbleConfig(cfg) {
+      const body = JSON.stringify(cfg, null, 2)
+      for (const p of BUBBLE_FILE_CANDIDATES) {
+        try { fs.writeFileSync(p, body, 'utf8'); return true } catch (err) {}
+      }
+      return false
+    }
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/bubble.json',
+      handler: async (req, res) => {
+        try {
+          if (req.method === 'POST' || req.method === 'PUT') {
+            const body = await readBodyMax(req, 512 * 1024)
+            const parsed = JSON.parse(body)
+            if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.items) || !Array.isArray(parsed.lib)) {
+              res.writeHead(400, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: false, error: 'invalid bubble config' }))
+              return
+            }
+            // v727：tapAdvance =「点按角色推进泡泡队列」（只存布尔值，不放行其它字段）
+            // v815：泡泡框（frames/defaultFrameId）与 items 上的框引用/外观覆盖走净化后落盘。
+            //   没带 frames 的老客户端 ⇒ 不写这两个键（老配置零 churn）。
+            const itemsClean = itemsSanitizeFrames(parsed.items)
+            const cfg = { v: 1, items: itemsClean, lib: parsed.lib, tapAdvance: parsed.tapAdvance === true }
+            if (Array.isArray(parsed.frames)) {
+              const fr = framesSanitize(parsed.frames, parsed.defaultFrameId)
+              cfg.frames = fr.frames
+              cfg.defaultFrameId = fr.defaultFrameId
+            }
+            writeBubbleConfig(cfg)
+            res.writeHead(200, JSON_HEADERS)
+            res.end(JSON.stringify({ ok: true, config: cfg }))
+            return
+          }
+          const cfg = loadBubbleConfig()
+          res.writeHead(200, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: true, config: cfg }))
+        } catch (err) {
+          res.writeHead(400, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err).slice(0, 200) }))
+        }
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/bubble-imgs.json',
+      handler: (req, res) => {
+        res.writeHead(200, JSON_HEADERS)
+        res.end(JSON.stringify(bubbleImgPayload()))
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/bubble-img-upload.json',
+      handler: async (req, res) => {
+        try {
+          const body = await readBodyMax(req, 10 * 1024 * 1024)
+          const parsed = JSON.parse(body)
+          const action = parsed && parsed.action
+          const index = readBubbleImgIndex()
+          if (action === 'upload') {
+            const name = String(parsed.name || '').trim().slice(0, 40) || ''
+            const data = String(parsed.data || '')
+            const m = /^data:image\/(png|gif);base64,([A-Za-z0-9+/=]+)$/.exec(data)
+            if (!m) {
+              res.writeHead(400, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: false, error: 'invalid image data' }))
+              return
+            }
+            const format = m[1] === 'gif' ? 'gif' : 'png'
+            const buf = Buffer.from(m[2], 'base64')
+            if (buf.length < 64 || buf.length > 8 * 1024 * 1024) {
+              res.writeHead(400, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: false, error: 'image too large' }))
+              return
+            }
+            const id = 'bimg_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8)
+            fs.writeFileSync(path.join(pickBubbleImgDir(), id + '.' + format), buf)
+            index.images.push({ id, name, format, createdAt: Date.now() })
+            writeBubbleImgIndex(index)
+            res.writeHead(200, JSON_HEADERS)
+            res.end(JSON.stringify(bubbleImgPayload()))
+            return
+          }
+          if (action === 'delete') {
+            const id = String(parsed.id || '')
+            const img = index.images.find((x) => x.id === id)
+            if (!img) {
+              res.writeHead(404, JSON_HEADERS)
+              res.end(JSON.stringify({ ok: false, error: 'image not found' }))
+              return
+            }
+            index.images = index.images.filter((x) => x.id !== id)
+            writeBubbleImgIndex(index)
+            const ext = img.format === 'gif' ? 'gif' : 'png'
+            try { fs.unlinkSync(path.join(pickBubbleImgDir(), id + '.' + ext)) } catch (err) {}
+            res.writeHead(200, JSON_HEADERS)
+            res.end(JSON.stringify(bubbleImgPayload()))
+            return
+          }
+          res.writeHead(400, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: false, error: 'unknown action' }))
+        } catch (err) {
+          res.writeHead(400, JSON_HEADERS)
+          res.end(JSON.stringify({ ok: false, error: String((err && err.message) || err).slice(0, 200) }))
+        }
+      },
+    }))
+
+    disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/bubble-img.png',
+      handler: (req, res) => {
+        try {
+          const id = bubbleImgIdFromUrl(req.url)
+          // 1) 用户图库优先
+          const index = readBubbleImgIndex()
+          const img = index.images.find((x) => x.id === id)
+          if (img) {
+            const ext = img.format === 'gif' ? 'gif' : 'png'
+            const bytes = fs.readFileSync(path.join(pickBubbleImgDir(), id + '.' + ext))
+            res.writeHead(200, {
+              'Content-Type': img.format === 'gif' ? 'image/gif' : 'image/png',
+              'Cache-Control': 'no-store',
+              'Content-Length': String(bytes.length),
+            })
+            res.end(bytes)
+            return
+          }
+          // 2) 内置默认图回退(全新安装无用户图库时,泡泡序列引用的语义 id 也能出图)
+          const def = DEFAULT_BUBBLE_IMGS.find((x) => x.id === id)
+          if (def) {
+            const bytes = loadBuiltinBubbleImgBytes(def)
+            if (bytes) {
+              res.writeHead(200, {
+                'Content-Type': def.format === 'gif' ? 'image/gif' : 'image/png',
+                'Cache-Control': 'no-store',
+                'Content-Length': String(bytes.length),
+              })
+              res.end(bytes)
+              return
+            }
+          }
+          throw new Error('bad image id')
+        } catch (err) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+          res.end('bubble image unavailable')
+        }
+      },
+    }))
+
+          disposers.push(registerRoute({
+      kind: 'exact',
+      path: '/dsh-whale/widget.js',
+      handler: (req, res) => {
+        res.writeHead(200, {
+          'Content-Type': 'application/javascript; charset=utf-8',
+          'Cache-Control': 'no-store',
+        })
+        res.end(loadWidgetJs())
+      },
+    }))
+
+    disposers.push(ctx.webServer.tapIndex((html) => {
+      if (html.indexOf('/dsh-whale/widget.js') !== -1) return html
+      const tag = '<script defer src="/dsh-whale/widget.js"></script>'
+      if (html.indexOf('</body>') !== -1) return html.replace('</body>', tag + '</body>')
+      return html + tag
+    }))
+
+    // —— 官方 DSH 桌面端（Electron）适配（issue #152 / #153 / #154）——
+    // 桌面壳的 index.html 是**从安装包静态 dist 直接读盘**的（`dsh-app://app/`），永远不经过宿主的
+    // renderIndex()，所以上面的 tapIndex 在桌面端不生效 —— 于是"宿主半区活着、客户端半区从未被请求"。
+    // 桌面端唯一的注入通道是 `webserver/index-inject` 的结构化行（宿主启动时 collectIndexInjections()
+    // 经 IPC 交给渲染层，渲染层按 kind 逐行应用）。
+    // **该行的注册已上移到 apply() 开头**（见 `DESKTOP_WIDGET_ROW_TEXT` 上方那段注释）：两个原因 ——
+    // ① 桌面端的注入表是**一次性收集**的，行必须尽早进表；② 行本身改成了**内联 script 行**，
+    // 因为页面侧解释器对 `script-src` 是"加载失败即 reject 整个 boot"（issue #154 的致命启动错误）。
+
+    ctx.effect(() => () => {
+      for (const d of disposers) {
+        try { d() } catch (err) {}
+      }
+    })
+    }) // ← 结束 root.inject(['webServer','credentials','connection'], cb)
+  },
+}
