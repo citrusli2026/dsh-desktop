@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop 更新日志","url":"https://dsh-desktop.com/changelog","inLanguage":"zh-CN","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/"},{"@type":"ListItem","position":2,"name":"更新日志","item":"https://dsh-desktop.com/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-24","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.6"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-24","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.7"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,15 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.7 <small>（内核 0.2.1-rc.2）</small></h2>
+  <ul>
+    <li><strong>小鲸鱼桌宠成为可选的内置扩展</strong>：安装包自带<strong>未经修改</strong>的社区插件 <code>dsh-whale-widget</code> 0.4.2。 插件不需要声明伴随窗口、也不需要提供 pet 路由——壳按已知包版本提供描述，并自己提供一个适配页加载 插件原有的 <code>/dsh-whale/widget.js</code>。打开「桌面设置 → 扩展 → 小鲸鱼桌宠」勾选并点「立即重启」即可： 右下角显示 DeepSeek 余额与今日已用，主窗口最小化后小鲸鱼留在桌面，点右上角 <code>−</code> 或按 Esc 收起。</li>
+    <li><strong>默认关闭、可随时关闭</strong>：<code>whaleWidgetEnabled</code> 缺省为 false；关闭后壳不挂载插件，并移除自己创建的 profile 链接，插件列表、桌面工具面板和伴窗都不再出现该插件。Safe Mode 下一律不挂载。 插件将来若自己声明 <code>dsh.companion</code>，以插件声明为准，壳的适配层自动让位。</li>
+    <li><strong>署名与上游入口</strong>：设置页写明原作者 MeteorNOX，并提供「打开原作者项目」按钮；插件副本固定随壳分发， 不跟随 npm 自动更新。代码为 MIT，美术/音频素材按上游 <code>PROVENANCE.md</code> 原样分发（见 <code>third_party/dsh-whale-widget/VENDORED.md</code>）。</li>
+    <li><strong>边界不变</strong>：壳仍不读 Harness DOM、不调用 <code>executeJavaScript</code>、不提供审批桥；伴窗内的审批动作只会 把用户带回主窗口确认，Safe Mode 与第三方插件隔离承诺保持。</li>
+    <li><strong>安装包体积</strong>：新增约 7 MB 的内置插件资源（角色图、音效、前端脚本）。</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.6 <small>（内核 0.2.1-rc.2）</small></h2>
   <ul>
     <li><strong>插件伴随窗口可用性修复</strong>：真实插件（例如小鲸鱼 <code>/dsh-whale/pet</code>）的路由通常经过 Harness 的连接 鉴权栅栏，旧探针用无凭据的 Node <code>fetch</code> 会被 401，导致伴窗永远打不开；现在探针改用主窗口的 session， 看到的结果与伴窗一致。同时修掉「加载慢时晚到的 <code>showInactive()</code> 把已恢复的主窗口重新盖住」的竞态。</li>
@@ -106,16 +115,6 @@
     <li><strong>Linux arm64 产物</strong>：发布矩阵新增 <code>ubuntu-24.04-arm</code>，与 amd64 同源打包 <code>-arm64.deb</code>；资产契约从 8 个公开文件变为 10 个 Release 文件（8 个用户可见） （GitHub Release 共 10 个文件，其中 8 个用户可见：安装包 + 校验文件），应用内修复链接按运行架构选择，站点文案与 ADR 0017 同步更新。</li>
     <li><strong>发版流程新增四端视觉证据门禁</strong>：macOS / Windows / Linux x64 / Linux arm64 四个 runner 在打包 <code>@smoke</code> 跑完后 必须证明<strong>渲染出全部 21 个桌面扩展面</strong>（首启与安全模式横幅、浮动飞书快捷控制及其底部菜单、飞书管理五种状态、 消息偏好、六个设置面板、LAN 配对、回收站、恢复与加载）；缺失即失败并列出缺哪些，截图随工件发布 （<code>scripts/verify-visual-evidence.mjs</code>）。</li>
     <li><strong>边界说明</strong>：所有验证都在本地或 CI 的隔离环境完成；健康检查结果只在本地脱敏展示，不会自动上传。</li>
-  </ul>
-
-  <h2>v0.2.1-rc.1.shell.1 <small>（内核 0.2.1-rc.1）</small></h2>
-  <ul>
-    <li><strong>插件崩溃后能自愈（#115 一类）</strong>：当某个加载行引用了内置内核不提供的包时，以前只有 &quot;启动失败&quot;和一个反复重启的循环——安全模式也救不回来（安全模式只收集用户 bundle 插入的行， 而失败行常常来自 <code>cordis.patch.yml</code> 或它 include 的文件）。本版：失败分类新增&quot;找不到包&quot;， 错误页直接给出&quot;升级到最新版 / 禁用该插件&quot;的方向；安全模式开始覆盖 profile 与 home 两层的 <code>cordis.patch.yml</code> 及其 <code>include</code> 文件（用户对<strong>官方行</strong>的配置覆盖仍保持启用，不会被误禁用）； 自动隔离不再只认 bundle 名，非 bundle 的失败行会被记入壳自有的禁用 overlay，下次启动自动 绕开它，并可在错误页、「桌面工具」菜单或升级/禁用该插件后一键解除。</li>
-    <li><strong>profile 文件不可写不再死循环（#100/#116）</strong>：内置内核每次启动都会重写 <code>profiles/web/cordis.yml</code>，该文件只读、ACL 拒绝写入或被 Windows&quot;受控文件夹访问&quot;拦截时， 以前表现为&quot;白屏后怎么重启都起不来&quot;，而体检仍显示&quot;数据目录可写&quot;。本版在启动前做<strong>文件级</strong> 写权限预检：预检失败不再空转重启，而是给出带具体路径的错误页与&quot;修复文件权限并重启&quot;按钮 （清除只读属性后自动重试）；体检的&quot;数据目录与磁盘&quot;项改用同一探测；诊断报告新增 <code>profile_write=</code> 一行。</li>
-    <li><strong>白屏可诊断（#100）</strong>：渲染进程没有崩溃但页面空白时，以前没有任何线索，只能请用户手工开 开发者工具。本版采集渲染进程的 error/warning 控制台消息与&quot;无响应&quot;事件（环形缓冲、限长、 导出时脱敏），写入诊断报告的 <code>renderer_errors</code> 段；渲染进程恢复失败时也会把首条异常并入 错误页日志尾部。</li>
-    <li><strong>诊断更完整</strong>：插件清单新增 <code>patch_layers</code>（读到的用户补丁层）与 <code>unkeyed_rows</code> （无法按 id 禁用的&quot;隐形行&quot;）——以前这两类信息在报告里完全看不到。</li>
-    <li><strong>内核未变</strong>：仍打包 <code>@deepseek-ai/dsh</code> <code>0.2.1-rc.1</code>，只递增壳修订号；上游 <code>0.2.1-rc.2</code> 不在本次范围内，不借壳发布做隐式内核升级。</li>
-    <li><strong>边界说明</strong>：所有修复都在本机完成，不改变隐私边界——诊断报告仍只在本地生成、不自动上传； 一键修复只清除只读属性，不修改 ACL、不调整安全软件设置、不删除用户数据。</li>
   </ul>
   <!-- changelog:auto:end -->
 

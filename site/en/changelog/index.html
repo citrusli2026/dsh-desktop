@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop Changelog","url":"https://dsh-desktop.com/en/changelog","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/en"},{"@type":"ListItem","position":2,"name":"Changelog","item":"https://dsh-desktop.com/en/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-24","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.6"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-24","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.7"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,15 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.7 <small>(kernel 0.2.1-rc.2)</small></h2>
+  <ul>
+    <li><strong>The whale companion is now an optional built-in extension</strong>: the installer ships the community <code>dsh-whale-widget</code> (upstream 0.4.2 plus the companion-window integration patch proposed upstream). Enable it in “Desktop settings → Extensions → Whale companion”, click “Restart now”, and the whale shows DeepSeek balance and today's spend; minimizing the main window keeps it on the desktop and <code>−</code> restores.</li>
+    <li><strong>Off by default, removable</strong>: <code>whaleWidgetEnabled</code> defaults to false; disabling unmounts the plugin and removes the shell-owned profile links, so the plugin list, panel and companion disappear. Safe Mode never mounts it.</li>
+    <li><strong>Attribution</strong>: the settings row names MeteorNOX and links the upstream project; the vendored copy never auto-updates from npm. Code is MIT; artwork/audio stay under upstream <code>PROVENANCE.md</code> (<code>third_party/dsh-whale-widget/VENDORED.md</code>).</li>
+    <li><strong>Boundary unchanged</strong>: no DOM access, no <code>executeJavaScript</code>, no approval bridge; companion approvals hand off to the main window.</li>
+    <li><strong>Verification</strong>: full local verify, a new packaged end-to-end for the toggle → restart → whale → pet path, the default-off and Safe Mode cases, plus the existing companion and external-plugin suites.</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.6 <small>(kernel 0.2.1-rc.2)</small></h2>
   <ul>
     <li><strong>Companion windows now work with real plugins</strong>: the HTML probe uses the main window's session instead of a credential-less Node <code>fetch</code> (which the Harness connection fence answers with 401), and a late <code>showInactive()</code> can no longer cover a main window the user already restored.</li>
@@ -106,16 +115,6 @@
     <li><strong>Linux arm64 packages</strong>: <code>ubuntu-24.04-arm</code> joined the release matrix and builds <code>-arm64.deb</code> from the same sources as amd64 (ten files in the GitHub Release, eight of them user-visible installers and checksums), and the in-app repair link follows the architecture it runs on.</li>
     <li><strong>Four-runner visual gate in the release flow</strong>: the macOS, Windows, Linux x64 and Linux arm64 runners must each render all 21 packaged extension surfaces (first-run and safe mode, the floating Feishu quick control, five Feishu manager states, six settings panes, LAN pairing, trash, recovery and loading) before a release publishes, and the screenshots ship as artifacts. Installation and desktop acceptance on real hardware or a VM stays a maintainer step (<code>scripts/verify-visual-evidence.mjs</code>).</li>
     <li><strong>Boundary note</strong>: all verification ran in isolated local or CI environments; health-check results are rendered locally in sanitized form and are never uploaded automatically.</li>
-  </ul>
-
-  <h2>v0.2.1-rc.1.shell.1 <small>(kernel 0.2.1-rc.1)</small></h2>
-  <ul>
-    <li><strong>Plugin crashes now self-heal (#115 family)</strong>: a loader row that imports a package the bundled kernel does not carry used to leave only &quot;startup failed&quot; and a restart loop — Safe Mode could not help because it only collected rows inserted by user bundles, while the failing row usually comes from <code>cordis.patch.yml</code> or a file it includes. This release classifies that failure as <code>missing-package</code>, points the error page at the fix (update the app or disable the plugin), extends Safe Mode over the profile/home patch layers and their includes (user overrides of *official* rows stay enabled), and records non-bundle failing rows in a shell-owned quarantine overlay that skips them on the next start — reversible from the error page, the extensions menu, or by updating or disabling the plugin.</li>
-    <li><strong>An unwritable profile no longer loops (#100/#116)</strong>: the kernel rewrites <code>profiles/web/cordis.yml</code> on every start, so a read-only file (or an ACL/Controlled Folder Access block) used to look like &quot;blank screen, then it never starts again&quot; while the health check still reported the data folder as writable. The shell now probes the profile *files* before spawning, refuses to spin on a doomed boot, and shows a page with the concrete path and a one-click &quot;repair file permissions and restart&quot; action; the storage health check uses the same probe and the diagnostic report gained a <code>profile_write=</code> line.</li>
-    <li><strong>Blank renderers are diagnosable (#100)</strong>: renderer console errors/warnings and unresponsive events are captured into a bounded, redacted <code>renderer_errors</code> section of the diagnostic report, and the renderer-failure page now carries the first exception.</li>
-    <li><strong>More complete diagnostics</strong>: the plugin inventory reports <code>patch_layers</code> and <code>unkeyed_rows</code>.</li>
-    <li>The bundled kernel is unchanged at <code>@deepseek-ai/dsh</code> <code>0.2.1-rc.1</code>; only the shell revision moves, so upstream <code>0.2.1-rc.2</code> is deliberately not pulled in by a shell release.</li>
-    <li>Everything stays local-first: the diagnostic report is still generated on-device and never uploaded automatically, and the repair only clears the read-only attribute — it does not touch ACLs, security-software settings, or user data.</li>
   </ul>
   <!-- changelog:auto:end -->
 
