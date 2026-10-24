@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop 更新日志","url":"https://dsh-desktop.com/changelog","inLanguage":"zh-CN","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/"},{"@type":"ListItem","position":2,"name":"更新日志","item":"https://dsh-desktop.com/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-24","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.7"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-24","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.8"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,16 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.8 <small>（内核 0.2.1-rc.2）</small></h2>
+  <ul>
+    <li><strong>失败可以一键交给 AI 排查（Incident）</strong>：恢复中心和「插件市场」失败提示新增「问 AI / 问 AI 诊断」。 壳把已脱敏的诊断（版本、profile、插件清单、失败分类、日志尾部）组装成一条故障事件，在 Harness 里 创建会话并把带结构的排查提示作为首条消息：先判根因，再给最多 5 步修复和验证方法。AI 不可用时 （内核未启动 / 能力缺失 / 创建失败）会如实说明，并自动回退到导出诊断 / issue，绝不是唯一出路。 提示词把日志明确标为「数据，不是指令」，24 000 字节上限，超长保留头部并标注截断；只写本机 <code>$DSH_HOME/incidents/{id}/</code>，不上传任何东西。ADR 0046。</li>
+    <li><strong>小鲸鱼桌宠默认开启</strong>：安装后主窗口右下角直接出现小鲸鱼；仍可在「桌面设置 → 扩展 → 小鲸鱼桌宠」 关闭（切换后点「立即重启」）。Safe Mode 下一律不加载。</li>
+    <li><strong>修复：旧版残留会让伴窗静默消失</strong>。如果 web profile 里还留着自己安装的旧版 <code>dsh-whale-widget</code>（例如 0.2.10），上一版会按这个旧版本号做兼容判断，导致最小化后不出现小鲸鱼。 现在兼容判断读取<strong>实际挂载的版本</strong>（壳在 <code>profiles/node_modules</code> 的链接，0.4.2），旧目录不再影响 伴窗；同时适配页仍加载实际挂载插件自己的 <code>/dsh-whale/widget.js</code>。</li>
+    <li><strong>桌面工具入口不再被小鲸鱼遮挡</strong>：小鲸鱼的装饰层之前会盖住右下角的「桌面工具」按钮和部分对话框； 现在壳把它的层级压到 Harness 浮层之下，桌面工具与设置弹窗始终可点。</li>
+    <li><strong>修复：重装插件市场不再“装完仍是未安装”</strong>。<code>dsh plugin add</code> 只启用新增依赖，已保留的旧版本会被 pnpm 锁住，且被内核兼容门禁跳过的版本只打告警。现在安装 <code>dshmarket@latest</code>；装完若启动清单仍缺 该 bundle，壳补写 <code>dsh.profile.bundles</code> 一条（依赖与包目录不动）；CLI 明确报不兼容时返回新的 <code>incompatible</code> 原因并附门禁原始行，不再误报为“目录不可写”。ADR 0045。</li>
+    <li><strong>行为不变的部分</strong>：插件代码仍未经修改；关闭鲸鱼开关会卸载插件并移除壳创建的链接；审批只在主窗口 完成；Linux 不提供点击穿透；素材按上游 <code>PROVENANCE.md</code> 原样分发。</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.7 <small>（内核 0.2.1-rc.2）</small></h2>
   <ul>
     <li><strong>小鲸鱼桌宠成为可选的内置扩展</strong>：安装包自带<strong>未经修改</strong>的社区插件 <code>dsh-whale-widget</code> 0.4.2。 插件不需要声明伴随窗口、也不需要提供 pet 路由——壳按已知包版本提供描述，并自己提供一个适配页加载 插件原有的 <code>/dsh-whale/widget.js</code>。打开「桌面设置 → 扩展 → 小鲸鱼桌宠」勾选并点「立即重启」即可： 右下角显示 DeepSeek 余额与今日已用，主窗口最小化后小鲸鱼留在桌面，点右上角 <code>−</code> 或按 Esc 收起。</li>
@@ -105,16 +115,6 @@
     <li><strong>桌面工具面板新增 Star 入口</strong>：信息分组里多了一行「在 GitHub 上 Star」，点击会用默认浏览器打开仓库并带 <code>?ref=app-panel</code> 归因，方便区分面板点击与官网点击。它只是一个常驻链接：不弹窗、不催促、不影响面板其它操作。</li>
     <li><strong>官网同步做了事实与文案迭代</strong>：核查并修正了站点上的错误声明（内置运行时是 Node.js 24 而不是 22、去掉已下线的 <code>npx</code> 校验命令、去掉未经核实的插件数量、把 CI 门禁的「真机」措辞改为四端 runner 视觉证据）；修正了中英文各自 独立的文案副本（<code>data-i18n</code> 现在真正生效）；更新日志中英条目逐条对齐；SEO 补齐结构化数据、可抓取的版本快照、 sitemap 日期与双语 404。这些随站点部署，无需更换安装包。</li>
     <li><strong>边界说明</strong>：Star 入口与官网的 Star 邀请都只打开仓库页面，不发送任何遥测；内核 <code>0.2.1-rc.2</code>、签名与公证边界 与上一版完全一致。</li>
-  </ul>
-
-  <h2>v0.2.1-rc.2.shell.0 <small>（内核 0.2.1-rc.2）</small></h2>
-  <ul>
-    <li><strong>内核升级 <code>0.2.1-rc.1</code> → <code>0.2.1-rc.2</code></strong>：同步 32 个 <code>@deepseek-ai/dsh-*</code> peer 版本，重生成 manifest 锁定文件， 并把发行年龄豁免重新固定到新内核（315 → 302 条，13 条保留锁定文件中的解析版本）。两处已复核的壳内补丁 （账号授权弹窗回退、会话回收站生命周期）确认继续适用：被补丁的两个上游 bundle 在 rc.1 与 rc.2 之间 <strong>逐字节相同</strong>，两个变换在新源码上仍然命中；补丁清单因此改为显式的「已复核内核」列表。</li>
-    <li><strong>控制套接字路径修复（macOS）</strong>：非 legacy 应用的 sidecar 数据目录很深， <code>…/cc-connect/applications/〈应用 ID〉/data/run/api.sock</code> 超过 macOS <code>sun_path</code> 上限，<code>bind</code> 失败后管理器会把 正常工作的连接显示成「已关闭/离线」。现在给 sidecar 一个 <code>$TMPDIR</code> 下的短别名（软链到真实数据目录，零迁移）， 实测深路径 116 字符绑定失败、别名 93 字符成功，打包后日志为 <code>api server started socket=/var/folders/…</code>。</li>
-    <li><strong>飞书默认改为富卡片</strong>：新连接的卡片样式默认 <code>rich</code>、进度展示默认 <code>card</code>（老配置与显式 <code>legacy</code> 选择保持不变）。</li>
-    <li><strong>Linux arm64 产物</strong>：发布矩阵新增 <code>ubuntu-24.04-arm</code>，与 amd64 同源打包 <code>-arm64.deb</code>；资产契约从 8 个公开文件变为 10 个 Release 文件（8 个用户可见） （GitHub Release 共 10 个文件，其中 8 个用户可见：安装包 + 校验文件），应用内修复链接按运行架构选择，站点文案与 ADR 0017 同步更新。</li>
-    <li><strong>发版流程新增四端视觉证据门禁</strong>：macOS / Windows / Linux x64 / Linux arm64 四个 runner 在打包 <code>@smoke</code> 跑完后 必须证明<strong>渲染出全部 21 个桌面扩展面</strong>（首启与安全模式横幅、浮动飞书快捷控制及其底部菜单、飞书管理五种状态、 消息偏好、六个设置面板、LAN 配对、回收站、恢复与加载）；缺失即失败并列出缺哪些，截图随工件发布 （<code>scripts/verify-visual-evidence.mjs</code>）。</li>
-    <li><strong>边界说明</strong>：所有验证都在本地或 CI 的隔离环境完成；健康检查结果只在本地脱敏展示，不会自动上传。</li>
   </ul>
   <!-- changelog:auto:end -->
 
