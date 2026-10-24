@@ -89,6 +89,15 @@ export function companionUrl(base: string | undefined, route: string): string | 
   }
 }
 
+/**
+ * Click-through relies on `forward` being honoured: only darwin/win32 forward
+ * mouse moves to a window that ignores them. Elsewhere the page could never
+ * re-enable interaction, so the window stays interactive.
+ */
+export function canForwardMouseMoves(platform: NodeJS.Platform): boolean {
+  return platform === 'darwin' || platform === 'win32'
+}
+
 /** A companion is shown only after the Harness serves a real HTML page. */
 export function isCompanionResponseOk(status: number, contentType: string | null): boolean {
   if (status < 200 || status >= 300) return false

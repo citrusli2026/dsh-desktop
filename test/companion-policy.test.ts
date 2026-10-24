@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  canForwardMouseMoves,
   companionPosition,
   companionUrl,
   isCompanionResponseOk,
@@ -55,4 +56,10 @@ test('companion placement stays inside the work area and cascades', () => {
   const small = { x: 100, y: 100, width: 400, height: 400 }
   const placed = companionPosition(small, { width: 480, height: 600 })
   assert.deepEqual(placed, { x: 100, y: 100 })
+})
+
+test('click-through is only offered where mouse moves are forwarded', () => {
+  assert.equal(canForwardMouseMoves('darwin'), true)
+  assert.equal(canForwardMouseMoves('win32'), true)
+  assert.equal(canForwardMouseMoves('linux'), false)
 })

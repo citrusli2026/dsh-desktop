@@ -8,6 +8,7 @@
 import { app, BrowserWindow, ipcMain, screen, type IpcMainInvokeEvent, type Rectangle, type Session } from 'electron'
 import { join } from 'node:path'
 import {
+  canForwardMouseMoves,
   companionPosition,
   companionUrl,
   isCompanionResponseOk,
@@ -236,6 +237,9 @@ function registerIpc(): void {
     const entry = companionFor(event)
     const win = entry?.window
     if (win === undefined || win.isDestroyed() || typeof interactive !== 'boolean') return false
+    // Linux cannot forward moves to an ignoring window, so click-through would
+    // leave the page unable to hear the pointer again. Keep it interactive.
+    if (!canForwardMouseMoves(process.platform)) return interactive === true
     win.setIgnoreMouseEvents(!interactive, { forward: true })
     return true
   })
