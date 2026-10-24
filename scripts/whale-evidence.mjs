@@ -50,13 +50,13 @@ const bounds = {
 await main.evaluate((win, b) => { win.setBounds(b); win.show(); win.focus() }, bounds)
 // A full-screen neutral stage keeps the recording free of whatever desktop
 // windows happen to sit behind the test app.
-await app.evaluate(({ BrowserWindow, screen }) => {
+await app.evaluate(({ BrowserWindow, screen }, stamp) => {
   const area = screen.getPrimaryDisplay().workArea
   const html = '<!doctype html><html><head><meta charset="utf-8"><style>'
     + 'html,body{margin:0;height:100%;overflow:hidden;background:linear-gradient(135deg,#eef2ff,#f8fafc 45%,#e0f2fe);font-family:-apple-system,"PingFang SC",sans-serif}'
     + 'body::before{content:"";position:absolute;inset:0;background-image:radial-gradient(#c7d2fe 1px,transparent 1px);background-size:24px 24px;opacity:.45}'
     + '.label{position:absolute;left:32px;bottom:28px;color:#475569;font-size:14px;letter-spacing:.04em;background:rgba(255,255,255,.72);border:1px solid rgba(148,163,184,.35);padding:8px 12px;border-radius:10px}'
-    + '</style></head><body><div class="label">dsh-desktop · 伴随窗口回归演示 · ' + STAMP + '</div></body></html>'
+    + '</style></head><body><div class="label">dsh-desktop · 伴随窗口回归演示 · ' + stamp + '</div></body></html>'
   const stage = new BrowserWindow({
     x: area.x, y: area.y, width: area.width, height: area.height,
     frame: false, resizable: false, movable: false, focusable: false,
@@ -66,7 +66,7 @@ await app.evaluate(({ BrowserWindow, screen }) => {
   stage.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
   stage.showInactive()
   return stage.id
-})
+}, STAMP)
 await main.evaluate(win => { win.moveTop(); win.show(); win.focus() })
 await sleep(1200)
 const guideClose = page.getByRole('button', { name: /关闭首次使用引导|Dismiss first-run guide/ })

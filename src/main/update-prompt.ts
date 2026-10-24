@@ -3,6 +3,7 @@ import { app, dialog, net, shell } from 'electron'
 import electronUpdater from 'electron-updater'
 import { isNewerVersion, latestPublishedRelease } from './update-check.ts'
 import { shellText, type ShellLocale } from './locale.ts'
+import { communityDownloadUrl } from './links.ts'
 
 const { autoUpdater } = electronUpdater
 const RELEASES_API_URL = 'https://api.github.com/repos/citrusli2026/dsh-desktop/releases?per_page=20'
@@ -39,7 +40,9 @@ export async function checkMacUpdate(manual: boolean, locale: ShellLocale, detai
         defaultId: 0,
         cancelId: 1,
       })
-      if (choice === 0) await shell.openExternal(latest.htmlUrl)
+      // The prompt is a download invitation, not a GitHub tour: the community
+      // page lists both the GitHub and the domestic mirror plus install notes.
+      if (choice === 0) await shell.openExternal(communityDownloadUrl(locale))
     } else if (manual) {
       await dialog.showMessageBox({
         type: 'info',

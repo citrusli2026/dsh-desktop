@@ -229,6 +229,16 @@ function registerIpc(): void {
     }
     return showCompanion(id)
   })
+  // Let the page decide when the transparent parts of its own window should
+  // pass clicks through to the desktop (ADR 0043 keeps this generic: the shell
+  // never inspects the page, it only applies the window flag the page asks for).
+  ipcMain.handle('companion:set-interactive', (event, interactive: unknown) => {
+    const entry = companionFor(event)
+    const win = entry?.window
+    if (win === undefined || win.isDestroyed() || typeof interactive !== 'boolean') return false
+    win.setIgnoreMouseEvents(!interactive, { forward: true })
+    return true
+  })
   ipcMain.handle('companion:hide-self', event => {
     const entry = companionFor(event)
     if (entry?.window === undefined) return false

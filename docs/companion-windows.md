@@ -47,12 +47,30 @@
 预加载脚本只暴露两个方法：
 
 ```js
-await window.dshCompanion.hide()       // 只隐藏自己
-await window.dshCompanion.focusMain()  // 隐藏自己并聚焦主窗口
+await window.dshCompanion.hide()               // 只隐藏自己
+await window.dshCompanion.focusMain()          // 隐藏自己并聚焦主窗口
+await window.dshCompanion.setInteractive(false) // 透明区域点击穿透到桌面
+await window.dshCompanion.setInteractive(true)  // 恢复接收点击（默认）
+```
+
+`setInteractive` 只作用于伴窗自己。默认是可交互的；页面自己判断指针是否在自己的 UI 上，再调用它来让
+透明区域放行桌面点击（窗口用 `setIgnoreMouseEvents(true, { forward: true })`，因此 `mousemove` 仍会
+送到页面，用来检测指针重新进入）。典型写法：
+
+```js
+let over = false
+document.addEventListener('mousemove', event => {
+  const hit = document.elementFromPoint(event.clientX, event.clientY)?.closest('.my-widget') !== null
+  if (hit !== over) { over = hit; window.dshCompanion.setInteractive(hit) }
+}, { passive: true })
+window.dshCompanion.setInteractive(false) // 初始放行
 ```
 
 **没有** DOM 访问、`executeJavaScript` 或审批桥。需要用户确认的操作请回到主窗口完成——这是刻意的
 安全边界，不建议扩展。
+
+页面如果需要「点一下就去主窗口确认」的降级路径，自己在页面里实现即可：调用 `focusMain()` 唤回主窗口，
+不要试图伪造审批结果。
 
 ## 验证
 
@@ -82,3 +100,17 @@ WHALE_PLUGIN_DIR=/path/to/prepared/dsh-whale-widget pnpm run test:e2e:whale
 
 用例会走一遍：发现插件 → 最小化主窗口 → 伴窗出现（标题「小鲸鱼」、`−` 按钮可见）→ 点 `−` 恢复
 主窗口并收起伴窗 → 面板「伴随窗口」再次打开/收起。截图落在 Playwright 的 `test-results/` 下。
+
+### 点击穿透（可选）
+
+透明伴窗如果整块挡住桌面会很碍事。页面可以自己判断指针是否落在自己的 UI 上，再用
+`window.dshCompanion.setInteractive(false)` 让空白区域把点击交给桌面；指针移回 UI 时用
+`setInteractive(true)` 恢复。窗口默认是可交互的，所以不实现这一步的插件行为不变。
+
+验证（需要辅助功能权限，会发送真实鼠标事件）：
+
+```sh
+WHALE_PLUGIN_DIR=/path/to/prepared/dsh-whale-widget node scripts/whale-clickthrough.mjs
+```
+
+脚本会在伴窗后面放一个全屏窗口当对照：点击透明角落应落到后窗，点击鲸鱼应留在伴窗。

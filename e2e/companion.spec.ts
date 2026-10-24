@@ -104,6 +104,15 @@ test.describe('installed plugin companion windows', () => {
       await expect(companion.locator('#companion-fixture')).toHaveText('companion ok')
       expect(companion.url()).toContain('__companion-fixture')
 
+      // Click-through is a per-companion window flag the page asks for.
+      const interactive = await companion.evaluate(async () => {
+        const bridge = (window as unknown as {
+          dshCompanion: { setInteractive(enabled: boolean): Promise<boolean> }
+        }).dshCompanion
+        return [await bridge.setInteractive(false), await bridge.setInteractive(true), await bridge.setInteractive('yes' as unknown as boolean)]
+      })
+      expect(interactive).toEqual([true, true, false])
+
       // The bridge hides the companion and restores the main window.
       await companion.evaluate(() => (window as unknown as { dshCompanion: { focusMain(): Promise<boolean> } }).dshCompanion.focusMain())
       await expect.poll(() => app.evaluate(({ BrowserWindow }) => {

@@ -7,4 +7,13 @@ contextBridge.exposeInMainWorld('dshCompanion', {
   focusMain: (): Promise<boolean> => ipcRenderer.invoke('companion:focus-main'),
   /** Hide this companion without changing the main window. */
   hide: (): Promise<boolean> => ipcRenderer.invoke('companion:hide-self'),
+  /**
+   * Opt into click-through for the transparent parts of this window.
+   * Call with false when the pointer is over the page's own UI and with true
+   * when it is over an empty area. Defaults to interactive.
+   */
+  setInteractive: (enabled: boolean): Promise<boolean> =>
+    typeof enabled === 'boolean'
+      ? ipcRenderer.invoke('companion:set-interactive', enabled)
+      : Promise.resolve(false),
 })

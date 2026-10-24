@@ -6,3 +6,12 @@ export const PROJECT_ISSUES_URL = `${PROJECT_REPO_URL}/issues`
 export const DEEPSEEK_HARNESS_URL = 'https://www.deepseek.com/harness/'
 export const DEEPSEEK_OFFICIAL_URL = 'https://www.deepseek.com/'
 export const DEEPSEEK_PLATFORM_RECHARGE_URL = 'https://platform.deepseek.com/top_up'
+
+/**
+ * Download page on the community site, per locale. Update prompts point here
+ * instead of GitHub so users land on the page that shows both the GitHub and
+ * the domestic mirror, with install notes.
+ */
+export function communityDownloadUrl(locale: 'zh' | 'en'): string {
+  return `${COMMUNITY_WEBSITE_URL}${locale === 'en' ? 'en/' : ''}download`
+}

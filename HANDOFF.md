@@ -2871,3 +2871,28 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
 5. **对 #130 的答复**：窗口部分由通用能力承接，鲸鱼插件侧只需增加 `dsh.companion` 声明与
    `/dsh-whale/pet` 路由，无需改壳或替换 `app.asar`；审批泡泡仍不在壳能力内。
 6. **未发布**：本能力在 `v0.2.1-rc.2.shell.4` 之后合入，随下个 shell 版本发布。
+
+## 96. 鲸鱼插件接入验收与升级弹框改跳官网（2026-10-24，未发布）
+
+1. **鲸鱼插件覆盖范围（ADR 0043 通用伴窗）**：伴窗加载的是插件自己的 `/dsh-whale/pet` 页面，宿主侧
+   记账/余额/会话监听仍在同一进程运行，所以余额、今日已用、每轮消耗、峰谷、账本、泡泡、音效、角色、
+   自定义厂商、Codex 统计、对话名都在伴窗里照常工作；`wait.json` 在主窗口与伴窗返回同一份
+   `sessionName`（实测两窗一致）。**审批**不内联：通用壳没有审批桥，插件侧把「允许一次/拒绝」改成
+   fail-closed 降级——只唤回主窗口，由主窗口的官方面板确认；**提问**只保留提醒，与作者原设计一致。
+2. **壳侧补齐**（PR #132）：探针改用主窗口 session（否则真实插件路由被 `connection.requestRejection`
+   401）；`loadURL` 晚到的 `showInactive()` 不再覆盖已恢复的主窗口；新增通用
+   `companion:set-interactive` + preload `setInteractive()`，让插件页面自行决定透明区域点击穿透。
+3. **插件侧适配**（作者仓库 PR #1）：`package.json` 增加 `dsh.companion`；pet 页加一层小桥——写入
+   `dshwPet=1`、把 `window.whalePet.{minimize,focusMain,answerApproval}` 映射到 `window.dshCompanion`，
+   并用 `elementFromPoint` 做命中测试驱动点击穿透。**没有**在插件里伪造审批结果。
+4. **回归**：`e2e/companion.spec.ts` 2/2（鉴权栅栏探针 + 晚到 show 竞态）；新增 opt-in
+   `e2e/whale-companion.spec.ts`（`pnpm run test:e2e:whale`）覆盖发现→最小化开窗→审批 fail-closed
+   唤回主窗口→面板重开→`−` 恢复；`scripts/whale-clickthrough.mjs` 用真实 HID 点击验证透明区域穿透
+   （后窗 1 次、伴窗 1 次），本机通过。
+5. **升级弹框**：macOS/Linux 的「发现新版本」不再打开 GitHub Release，改为按语言打开社区官网下载页
+   （`https://dsh-desktop.com/download` / `/en/download`），按钮文案改为「打开下载页」；纯函数
+   `communityDownloadUrl()` 有单测（`test/links.test.ts`）。
+6. **视觉证据**：`artifacts/whale-companion-2026-10-24/`（五步截图、`flow.mov` 32 秒录屏、`notes.md`），
+   `artifacts/` 已 gitignore。本机安装包仍是 `0.2.1-alpha.3.shell.0`，验收用的是 `dist:dir` 产物。
+7. **未发布**：以上改动都在 PR #132（壳）与作者仓库 PR #1（插件）里；用户可用需要壳带修复的版本 +
+   插件发新版本（npm 0.4.2 已占用）。

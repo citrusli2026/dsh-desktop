@@ -84,8 +84,13 @@ test.describe('real whale plugin companion', () => {
       expect(pet.url()).toContain('dshwPet=1')
       await pet.screenshot({ path: info.outputPath('02-pet-window.png'), omitBackground: true })
 
-      // The pet's own − button is the bridge to the generic shell preload.
-      await pet.locator('.dshwv-pet-min').click()
+      // Approvals are fail-closed: the pet cannot answer for the user, so the
+      // action hands off to the main window where the real panel lives.
+      const approval = await pet.evaluate(() => (window as unknown as {
+        whalePet: { answerApproval(outcome: string, id: string): Promise<{ ok: boolean; reason?: string }> }
+      }).whalePet.answerApproval('allowed-once', 'not-a-real-approval'))
+      expect(approval.ok).toBe(false)
+      expect(approval.reason).toBe('confirm-in-main')
       await expect.poll(() => app.evaluate(({ BrowserWindow }) => {
         const main = BrowserWindow.getAllWindows().find(win => !win.webContents.getURL().includes('/dsh-whale/pet'))
         return main?.isMinimized() ?? true
@@ -96,7 +101,7 @@ test.describe('real whale plugin companion', () => {
       }), { timeout: 20_000 }).toBe(false)
       await page.screenshot({ path: info.outputPath('03-restored.png') })
 
-      // The panel lists the real plugin and can reopen the companion on demand.
+      // The panel lists the real plugin and reopens the companion on demand.
       await page.locator('[data-dsh-controls-trigger]').click()
       const group = page.locator('[data-dsh-controls-group="companions"]')
       await expect(group).toContainText('小鲸鱼')
@@ -108,12 +113,25 @@ test.describe('real whale plugin companion', () => {
         const petWindow = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('/dsh-whale/pet'))
         return petWindow?.isVisible() ?? false
       }), { timeout: 20_000 }).toBe(true)
-      await page.screenshot({ path: info.outputPath('05-panel-toggle.png') })
-      await toggle.click()
+
+      // Click-through is the generic window flag the page asks for.
+      const interactive = await pet.evaluate(async () => {
+        const bridge = (window as unknown as { dshCompanion: { setInteractive(enabled: boolean): Promise<boolean> } }).dshCompanion
+        return [await bridge.setInteractive(false), await bridge.setInteractive(true)]
+      })
+      expect(interactive).toEqual([true, true])
+
+      // The pet's own − button is the bridge back to the main window.
+      await pet.locator('.dshwv-pet-min').click()
+      await expect.poll(() => app.evaluate(({ BrowserWindow }) => {
+        const main = BrowserWindow.getAllWindows().find(win => !win.webContents.getURL().includes('/dsh-whale/pet'))
+        return main?.isMinimized() ?? true
+      }), { timeout: 20_000 }).toBe(false)
       await expect.poll(() => app.evaluate(({ BrowserWindow }) => {
         const petWindow = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('/dsh-whale/pet'))
         return petWindow?.isVisible() ?? false
       }), { timeout: 20_000 }).toBe(false)
+      await page.screenshot({ path: info.outputPath('05-panel-toggle.png') })
     } finally {
       await app.close().catch(() => {})
       await rm(root, { recursive: true, force: true })
