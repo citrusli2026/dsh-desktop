@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | `0.2.1-rc.2.shell.6`（伴窗探针/晚到 show 修复、点击穿透、升级弹框改跳官网，内核不变），GitHub 与 GitCode 均已交付（tag `3576586`），见 §97 |
-| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.6`（10 资产，`prerelease=false`）＋ GitCode release（八资产 8/8，arm64 dmg 全量回读 SHA-256 一致）；`v0.2.1-rc.2.shell.5` 为上一版 |
-| 本地门禁 | ✅ `pnpm verify` 通过；LAN 配对 2/2、市场离线 1/1、真实市场 2/2；新 `dist:dir`（shell.6）后 packaged smoke、Harness-UI smoke 均 OK；companion 2/2、真实鲸鱼插件 1/1；见 §97 |
-| 核心发布 | ✅ Release `40059873821` / tag `3576586`，verify + 四平台 build + publish success，十文件与来源证明通过（§97） |
-| 官网数据 | ✅ site-refresh 自动同步（bot `51139cd`，先于镜像故 1/8），本机重新生成并提交 `b70ad3a`：`v0.2.1-rc.2.shell.6`、八资产 `gitcode_ok=true`（§97） |
-| 国内镜像 | ✅ GitCode release / tag `3576586`；八资产匿名可下载（8/8 verified），arm64 dmg 全量下载 SHA-256 `6ac5cfb6…` 与 GitHub 一致；`--status unset` 创建（预发布配额规避）（§97） |
-| 实时下载统计 | GitHub 安装快照 7922（mac 873 / Windows 6239 / Linux 810），85 版本（2026-10-24T05:15Z 本机生成）；两种统计不混用 |
+| 最新代码基线 | `0.2.1-rc.2.shell.7`（小鲸鱼桌宠作为可选内置扩展，插件代码不改，壳侧适配，内核不变），GitHub 与 GitCode 均已交付（tag `f8b73f4`），见 §98 |
+| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.7`（10 资产，`prerelease=false`）＋ GitCode release（八资产 8/8，arm64 dmg 全量回读 SHA-256 `a3d76594…` 一致）；`v0.2.1-rc.2.shell.6` 为上一版 |
+| 本地门禁 | ✅ `pnpm verify` 通过；LAN 配对 2/2、市场离线 1/1、真实市场 2/2；`dist:dir`（shell.7）后 packaged smoke、Harness-UI smoke 均 OK；内置伴窗 3/3、通用伴窗 2/2、外部已适配插件 1/1；四端 CI 打包 @smoke 门禁全绿；见 §98 |
+| 核心发布 | ✅ Release `40079414115` / tag `f8b73f4`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§98） |
+| 官网数据 | ✅ site-refresh 自动同步（bot `bff733d`，先于镜像），镜像完成后本机重新生成：`v0.2.1-rc.2.shell.7`、八资产 `gitcode_ok=true`（§98） |
+| 国内镜像 | ✅ GitCode release / tag `f8b73f4`；八资产匿名可下载（8/8 verified），arm64 dmg 全量下载 SHA-256 `a3d76594…` 与 GitHub 一致；`--status unset` 创建（预发布配额规避）（§98） |
+| 实时下载统计 | GitHub 安装快照 8018（mac 879 / Windows 6299 / Linux 840），86 版本（2026-10-24T10:26Z 本机生成）；两种统计不混用 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -2926,3 +2926,30 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    shell.5 发布，§96 标注壳侧随 shell.6 发布（插件侧仍在作者仓库 PR #1）。
 7. **保留边界**：Windows/Linux 原生安装与视觉仍由 CI 四端视觉门禁覆盖；本机未做 Windows 实机验收。
    插件侧（`dsh.companion` 声明 + pet 页桥）尚未合入上游，用户需等插件发布新版本后才能完整体验。
+
+## 98. 发布 v0.2.1-rc.2.shell.7（小鲸鱼桌宠可选内置，插件代码不改，2026-10-24）
+
+1. **本版内容（内核仍为 0.2.1-rc.2，壳修订 6 → 7）**：随安装包分发**未经修改**的
+   `dsh-whale-widget` 0.4.2（npm tarball 原样，`third_party/dsh-whale-widget`），桌面设置新增
+   「扩展 → 小鲸鱼桌宠」开关（默认关闭）。壳不要求插件声明 `dsh.companion`、也不要求 pet 路由：
+   `companion-compat.ts` 按 0.4.x 版本提供描述，`dsh-desktop-controls` 宿主提供
+   `/__dsh-desktop/whale-pet` 适配页加载插件自己的 `/dsh-whale/widget.js`；插件将来自己声明则以插件
+   为准，适配层自动让位。Safe Mode 一律不挂载；关闭时移除壳创建的 profile 链接。详见 ADR 0044。
+2. **本地门禁**：`pnpm verify` 通过（本机需把 Go 加入 PATH）；LAN 配对 2/2；市场离线 1/1、真实 2/2；
+   `dist:dir`（shell.7）后 packaged smoke 与 Harness-UI smoke 均 OK；内置伴窗 E2E 3/3（挂载+适配页、
+   开关持久化、关闭/Safe Mode 不挂载）、通用伴窗 2/2、外部已适配插件 1/1。
+3. **发布**：tag `v0.2.1-rc.2.shell.7` → `f8b73f4af7d8b562a1186c6372b216c012451eef`；Release run
+   `40079414115` verify + 4×build（含四端打包 @smoke 门禁）+ publish 全绿；GitHub Release **10 文件**、
+   `prerelease=false`。**首次候选被取消**：旧实现依赖插件侧 pet 路由与自定义 preload，Linux 打包 E2E
+   两处失败；改为「插件不改、壳侧描述+适配页」后重指未发布的 tag（无 Release、无资产）并重跑，四端绿。
+4. **GitCode 镜像**：先上传 amd64 `.sha256` 作为种子、`create --status unset` 建对象（tag/ref 精确），
+   再跑 `mirror-gitcode-v2.mjs` 补齐其余 7 个并链接 → **8/8 assets verified anonymously**。本机直连
+   GitHub 仍被限速（~8 KB/s），走本机 HTTP 代理（`HTTPS_PROXY=http://127.0.0.1:7890`，约 200–330 KB/s）
+   下载约 1.1 GB；arm64 dmg 从 GitCode 全量回读 291,456,372 字节，SHA-256
+   `a3d76594459e165ec0a531fa6290c8c183b7875aba23d1eaba530378eab0f9f5` 与 GitHub `.sha256` 一致。
+5. **官网数据**：site-refresh 自动 run `40081298859` success（bot `bff733d`），在镜像完成前探测；
+   镜像完成后本机 `node scripts/gen-site-data.mjs` 重新生成（stats 8018：mac 879 / win 6299 / linux 840，
+   86 版本），八资产 `gitcode_ok=true`。
+6. **边界**：Linux 不支持 `forward` 鼠标移动，壳在该平台不提供点击穿透（伴窗保持可交互）；审批仍只在
+   主窗口完成；美术/音频素材按上游 `PROVENANCE.md` 原样分发，不纳入壳的 MIT。插件若改版（非 0.4.x）壳
+   暂不套用适配页，回落到普通插件行为。
