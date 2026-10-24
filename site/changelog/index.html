@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop 更新日志","url":"https://dsh-desktop.com/changelog","inLanguage":"zh-CN","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/"},{"@type":"ListItem","position":2,"name":"更新日志","item":"https://dsh-desktop.com/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-22","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.5"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-24","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.6"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,15 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.6 <small>（内核 0.2.1-rc.2）</small></h2>
+  <ul>
+    <li><strong>插件伴随窗口可用性修复</strong>：真实插件（例如小鲸鱼 <code>/dsh-whale/pet</code>）的路由通常经过 Harness 的连接 鉴权栅栏，旧探针用无凭据的 Node <code>fetch</code> 会被 401，导致伴窗永远打不开；现在探针改用主窗口的 session， 看到的结果与伴窗一致。同时修掉「加载慢时晚到的 <code>showInactive()</code> 把已恢复的主窗口重新盖住」的竞态。</li>
+    <li><strong>透明区域点击穿透</strong>：伴窗新增通用 <code>window.dshCompanion.setInteractive()</code>，插件页面可以自己判断指针 是否在自己的 UI 上，让空白区域把点击交给桌面，不再整块挡住 560×620 的范围。窗口默认仍可交互，不实现 这一步的插件行为不变。</li>
+    <li><strong>升级弹框改跳社区官网</strong>：macOS / Linux 的「发现新版本」不再打开 GitHub Release，改为按语言打开社区 下载页（<code>dsh-desktop.com/download</code> / <code>/en/download</code>），按钮文案改为「打开下载页」。</li>
+    <li><strong>真实插件回归门禁</strong>：新增 opt-in 的 <code>pnpm run test:e2e:whale</code>（发现插件 → 最小化开窗 → 审批 fail-closed 唤回主窗口 → 面板重开 → <code>−</code> 恢复），以及 <code>scripts/whale-clickthrough.mjs</code>（真实鼠标事件 验证穿透）。默认 fixture 用例同时补上鉴权栅栏与慢加载竞态。</li>
+    <li><strong>边界说明</strong>：通用壳仍然不读 Harness DOM、不调用 <code>executeJavaScript</code>、不提供审批桥；桌宠里的审批动作 只会把用户带回主窗口确认，不会在伴窗内伪造批准结果。所有判断都在本机完成，不新增联网行为。</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.5 <small>（内核 0.2.1-rc.2）</small></h2>
   <ul>
     <li><strong>插件伴随窗口（ADR 0043）</strong>：已安装插件可在自己的 <code>package.json</code> 里声明 <code>dsh.companion { route, width, height, title, showOnMinimize }</code>，主窗口最小化后它的页面会作为独立桌面 窗口留在右下角，恢复主窗口时自动收起。壳只读扫描当前 Web profile 的插件清单，不执行插件代码；显示前 要求该路由 4 秒内返回 2xx <code>text/html</code>，不会留下一块透明残窗。</li>
@@ -107,19 +116,6 @@
     <li><strong>诊断更完整</strong>：插件清单新增 <code>patch_layers</code>（读到的用户补丁层）与 <code>unkeyed_rows</code> （无法按 id 禁用的&quot;隐形行&quot;）——以前这两类信息在报告里完全看不到。</li>
     <li><strong>内核未变</strong>：仍打包 <code>@deepseek-ai/dsh</code> <code>0.2.1-rc.1</code>，只递增壳修订号；上游 <code>0.2.1-rc.2</code> 不在本次范围内，不借壳发布做隐式内核升级。</li>
     <li><strong>边界说明</strong>：所有修复都在本机完成，不改变隐私边界——诊断报告仍只在本地生成、不自动上传； 一键修复只清除只读属性，不修改 ACL、不调整安全软件设置、不删除用户数据。</li>
-  </ul>
-
-  <h2>v0.2.1-rc.1.shell.0 <small>（内核 0.2.1-rc.1）</small></h2>
-  <ul>
-    <li><strong>内核升级</strong>：把内置 Harness 从 alpha.5 升到 <code>0.2.1-rc.1</code>（上游 <code>next</code> 通道），同步 32 个 内核同族直接依赖、锁文件与 <code>minimumReleaseAgeExclude</code>。上游随后发布了 <a href="https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.1" target="_blank" rel="noopener">官方预览版说明</a> （2026-10-17T05:22Z）。</li>
-    <li><strong>说明口径</strong>：上游 rc.1 说明汇总的是 <code>v0.2.0-rc.2</code> 以来的整条 0.2.1 变更线，其中多数已随 alpha.1–alpha.5 进入本壳此前的版本；就 alpha.5 → rc.1 这一段，逐包 registry 元数据核对显示 297 个内核包仅有版本字符串一类的小幅缩减。本壳的实际使用面（会话控制器、工作区客户端、 账户登录补丁、ACP 组合）在 rc.1 未发生变化。</li>
-    <li><strong>闭包差异</strong>：按 registry 元数据逐包比对，297 个内核包全部只有版本字符串一类的小幅缩减 （每个包 −100～−500 字节，来自 <code>0.2.1-alpha.5</code> → <code>0.2.1-rc.1</code> 的替换），没有新增或移除依赖； 壳直接打补丁或依赖契约的三个包中，<code>dsh-api-session-controller</code> 与 <code>dsh-client-ui-workspace</code> 逐字节一致，<code>dsh-client-ui-settings-account</code> 仅两处版本字符串变化，ACP/headless 的 <code>cordis.patch.yml</code> 组合未变。</li>
-    <li><strong>上游移除/变更接口核对</strong>：rc.1 移除了运行时 invariant 插件与各包 <code>./invariant</code> 导出、工具展示的 <code>both</code> 混合模式、输入区 <code>stats</code> 统计行，并把 <code>--from-default-profile</code> 调整为替换式重建， Agent Team 消息改为直接投递 Inbox。全仓检索确认本壳未使用其中任何接口：没有 <code>from-default-profile</code> 调用，没有 invariant 引用，没有注册 <code>stats</code> 行，也没有使用 <code>both</code> 模式； 本壳的 ACP 与凭据边界（Web/桌面优先已保存凭据、headless 改用环境变量）与既有断言一致。</li>
-    <li><strong>插件框架转正</strong>：内核声明的 cordis 家族在同一批次由 <code>-alpha.2</code> 预发布转为稳定版 （<code>@deepseek-ai/cordis</code> 4.0.5、<code>cordis-plugin-include</code> 1.0.10、<code>cordis-plugin-loader</code> 1.0.6、 <code>cordis-plugin-timer</code> 1.1.7，以及 <code>cosmokit</code>/<code>schemastery</code> 同线更新），稳定版发布时间早于 rc.1，属于内核自身声明的范围解析结果，不是本壳额外引入的依赖。</li>
-    <li><strong>账户登录兼容</strong>：账户补丁随精确版本迁移到 rc.1，补丁内容不变，继续只在官方桌面桥具备 <code>dshOnboarding.hasApiKey</code> 能力时走内嵌登录；Electron 拒绝预开空白窗口时仍把实际授权 URL 一次性交给系统浏览器，不放开导航、Node 权限或外链协议。</li>
-    <li><strong>垃圾桶兼容</strong>：会话控制器与工作区客户端与 alpha.5 逐字节一致，补丁锚点重新核对后版本保护 更新为 rc.1；运行中、排队中、跨客户端所有权、维护中及子会话仍拒绝删除。</li>
-    <li><strong>构建可复现性</strong>：<code>pnpm run bootstrap</code> 现在固定使用仓库锁定的 pnpm 10.33.2 生成/校验锁文件， 并显式请求 hoisted 布局，不再依赖外层 pnpm 注入的环境；此前用 pnpm 11 写出的紧凑 <code>patchedDependencies</code> 形式会被 10.33.2 判为配置不匹配，导致 bootstrap 在 <code>ERR_PNPM_LOCKFILE_CONFIG_MISMATCH</code> 处中止。</li>
-    <li><strong>飞书快捷控制</strong>：浮窗「连接」分组继续分开显示当前应用、桌面进程、飞书通道与 DSH 任务， 并提供显式开启、关闭、重连；打开或轮询只读，不隐式连接、不发消息、不调用模型。</li>
   </ul>
   <!-- changelog:auto:end -->
 

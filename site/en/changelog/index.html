@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop Changelog","url":"https://dsh-desktop.com/en/changelog","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/en"},{"@type":"ListItem","position":2,"name":"Changelog","item":"https://dsh-desktop.com/en/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-22","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.5"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-24","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.6"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,15 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.6 <small>(kernel 0.2.1-rc.2)</small></h2>
+  <ul>
+    <li><strong>Companion windows now work with real plugins</strong>: the HTML probe uses the main window's session instead of a credential-less Node <code>fetch</code> (which the Harness connection fence answers with 401), and a late <code>showInactive()</code> can no longer cover a main window the user already restored.</li>
+    <li><strong>Click-through</strong>: a generic <code>window.dshCompanion.setInteractive()</code> lets a plugin page hand clicks on its transparent areas to the desktop; the window is interactive by default, so plugins that ignore it are unaffected.</li>
+    <li><strong>Update prompt</strong>: macOS/Linux “new version available” opens the community download page in the user's locale instead of a GitHub release page.</li>
+    <li><strong>Real-plugin release gate</strong>: opt-in <code>pnpm run test:e2e:whale</code> plus a HID click-through check; the fixture suite now covers the auth fence and the late-load race.</li>
+    <li><strong>Boundary unchanged</strong>: no DOM access, no <code>executeJavaScript</code>, no approval bridge — approvals in the companion hand off to the main window.</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.5 <small>(kernel 0.2.1-rc.2)</small></h2>
   <ul>
     <li><strong>Plugin companion windows (ADR 0043)</strong>: an installed plugin can declare <code>dsh.companion { route, width, height, title, showOnMinimize }</code> in its own <code>package.json</code>; the shell discovers it read-only, probes the route for a 2xx HTML response, and hosts it in a sandboxed window that appears when the main window is minimized and hides when it is restored.</li>
@@ -107,19 +116,6 @@
     <li><strong>More complete diagnostics</strong>: the plugin inventory reports <code>patch_layers</code> and <code>unkeyed_rows</code>.</li>
     <li>The bundled kernel is unchanged at <code>@deepseek-ai/dsh</code> <code>0.2.1-rc.1</code>; only the shell revision moves, so upstream <code>0.2.1-rc.2</code> is deliberately not pulled in by a shell release.</li>
     <li>Everything stays local-first: the diagnostic report is still generated on-device and never uploaded automatically, and the repair only clears the read-only attribute — it does not touch ACLs, security-software settings, or user data.</li>
-  </ul>
-
-  <h2>v0.2.1-rc.1.shell.0 <small>(kernel 0.2.1-rc.1)</small></h2>
-  <ul>
-    <li><strong>Kernel upgrade</strong>: the bundled Harness moves from alpha.5 to <code>0.2.1-rc.1</code> (upstream <code>next</code> channel) with 32 kernel-family direct dependencies, the lockfile and <code>minimumReleaseAgeExclude</code> re-synced; upstream published its <a href="https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.1-rc.1" target="_blank" rel="noopener">preview notes</a> at 2026-10-17T05:22Z.</li>
-    <li><strong>Scope of those notes</strong>: they summarize the whole 0.2.1 line since <code>v0.2.0-rc.2</code>, most of which already reached this shell in alpha.1–alpha.5. For the alpha.5 → rc.1 step, per-package registry metadata shows 297 kernel packages changed only in version strings, and the surfaces this shell actually uses (session controller, workspace client, account patch, ACP composition) are unchanged in rc.1.</li>
-    <li><strong>Closure diff</strong>: all 297 kernel packages shrink by 100–500 bytes each from the <code>0.2.1-alpha.5</code> → <code>0.2.1-rc.1</code> substitution with no dependency added or removed; of the three packages this shell patches or depends on by contract, <code>dsh-api-session-controller</code> and <code>dsh-client-ui-workspace</code> are byte-identical, <code>dsh-client-ui-settings-account</code> differs only in two version strings, and the ACP/headless <code>cordis.patch.yml</code> composition is unchanged.</li>
-    <li><strong>Removed or changed upstream interfaces audited</strong>: rc.1 drops the runtime invariant plugin and each package's <code>./invariant</code> export, the <code>both</code> tool-display mode and the input-area <code>stats</code> row, turns <code>--from-default-profile</code> into a replace-style rebuild, and delivers Agent Team messages straight to the Inbox. A repository-wide search confirms this shell uses none of them (no <code>from-default-profile</code> call, no invariant reference, no <code>stats</code> row, no <code>both</code> mode), and its ACP and credential boundaries still match the existing assertions.</li>
-    <li><strong>Plugin framework promoted</strong>: the cordis family the kernel declares moved from <code>-alpha.2</code> prereleases to stable releases in the same batch (<code>@deepseek-ai/cordis</code> 4.0.5, <code>cordis-plugin-include</code> 1.0.10, <code>cordis-plugin-loader</code> 1.0.6, <code>cordis-plugin-timer</code> 1.1.7, plus same-line <code>cosmokit</code>/<code>schemastery</code> updates); those stable releases predate rc.1, so this is the kernel's own resolution rather than a dependency this shell added.</li>
-    <li><strong>Account-login compatibility</strong>: the account patch moved to rc.1 unchanged and still uses the embedded login only when the official desktop bridge exposes <code>dshOnboarding.hasApiKey</code>; when Electron refuses a pre-opened blank window it hands the real authorization URL to the system browser once, without opening up navigation, Node privileges or external protocols.</li>
-    <li><strong>Trash compatibility</strong>: the session controller and workspace client are byte-identical to alpha.5 and the version guard now targets rc.1 after re-checking the anchors; running, queued, cross-client-owned, maintenance and child sessions still refuse deletion.</li>
-    <li><strong>Reproducible builds</strong>: <code>pnpm run bootstrap</code> now always generates and validates the lockfile with the repository-pinned pnpm 10.33.2 and explicitly requests the hoisted layout instead of inheriting the caller's pnpm environment; the compact <code>patchedDependencies</code> form written by pnpm 11 is rejected by 10.33.2 as a configuration mismatch and used to abort bootstrap with <code>ERR_PNPM_LOCKFILE_CONFIG_MISMATCH</code>.</li>
-    <li><strong>Feishu quick control</strong>: the floating panel's Connect group keeps application, desktop process, Feishu channel and DSH-task states separate with explicit start, stop and reconnect; opening or polling it is read-only and never connects, sends a message or calls a model.</li>
   </ul>
   <!-- changelog:auto:end -->
 
