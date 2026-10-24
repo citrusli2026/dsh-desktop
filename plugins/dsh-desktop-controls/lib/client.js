@@ -478,6 +478,8 @@ window.__ModuleLoader__.load({
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-record],
       [data-dsh-desktop-settings] [data-dsh-desktop-lan-target],
+      [data-dsh-desktop-settings] [data-dsh-whale-restart],
+      [data-dsh-desktop-settings] [data-dsh-whale-author],
       [data-dsh-trash-section] [data-dsh-desktop-lan-target] {
         background: transparent;
         border: 1px solid var(--dsw-alias-border-l2, rgba(31, 35, 43, .12));
@@ -490,10 +492,22 @@ window.__ModuleLoader__.load({
       }
       [data-dsh-desktop-settings] [data-dsh-desktop-record]:hover,
       [data-dsh-desktop-settings] [data-dsh-desktop-lan-target]:hover,
+      [data-dsh-desktop-settings] [data-dsh-whale-restart]:hover,
+      [data-dsh-desktop-settings] [data-dsh-whale-author]:hover,
       [data-dsh-trash-section] [data-dsh-desktop-lan-target]:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(31, 35, 43, .06)); }
       [data-dsh-desktop-settings] [data-dsh-desktop-record][disabled],
       [data-dsh-desktop-settings] [data-dsh-desktop-lan-target][disabled],
       [data-dsh-trash-section] [data-dsh-desktop-lan-target][disabled] { cursor: wait; opacity: .65; }
+      [data-dsh-desktop-settings] [data-dsh-whale-hint] {
+        align-items: center;
+        color: var(--dsw-alias-label-secondary, #606878);
+        display: flex;
+        flex-wrap: wrap;
+        font-size: 12px;
+        gap: 8px;
+        margin: 2px 0 4px;
+      }
+      [data-dsh-desktop-settings] [data-dsh-whale-author] { align-self: flex-start; }
       [data-dsh-desktop-settings] [data-dsh-desktop-lan-actions],
       [data-dsh-trash-section] [data-dsh-desktop-lan-actions] {
         align-items: center;
@@ -1036,7 +1050,9 @@ window.__ModuleLoader__.load({
         guideEyebrow: "第一次使用", guideTitle: "从这里开始", guideClose: "关闭首次使用引导", guideIntro: "无需先安装插件，完成下面四步即可开始。",
         guideRuntime: "运行环境就绪", guideWorkspace: "选择工作区", guideModel: "配置模型", guideTask: "完成第一条任务", guideDone: "完成", guidePending: "待完成", guideMarketOptional: "插件市场是可选项，不影响你先完成第一条任务。",
         healthTitle: "运行体检", healthCopy: "检查运行环境、数据目录、Harness、本地连接、Profile 和插件状态。结果仅保留在本机并已脱敏，不上传，也不会自动修复文件。", healthRun: "开始体检", healthAgain: "重新体检", healthRunning: "检查中…", healthNetwork: "额外检查代理、registry 和更新源连通性（会发起网络请求）", healthOk: "正常", healthWarning: "警告", healthFailed: "失败", healthRepairGet: "获取重装包", healthRepairAlt: "备用线路", healthRepairSteps: "① 完全退出 dsh-desktop（含托盘）→ ② 运行下载的安装包覆盖安装 → ③ 完成后重新体检",
-        groupHabits: "桌面习惯", groupServices: "账户与插件", groupRecovery: "恢复", groupPlugins: "插件", groupOptional: "维护与迁移",
+        groupHabits: "桌面习惯", groupServices: "账户与插件", groupRecovery: "恢复", groupPlugins: "插件", groupOptional: "维护与迁移", groupExtensions: "扩展",
+        whaleTitle: "小鲸鱼桌宠", whaleDetail: "内置社区插件 dsh-whale-widget：右下角显示 DeepSeek 余额与今日已用；主窗口最小化后小鲸鱼仍留在桌面。原作者 MeteorNOX，问题请反馈给上游项目。",
+        whaleRestartHint: "切换后需重启 Harness 生效。", whaleRestartNow: "立即重启", whaleAuthor: "打开原作者项目",
         connectTitle: "飞书消息连接", connectCopy: "从飞书发起 DSH 任务；Secret 只保存在本机主进程。", connectEnabled: "启用连接", connectAppId: "App ID", connectAppSecret: "App Secret", connectAppSecretPlaceholder: "留空以保留已保存的 Secret", connectWorkspace: "默认工作区", connectChoose: "选择", connectSave: "保存连接", connectStart: "启动", connectStop: "停止", connectRestart: "重连", connectStatus: "状态", connectDisabled: "未启用", connectStopped: "已停止", connectStarting: "启动中", connectReady: "已连接", connectDegraded: "连接不稳定", connectCrashed: "连接已崩溃", connectSecretStored: "Secret 已保存", connectSecretMissing: "尚未保存 Secret", connectProtected: "系统安全存储", connectFileFallback: "本机受限存储", connectSaved: "连接设置已保存。", connectInvalidWorkspace: "请选择存在的绝对工作区目录。", connectInvalid: "请填写 App ID 并选择工作区。", connectStorage: "设置或凭证保存失败，请重试。", connectUnavailable: "连接桥不可用；请使用系统托盘或重新打开桌面设置。", connectLastError: "最近错误",
         lanSettings: "连接移动设备", lanSettingsDetail: "手机与电脑连接同一局域网，扫码即可进入 Harness Web 界面。",
         connectSecretReentry: "请重新录入一次 App Secret；不会读取旧 macOS 钥匙串凭据。", connectFilePlaintext: "未加密文件",
@@ -1115,7 +1131,9 @@ window.__ModuleLoader__.load({
         guideEyebrow: "FIRST RUN", guideTitle: "Start here", guideClose: "Dismiss first-run guide", guideIntro: "No plugin is required. Complete these four steps to get started.",
         guideRuntime: "Runtime ready", guideWorkspace: "Choose a workspace", guideModel: "Configure a model", guideTask: "Complete your first task", guideDone: "Done", guidePending: "To do", guideMarketOptional: "The plugin market is optional and never blocks your first task.",
         healthTitle: "Run health check", healthCopy: "Checks the runtime, data folders, Harness, loopback, profile, and plugin state. Results stay local and sanitized; nothing is uploaded or repaired automatically.", healthRun: "Run check", healthAgain: "Run again", healthRunning: "Checking…", healthNetwork: "Also check proxy, registry, and update-source connectivity (sends network requests)", healthOk: "OK", healthWarning: "Warning", healthFailed: "Failed", healthRepairGet: "Get the installer", healthRepairAlt: "Mirror link", healthRepairSteps: "① Quit dsh-desktop (also from the tray) → ② Run the downloaded installer over the existing install → ③ Run the health check again",
-        groupHabits: "Desktop habits", groupServices: "Account & plugins", groupRecovery: "Recovery", groupPlugins: "Plugins", groupOptional: "Maintenance & migration",
+        groupHabits: "Desktop habits", groupServices: "Account & plugins", groupRecovery: "Recovery", groupPlugins: "Plugins", groupOptional: "Maintenance & migration", groupExtensions: "Extensions",
+        whaleTitle: "Whale companion", whaleDetail: "Built-in community plugin dsh-whale-widget: shows DeepSeek balance and today's spend in the corner, and keeps the whale on the desktop while the main window is minimized. Created by MeteorNOX; please report issues to the upstream project.",
+        whaleRestartHint: "Restart Harness to apply the change.", whaleRestartNow: "Restart now", whaleAuthor: "Open the upstream project",
         connectTitle: "Feishu message connection", connectCopy: "Start DSH tasks from Feishu. The Secret stays in the local main process.", connectEnabled: "Enable connection", connectAppId: "App ID", connectAppSecret: "App Secret", connectAppSecretPlaceholder: "Leave blank to keep the saved Secret", connectWorkspace: "Default workspace", connectChoose: "Choose", connectSave: "Save connection", connectStart: "Start", connectStop: "Stop", connectRestart: "Reconnect", connectStatus: "Status", connectDisabled: "Disabled", connectStopped: "Stopped", connectStarting: "Starting", connectReady: "Connected", connectDegraded: "Unstable", connectCrashed: "Crashed", connectSecretStored: "Secret saved", connectSecretMissing: "Secret not saved", connectProtected: "System secure storage", connectFileFallback: "Protected local file", connectSaved: "Connection settings saved.", connectInvalidWorkspace: "Choose an existing absolute workspace directory.", connectInvalid: "Enter an App ID and choose a workspace.", connectStorage: "Settings or credential storage failed; retry.", connectUnavailable: "The connection bridge is unavailable; use the system tray or reopen Desktop settings.", connectLastError: "Last error",
         lanSettings: "Connect a mobile device", lanSettingsDetail: "Same LAN as the computer; scan the QR code to enter the Harness Web UI.",
         connectSecretReentry: "Re-enter App Secret once. The old macOS keychain credential will not be accessed.", connectFilePlaintext: "unencrypted file",
@@ -1962,6 +1980,18 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsx("span", { "data-dsh-desktop-setting-label": true, children: copy.launchHidden }),
             react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.launchHidden === true, onChange: (event) => void update({ launchHidden: event.target.checked }) }),
           ] }) : null,
+          ] }),
+          react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, "data-dsh-desktop-group": "extensions", children: [
+            react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupExtensions }),
+            react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, "data-dsh-whale-toggle": true, children: [
+              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.whaleTitle, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.whaleDetail })] }),
+              react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.whaleWidgetEnabled === true, onChange: (event) => void update({ whaleWidgetEnabled: event.target.checked }) }),
+            ] }),
+            react_jsx_runtime.jsxs("p", { "data-dsh-whale-hint": true, children: [
+              copy.whaleRestartHint,
+              typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-whale-restart": true, onClick: () => void bridge.desktopAction("restartHarness"), children: copy.whaleRestartNow }) : null,
+            ] }),
+            typeof bridge?.openWhaleAuthor === "function" ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-whale-author": true, onClick: () => void bridge.openWhaleAuthor(), children: copy.whaleAuthor }) : null,
           ] }),
           react_jsx_runtime.jsxs("section", { "data-dsh-desktop-settings-group": true, "data-dsh-desktop-group": "services", children: [
             react_jsx_runtime.jsx("h4", { "data-dsh-desktop-settings-group-title": true, children: copy.groupServices }),

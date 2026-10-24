@@ -29,6 +29,7 @@ import {
 } from './kernel-manager.ts'
 import { RuntimeManager, runtimeEnvironmentsDir } from './runtime-manager.ts'
 import { builtinEdition, builtinEditionCatalog } from './edition-catalog.ts'
+import { prepareWhaleMount } from './builtin-whale.ts'
 import { missingVcRuntimeDlls, vcRuntimeDismissedPath, VC_REDIST_URL } from './win-runtime.ts'
 import { ensureInstallShims, prependPath, proxyEnvFromResolveProxy } from './install-env.ts'
 import { installAppMenu, showAboutDialog, type AboutMaintenanceActions } from './menu.ts'
@@ -58,7 +59,7 @@ import { SessionTrashClient } from './trash-client.ts'
 import { buildPresetPackage, importPresetPackage, listUserPresets, parsePresetPackage, removeUserPreset } from './presets.ts'
 import { ShellLocaleController, shellText, type CopyKey, type ShellLocale } from './locale.ts'
 import type { LanMenuActions, LanMenuState, MenuActions } from './menu-template.ts'
-import { DEEPSEEK_PLATFORM_RECHARGE_URL, PROJECT_REPO_URL } from './links.ts'
+import { DEEPSEEK_PLATFORM_RECHARGE_URL, PROJECT_REPO_URL, WHALE_WIDGET_URL } from './links.ts'
 import { isPrivateLanIPv4, lanPairingUrlCandidates, pairingUrlKind, LanService, listPrivateLanIPv4, loadOrCreateLanMasterToken, qrSvgFromText } from './lan.ts'
 import { closeLanPairingWindow, isLanPairingWindow, showLanPairingWindow } from './lan-window.ts'
 import { isMainWindowHarnessSender, isMainWindowSender, isShellOwnedFrame, ShellApp } from './shell-app.ts'
@@ -620,6 +621,15 @@ const shellApp = new ShellApp({
       profilePreflight: async () => {
         const probe = await probeProfileWritable(resolveDshHome(process.env, homedir()))
         return probe.ok ? undefined : probe
+      },
+      // Built-in opt-in plugins (ADR 0044): the whale widget is vendored and
+      // mounted only while the setting is on, never in Safe Mode.
+      builtinPlugins: {
+        patchFactory: async () => prepareWhaleMount(
+          resolveDshHome(process.env, homedir()),
+          harnessRoot(),
+          safeModeActive() !== true && desktopPreferencesController?.snapshot.whaleWidgetEnabled === true,
+        ),
       },
       trashHook: {
         enabled: () => desktopPreferencesController?.snapshot.agentDeletionInterception === true,
@@ -1240,6 +1250,12 @@ ipcMain.handle('desktop:runtime:uninstall', async (event, rawVersion: unknown) =
   }
 })
 
+ipcMain.handle('desktop:whale:open-author', async (event) => {
+  if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
+  await shell.openExternal(WHALE_WIDGET_URL)
+  return true
+})
+
 ipcMain.handle('desktop:edition:open-source', async (event, rawId: unknown) => {
   if (!isMainWindowHarnessSender(windowContext.mainWindow, event.sender, event.senderFrame?.url, windowContext.allowedOrigin)) return false
   if (typeof rawId !== 'string') return false
@@ -1288,6 +1304,7 @@ ipcMain.handle('desktop:preferences:update', (event, patch: unknown) => {
   if (typeof candidate.screenCapture === 'boolean') update.screenCapture = candidate.screenCapture
   if (typeof candidate.agentDeletionInterception === 'boolean') update.agentDeletionInterception = candidate.agentDeletionInterception
   if (typeof candidate.firstRunGuideDismissed === 'boolean') update.firstRunGuideDismissed = candidate.firstRunGuideDismissed
+  if (typeof candidate.whaleWidgetEnabled === 'boolean') update.whaleWidgetEnabled = candidate.whaleWidgetEnabled
   if (Array.isArray(candidate.lanListenAddresses)) {
     const addresses = candidate.lanListenAddresses.filter((value): value is string => typeof value === 'string' && isPrivateLanIPv4(value))
     update.lanListenAddresses = addresses

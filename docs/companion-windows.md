@@ -114,3 +114,19 @@ WHALE_PLUGIN_DIR=/path/to/prepared/dsh-whale-widget node scripts/whale-clickthro
 ```
 
 脚本会在伴窗后面放一个全屏窗口当对照：点击透明角落应落到后窗，点击鲸鱼应留在伴窗。
+
+## 内置的鲸鱼挂件（ADR 0044）
+
+壳随安装包提供一个**默认关闭**的 `dsh-whale-widget` 副本：
+
+- 打开「桌面设置 → 扩展 → 小鲸鱼桌宠」，勾选后点「立即重启」；
+- 关闭后不再挂载，插件与伴窗都从列表消失；
+- Safe Mode 下不会挂载（与第三方插件隔离一致）；
+- 设置页写明原作者 MeteorNOX 并链接上游项目；
+- 代码副本位于 `third_party/dsh-whale-widget`，来源与素材许可见其 `VENDORED.md`；壳不从 npm 更新它。
+
+需要 CLI/自动化验证内置路径时：
+
+```sh
+DSH_E2E_PACKAGED=1 pnpm exec playwright test e2e/builtin-whale.spec.ts
+```

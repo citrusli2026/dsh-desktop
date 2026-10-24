@@ -67,6 +67,7 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       agentDeletionInterception: true,
       firstRunGuideDismissed: false,
       firstTaskCompleted: false,
+      whaleWidgetEnabled: false,
     })
     store.updateDesktopPreferences({ shortcut: 'Ctrl+Alt+K', launchAtLogin: true, launchHidden: true, notificationsEnabled: false })
     assert.deepEqual(store.getDesktopPreferences(), {
@@ -79,6 +80,7 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       agentDeletionInterception: true,
       firstRunGuideDismissed: false,
       firstTaskCompleted: false,
+      whaleWidgetEnabled: false,
     })
     const raw = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>
     assert.equal(raw.closeToTrayExplained, undefined)
@@ -111,6 +113,22 @@ test('selected LAN listen addresses survive preference reloads', async () => {
     assert.deepEqual(createShellPreferences(path).getDesktopPreferences().lanListenAddresses, ['192.168.1.10', '10.211.55.2'])
     store.updateDesktopPreferences({ lanListenAddresses: [] })
     assert.deepEqual(createShellPreferences(path).getDesktopPreferences().lanListenAddresses, [])
+  } finally {
+    await rm(join(path, '..'), { recursive: true, force: true })
+  }
+})
+
+test('the built-in whale widget is off until the user opts in', async () => {
+  const path = await tempPath()
+  try {
+    const store = createShellPreferences(path)
+    assert.equal(store.getDesktopPreferences().whaleWidgetEnabled, false)
+    store.updateDesktopPreferences({ whaleWidgetEnabled: true })
+    assert.equal(createShellPreferences(path).getDesktopPreferences().whaleWidgetEnabled, true)
+    const raw = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>
+    assert.equal(raw.whaleWidgetEnabled, true)
+    store.updateDesktopPreferences({ whaleWidgetEnabled: false })
+    assert.equal(createShellPreferences(path).getDesktopPreferences().whaleWidgetEnabled, false)
   } finally {
     await rm(join(path, '..'), { recursive: true, force: true })
   }

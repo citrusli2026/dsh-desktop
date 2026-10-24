@@ -153,6 +153,11 @@ export class DesktopPreferencesController {
     if (patch.lanListenAddresses !== undefined) {
       this.current = this.store.updateDesktopPreferences({ lanListenAddresses: patch.lanListenAddresses })
     }
+    // Built-in plugins (ADR 0044) need no side effect here: the supervisor
+    // reads the preference on the next spawn.
+    if (patch.whaleWidgetEnabled !== undefined) {
+      this.current = this.store.updateDesktopPreferences({ whaleWidgetEnabled: patch.whaleWidgetEnabled })
+    }
     return { ok: true, preferences: this.snapshot }
   }
 

@@ -56,6 +56,12 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /panelMaintenance/)
   assert.match(client, /panelInfo/)
   assert.match(client, /groupServices/)
+  // Built-in extension toggle (ADR 0044): off by default, restart hint, upstream link.
+  assert.match(client, /groupExtensions/)
+  assert.match(client, /data-dsh-whale-toggle/)
+  assert.match(client, /whaleWidgetEnabled/)
+  assert.match(client, /openWhaleAuthor/)
+  assert.match(client, /data-dsh-whale-restart/)
   assert.match(client, /id: "dsh-desktop-feishu"/)
   assert.match(client, /FeishuSettingsSection/)
   assert.match(client, /onClick: \(\) => void openConnectManager\(\)/)

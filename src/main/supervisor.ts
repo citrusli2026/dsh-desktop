@@ -104,6 +104,11 @@ export interface SupervisorOptions {
    * never spawning a doomed harness — or undefined when the profile is
    * writable. Omitted in tests and fixtures that spawn their own command. */
   profilePreflight?: () => Promise<ProfileWriteProbe | undefined>
+  /** Built-in opt-in plugins (ADR 0044): evaluated per spawn so the settings
+   * toggle applies on the next Harness restart. Safe Mode must exclude them. */
+  builtinPlugins?: {
+    patchFactory(): Promise<string | undefined>
+  }
 }
 
 function defaultLogDir(): string {
@@ -149,6 +154,7 @@ export class HarnessSupervisor {
   private readonly safeMode: NonNullable<SupervisorOptions['safeMode']> | undefined
   private readonly trashHook: NonNullable<SupervisorOptions['trashHook']> | undefined
   private readonly quarantine: NonNullable<SupervisorOptions['quarantine']> | undefined
+  private readonly builtinPlugins: NonNullable<SupervisorOptions['builtinPlugins']> | undefined
   private readonly profilePreflight: SupervisorOptions['profilePreflight']
   private readonly dshBinOverride: (() => string | undefined) | undefined
 
@@ -170,6 +176,7 @@ export class HarnessSupervisor {
     this.safeMode = options.safeMode
     this.trashHook = options.trashHook
     this.quarantine = options.quarantine
+    this.builtinPlugins = options.builtinPlugins
     this.profilePreflight = options.profilePreflight
     mkdirSync(logDir, { recursive: true })
     const logPath = join(logDir, 'harness.log')
@@ -207,6 +214,15 @@ export class HarnessSupervisor {
       if (control !== undefined) patches.push(control)
     } catch (error) {
       console.warn(`dsh-desktop: desktop controls mount failed, booting without the in-app surface: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    if (this.builtinPlugins !== undefined) {
+      try {
+        const builtin = await this.builtinPlugins.patchFactory()
+        // Before the quarantine/safe-mode overlays so those still win.
+        if (builtin !== undefined) patches.push(builtin)
+      } catch (error) {
+        console.warn(`dsh-desktop: built-in plugin mount failed, booting without it: ${error instanceof Error ? error.message : String(error)}`)
+      }
     }
     if (this.quarantine !== undefined) {
       try {

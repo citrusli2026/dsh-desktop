@@ -14,6 +14,7 @@ function createStore(initial: Partial<DesktopPreferences> = {}): ShellPreference
     agentDeletionInterception: true,
     firstRunGuideDismissed: false,
     firstTaskCompleted: false,
+    whaleWidgetEnabled: false,
     ...initial,
   }
   return {

@@ -25,6 +25,8 @@ export interface DesktopPreferences {
   /** LAN multi-NIC listen (#65): explicit listen addresses; empty = auto
    *  (physical first, then VPN virtual adapters). */
   lanListenAddresses?: string[]
+  /** Built-in third-party whale widget (ADR 0044): opt-in, default off. */
+  whaleWidgetEnabled: boolean
 }
 
 interface ShellPreferences {
@@ -41,6 +43,8 @@ interface ShellPreferences {
   /** LAN multi-NIC listen (#65). Persisted so the settings checkboxes
    *  survive a reload; absent = auto (physical first, then VPN adapters). */
   lanListenAddresses?: string[]
+  /** Built-in whale widget (ADR 0044). Absent = off. */
+  whaleWidgetEnabled?: boolean
 }
 
 export interface ShellPreferencesStore {
@@ -60,6 +64,7 @@ export const DEFAULT_DESKTOP_PREFERENCES: DesktopPreferences = {
   agentDeletionInterception: true,
   firstRunGuideDismissed: false,
   firstTaskCompleted: false,
+  whaleWidgetEnabled: false,
 }
 
 function desktopPreferencesOf(raw: ShellPreferences): DesktopPreferences {
@@ -73,6 +78,7 @@ function desktopPreferencesOf(raw: ShellPreferences): DesktopPreferences {
     agentDeletionInterception: raw.agentDeletionInterception !== false,
     firstRunGuideDismissed: raw.firstRunGuideDismissed === true,
     firstTaskCompleted: raw.firstTaskCompleted === true,
+    whaleWidgetEnabled: raw.whaleWidgetEnabled === true,
     ...(Array.isArray(raw.lanListenAddresses)
       ? { lanListenAddresses: raw.lanListenAddresses.filter(value => typeof value === 'string') }
       : {}),
@@ -111,6 +117,7 @@ export function createShellPreferences(path: string): ShellPreferencesStore {
           agentDeletionInterception: next.agentDeletionInterception,
           firstRunGuideDismissed: next.firstRunGuideDismissed,
           firstTaskCompleted: next.firstTaskCompleted,
+          whaleWidgetEnabled: next.whaleWidgetEnabled,
           lanListenAddresses: next.lanListenAddresses,
         }
       })

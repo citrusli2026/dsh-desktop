@@ -168,6 +168,8 @@ contextBridge.exposeInMainWorld('dshDesktop', {
   restartConnect: (): Promise<boolean> => ipcRenderer.invoke('desktop:connect:restart'),
   listLanInterfaces: (): Promise<Array<{ name: string; address: string }> | null> =>
     ipcRenderer.invoke('desktop:lan-interfaces'),
+  /** Open the upstream project page of the vendored whale widget (ADR 0044). */
+  openWhaleAuthor: (): Promise<boolean> => ipcRenderer.invoke('desktop:whale:open-author'),
   /** Update one or more shell preferences through the allowlisted main handler. */
   updateDesktopPreferences: (patch: DesktopPreferencesUpdate): Promise<DesktopPreferencesResult | null> =>
     ipcRenderer.invoke('desktop:preferences:update', patch),

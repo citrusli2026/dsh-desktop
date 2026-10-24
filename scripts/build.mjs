@@ -78,4 +78,12 @@ await build({
   entryPoints: ['src/main/trash-host.ts'], bundle: true, platform: 'node', format: 'esm',
   outfile: join(controlsTarget, 'lib/trash-host.js'),
 })
+
+// Vendored third-party widget (opt-in, ADR 0044): staged into the deployed
+// closure so the shell can mount it only when the user enables it. Replaced
+// wholesale so a removed asset never lingers from an older build.
+const whaleSource = resolve('third_party/dsh-whale-widget')
+const whaleTarget = resolve('resources/harness/node_modules/dsh-whale-widget')
+rmSync(whaleTarget, { recursive: true, force: true })
+cpSync(whaleSource, whaleTarget, { recursive: true })
 await patchBundledSessionTrash(resolve('resources/harness'), resolve('manifest/harness'))
