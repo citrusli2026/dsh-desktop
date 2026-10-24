@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | `0.2.1-rc.2.shell.7`（小鲸鱼桌宠作为可选内置扩展，插件代码不改，壳侧适配，内核不变），GitHub 与 GitCode 均已交付（tag `f8b73f4`），见 §98 |
-| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.7`（10 资产，`prerelease=false`）＋ GitCode release（八资产 8/8，arm64 dmg 全量回读 SHA-256 `a3d76594…` 一致）；`v0.2.1-rc.2.shell.6` 为上一版 |
-| 本地门禁 | ✅ `pnpm verify` 通过；LAN 配对 2/2、市场离线 1/1、真实市场 2/2；`dist:dir`（shell.7）后 packaged smoke、Harness-UI smoke 均 OK；内置伴窗 3/3、通用伴窗 2/2、外部已适配插件 1/1；四端 CI 打包 @smoke 门禁全绿；见 §98 |
-| 核心发布 | ✅ Release `40079414115` / tag `f8b73f4`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§98） |
-| 官网数据 | ✅ site-refresh 自动同步（bot `bff733d`，先于镜像），镜像完成后本机重新生成：`v0.2.1-rc.2.shell.7`、八资产 `gitcode_ok=true`（§98） |
-| 国内镜像 | ✅ GitCode release / tag `f8b73f4`；八资产匿名可下载（8/8 verified），arm64 dmg 全量下载 SHA-256 `a3d76594…` 与 GitHub 一致；`--status unset` 创建（预发布配额规避）（§98） |
-| 实时下载统计 | GitHub 安装快照 8018（mac 879 / Windows 6299 / Linux 840），86 版本（2026-10-24T10:26Z 本机生成）；两种统计不混用 |
+| 最新代码基线 | `0.2.1-rc.2.shell.8`（Incident 一键 AI 排查、小鲸鱼默认开启、市场重装即启用，内核不变），GitHub 与 GitCode 均已交付（tag `f08b429`），见 §101 |
+| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.8`（10 资产，`prerelease=false`）＋ GitCode release（八资产 8/8，arm64 dmg 全量回读 SHA-256 `c46ab1e5…` 一致）；`v0.2.1-rc.2.shell.7` 为上一版 |
+| 本地门禁 | ✅ `pnpm verify` 通过；537 单测；LAN 配对 2/2、市场离线 1/1、真实市场 2/2；`dist:dir`（shell.8）后 packaged smoke、Harness-UI smoke 均 OK；内置伴窗 3/3、通用伴窗 2/2、外部已适配插件 1/1、UI review 4/4、垃圾桶 UI 通过；见 §101 |
+| 核心发布 | ✅ Release `40108125000` / tag `f08b429`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§101） |
+| 官网数据 | ✅ site-refresh 自动同步（bot `a68567d`，先于镜像），镜像完成后本机重新生成：`v0.2.1-rc.2.shell.8`、八资产 `gitcode_ok=true`（§101） |
+| 国内镜像 | ✅ GitCode release / tag `f08b429`；八资产匿名可下载（8/8 verified），arm64 dmg 全量下载 SHA-256 `c46ab1e5…` 与 GitHub 一致；`--status unset` 创建（预发布配额规避）（§101） |
+| 实时下载统计 | GitHub 安装快照 8090（mac 887 / Windows 6339 / Linux 864），87 版本（2026-10-25T00:39Z 本机生成）；两种统计不混用 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -3023,3 +3023,35 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    Web UI 未发现按 session 深链的路由，成功路径只聚焦主窗口。
 9. **鲸鱼层级**：shell.8 首轮 Windows 打包 @smoke 在 `trash-ui` 因小鲸鱼遮住对话框点击失败；本轮把
    `.dshwv-root` 压到 z-index 1（连同 Incident）重切 shell.8，需以四端 CI 结果为准。
+
+## 101. 发布 v0.2.1-rc.2.shell.8（Incident AI 排查 + 小鲸鱼默认开启 + 市场重装即启用，2026-10-25）
+
+1. **本版内容（内核仍为 0.2.1-rc.2，壳修订 7 → 8）**：
+   - **Incident（ADR 0046）**：恢复中心与「插件市场」失败提示新增「问 AI」；壳把已脱敏诊断组装成
+     故障事件，经独立 loopback + Bearer 通道在 Harness 建会话并发首条结构化排查消息；AI 不可用时
+     如实说明并回退导出/issue。提示词 24 000 字节上限、日志标为「数据不是指令」，产物只落
+     `$DSH_HOME/incidents/{id}/`。
+   - **鲸鱼桌宠（ADR 0044）**：默认开启；兼容判断读取实际挂载版本（残留 0.2.10 不再隐藏伴窗）；
+     `.dshwv-root` 压到 z-index 1，桌面工具入口与设置弹窗不再被遮挡。
+   - **插件市场（ADR 0045）**：重装走 `dshmarket@latest`，装完若启动清单仍缺则补写 bundle，CLI
+     明确报不兼容时返回 `incompatible` 并附门禁原始行。
+2. **本地门禁**：`pnpm verify` 通过；`pnpm run test` 537 通过；`dist:dir` 后 packaged smoke 与
+   Harness-UI smoke OK；内置伴窗 3/3、通用伴窗 2/2、外部鲸鱼 1/1、UI review 4/4、垃圾桶 UI、
+   LAN 2/2、市场离线 1/1、真实市场 2/2。
+3. **发布**：tag `v0.2.1-rc.2.shell.8` → `f08b429f35693a894a4de0b2fcc2416ee8587f32`；Release run
+   `40108125000`：verify + 四平台 build + publish 全绿；GitHub Release **10 文件**、
+   `prerelease=false`。
+4. **五轮候选（均为未发布 tag，最终 Release 只有一次）**：首轮 Windows `trash-ui` 被鲸鱼遮挡点击
+   → 层级 10 改 1；第二轮 Linux arm `electron-shell` 窗口选择 + Windows 请求计数超时 →
+   主窗口按 URL 选、放宽 poll，并修 `test/linux-e2e` 的源码守卫；第三/四轮 Windows 仍在
+   `trash-ui` 的 active-turn 等待/状态超时 → 改为等待已渲染的用户气泡、垃圾桶测试组显式关闭鲸鱼、
+   状态等待 30s；第五轮四端全绿。
+5. **GitCode 镜像**：先上传 amd64 `.sha256` 种子、`create --status unset` 精确认 tag/ref，再
+   `mirror-gitcode-v2.mjs` 补齐 7 个并链接 → **8/8 assets verified anonymously**；arm64 dmg 从
+   GitCode 全量回读 291,465,287 字节，SHA-256
+   `c46ab1e534f09d5d84e80f7167f7dc42f89f263c1cf21f395794015139243222` 与 GitHub `.sha256` 一致。
+6. **官网数据**：site-refresh 自动 run success（bot `a68567d`，先于镜像）；镜像后本机
+   `gen-site-data.mjs` 重新生成：`v0.2.1-rc.2.shell.8`、八资产 `gitcode_ok=true`，统计 8090
+   （mac 887 / win 6339 / linux 864），87 版本。
+7. **遗留**：Web UI 仍无按 session 深链，Incident 成功后只聚焦主窗口；临时 home 无模型时侧栏
+   新会话可见性未复验；「插件市场随包默认开启 / 扩展菜单压缩 / 流行插件推荐」未纳入本版。

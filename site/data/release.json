@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-24T16:34:50.916Z",
+  "generated_at": "2026-10-24T16:39:21.877Z",
   "repo": {
     "full_name": "citrusli2026/dsh-desktop",
     "html_url": "https://github.com/citrusli2026/dsh-desktop",
@@ -7,10 +7,10 @@
     "license": "MIT"
   },
   "stats": {
-    "installer_downloads": 8087,
-    "mac_downloads": 886,
-    "win_downloads": 6338,
-    "linux_downloads": 863,
+    "installer_downloads": 8090,
+    "mac_downloads": 887,
+    "win_downloads": 6339,
+    "linux_downloads": 864,
     "releases": 87
   },
   "release": {
@@ -23,7 +23,7 @@
       {
         "name": "dsh-desktop-0.2.1-rc.2.shell.8-amd64.deb",
         "size": 234205332,
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.2.1-rc.2.shell.8/dsh-desktop-0.2.1-rc.2.shell.8-amd64.deb",
         "kind": "installer",
         "sha256": null,
@@ -43,7 +43,7 @@
       {
         "name": "dsh-desktop-0.2.1-rc.2.shell.8-arm64-mac.dmg",
         "size": 291465287,
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.2.1-rc.2.shell.8/dsh-desktop-0.2.1-rc.2.shell.8-arm64-mac.dmg",
         "kind": "installer",
         "sha256": null,
@@ -83,7 +83,7 @@
       {
         "name": "dsh-desktop-setup-0.2.1-rc.2.shell.8.exe",
         "size": 265800069,
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/citrusli2026/dsh-desktop/releases/download/v0.2.1-rc.2.shell.8/dsh-desktop-setup-0.2.1-rc.2.shell.8.exe",
         "kind": "installer",
         "sha256": null,
