@@ -10,7 +10,7 @@ switchable, while keeping the original author's attribution and upstream entry p
 third-party plugin conflicts with 0030's "no desktop pet" exclusion, so this decision keeps the scope
 narrow:
 
-The shell ships a **reviewed copy of the community plugin** but mounts it only after the user enables
+The shell ships a **reviewed copy of the community plugin**, enabled by default; users can turn it off in
 "Desktop settings → Extensions → Whale companion".
 
 - **Upstream code untouched**: `third_party/dsh-whale-widget` is **unmodified upstream 0.4.2**. The shell
@@ -19,12 +19,12 @@ The shell ships a **reviewed copy of the community plugin** but mounts it only a
   (`/__dsh-desktop/whale-pet`, loading the plugin's own `/dsh-whale/widget.js`). If the plugin ever declares
   `dsh.companion` itself, that declaration wins and the adapter steps aside. `VENDORED.md` records the
   version and asset terms; installers never follow npm updates for it.
-- **Off by default**: the `whaleWidgetEnabled` preference defaults to false. While it is off the shell does
-  not hand the patch to the loader and removes the profile symlinks it owns, so the plugin manager, the
-  companion list and the panel do not see it.
-- **Only the user's switch mounts it**: `prepareWhaleMount()` decides per Harness spawn, and **Safe Mode
-  never mounts it**, matching the "third-party plugins isolated" promise. The toggle needs a Harness
-  restart; the settings row provides an explicit button.
+- **On by default, opt-out**: the `whaleWidgetEnabled` preference defaults to true (a missing key counts as
+  on). While it is off the shell does not hand the patch to the loader and removes the profile symlinks it
+  owns, so the plugin manager, the companion list and the panel do not see it.
+- **Only the preference mounts it**: `prepareWhaleMount()` decides per Harness spawn, and **Safe Mode never
+  mounts it**, matching the "third-party plugins isolated" promise. The toggle needs a Harness restart; the
+  settings row provides an explicit button.
 - **No profile rewriting**: it uses the shell-owned `--patch` argument and profile symlinks, the same
   mechanism as `dsh-desktop-controls`. A user-installed package of the same name wins; the shell never
   replaces a real directory.
@@ -35,6 +35,8 @@ The shell ships a **reviewed copy of the community plugin** but mounts it only a
 
 Consequences: users get the experience without installing anything, and disabling it restores the previous
 behaviour exactly; the shell owns one third-party integration with a built-in packaged test and the external
-opt-in test, and Safe Mode excludes it automatically. Rejected: always-on mounting (changes every user's
-UI), reimplementing the plugin inside the shell (two implementations to maintain), and auto-updating it from
-npm (bypasses shell review).
+opt-in test, and Safe Mode excludes it automatically. The compat check reads the **mounted** version
+(`profiles/node_modules`, the shell's link), so a stale user copy in the web profile (e.g. 0.2.10) cannot
+silently disable the companion. Rejected: always-on with no opt-out (users could not restore the old UI),
+reimplementing the plugin inside the shell (two implementations to maintain), and auto-updating it from npm
+(bypasses shell review).

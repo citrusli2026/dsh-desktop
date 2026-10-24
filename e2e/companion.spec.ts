@@ -78,7 +78,7 @@ test.describe('installed plugin companion windows', () => {
     await mkdir(home, { recursive: true })
     await mkdir(userData, { recursive: true })
     await writeFile(join(home, 'settings.yaml'), 'locale:\n  preference: en\nui-theme:\n  preference: system\n')
-    await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
+    await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true,"whaleWidgetEnabled":false}\n')
     await seedProfile(home)
 
     const app = await electron.launch({
@@ -201,7 +201,7 @@ test('a late companion load never covers a restored main window', async () => {
   await mkdir(home, { recursive: true })
   await mkdir(userData, { recursive: true })
   await writeFile(join(home, 'settings.yaml'), 'locale:\n  preference: en\nui-theme:\n  preference: system\n')
-  await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true}\n')
+  await writeFile(join(userData, 'shell-preferences.json'), '{"closeToTrayExplained":true,"whaleWidgetEnabled":false}\n')
   await seedSlowProfile(home)
 
   const app = await electron.launch({

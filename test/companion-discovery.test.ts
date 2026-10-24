@@ -78,3 +78,20 @@ test('a plugin declaration wins over the shell compat map, and unknown versions 
     await rm(home, { recursive: true, force: true })
   }
 })
+
+test('a stale web-profile copy does not hide the shell-mounted version', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-companion-'))
+  try {
+    // The user's old real directory (0.2.10) in the web profile, plus the
+    // shell's mount link to the reviewed 0.4.2 copy in profiles/node_modules.
+    await packageFile(home, 'dsh-whale-widget', { name: 'dsh-whale-widget', version: '0.2.10', dsh: { bundle: { patch: './cordis.patch.yml' } } })
+    const mounted = join(home, 'profiles', 'node_modules', 'dsh-whale-widget')
+    await mkdir(mounted, { recursive: true })
+    await writeFile(join(mounted, 'package.json'), JSON.stringify({ name: 'dsh-whale-widget', version: '0.4.2' }))
+    const listed = await discoverCompanions(home)
+    assert.equal(listed.length, 1)
+    assert.equal(listed[0]?.route, '/__dsh-desktop/whale-pet')
+  } finally {
+    await rm(home, { recursive: true, force: true })
+  }
+})

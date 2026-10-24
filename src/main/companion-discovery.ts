@@ -29,6 +29,21 @@ async function installedPackages(profileDir: string): Promise<string[]> {
 }
 
 /**
+ * Version of the package the harness actually mounts. The shell's built-in
+ * mount links the reviewed copy into `profiles/node_modules`, which can differ
+ * from a stale user copy in `profiles/web/node_modules` (the user's 0.2.10
+ * shadowed our 0.4.2 and silently disabled the adapter). Prefer the mounted
+ * copy for the compat gate; a plugin's own declaration still wins.
+ */
+async function mountedVersion(dshHome: string, name: string, fallback: unknown): Promise<string> {
+  try {
+    const manifest = JSON.parse(await readFile(join(dshHome, 'profiles', 'node_modules', name, 'package.json'), 'utf8')) as { version?: unknown }
+    if (typeof manifest.version === 'string') return manifest.version
+  } catch { /* no shell-mounted copy */ }
+  return typeof fallback === 'string' ? fallback : ''
+}
+
+/**
  * One descriptor per installed package that declares `dsh.companion`.
  * Declarations are read from package.json only — plugin code is never run.
  */
@@ -45,7 +60,7 @@ export async function discoverCompanions(dshHome: string): Promise<CompanionDesc
       // A plugin's own declaration always wins; otherwise the shell supplies
       // one for a reviewed package version (ADR 0044).
       const descriptor = parseCompanionDescriptor(name, manifest.dsh?.companion)
-        ?? parseCompanionDescriptor(name, compatCompanionDescriptor(name, typeof manifest.version === 'string' ? manifest.version : ''))
+        ?? parseCompanionDescriptor(name, compatCompanionDescriptor(name, await mountedVersion(dshHome, name, manifest.version)))
       if (descriptor !== undefined) found.push(descriptor)
     } catch { /* missing, unreadable or damaged package */ }
   }

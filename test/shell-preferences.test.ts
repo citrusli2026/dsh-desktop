@@ -67,7 +67,7 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       agentDeletionInterception: true,
       firstRunGuideDismissed: false,
       firstTaskCompleted: false,
-      whaleWidgetEnabled: false,
+      whaleWidgetEnabled: true,
     })
     store.updateDesktopPreferences({ shortcut: 'Ctrl+Alt+K', launchAtLogin: true, launchHidden: true, notificationsEnabled: false })
     assert.deepEqual(store.getDesktopPreferences(), {
@@ -80,7 +80,7 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       agentDeletionInterception: true,
       firstRunGuideDismissed: false,
       firstTaskCompleted: false,
-      whaleWidgetEnabled: false,
+      whaleWidgetEnabled: true,
     })
     const raw = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>
     assert.equal(raw.closeToTrayExplained, undefined)
@@ -118,17 +118,27 @@ test('selected LAN listen addresses survive preference reloads', async () => {
   }
 })
 
-test('the built-in whale widget is off until the user opts in', async () => {
+test('the built-in whale widget is on by default and can be opted out', async () => {
   const path = await tempPath()
   try {
     const store = createShellPreferences(path)
-    assert.equal(store.getDesktopPreferences().whaleWidgetEnabled, false)
-    store.updateDesktopPreferences({ whaleWidgetEnabled: true })
-    assert.equal(createShellPreferences(path).getDesktopPreferences().whaleWidgetEnabled, true)
-    const raw = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>
-    assert.equal(raw.whaleWidgetEnabled, true)
+    assert.equal(store.getDesktopPreferences().whaleWidgetEnabled, true)
     store.updateDesktopPreferences({ whaleWidgetEnabled: false })
     assert.equal(createShellPreferences(path).getDesktopPreferences().whaleWidgetEnabled, false)
+    const raw = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>
+    assert.equal(raw.whaleWidgetEnabled, false)
+    store.updateDesktopPreferences({ whaleWidgetEnabled: true })
+    assert.equal(createShellPreferences(path).getDesktopPreferences().whaleWidgetEnabled, true)
+  } finally {
+    await rm(join(path, '..'), { recursive: true, force: true })
+  }
+})
+
+test('a preferences file without the whale key keeps it enabled', async () => {
+  const path = await tempPath()
+  try {
+    await writeFile(path, '{"closeToTrayExplained":true}\n')
+    assert.equal(createShellPreferences(path).getDesktopPreferences().whaleWidgetEnabled, true)
   } finally {
     await rm(join(path, '..'), { recursive: true, force: true })
   }

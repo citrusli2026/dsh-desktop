@@ -122,7 +122,7 @@ WHALE_PLUGIN_DIR=/path/to/prepared/dsh-whale-widget node scripts/whale-clickthro
 （`/__dsh-desktop/whale-pet`），页面加载插件自己的 `/dsh-whale/widget.js`。插件若自己声明伴随窗口，
 声明优先。
 
-- 打开「桌面设置 → 扩展 → 小鲸鱼桌宠」，勾选后点「立即重启」；
+- 默认开启；「桌面设置 → 扩展 → 小鲸鱼桌宠」可关闭，切换后点「立即重启」；
 - 关闭后不再挂载，插件与伴窗都从列表消失；
 - Safe Mode 下不会挂载（与第三方插件隔离一致）；
 - 设置页写明原作者 MeteorNOX 并链接上游项目；

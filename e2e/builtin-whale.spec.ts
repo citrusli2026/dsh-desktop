@@ -12,19 +12,17 @@ import { locatePackagedExecutable } from '../scripts/packaged-locator.mjs'
  */
 const PACKAGED = process.env.DSH_E2E_PACKAGED === '1'
 
-async function launch(options: { whale: boolean; safeMode?: boolean }) {
+async function launch(options: { whale?: boolean; safeMode?: boolean }) {
   const root = await mkdtemp(join(tmpdir(), 'dsh-builtin-whale-'))
   const home = join(root, 'home')
   const userData = join(root, 'data')
   await mkdir(home, { recursive: true })
   await mkdir(userData, { recursive: true })
   await writeFile(join(home, 'settings.yaml'), 'locale:\n  preference: zh\nui-theme:\n  preference: light\n')
-  await writeFile(join(userData, 'shell-preferences.json'), JSON.stringify({
-    closeToTrayExplained: true,
-    firstRunGuideDismissed: true,
-    whaleWidgetEnabled: options.whale,
-    safeMode: options.safeMode === true,
-  }) + '\n')
+  const preferences: Record<string, unknown> = { closeToTrayExplained: true, firstRunGuideDismissed: true }
+  if (options.whale !== undefined) preferences.whaleWidgetEnabled = options.whale
+  if (options.safeMode === true) preferences.safeMode = true
+  await writeFile(join(userData, 'shell-preferences.json'), JSON.stringify(preferences) + '\n')
   const app = await electron.launch({
     executablePath: await locatePackagedExecutable(),
     args: [`--user-data-dir=${userData}`],
@@ -37,9 +35,9 @@ async function launch(options: { whale: boolean; safeMode?: boolean }) {
 test.describe('built-in whale widget', () => {
   test.skip(!PACKAGED, 'requires the packaged build')
 
-  test('enabled mounts the unmodified widget and hosts the shell adapter @smoke', async ({}, info) => {
+  test('on by default: mounts the unmodified widget and hosts the shell adapter @smoke', async ({}, info) => {
     test.setTimeout(300_000)
-    const { app, root } = await launch({ whale: true })
+    const { app, root } = await launch({})
     try {
       const page = await app.firstWindow()
       await expect.poll(() => page.locator('[data-dsh-desktop-controls]').count(), { timeout: 180_000 }).toBe(1)
@@ -66,7 +64,7 @@ test.describe('built-in whale widget', () => {
     }
   })
 
-  test('the settings toggle persists the opt-in and offers a restart @smoke', async ({}, info) => {
+  test('the settings toggle persists the choice and offers a restart @smoke', async ({}, info) => {
     test.setTimeout(300_000)
     const { app, root } = await launch({ whale: false })
     try {
