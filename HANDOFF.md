@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | `0.2.1-rc.2.shell.4`（扩展失败可感知、面板点外关闭，内核不变），GitHub 与 GitCode 均已交付（tag `3961d6f`），见 §94 |
-| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.4`（10 资产，`prerelease=false`）＋ GitCode release `60557`（八资产 8/8，arm64 dmg 全量回读一致）；`v0.2.1-rc.2.shell.3` 为其上一版 |
-| 本地门禁 | ✅ verify 498 通过；新 `dist:dir` 后 packaged smoke、Harness-UI smoke 均 OK；打包 E2E 24 项全绿；本机沙箱需放宽才能启动 Electron，见 §94 |
-| 核心发布 | ✅ Release `39620441606` / tag `3961d6f`，verify + 四平台 build + publish success，十文件与来源证明通过；首次 run 因内网 npm 镜像缺 `electron-publish@26.18.0` 在 publish 失败，已改为 npmjs 解析后重跑（§94） |
-| 官网数据 | ✅ site-refresh 已自动同步（bot `a0bd97d`，生成于 2026-10-21T15:57Z）：`v0.2.1-rc.2.shell.4`、八资产 `gitcode_ok=true`（§94） |
-| 国内镜像 | ✅ GitCode release `60557` / tag `3961d6f`；八资产匿名可下载（8/8 present），arm64 dmg 全量下载 SHA-256 与本地一致 `29f087da…`；`--status unset` 创建（预发布配额规避）（§94） |
-| 实时下载统计 | GitHub 安装快照 7388（mac 840 / Windows 5806 / Linux 742），83 版本（2026-10-21T15:57Z bot 生成）；两种统计不混用 |
+| 最新代码基线 | `0.2.1-rc.2.shell.6`（伴窗探针/晚到 show 修复、点击穿透、升级弹框改跳官网，内核不变），GitHub 与 GitCode 均已交付（tag `3576586`），见 §97 |
+| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.6`（10 资产，`prerelease=false`）＋ GitCode release（八资产 8/8，arm64 dmg 全量回读 SHA-256 一致）；`v0.2.1-rc.2.shell.5` 为上一版 |
+| 本地门禁 | ✅ `pnpm verify` 通过；LAN 配对 2/2、市场离线 1/1、真实市场 2/2；新 `dist:dir`（shell.6）后 packaged smoke、Harness-UI smoke 均 OK；companion 2/2、真实鲸鱼插件 1/1；见 §97 |
+| 核心发布 | ✅ Release `40059873821` / tag `3576586`，verify + 四平台 build + publish success，十文件与来源证明通过（§97） |
+| 官网数据 | ✅ site-refresh 自动同步（bot `51139cd`，先于镜像故 1/8），本机重新生成并提交 `b70ad3a`：`v0.2.1-rc.2.shell.6`、八资产 `gitcode_ok=true`（§97） |
+| 国内镜像 | ✅ GitCode release / tag `3576586`；八资产匿名可下载（8/8 verified），arm64 dmg 全量下载 SHA-256 `6ac5cfb6…` 与 GitHub 一致；`--status unset` 创建（预发布配额规避）（§97） |
+| 实时下载统计 | GitHub 安装快照 7922（mac 873 / Windows 6239 / Linux 810），85 版本（2026-10-24T05:15Z 本机生成）；两种统计不混用 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -2848,7 +2848,7 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
 6. **已知未覆盖**：面板点外关闭与系统通知没有进入打包截图门禁（仅单元/静态断言 + 人工验收）；
    四端视觉门禁的 22 个 surface 未新增“失败态”画面。真实飞书收发与托盘通知观感仍需人工确认。
 
-## 95. 插件伴随窗口能力（ADR 0043，2026-10-23，未发布）
+## 95. 插件伴随窗口能力（ADR 0043，2026-10-23，随 shell.5 发布）
 
 1. **背景**：#130 的鲸鱼桌宠补丁技术上可用，但把 `/dsh-whale/pet` 路由与 `.dshwv-*` 类名硬编码进壳，
    且分发依赖替换 `app.asar`、关闭自动更新，与 ADR 0030 的「桌面宠物非目标」和可靠壳的更新/完整性契约
@@ -2870,9 +2870,9 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    残窗。
 5. **对 #130 的答复**：窗口部分由通用能力承接，鲸鱼插件侧只需增加 `dsh.companion` 声明与
    `/dsh-whale/pet` 路由，无需改壳或替换 `app.asar`；审批泡泡仍不在壳能力内。
-6. **未发布**：本能力在 `v0.2.1-rc.2.shell.4` 之后合入，随下个 shell 版本发布。
+6. **已发布**：本能力在 `v0.2.1-rc.2.shell.4` 之后合入，随 `v0.2.1-rc.2.shell.5` 发布。
 
-## 96. 鲸鱼插件接入验收与升级弹框改跳官网（2026-10-24，未发布）
+## 96. 鲸鱼插件接入验收与升级弹框改跳官网（2026-10-24，随 shell.6 发布）
 
 1. **鲸鱼插件覆盖范围（ADR 0043 通用伴窗）**：伴窗加载的是插件自己的 `/dsh-whale/pet` 页面，宿主侧
    记账/余额/会话监听仍在同一进程运行，所以余额、今日已用、每轮消耗、峰谷、账本、泡泡、音效、角色、
@@ -2894,5 +2894,35 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    `communityDownloadUrl()` 有单测（`test/links.test.ts`）。
 6. **视觉证据**：`artifacts/whale-companion-2026-10-24/`（五步截图、`flow.mov` 32 秒录屏、`notes.md`），
    `artifacts/` 已 gitignore。本机安装包仍是 `0.2.1-alpha.3.shell.0`，验收用的是 `dist:dir` 产物。
-7. **未发布**：以上改动都在 PR #132（壳）与作者仓库 PR #1（插件）里；用户可用需要壳带修复的版本 +
-   插件发新版本（npm 0.4.2 已占用）。
+7. **已发布（壳侧）**：以上壳改动随 `v0.2.1-rc.2.shell.6` 发布（见 §97）；插件侧仍在作者仓库 PR #1，
+   需作者合入并发新版本（npm 0.4.2 已占用）后用户才能获得完整体验。
+
+## 97. 发布 v0.2.1-rc.2.shell.6（伴窗可用性修复 + 点击穿透 + 升级弹框改跳官网，2026-10-24）
+
+1. **本版内容（内核仍为 0.2.1-rc.2，壳修订 5 → 6）**：真实插件伴窗的探针改用主窗口 session（否则
+   Harness 连接栅栏返回 401，`/dsh-whale/pet` 永远打不开）；`loadURL` 晚到的 `showInactive()` 不再覆盖
+   已恢复的主窗口；新增通用 `setInteractive()` 让插件页面自行决定透明区域点击穿透；macOS/Linux 升级弹框
+   改跳社区下载页（`/download`、`/en/download`），按钮改「打开下载页」；新增真实鲸鱼插件 opt-in 门禁
+   `pnpm run test:e2e:whale` 与 HID 点击穿透脚本。详见 §96。
+2. **本地门禁**：`pnpm verify` 通过（本机需把 Go 加入 PATH，否则 `cc-connect-config` 真实 loader 用例
+   `spawn go ENOENT`）；LAN 配对 2/2；市场离线 1/1、真实 2/2；`dist:dir`（shell.6）后 packaged smoke 与
+   Harness-UI smoke 均 OK；打包 companion E2E 2/2、真实鲸鱼插件 1/1；点击穿透实测
+   `transparentClickPassedThrough=true`。
+3. **发布**：tag `v0.2.1-rc.2.shell.6` → `3576586614eb4a7205df9f604d9d9585923ee3b9`；Release run
+   `40059873821` verify + 4×build（macos-14 / windows-2022 / ubuntu-24.04 / ubuntu-24.04-arm）+ publish
+   全绿；GitHub Release **10 文件**、`prerelease=false`。`main` 首次推送被拒（瞬时竞态），随即
+   `HEAD:main` 推送成功；tag 与 main 均已对齐 `3576586`。
+4. **GitCode 镜像（v2 / gitcode-release-publisher）**：GitCode tag 已对齐 `3576586`。新 tag 没有 release
+   对象，先上传 amd64 `.sha256` 作为种子、`create --status unset` 建对象（tag/ref 精确、`asset_count=1`），
+   再跑 `mirror-gitcode-v2.mjs` 补齐其余 7 个并链接 → **8/8 assets verified anonymously**。
+   **本机 GitHub 直连只有 ~8 KB/s**：首次 v2 run 45 分钟仅下到 63 MB dmg；改用本机 HTTP 代理
+   （`HTTPS_PROXY=http://127.0.0.1:7890`，实测 ~5 MB/s）并复用 `--work-dir` 后一次跑完（下载 + 校验 +
+   上传 + 链接约 1 分钟）。arm64 dmg 从 GitCode 全量回读 285,816,870 字节，SHA-256
+   `6ac5cfb6f33b240cd1baae0bc61973ae8e5103af527cafd8a396922294d6da72` 与 GitHub `.sha256` 一致。
+5. **官网数据**：site-refresh 自动 run `40062402048` success（bot `51139cd`），但它在镜像完成前探测，
+   `gitcode_ok` 只有 1/8；镜像完成后本机 `node scripts/gen-site-data.mjs` 重新生成（stats 7922：
+   mac 873 / win 6239 / linux 810，85 版本），提交 `b70ad3a`；`site:check` 与 `api-downloads` 全通过。
+6. **HANDOFF/状态表**：基线、已发布、门禁、核心发布、官网数据、国内镜像六行更新到 shell.6；§95 标注随
+   shell.5 发布，§96 标注壳侧随 shell.6 发布（插件侧仍在作者仓库 PR #1）。
+7. **保留边界**：Windows/Linux 原生安装与视觉仍由 CI 四端视觉门禁覆盖；本机未做 Windows 实机验收。
+   插件侧（`dsh.companion` 声明 + pet 页桥）尚未合入上游，用户需等插件发布新版本后才能完整体验。
