@@ -16,7 +16,9 @@ test('Linux E2E uses an owned, readiness-checked window manager and retains mini
     assert.ok(steps.some(step => step.run?.includes('xvfb-run -a sh scripts/run-e2e-linux.sh')))
   }
   const e2e = await readFile('e2e/electron-shell.spec.ts', 'utf8')
-  assert.match(e2e, /isMinimized\(\)\)\).toBe\(true\)/)
+  // The main window is addressed by URL now (the whale companion can become
+  // window[0]); the minimize assertion is retained.
+  assert.match(e2e, /mainState\(\)\)\?\.minimized\)\.toBe\(true\)/)
   assert.match(e2e, /a real second instance[\s\S]*?\.hide\(\)[\s\S]*?expect\(exited\).not.toBeNull\(\)/)
   const release = parse(await readFile('.github/workflows/release.yml', 'utf8'))
   assert.equal(release.jobs['report-failure'].if, "${{ failure() && github.ref_type == 'tag' }}")
