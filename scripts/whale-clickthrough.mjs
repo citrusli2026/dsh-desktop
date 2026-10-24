@@ -24,6 +24,11 @@ const SWIFT = `
 import CoreGraphics
 import Foundation
 let mode = CommandLine.arguments[1]
+if mode == "lock" {
+  let d = CGSessionCopyCurrentDictionary() as? [String: Any]
+  print(d?["CGSSessionScreenIsLocked"] as? Int ?? 0)
+  exit(0)
+}
 let x = Double(CommandLine.arguments[2])!
 let y = Double(CommandLine.arguments[3])!
 let p = CGPoint(x: x, y: y)
@@ -35,12 +40,21 @@ if mode != "move" {
   CGEvent(mouseEventSource: nil, mouseType: .leftMouseUp, mouseCursorPosition: p, mouseButton: .left)?.post(tap: .cghidEventTap)
 }
 `
-const swiftPath = join(tmpdir(), 'dsh-companion-click.swift')
-writeFileSync(swiftPath, SWIFT)
-const post = (mode, x, y) => execFileSync('swift', [swiftPath, mode, String(Math.round(x)), String(Math.round(y))], { encoding: 'utf8' })
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 const root = await mkdtemp(join(tmpdir(), 'dsh-clickthrough-'))
+// Private temp dir (mkdtemp), never a predictable path in the shared tmp dir.
+const swiftPath = join(root, 'click.swift')
+writeFileSync(swiftPath, SWIFT, { mode: 0o600 })
+const post = (mode, x, y) => execFileSync('swift', [swiftPath, mode, String(Math.round(x)), String(Math.round(y))], { encoding: 'utf8' })
+const locked = () => execFileSync('swift', [swiftPath, 'lock', '0', '0'], { encoding: 'utf8' }).trim() === '1'
+// Posted HID events never reach app windows while the screen is locked, so
+// fail before launching anything instead of reporting a bogus 0-click result.
+if (locked()) {
+  console.error('screen is locked — unlock the Mac and rerun this check')
+  await rm(root, { recursive: true, force: true })
+  process.exit(3)
+}
 const home = join(root, 'home')
 const userData = join(root, 'data')
 await mkdir(home, { recursive: true })
@@ -89,6 +103,7 @@ try {
   })
   await pet.evaluate(() => { window.__clicks = 0; document.addEventListener('click', () => { window.__clicks++ }, true) })
 
+
   // 1. Transparent corner: the click must reach the stage, not the companion.
   post('click', bounds.x + 40, bounds.y + 40)
   await sleep(400)
@@ -110,7 +125,7 @@ try {
   }
   console.log('RESULT', JSON.stringify(result))
   if (!result.transparentClickPassedThrough && afterWhale === 0 && petClicks === 0) {
-    console.error('inconclusive: no clicks were delivered — grant Accessibility permission to the terminal')
+    console.error('inconclusive: no clicks were delivered — check Accessibility permission for the terminal')
     process.exitCode = 1
   } else if (!result.transparentClickPassedThrough || !result.whaleClickStayedInCompanion) {
     process.exitCode = 1
