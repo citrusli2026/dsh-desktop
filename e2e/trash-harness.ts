@@ -69,7 +69,7 @@ export async function launchTrashHarness(packaged: boolean, options: { locale?: 
       '- id: workspace-controller', '  config:', `    documentsDirectory: ${JSON.stringify(documents)}`, '',
     ].join('\n'))
     await writeFile(join(home, 'settings.yaml'), `locale:\n  preference: ${locale}\nui-theme:\n  preference: ${theme}\n` + WELCOME_ACKNOWLEDGED_YAML)
-    await writeFile(join(userData, 'shell-preferences.json'), JSON.stringify({ closeToTrayExplained: true, firstRunGuideDismissed: options.firstRunGuideDismissed ?? true, safeMode: options.safeMode ?? false }))
+    await writeFile(join(userData, 'shell-preferences.json'), JSON.stringify({ closeToTrayExplained: true, firstRunGuideDismissed: options.firstRunGuideDismissed ?? true, safeMode: options.safeMode ?? false, whaleWidgetEnabled: false }))
     let connectModePath: string | undefined
     let connectBinPath: string | undefined
     if (options.connectSidecar) {
