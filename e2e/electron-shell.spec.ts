@@ -531,13 +531,24 @@ shellTest('closing the main window quits even with an auxiliary window open @smo
 
 shellTest('a second-instance activation restores the minimized window @smoke @critical', async ({ electronApp, window }) => {
   await packagedOrStubHeadline(window)
-  await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isVisible())).toBe(true)
-  await electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.minimize())
-  await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isMinimized())).toBe(true)
+  // Minimizing can open the built-in whale companion, which may become window
+  // [0]; keep addressing the main window by its URL.
+  const mainState = () => electronApp.evaluate(({ BrowserWindow }) => {
+    const windows = BrowserWindow.getAllWindows()
+    const main = windows.find(candidate => !candidate.webContents.getURL().includes('/__dsh-desktop/whale-pet')) ?? windows[0]
+    return main === undefined ? null : { visible: main.isVisible(), minimized: main.isMinimized() }
+  })
+  await expect.poll(async () => (await mainState())?.visible).toBe(true)
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    const windows = BrowserWindow.getAllWindows()
+    const main = windows.find(candidate => !candidate.webContents.getURL().includes('/__dsh-desktop/whale-pet')) ?? windows[0]
+    main?.minimize()
+  })
+  await expect.poll(async () => (await mainState())?.minimized).toBe(true)
   await electronApp.evaluate(({ app }) => {
     app.emit('second-instance', {} as Electron.Event, [], process.cwd(), {})
   })
-  await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isVisible())).toBe(true)
+  await expect.poll(async () => (await mainState())?.visible).toBe(true)
 })
 
 shellTest('settings UI drives locale/theme through the harness page into settings.yaml', async ({ electronApp, window, dshHome }) => {

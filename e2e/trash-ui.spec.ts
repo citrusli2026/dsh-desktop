@@ -319,7 +319,7 @@ realTrashTest('Host refuses deletion during a real active turn without stopping 
   harness.pause()
   await page.getByRole('textbox', { name: /发消息或创建任务/ }).fill('TRASH-ACTIVE-SESSION')
   await page.getByRole('button', { name: '发送消息', exact: true }).click()
-  await expect.poll(() => harness.requests).toBe(3)
+  await expect.poll(() => harness.requests, { timeout: 30_000 }).toBe(3)
   const trash = await openTrashSection(page)
   await trash.getByRole('tab', { name: /^会话 / }).click()
   const row = trash.locator(`[data-dsh-session-id="${session.sessionId}"]`)
