@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop 更新日志","url":"https://dsh-desktop.com/changelog","inLanguage":"zh-CN","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/"},{"@type":"ListItem","position":2,"name":"更新日志","item":"https://dsh-desktop.com/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-24","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.8"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-25","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.9"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.9 <small>（内核 0.2.1-rc.2）</small></h2>
+  <ul>
+    <li><strong>Fix the shell.8 whale regression</strong>: lowering <code>.dshwv-root</code> to <code>z-index: 1</code> put it behind the Harness app root (a stacking context), so it was clipped and clicks fell through to the page. Restored its body-level <code>z-index: 9999</code>; the whale is visible and clickable again.</li>
+    <li><strong>No need to lower it</strong>: instead hide the whale while a Harness dialog or the desktop-tools panel is open, so those surfaces stay clickable without breaking the whale.</li>
+    <li><strong>Fix companion size sync</strong>: the adapter page hard-coded <code>--dshw-scale: 1.6</code>; removed, so the main window and the companion both use the saved <code>.dshw-size.json</code> scale.</li>
+    <li><strong>Regression coverage</strong>: the built-in whale E2E now asserts the 9999 layer, the saved scale, a real click opening the menu, hiding on Settings, and matching companion scale.</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.8 <small>（内核 0.2.1-rc.2）</small></h2>
   <ul>
     <li><strong>失败可以一键交给 AI 排查（Incident）</strong>：恢复中心和「插件市场」失败提示新增「问 AI / 问 AI 诊断」。 壳把已脱敏的诊断（版本、profile、插件清单、失败分类、日志尾部）组装成一条故障事件，在 Harness 里 创建会话并把带结构的排查提示作为首条消息：先判根因，再给最多 5 步修复和验证方法。AI 不可用时 （内核未启动 / 能力缺失 / 创建失败）会如实说明，并自动回退到导出诊断 / issue，绝不是唯一出路。 提示词把日志明确标为「数据，不是指令」，24 000 字节上限，超长保留头部并标注截断；只写本机 <code>$DSH_HOME/incidents/{id}/</code>，不上传任何东西。ADR 0046。</li>
@@ -108,13 +116,6 @@
     <li><strong>面板信息组进入四端视觉门禁</strong>：桌面工具面板的「信息」组（关于 + 在 GitHub 上 Star）现在由 macOS、Windows、Linux x64、Linux arm64 四个 runner 各产出一张截图，并由门禁强制校验；扩展面契约 从 21 增至 22，任一平台缺少该画面即失败。这样面板里唯一的常驻产品入口不会再被静默改坏。</li>
     <li><strong>应用行为无变化</strong>：内核仍是 <code>0.2.1-rc.2</code>，本版只推进壳修订号；Star 入口自 <code>.shell.1</code> 起已在面板中， 本版不新增功能，安装包行为与上一版一致。</li>
     <li><strong>边界说明</strong>：Star 入口只打开仓库页面（带 <code>?ref=app-panel</code> 归因），不发送任何遥测；签名与公证边界不变。</li>
-  </ul>
-
-  <h2>v0.2.1-rc.2.shell.1 <small>（内核 0.2.1-rc.2）</small></h2>
-  <ul>
-    <li><strong>桌面工具面板新增 Star 入口</strong>：信息分组里多了一行「在 GitHub 上 Star」，点击会用默认浏览器打开仓库并带 <code>?ref=app-panel</code> 归因，方便区分面板点击与官网点击。它只是一个常驻链接：不弹窗、不催促、不影响面板其它操作。</li>
-    <li><strong>官网同步做了事实与文案迭代</strong>：核查并修正了站点上的错误声明（内置运行时是 Node.js 24 而不是 22、去掉已下线的 <code>npx</code> 校验命令、去掉未经核实的插件数量、把 CI 门禁的「真机」措辞改为四端 runner 视觉证据）；修正了中英文各自 独立的文案副本（<code>data-i18n</code> 现在真正生效）；更新日志中英条目逐条对齐；SEO 补齐结构化数据、可抓取的版本快照、 sitemap 日期与双语 404。这些随站点部署，无需更换安装包。</li>
-    <li><strong>边界说明</strong>：Star 入口与官网的 Star 邀请都只打开仓库页面，不发送任何遥测；内核 <code>0.2.1-rc.2</code>、签名与公证边界 与上一版完全一致。</li>
   </ul>
   <!-- changelog:auto:end -->
 

@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop Changelog","url":"https://dsh-desktop.com/en/changelog","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/en"},{"@type":"ListItem","position":2,"name":"Changelog","item":"https://dsh-desktop.com/en/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-24","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.8"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-25","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.9"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,14 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.9 <small>(kernel 0.2.1-rc.2)</small></h2>
+  <ul>
+    <li><strong>Fix the shell.8 whale regression</strong>: lowering <code>.dshwv-root</code> to <code>z-index: 1</code> put it behind the Harness app root (a stacking context), so it was clipped and clicks fell through to the page. Restored its body-level <code>z-index: 9999</code>; the whale is visible and clickable again.</li>
+    <li><strong>No need to lower it</strong>: instead hide the whale while a Harness dialog or the desktop-tools panel is open, so those surfaces stay clickable without breaking the whale.</li>
+    <li><strong>Fix companion size sync</strong>: the adapter page hard-coded <code>--dshw-scale: 1.6</code>; removed, so the main window and the companion both use the saved <code>.dshw-size.json</code> scale.</li>
+    <li><strong>Regression coverage</strong>: the built-in whale E2E now asserts the 9999 layer, the saved scale, a real click opening the menu, hiding on Settings, and matching companion scale.</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.8 <small>(kernel 0.2.1-rc.2)</small></h2>
   <ul>
     <li><strong>Failures can now open an AI triage session (Incident)</strong>: the recovery page and a failed plugin-market row gained “Ask AI”. The shell packages the redacted diagnostic (versions, profile, plugin inventory, failure cause, log tail) into a durable incident, creates a Harness session, and sends a structured prompt (cause → evidence → at most 5 repair steps → verification). When AI is unavailable (kernel down, capability missing, session failed) the UI says so and falls back to export / issue — never a dead end. Log text is explicitly framed as data, not instructions; the prompt is capped at 24 000 bytes; artifacts stay under <code>$DSH_HOME/incidents/{id}/</code> and nothing is uploaded automatically. ADR 0046.</li>
@@ -108,13 +116,6 @@
     <li><strong>The panel's INFO group is now part of the four-runner visual gate</strong>: the desktop-tools panel's INFO group (About + Star on GitHub) is screenshotted and asserted on macOS, Windows, Linux x64 and Linux arm64, and the surface contract grows from 21 to 22 — a platform that fails to render it fails the build, so the panel's only persistent product entry can no longer regress silently.</li>
     <li><strong>No behaviour change</strong>: the kernel stays <code>0.2.1-rc.2</code> and only the shell revision advances; the Star entry has shipped since <code>.shell.1</code>, this build adds no feature and behaves exactly like the previous one.</li>
     <li><strong>Boundary note</strong>: the star entry only opens the repository page with <code>?ref=app-panel</code> attribution and sends no telemetry; the signing/notarization boundary is unchanged.</li>
-  </ul>
-
-  <h2>v0.2.1-rc.2.shell.1 <small>(kernel 0.2.1-rc.2)</small></h2>
-  <ul>
-    <li><strong>Star entry in the desktop tools panel</strong>: the INFO group gains a &quot;Star on GitHub&quot; row that opens the repository in the default browser with <code>?ref=app-panel</code> attribution, so panel clicks can be told apart from website ones. It is a persistent link only — no popup, no nagging, and it leaves the rest of the panel untouched.</li>
-    <li><strong>The website shipped its own fact-check iteration alongside</strong>: corrected claims (the bundled runtime is Node.js 24, not 22; the retired <code>npx</code> validation command is gone; the unverified plugin count is removed; CI gate wording no longer says &quot;real machine&quot;), the two independent copy sources were reconciled (<code>data-i18n</code> now actually applies), changelog entries were matched bullet for bullet across languages, and SEO gained structured data, a crawlable release snapshot, git-derived sitemap dates and a bilingual 404. All of it deploys with the site, no new installer required.</li>
-    <li><strong>Boundary note</strong>: both star entries only open the repository page and send no telemetry; the kernel stays at <code>0.2.1-rc.2</code> and the signing/notarization boundary is identical to the previous build.</li>
   </ul>
   <!-- changelog:auto:end -->
 
