@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | `0.2.1-rc.2.shell.9`（修复 shell.8 小鲸鱼层级/点击穿透/伴窗尺寸，内核不变），GitHub 与 GitCode 均已交付（tag `9cd832f`），见 §102 |
-| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.9`（10 资产，`prerelease=false`）＋ GitCode release（八资产 8/8，arm64 dmg 全量回读 SHA-256 `8e83f83e…` 一致）；`v0.2.1-rc.2.shell.8` 为上一版 |
-| 本地门禁 | ✅ `pnpm verify` 通过；537 单测；`dist:dir`（shell.9）后 packaged smoke、Harness-UI smoke 均 OK；内置伴窗 3/3（含层级/点击/缩放断言）、通用伴窗 2/2、UI review 4/4、垃圾桶 UI 通过；见 §102 |
-| 核心发布 | ✅ Release `40150353198` / tag `9cd832f`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§102） |
-| 官网数据 | ✅ site-refresh 自动同步（bot `6193e48`）：`v0.2.1-rc.2.shell.9`、八资产 `gitcode_ok=true`（§102） |
-| 国内镜像 | ✅ GitCode release / tag `9cd832f`；八资产匿名可下载（8/8 verified），arm64 dmg 全量下载 SHA-256 `8e83f83e…` 与 GitHub 一致；`--status unset` 创建（§102） |
-| 实时下载统计 | GitHub 安装快照 8121（mac 890 / Windows 6357 / Linux 874），88 版本（2026-10-25T02:17Z 生成）；两种统计不混用 |
+| 最新代码基线 | `0.2.1-rc.2.shell.10`（伴窗独立大小、SDK 1.32、热重载安全路由，内核不变），GitHub 已交付（tag `996e8ca`），GitCode 镜像待网络恢复，见 §103 |
+| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.10`（10 资产，`prerelease=false`）；⏳ GitCode release 已建对象但仅 1/8（种子），镜像因网络限速暂停；`v0.2.1-rc.2.shell.9` 为上一版 |
+| 本地门禁 | ✅ `pnpm verify` 通过；540 单测；`dist:dir`（shell.10）后 packaged smoke、Harness-UI smoke 均 OK；内置鲸鱼 3/3（伴窗 220 px 独立断言）、通用伴窗 2/2、UI review 4/4、垃圾桶 UI、市场离线/真实、LAN 2/2 通过；见 §103 |
+| 核心发布 | ✅ Release `40190713795` / tag `996e8ca`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§103） |
+| 官网数据 | ⚠️ site-refresh 自动同步（bot `8c695a4`）：`v0.2.1-rc.2.shell.10`，但 `gitcode_ok=1/8`，镜像完成后需重新生成（§103） |
+| 国内镜像 | ⏳ GitCode release / tag `996e8ca` 已创建（仅 amd64 `.sha256` 种子，1/8）；网络限速/代理 501 导致 7 个资产未上传，需恢复后重跑 `mirror-gitcode-v2.mjs`（§103） |
+| 实时下载统计 | GitHub 安装快照 8242（mac 896 / Windows 6447 / Linux 899），89 版本（2026-10-25T13:02Z 生成）；两种统计不混用 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -3080,3 +3080,27 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    统计 8121（mac 890 / win 6357 / linux 874），88 版本。本机 `gen-site-data` 因直连 GitHub 超时
    未重跑，沿用 bot 数据（tag 与 8/8 已核对）。
 8. **提醒**：用户当前安装的是 shell.8，需退出后安装 shell.9 才能看到修复；不要覆盖运行中的 app。
+
+## 103. 发布 v0.2.1-rc.2.shell.10（伴窗独立大小 + SDK 1.32 + 热重载安全路由，2026-10-25）
+
+1. **桌面伴窗大小独立配置**（ADR 0047）：新增 `whaleCompanionSize`（80–400 px，默认 160），
+   设置页滑杆，只影响最小化后的伴窗；主窗口保留插件自己的缩放；伴窗 URL 只对壳适配页追加
+   `dshCompanionSize`，适配页钉住 `--dshw-base`。E2E 以 220 px 验证，主窗口仍为 0.6。
+2. **#122 SDK 升级**：合并 Dependabot PR 后发现 `pnpm-workspace.yaml` 的安全覆盖仍钉在 1.31.0，
+   实际未生效；把覆盖与三条传递依赖改为 1.32.0 / jose 6.2.13，重生成锁、重部署闭包，
+   `sdk=1.32.0`，`harness-security-lock` 断言同步更新。
+3. **#268 热重载安全路由**（ADR 0048）：壳宿主插件先于第三方安装路由守卫，同一 `(kind,path)`
+   再次注册时先释放旧路由再注册；单测覆盖替换/dispose/冻结服务，打包鲸鱼与伴窗用例通过；
+   插件代码仍未修改。Cordis 实际重载没有稳定测试钩子，未做端到端重载用例。
+4. **收尾**：关闭 #133（shell.8 失败自动单）与 #131（被通用伴窗取代）。
+5. **发布**：tag `v0.2.1-rc.2.shell.10` → `996e8ca`；Release run `40190713795` verify + 四平台
+   build + publish 全绿；GitHub 10 资产、`prerelease=false`。
+6. **GitCode 镜像未完成**：已上传 amd64 `.sha256` 种子并 `create --status unset`（1/8）；随后
+   ghproxy/直连 GitHub 均被限速（约 10–40 KB/s），且 `-C -` 被代理返回 501、分块下载多次被
+   截断/限流，下载 1 GB 预计数小时且不稳定，已停止，避免继续空耗。恢复网络后执行：
+   `node scripts/mirror-gitcode-v2.mjs v0.2.1-rc.2.shell.10`；完成后重新生成站点数据并核对
+   `gitcode_ok=8/8` 与 arm64 dmg 的 SHA-256。
+7. **官网**：site-refresh bot `8c695a4` 已生成 shell.10，但 `gitcode_ok=1/8`；镜像完成后重跑
+   `node scripts/gen-site-data.mjs` 并推送。
+8. **提醒**：用户当前装的是 shell.9；安装 shell.10 后可在「设置 → 扩展 → 小鲸鱼桌宠」独立调
+   伴窗大小。
