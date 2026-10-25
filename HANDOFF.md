@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | `0.2.1-rc.2.shell.8`（Incident 一键 AI 排查、小鲸鱼默认开启、市场重装即启用，内核不变），GitHub 与 GitCode 均已交付（tag `f08b429`），见 §101 |
-| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.8`（10 资产，`prerelease=false`）＋ GitCode release（八资产 8/8，arm64 dmg 全量回读 SHA-256 `c46ab1e5…` 一致）；`v0.2.1-rc.2.shell.7` 为上一版 |
-| 本地门禁 | ✅ `pnpm verify` 通过；537 单测；LAN 配对 2/2、市场离线 1/1、真实市场 2/2；`dist:dir`（shell.8）后 packaged smoke、Harness-UI smoke 均 OK；内置伴窗 3/3、通用伴窗 2/2、外部已适配插件 1/1、UI review 4/4、垃圾桶 UI 通过；见 §101 |
-| 核心发布 | ✅ Release `40108125000` / tag `f08b429`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§101） |
-| 官网数据 | ✅ site-refresh 自动同步（bot `a68567d`，先于镜像），镜像完成后本机重新生成：`v0.2.1-rc.2.shell.8`、八资产 `gitcode_ok=true`（§101） |
-| 国内镜像 | ✅ GitCode release / tag `f08b429`；八资产匿名可下载（8/8 verified），arm64 dmg 全量下载 SHA-256 `c46ab1e5…` 与 GitHub 一致；`--status unset` 创建（预发布配额规避）（§101） |
-| 实时下载统计 | GitHub 安装快照 8090（mac 887 / Windows 6339 / Linux 864），87 版本（2026-10-25T00:39Z 本机生成）；两种统计不混用 |
+| 最新代码基线 | `0.2.1-rc.2.shell.9`（修复 shell.8 小鲸鱼层级/点击穿透/伴窗尺寸，内核不变），GitHub 与 GitCode 均已交付（tag `9cd832f`），见 §102 |
+| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.9`（10 资产，`prerelease=false`）＋ GitCode release（八资产 8/8，arm64 dmg 全量回读 SHA-256 `8e83f83e…` 一致）；`v0.2.1-rc.2.shell.8` 为上一版 |
+| 本地门禁 | ✅ `pnpm verify` 通过；537 单测；`dist:dir`（shell.9）后 packaged smoke、Harness-UI smoke 均 OK；内置伴窗 3/3（含层级/点击/缩放断言）、通用伴窗 2/2、UI review 4/4、垃圾桶 UI 通过；见 §102 |
+| 核心发布 | ✅ Release `40150353198` / tag `9cd832f`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§102） |
+| 官网数据 | ✅ site-refresh 自动同步（bot `6193e48`）：`v0.2.1-rc.2.shell.9`、八资产 `gitcode_ok=true`（§102） |
+| 国内镜像 | ✅ GitCode release / tag `9cd832f`；八资产匿名可下载（8/8 verified），arm64 dmg 全量下载 SHA-256 `8e83f83e…` 与 GitHub 一致；`--status unset` 创建（§102） |
+| 实时下载统计 | GitHub 安装快照 8121（mac 890 / Windows 6357 / Linux 874），88 版本（2026-10-25T02:17Z 生成）；两种统计不混用 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -3055,3 +3055,28 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    （mac 887 / win 6339 / linux 864），87 版本。
 7. **遗留**：Web UI 仍无按 session 深链，Incident 成功后只聚焦主窗口；临时 home 无模型时侧栏
    新会话可见性未复验；「插件市场随包默认开启 / 扩展菜单压缩 / 流行插件推荐」未纳入本版。
+
+## 102. 发布 v0.2.1-rc.2.shell.9（修复 shell.8 小鲸鱼层级/点击穿透/伴窗尺寸，2026-10-25）
+
+1. **现场问题**：用户在 shell.8 看到右下角小鲸鱼被页面盖住、点击穿透到下面的页面、伴窗与主窗口
+   尺寸不一致。根因：shell.8 为不遮挡「桌面工具」入口，把 `.dshwv-root` 压到 `z-index: 1`；Harness
+   应用根是层叠上下文，压低后小鲸鱼落到页面之后；同时伴窗适配页把 `--dshw-scale` 写死 1.6，
+   覆盖了用户保存的 0.6。
+2. **修复**：恢复 `.dshwv-root` 的 body 层级（9999），不再靠压低层级；改为在 Harness 弹窗
+   （`body:has([role="dialog"])`）和桌面工具面板（`[data-dsh-desktop-controls-panel]`）打开时隐藏
+   小鲸鱼。删除伴窗的 `--dshw-scale:1.6!important`，主窗口与伴窗都读 `.dshw-size.json`。
+3. **回归覆盖**：内置鲸鱼 E2E 新增：主窗口层级必须 9999、缩放必须等于保存值（0.6）、真实点击
+   `.dshwv-img` 能打开菜单、打开设置时小鲸鱼隐藏、伴窗缩放同为 0.6。
+4. **本地门禁**：`pnpm verify` 通过；537 单测；`dist:dir` 后 packaged smoke 与 Harness-UI smoke OK；
+   内置鲸鱼 3/3、通用伴窗 2/2、UI review 4/4、垃圾桶 UI、LAN 等通过。
+5. **发布**：tag `v0.2.1-rc.2.shell.9` → `9cd832f54ba67ffbc3c832e650639f1e04f87922`；Release run
+   `40150353198` verify + 四平台 build + publish 全绿；GitHub Release 10 文件、`prerelease=false`。
+6. **GitCode 镜像**：上传 amd64 `.sha256` 种子、`create --status unset` 建对象；随后 8 个稳定下载
+   URL 全部可匿名访问（`--check-only` 8/8），arm64 dmg 全量回读 291,466,344 字节，SHA-256
+   `8e83f83e96f8fd710b7211dceef315ccf2d30ab82f336148185c2bef4bcc7235` 与 GitHub `.sha256` 一致。
+   本轮本机代理离线，直连 GitHub 约 28 KB/s；用 `ghproxy.net` 并行下载后脚本判定「已全部可用」，
+   未重复上传。
+7. **官网数据**：site-refresh bot `6193e48` 已生成 `v0.2.1-rc.2.shell.9`、八资产 `gitcode_ok=true`；
+   统计 8121（mac 890 / win 6357 / linux 874），88 版本。本机 `gen-site-data` 因直连 GitHub 超时
+   未重跑，沿用 bot 数据（tag 与 8/8 已核对）。
+8. **提醒**：用户当前安装的是 shell.8，需退出后安装 shell.9 才能看到修复；不要覆盖运行中的 app。
