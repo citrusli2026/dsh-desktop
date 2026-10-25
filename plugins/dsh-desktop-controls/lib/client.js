@@ -32,10 +32,12 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-settings] button,
       [data-dsh-trash-section] button,
       [data-dsh-desktop-settings] input { font: inherit; }
-      /* The whale's decorative layer is body-level (z-index 9999); keep it
-         under the Harness overlay layer that hosts this panel so shell controls
-         stay clickable when both sit in the same corner. */
-      .dshwv-root { z-index: 1 !important; }
+      /* The whale is body-level above the app root. Lowering its z-index hides
+         it behind the page (the app root is a stacking context) and lets clicks
+         pass through, so never do that; instead hide it while a Harness dialog
+         or this panel is open, which are the only surfaces it can block. */
+      body:has([role="dialog"]) .dshwv-root,
+      body:has([data-dsh-desktop-controls-panel]) .dshwv-root { display: none !important; }
       [data-dsh-desktop-controls] [data-dsh-controls-trigger] {
         align-items: center;
         background: color-mix(in srgb, var(--dsh-controls-panel) 92%, transparent);

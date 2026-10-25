@@ -19,6 +19,7 @@ async function launch(options: { whale?: boolean; safeMode?: boolean }) {
   await mkdir(home, { recursive: true })
   await mkdir(userData, { recursive: true })
   await writeFile(join(home, 'settings.yaml'), 'locale:\n  preference: zh\nui-theme:\n  preference: light\n')
+  await writeFile(join(home, '.dshw-size.json'), JSON.stringify({ scale: 0.6, sound: false }))
   const preferences: Record<string, unknown> = { closeToTrayExplained: true, firstRunGuideDismissed: true }
   if (options.whale !== undefined) preferences.whaleWidgetEnabled = options.whale
   if (options.safeMode === true) preferences.safeMode = true
@@ -43,7 +44,20 @@ test.describe('built-in whale widget', () => {
       await expect.poll(() => page.locator('[data-dsh-desktop-controls]').count(), { timeout: 180_000 }).toBe(1)
       // The vendored plugin is mounted from the app's own closure.
       await expect(page.locator('.dshwv-root')).toBeVisible({ timeout: 120_000 })
+      // The whale must stay above the app root (lowering z-index hides it and
+      // makes clicks pass through) and use the saved scale, not a fixed one.
+      expect(await page.locator('.dshwv-root').evaluate(el => getComputedStyle(el).zIndex)).toBe('9999')
+      expect(await page.locator('.dshwv-root').evaluate(el => getComputedStyle(el).getPropertyValue('--dshw-scale').trim())).toBe('0.6')
+      await page.locator('.dshwv-img').click()
+      await expect(page.locator('.dshwv-menu')).toBeVisible()
+      await page.keyboard.press('Escape')
       await page.screenshot({ path: info.outputPath('01-main-whale.png') })
+
+      // A Harness dialog must not be blocked by the body-level whale.
+      await page.getByRole('button', { name: /账号菜单|Account menu/ }).click()
+      await page.getByText(/^(设置|Settings)$/, { exact: true }).first().click()
+      await expect(page.locator('.dshwv-root')).toBeHidden()
+      await page.keyboard.press('Escape')
 
       const pending = app.waitForEvent('window', { predicate: win => win.url().includes('/__dsh-desktop/whale-pet'), timeout: 120_000 })
       await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.minimize())
@@ -51,6 +65,7 @@ test.describe('built-in whale widget', () => {
       await expect(pet.locator('.dshwv-root')).toBeVisible({ timeout: 60_000 })
       await expect(pet.locator('#dsh-companion-hide')).toBeVisible()
       expect(pet.url()).toContain('dshCompanion=1')
+      expect(await pet.locator('.dshwv-root').evaluate(el => getComputedStyle(el).getPropertyValue('--dshw-scale').trim())).toBe('0.6')
       await pet.screenshot({ path: info.outputPath('02-pet.png'), omitBackground: true })
 
       await pet.locator('#dsh-companion-hide').click()

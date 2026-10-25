@@ -146,7 +146,6 @@ const COMPANION_ADAPTER_HTML = `<!doctype html><html lang="zh-CN"><head><meta ch
 <style>
 html,body{margin:0;padding:0;background:transparent!important;overflow:hidden}
 #root{display:none!important}
-.dshwv-root{--dshw-scale:1.6!important}
 #dsh-companion-hide{position:fixed;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:0;padding:0 0 2px;background:rgba(32,49,112,.78);color:#fff;font-size:17px;line-height:1;cursor:pointer;z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:inherit}
 #dsh-companion-hide:hover{background:#203170}
 </style></head><body>
