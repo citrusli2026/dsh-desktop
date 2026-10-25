@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop Changelog","url":"https://dsh-desktop.com/en/changelog","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/en"},{"@type":"ListItem","position":2,"name":"Changelog","item":"https://dsh-desktop.com/en/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-25","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.9"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-25","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.10"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,14 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.10 <small>(kernel 0.2.1-rc.2)</small></h2>
+  <ul>
+    <li><strong>The desktop companion now has its own size</strong>: a slider under “Desktop settings → Extensions → Whale companion” (80–400 px, default 160) affects only the minimized companion; the in-window widget keeps its own saved scale, and re-minimizing applies it without a Harness restart. ADR 0047.</li>
+    <li><strong>Fix a plugin-toggle crash</strong> (upstream #268): Cordis re-runs <code>apply</code> before disposing, so the whale's exact routes hit <code>duplicate exact route</code> and the desktop restarted. The shell's host plugin now installs a reload-safe route guard before third-party plugins: re-registering the same path disposes the old route first. The vendored plugin stays unmodified. ADR 0048.</li>
+    <li><strong>Bump <code>@modelcontextprotocol/sdk</code> 1.31.0 → 1.32.0</strong> (#122), including the workspace security override and lockfile; the deployed closure reports <code>sdk=1.32.0</code> / <code>jose=6.2.13</code>.</li>
+    <li><strong>Release housekeeping</strong>: close the shell.8 failure issue #133 and the superseded PR #131.</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.9 <small>(kernel 0.2.1-rc.2)</small></h2>
   <ul>
     <li><strong>Fix the shell.8 whale regression</strong>: lowering <code>.dshwv-root</code> to <code>z-index: 1</code> put it behind the Harness app root (a stacking context), so it was clipped and clicks fell through to the page. Restored its body-level <code>z-index: 9999</code>; the whale is visible and clickable again.</li>
@@ -109,13 +117,6 @@
     <li><strong>Electron runtime upgraded to 44.9.1</strong>: the main process now runs <strong>Chromium 152.0.7977.167 / Node 24.22.0</strong> (the same Node 24 line as the bundled Harness at 24.21.0), taking upstream security and stability fixes. Shell features, UI and data directory are unchanged, so the installer upgrades in place.</li>
     <li><strong>Test toolchain moved to Playwright 1.64.1</strong>: end-to-end and packaged regression stay on the current driver; this build still passes the 24 packaged cases and the four-runner visual gate.</li>
     <li><strong>Boundary note</strong>: the kernel stays <code>0.2.1-rc.2</code> and the signing/notarization boundary is unchanged; the desktop-tools panel's star entry only opens the repository page with <code>?ref=app-panel</code> attribution and sends no telemetry.</li>
-  </ul>
-
-  <h2>v0.2.1-rc.2.shell.2 <small>(kernel 0.2.1-rc.2)</small></h2>
-  <ul>
-    <li><strong>The panel's INFO group is now part of the four-runner visual gate</strong>: the desktop-tools panel's INFO group (About + Star on GitHub) is screenshotted and asserted on macOS, Windows, Linux x64 and Linux arm64, and the surface contract grows from 21 to 22 — a platform that fails to render it fails the build, so the panel's only persistent product entry can no longer regress silently.</li>
-    <li><strong>No behaviour change</strong>: the kernel stays <code>0.2.1-rc.2</code> and only the shell revision advances; the Star entry has shipped since <code>.shell.1</code>, this build adds no feature and behaves exactly like the previous one.</li>
-    <li><strong>Boundary note</strong>: the star entry only opens the repository page with <code>?ref=app-panel</code> attribution and sends no telemetry; the signing/notarization boundary is unchanged.</li>
   </ul>
   <!-- changelog:auto:end -->
 

@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop 更新日志","url":"https://dsh-desktop.com/changelog","inLanguage":"zh-CN","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/"},{"@type":"ListItem","position":2,"name":"更新日志","item":"https://dsh-desktop.com/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-25","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.9"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-25","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.10"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.10 <small>（内核 0.2.1-rc.2）</small></h2>
+  <ul>
+    <li><strong>小鲸鱼桌面伴窗大小可单独配置</strong>：设置 → 扩展 → 小鲸鱼桌宠新增「桌面伴窗大小」滑杆 （80–400 px，默认 160）。它<strong>只影响最小化后的桌面伴窗</strong>，主窗口仍使用插件自己保存的缩放； 重新最小化即生效，不需要重启 Harness。此前伴窗按视口公式取到 122 px 下限、又硬编码 1.6 倍， 与主窗口差距很大。ADR 0047。</li>
+    <li><strong>修复插件切换触发小鲸鱼重复路由、桌面端重启</strong>（上游 #268）：内核会在销毁上一次执行前重新运行 插件的 <code>apply</code>，小鲸鱼的精确路由第二次注册就会命中 <code>webserver: duplicate exact route &quot;/dsh-whale/image.png&quot;</code>。壳的宿主插件现在先于第三方安装一层 热重载安全的路由守卫：同一路径再次注册时先释放旧路由再注册新路由，不再抛错。插件代码仍未修改。 ADR 0048。</li>
+    <li><strong>升级 <code>@modelcontextprotocol/sdk</code> 1.31.0 → 1.32.0</strong>（#122）：同步更新 <code>pnpm-workspace</code> 的 安全覆盖与锁文件，重新部署闭包后 <code>sdk=1.32.0</code>、<code>jose=6.2.13</code>，peer 审计通过。仅依赖框架修复， 无用户可见行为变化。</li>
+    <li><strong>发布流程</strong>：关闭 shell.8 失败自动单 #133 与已被通用伴窗取代的 PR #131；后续版本继续沿用 “失败单在成功发布后处理”的约定。</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.9 <small>（内核 0.2.1-rc.2）</small></h2>
   <ul>
     <li><strong>Fix the shell.8 whale regression</strong>: lowering <code>.dshwv-root</code> to <code>z-index: 1</code> put it behind the Harness app root (a stacking context), so it was clipped and clicks fell through to the page. Restored its body-level <code>z-index: 9999</code>; the whale is visible and clickable again.</li>
@@ -109,13 +117,6 @@
     <li><strong>Electron 运行时升级到 44.9.1</strong>：主进程随之到 <strong>Chromium 152.0.7977.167 / Node 24.22.0</strong>（与内置 Harness 的 Node 24.21.0 同一条 24 线），用于收上游的安全与稳定性修复。壳的功能、界面与数据目录不变，安装包可直接覆盖升级。</li>
     <li><strong>测试工具链到 Playwright 1.64.1</strong>：端到端与打包回归与最新驱动保持一致，本版仍跑通 24 项打包回归与四端视觉门禁。</li>
     <li><strong>边界说明</strong>：内核仍是 <code>0.2.1-rc.2</code>，签名/公证边界与上一版一致；桌面工具面板的 Star 入口只打开仓库页面 （带 <code>?ref=app-panel</code> 归因），不发送任何遥测。</li>
-  </ul>
-
-  <h2>v0.2.1-rc.2.shell.2 <small>（内核 0.2.1-rc.2）</small></h2>
-  <ul>
-    <li><strong>面板信息组进入四端视觉门禁</strong>：桌面工具面板的「信息」组（关于 + 在 GitHub 上 Star）现在由 macOS、Windows、Linux x64、Linux arm64 四个 runner 各产出一张截图，并由门禁强制校验；扩展面契约 从 21 增至 22，任一平台缺少该画面即失败。这样面板里唯一的常驻产品入口不会再被静默改坏。</li>
-    <li><strong>应用行为无变化</strong>：内核仍是 <code>0.2.1-rc.2</code>，本版只推进壳修订号；Star 入口自 <code>.shell.1</code> 起已在面板中， 本版不新增功能，安装包行为与上一版一致。</li>
-    <li><strong>边界说明</strong>：Star 入口只打开仓库页面（带 <code>?ref=app-panel</code> 归因），不发送任何遥测；签名与公证边界不变。</li>
   </ul>
   <!-- changelog:auto:end -->
 
