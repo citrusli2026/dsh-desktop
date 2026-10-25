@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { defineTool } from "@deepseek-ai/dsh-tools";
 import { startIncidentServer } from "./incident-host.js";
+import { installRouteGuard } from "./route-guard.js";
 import { startSessionTrashServer } from "./trash-host.js";
 
 const CAPTURE_FALLBACKS_LINUX = [
@@ -203,6 +204,17 @@ export function registerCompanionAdapter(ctx) {
 }
 
 export function apply(ctx) {
+  // Install the reload-safe route wrapper before any third-party plugin applies
+  // (this patch runs first), so a fiber reload cannot hit duplicate routes.
+  try {
+    ctx.inject(["webServer"], (hostCtx) => {
+      try { installRouteGuard(hostCtx.webServer); } catch (error) {
+        console.warn(`dsh-desktop-controls: route guard injection failed: ${String(error)}`);
+      }
+    });
+  } catch (error) {
+    console.warn(`dsh-desktop-controls: route guard inject failed: ${String(error)}`);
+  }
   // Served for every profile so a recognised plugin needs no code change; the
   // page is only opened by the shell's companion controller. The web server is
   // an optional service, so wait for it locally instead of reading ctx.webServer

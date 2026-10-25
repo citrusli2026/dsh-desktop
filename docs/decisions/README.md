@@ -52,3 +52,4 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0045 | Reinstalling the plugin market leaves it enabled / 重装插件市场时保持已启用 | [EN](0045-market-reinstall-enables.md) · [中文](0045-market-reinstall-enables.zh.md) | Accepted / 已接受 |
 | 0046 | Failure incidents that open a triage session / 把失败变成可交给 AI 排查的故障事件 | [EN](0046-incident-ai-triage.md) · [中文](0046-incident-ai-triage.zh.md) | Accepted / 已接受 |
 | 0047 | The desktop companion has its own size / 桌面伴窗使用独立大小 | [EN](0047-companion-size.md) · [中文](0047-companion-size.zh.md) | Accepted / 已接受 |
+| 0048 | Reload-safe webserver route registration / 热重载安全的 webserver 路由注册 | [EN](0048-reload-safe-routes.md) · [中文](0048-reload-safe-routes.zh.md) | Accepted / 已接受 |

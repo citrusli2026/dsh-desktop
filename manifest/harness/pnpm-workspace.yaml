@@ -350,11 +350,11 @@ minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-workspace-changes@0.2.1-rc.2'
 overrides:
   # GHSA-6qxp-vccf-f47h / GHSA-vc2v-76pw-4v95: in-range security repairs.
-  '@modelcontextprotocol/sdk': 1.31.0
+  '@modelcontextprotocol/sdk': 1.32.0
   # Preserve the reviewed #99 transitives; the SDK repair needs no web-stack refresh.
-  '@modelcontextprotocol/sdk@1.31.0>@hono/node-server': 2.1.3
-  '@modelcontextprotocol/sdk@1.31.0>express': 5.2.1
-  '@modelcontextprotocol/sdk@1.31.0>jose': 6.2.12
+  '@modelcontextprotocol/sdk@1.32.0>@hono/node-server': 2.1.3
+  '@modelcontextprotocol/sdk@1.32.0>express': 5.2.1
+  '@modelcontextprotocol/sdk@1.32.0>jose': 6.2.13
   compression: 1.8.2
   # GHSA-ch52-4w7c-c8xp: shared downstream repair; see vendor source.
   'fast-uri@^3.0.0': 3.1.8

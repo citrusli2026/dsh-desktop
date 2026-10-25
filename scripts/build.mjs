@@ -63,7 +63,7 @@ await build({
 // Keep the hand-maintained client/Host plugin and its shared filesystem code
 // in the deployed closure in sync without reinstalling or upgrading packages.
 const controlsTarget = resolve('resources/harness/node_modules/dsh-desktop-controls')
-for (const relative of ['package.json', 'cordis.patch.yml', 'lib/index.js', 'lib/client.js', 'lib/incident-host.js']) {
+for (const relative of ['package.json', 'cordis.patch.yml', 'lib/index.js', 'lib/client.js', 'lib/incident-host.js', 'lib/route-guard.js']) {
   const source = join('plugins/dsh-desktop-controls', relative)
   const target = join(controlsTarget, relative)
   if (!existsSync(target) || !readFileSync(source).equals(readFileSync(target))) {
