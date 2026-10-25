@@ -127,6 +127,7 @@ const windowContext: WindowContext = {
   quitInProgress: false,
   getLocale: () => currentLocale,
   getDshHome: () => desktopDshHome(),
+  getCompanionSize: () => desktopPreferencesController?.snapshot.whaleCompanionSize ?? 160,
   onVisibilityChanged: refreshTray,
   onShowAbout: () => { void showAboutDialog(currentLocale, aboutMaintenance()) },
   lan: {
@@ -1391,6 +1392,7 @@ ipcMain.handle('desktop:preferences:update', (event, patch: unknown) => {
   if (typeof candidate.agentDeletionInterception === 'boolean') update.agentDeletionInterception = candidate.agentDeletionInterception
   if (typeof candidate.firstRunGuideDismissed === 'boolean') update.firstRunGuideDismissed = candidate.firstRunGuideDismissed
   if (typeof candidate.whaleWidgetEnabled === 'boolean') update.whaleWidgetEnabled = candidate.whaleWidgetEnabled
+  if (typeof candidate.whaleCompanionSize === 'number') update.whaleCompanionSize = candidate.whaleCompanionSize
   if (Array.isArray(candidate.lanListenAddresses)) {
     const addresses = candidate.lanListenAddresses.filter((value): value is string => typeof value === 'string' && isPrivateLanIPv4(value))
     update.lanListenAddresses = addresses

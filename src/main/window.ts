@@ -54,6 +54,8 @@ export interface WindowContext {
   onShowAbout?(): void
   /** DSH_HOME used for read-only plugin companion discovery (ADR 0043). */
   getDshHome(): string
+  /** Companion whale size in CSS pixels (ADR 0047); omitted in tests. */
+  getCompanionSize?(): number
 }
 
 const windowStateFile = new ConfigFile<unknown>(

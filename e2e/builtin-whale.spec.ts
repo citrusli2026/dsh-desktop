@@ -20,7 +20,7 @@ async function launch(options: { whale?: boolean; safeMode?: boolean }) {
   await mkdir(userData, { recursive: true })
   await writeFile(join(home, 'settings.yaml'), 'locale:\n  preference: zh\nui-theme:\n  preference: light\n')
   await writeFile(join(home, '.dshw-size.json'), JSON.stringify({ scale: 0.6, sound: false }))
-  const preferences: Record<string, unknown> = { closeToTrayExplained: true, firstRunGuideDismissed: true }
+  const preferences: Record<string, unknown> = { closeToTrayExplained: true, firstRunGuideDismissed: true, whaleCompanionSize: 220 }
   if (options.whale !== undefined) preferences.whaleWidgetEnabled = options.whale
   if (options.safeMode === true) preferences.safeMode = true
   await writeFile(join(userData, 'shell-preferences.json'), JSON.stringify(preferences) + '\n')
@@ -64,8 +64,11 @@ test.describe('built-in whale widget', () => {
       const pet = await pending
       await expect(pet.locator('.dshwv-root')).toBeVisible({ timeout: 60_000 })
       await expect(pet.locator('#dsh-companion-hide')).toBeVisible()
+      // The companion size is its own preference, not the main window's scale.
+      const companionWidth = await pet.locator('.dshwv-root').evaluate(el => Math.round(el.getBoundingClientRect().width))
+      expect(companionWidth).toBe(220)
       expect(pet.url()).toContain('dshCompanion=1')
-      expect(await pet.locator('.dshwv-root').evaluate(el => getComputedStyle(el).getPropertyValue('--dshw-scale').trim())).toBe('0.6')
+      expect(await pet.locator('.dshwv-root').evaluate(el => getComputedStyle(el).getPropertyValue('--dshw-base').trim())).toBe('220px')
       await pet.screenshot({ path: info.outputPath('02-pet.png'), omitBackground: true })
 
       await pet.locator('#dsh-companion-hide').click()

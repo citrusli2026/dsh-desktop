@@ -123,6 +123,7 @@ WHALE_PLUGIN_DIR=/path/to/prepared/dsh-whale-widget node scripts/whale-clickthro
 声明优先。
 
 - 默认开启；「桌面设置 → 扩展 → 小鲸鱼桌宠」可关闭，切换后点「立即重启」；
+- 桌面伴窗大小独立配置（80–400 px，默认 160），只影响最小化后的伴窗，主窗口保持插件自己的缩放；
 - 关闭后不再挂载，插件与伴窗都从列表消失；
 - Safe Mode 下不会挂载（与第三方插件隔离一致）；
 - 设置页写明原作者 MeteorNOX 并链接上游项目；

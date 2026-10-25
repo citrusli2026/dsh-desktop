@@ -153,6 +153,15 @@ html,body{margin:0;padding:0;background:transparent!important;overflow:hidden}
 <button id="dsh-companion-hide" type="button" title="收起小鲸鱼并打开 DSH" aria-label="收起小鲸鱼并打开 DSH">\u2212</button>
 <script>
 (function () {
+  // The shell passes the independently configured desktop size (px); pin both
+  // vars so the companion no longer inherits the main window's viewport-based
+  // base or the widget's saved scale.
+  var requested = parseInt(new URLSearchParams(location.search).get("dshCompanionSize"), 10);
+  var size = Math.min(400, Math.max(80, isFinite(requested) ? requested : 160));
+  var fit = Math.max(80, Math.min(size, Math.max(80, window.innerWidth - 16), Math.max(80, window.innerHeight - 16)));
+  var sizing = document.createElement("style");
+  sizing.textContent = ".dshwv-root{--dshw-scale:1!important;--dshw-base:" + fit + "px!important}";
+  document.head.appendChild(sizing);
   var bridge = window.dshCompanion;
   function interactive(on) { try { if (bridge && bridge.setInteractive) bridge.setInteractive(!!on); } catch (e) {} }
   var hit = null;

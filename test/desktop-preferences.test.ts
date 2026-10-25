@@ -15,6 +15,7 @@ function createStore(initial: Partial<DesktopPreferences> = {}): ShellPreference
     firstRunGuideDismissed: false,
     firstTaskCompleted: false,
     whaleWidgetEnabled: false,
+    whaleCompanionSize: 160,
     ...initial,
   }
   return {

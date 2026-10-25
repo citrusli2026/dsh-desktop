@@ -68,6 +68,7 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       firstRunGuideDismissed: false,
       firstTaskCompleted: false,
       whaleWidgetEnabled: true,
+      whaleCompanionSize: 160,
     })
     store.updateDesktopPreferences({ shortcut: 'Ctrl+Alt+K', launchAtLogin: true, launchHidden: true, notificationsEnabled: false })
     assert.deepEqual(store.getDesktopPreferences(), {
@@ -81,6 +82,7 @@ test('desktop preferences use safe defaults and preserve unrelated keys', async 
       firstRunGuideDismissed: false,
       firstTaskCompleted: false,
       whaleWidgetEnabled: true,
+      whaleCompanionSize: 160,
     })
     const raw = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>
     assert.equal(raw.closeToTrayExplained, undefined)
@@ -139,6 +141,25 @@ test('a preferences file without the whale key keeps it enabled', async () => {
   try {
     await writeFile(path, '{"closeToTrayExplained":true}\n')
     assert.equal(createShellPreferences(path).getDesktopPreferences().whaleWidgetEnabled, true)
+  } finally {
+    await rm(join(path, '..'), { recursive: true, force: true })
+  }
+})
+
+
+test('the desktop companion size is independent and bounded', async () => {
+  const path = await tempPath()
+  try {
+    const store = createShellPreferences(path)
+    assert.equal(store.getDesktopPreferences().whaleCompanionSize, 160)
+    store.updateDesktopPreferences({ whaleCompanionSize: 220 })
+    assert.equal(createShellPreferences(path).getDesktopPreferences().whaleCompanionSize, 220)
+    store.updateDesktopPreferences({ whaleCompanionSize: 40 })
+    assert.equal(store.getDesktopPreferences().whaleCompanionSize, 80)
+    store.updateDesktopPreferences({ whaleCompanionSize: 9_999 })
+    assert.equal(store.getDesktopPreferences().whaleCompanionSize, 400)
+    const raw = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>
+    assert.equal(raw.whaleCompanionSize, 400)
   } finally {
     await rm(join(path, '..'), { recursive: true, force: true })
   }

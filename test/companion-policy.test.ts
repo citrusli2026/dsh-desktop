@@ -58,6 +58,13 @@ test('companion placement stays inside the work area and cascades', () => {
   assert.deepEqual(placed, { x: 100, y: 100 })
 })
 
+test('extra companion params survive URL construction', () => {
+  const url = companionUrl('http://127.0.0.1:1234/?token=abc', '/__dsh-desktop/whale-pet', { dshCompanionSize: '220' })
+  assert.ok(url?.includes('dshCompanionSize=220'))
+  assert.ok(url?.includes('dshCompanion=1'))
+  assert.ok(url?.includes('token=abc'))
+})
+
 test('click-through is only offered where mouse moves are forwarded', () => {
   assert.equal(canForwardMouseMoves('darwin'), true)
   assert.equal(canForwardMouseMoves('win32'), true)

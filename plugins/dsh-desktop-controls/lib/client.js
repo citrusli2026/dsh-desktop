@@ -504,6 +504,7 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-settings] [data-dsh-desktop-record][disabled],
       [data-dsh-desktop-settings] [data-dsh-desktop-lan-target][disabled],
       [data-dsh-trash-section] [data-dsh-desktop-lan-target][disabled] { cursor: wait; opacity: .65; }
+      [data-dsh-desktop-settings] [data-dsh-whale-size-range] { accent-color: var(--dsw-alias-brand-primary, #4d6bfe); width: 140px; }
       [data-dsh-desktop-settings] [data-dsh-whale-hint] {
         align-items: center;
         color: var(--dsw-alias-label-secondary, #606878);
@@ -1059,6 +1060,7 @@ window.__ModuleLoader__.load({
         groupHabits: "桌面习惯", groupServices: "账户与插件", groupRecovery: "恢复", groupPlugins: "插件", groupOptional: "维护与迁移", groupExtensions: "扩展",
         whaleTitle: "小鲸鱼桌宠", whaleDetail: "内置社区插件 dsh-whale-widget：默认开启，右下角显示 DeepSeek 余额与今日已用；主窗口最小化后小鲸鱼仍留在桌面。原作者 MeteorNOX，问题请反馈给上游项目。",
         whaleRestartHint: "切换后需重启 Harness 生效。", whaleRestartNow: "立即重启", whaleAuthor: "打开原作者项目",
+        whaleSize: "桌面伴窗大小", whaleSizeDetail: "仅影响最小化后的桌面伴窗 · {size} px",
         connectTitle: "飞书消息连接", connectCopy: "从飞书发起 DSH 任务；Secret 只保存在本机主进程。", connectEnabled: "启用连接", connectAppId: "App ID", connectAppSecret: "App Secret", connectAppSecretPlaceholder: "留空以保留已保存的 Secret", connectWorkspace: "默认工作区", connectChoose: "选择", connectSave: "保存连接", connectStart: "启动", connectStop: "停止", connectRestart: "重连", connectStatus: "状态", connectDisabled: "未启用", connectStopped: "已停止", connectStarting: "启动中", connectReady: "已连接", connectDegraded: "连接不稳定", connectCrashed: "连接已崩溃", connectSecretStored: "Secret 已保存", connectSecretMissing: "尚未保存 Secret", connectProtected: "系统安全存储", connectFileFallback: "本机受限存储", connectSaved: "连接设置已保存。", connectInvalidWorkspace: "请选择存在的绝对工作区目录。", connectInvalid: "请填写 App ID 并选择工作区。", connectStorage: "设置或凭证保存失败，请重试。", connectUnavailable: "连接桥不可用；请使用系统托盘或重新打开桌面设置。", connectLastError: "最近错误",
         lanSettings: "连接移动设备", lanSettingsDetail: "手机与电脑连接同一局域网，扫码即可进入 Harness Web 界面。",
         connectSecretReentry: "请重新录入一次 App Secret；不会读取旧 macOS 钥匙串凭据。", connectFilePlaintext: "未加密文件",
@@ -1140,6 +1142,7 @@ window.__ModuleLoader__.load({
         groupHabits: "Desktop habits", groupServices: "Account & plugins", groupRecovery: "Recovery", groupPlugins: "Plugins", groupOptional: "Maintenance & migration", groupExtensions: "Extensions",
         whaleTitle: "Whale companion", whaleDetail: "Built-in community plugin dsh-whale-widget: on by default, shows DeepSeek balance and today's spend in the corner, and keeps the whale on the desktop while the main window is minimized. Created by MeteorNOX; please report issues to the upstream project.",
         whaleRestartHint: "Restart Harness to apply the change.", whaleRestartNow: "Restart now", whaleAuthor: "Open the upstream project",
+        whaleSize: "Desktop companion size", whaleSizeDetail: "Only the companion after minimizing · {size} px",
         connectTitle: "Feishu message connection", connectCopy: "Start DSH tasks from Feishu. The Secret stays in the local main process.", connectEnabled: "Enable connection", connectAppId: "App ID", connectAppSecret: "App Secret", connectAppSecretPlaceholder: "Leave blank to keep the saved Secret", connectWorkspace: "Default workspace", connectChoose: "Choose", connectSave: "Save connection", connectStart: "Start", connectStop: "Stop", connectRestart: "Reconnect", connectStatus: "Status", connectDisabled: "Disabled", connectStopped: "Stopped", connectStarting: "Starting", connectReady: "Connected", connectDegraded: "Unstable", connectCrashed: "Crashed", connectSecretStored: "Secret saved", connectSecretMissing: "Secret not saved", connectProtected: "System secure storage", connectFileFallback: "Protected local file", connectSaved: "Connection settings saved.", connectInvalidWorkspace: "Choose an existing absolute workspace directory.", connectInvalid: "Enter an App ID and choose a workspace.", connectStorage: "Settings or credential storage failed; retry.", connectUnavailable: "The connection bridge is unavailable; use the system tray or reopen Desktop settings.", connectLastError: "Last error",
         lanSettings: "Connect a mobile device", lanSettingsDetail: "Same LAN as the computer; scan the QR code to enter the Harness Web UI.",
         connectSecretReentry: "Re-enter App Secret once. The old macOS keychain credential will not be accessed.", connectFilePlaintext: "unencrypted file",
@@ -2017,6 +2020,10 @@ window.__ModuleLoader__.load({
             react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, "data-dsh-whale-toggle": true, children: [
               react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.whaleTitle, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.whaleDetail })] }),
               react_jsx_runtime.jsx("input", { "data-dsh-desktop-checkbox": true, type: "checkbox", checked: preferences.whaleWidgetEnabled === true, onChange: (event) => void update({ whaleWidgetEnabled: event.target.checked }) }),
+            ] }),
+            react_jsx_runtime.jsxs("label", { "data-dsh-desktop-setting-row": true, "data-dsh-whale-size": true, children: [
+              react_jsx_runtime.jsxs("span", { "data-dsh-desktop-setting-label": true, children: [copy.whaleSize, react_jsx_runtime.jsx("small", { "data-dsh-desktop-setting-detail": true, children: copy.whaleSizeDetail.replace("{size}", String(preferences.whaleCompanionSize ?? 160)) })] }),
+              react_jsx_runtime.jsx("input", { "data-dsh-whale-size-range": true, type: "range", min: "80", max: "400", step: "10", value: preferences.whaleCompanionSize ?? 160, onChange: (event) => void update({ whaleCompanionSize: Number(event.target.value) }) }),
             ] }),
             react_jsx_runtime.jsxs("p", { "data-dsh-whale-hint": true, children: [
               copy.whaleRestartHint,

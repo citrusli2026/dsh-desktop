@@ -73,7 +73,7 @@ export function parseCompanionDescriptor(id: string, raw: unknown): CompanionDes
  * Harness is accepted; the path comes from the declaration, never from the
  * page, and only the login token is forwarded.
  */
-export function companionUrl(base: string | undefined, route: string): string | undefined {
+export function companionUrl(base: string | undefined, route: string, extraParams?: Record<string, string>): string | undefined {
   if (!isCompanionRoute(route) || base === undefined) return undefined
   try {
     const source = new URL(base)
@@ -83,6 +83,7 @@ export function companionUrl(base: string | undefined, route: string): string | 
     const token = source.searchParams.get('token')
     if (token !== null) target.searchParams.set('token', token)
     target.searchParams.set('dshCompanion', '1')
+    for (const [key, value] of Object.entries(extraParams ?? {})) target.searchParams.set(key, value)
     return target.href
   } catch {
     return undefined

@@ -1,5 +1,6 @@
 /** Shell-owned desktop preferences and their native side effects. */
 import type { ShellPreferencesStore, DesktopPreferences } from './shell-preferences.ts'
+import { normalizeCompanionSize } from './shell-preferences.ts'
 import {
   DESKTOP_SUMMON_ACCELERATOR,
   desktopShortcutLabel,
@@ -157,6 +158,9 @@ export class DesktopPreferencesController {
     // reads the preference on the next spawn.
     if (patch.whaleWidgetEnabled !== undefined) {
       this.current = this.store.updateDesktopPreferences({ whaleWidgetEnabled: patch.whaleWidgetEnabled })
+    }
+    if (patch.whaleCompanionSize !== undefined) {
+      this.current = this.store.updateDesktopPreferences({ whaleCompanionSize: normalizeCompanionSize(patch.whaleCompanionSize) })
     }
     return { ok: true, preferences: this.snapshot }
   }

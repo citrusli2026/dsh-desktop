@@ -27,6 +27,9 @@ export interface DesktopPreferences {
   lanListenAddresses?: string[]
   /** Built-in third-party whale widget (ADR 0044): on by default, opt-out. */
   whaleWidgetEnabled: boolean
+  /** Desktop companion (minimized) whale size in CSS pixels; the main-window
+   *  widget keeps its own saved scale (ADR 0044/0047). */
+  whaleCompanionSize: number
 }
 
 interface ShellPreferences {
@@ -45,6 +48,8 @@ interface ShellPreferences {
   lanListenAddresses?: string[]
   /** Built-in whale widget (ADR 0044). Absent = on (opt-out). */
   whaleWidgetEnabled?: boolean
+  /** Companion size in CSS pixels; absent = the default 160. */
+  whaleCompanionSize?: number
 }
 
 export interface ShellPreferencesStore {
@@ -65,6 +70,13 @@ export const DEFAULT_DESKTOP_PREFERENCES: DesktopPreferences = {
   firstRunGuideDismissed: false,
   firstTaskCompleted: false,
   whaleWidgetEnabled: true,
+  whaleCompanionSize: 160,
+}
+
+/** 80–400 px, rounded; anything malformed falls back to the 160 px default. */
+export function normalizeCompanionSize(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return DEFAULT_DESKTOP_PREFERENCES.whaleCompanionSize
+  return Math.round(Math.min(400, Math.max(80, value)))
 }
 
 function desktopPreferencesOf(raw: ShellPreferences): DesktopPreferences {
@@ -79,6 +91,7 @@ function desktopPreferencesOf(raw: ShellPreferences): DesktopPreferences {
     firstRunGuideDismissed: raw.firstRunGuideDismissed === true,
     firstTaskCompleted: raw.firstTaskCompleted === true,
     whaleWidgetEnabled: raw.whaleWidgetEnabled !== false,
+    whaleCompanionSize: normalizeCompanionSize(raw.whaleCompanionSize),
     ...(Array.isArray(raw.lanListenAddresses)
       ? { lanListenAddresses: raw.lanListenAddresses.filter(value => typeof value === 'string') }
       : {}),
@@ -118,6 +131,7 @@ export function createShellPreferences(path: string): ShellPreferencesStore {
           firstRunGuideDismissed: next.firstRunGuideDismissed,
           firstTaskCompleted: next.firstTaskCompleted,
           whaleWidgetEnabled: next.whaleWidgetEnabled,
+          whaleCompanionSize: normalizeCompanionSize(next.whaleCompanionSize),
           lanListenAddresses: next.lanListenAddresses,
         }
       })

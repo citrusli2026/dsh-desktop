@@ -7,6 +7,7 @@
  */
 import { app, BrowserWindow, ipcMain, screen, type IpcMainInvokeEvent, type Rectangle, type Session } from 'electron'
 import { join } from 'node:path'
+import { COMPANION_ADAPTER_ROUTE } from './companion-compat.ts'
 import {
   canForwardMouseMoves,
   companionPosition,
@@ -155,7 +156,11 @@ export async function showCompanion(id: string, options: { onlyIfMinimized?: boo
   const descriptors = await discoverCompanions(current.context.getDshHome())
   const descriptor = descriptors.find(item => item.id === id)
   if (descriptor === undefined) return false
-  const url = companionUrl(current.context.harnessUrl, descriptor.route)
+  // Only the shell-owned adapter understands the size hint; a plugin's own
+  // companion page keeps its own layout untouched.
+  const size = current.context.getCompanionSize?.()
+  const url = companionUrl(current.context.harnessUrl, descriptor.route,
+    descriptor.route === COMPANION_ADAPTER_ROUTE && size !== undefined ? { dshCompanionSize: String(size) } : undefined)
   if (url === undefined) return false
   let entry = entries.get(id)
   if (entry === undefined) {

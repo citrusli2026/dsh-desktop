@@ -51,3 +51,4 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0044 | Ship the whale widget as an optional built-in plugin / 把鲸鱼挂件作为可选的内置插件 | [EN](0044-builtin-whale-widget.md) · [中文](0044-builtin-whale-widget.zh.md) | Accepted / 已接受 |
 | 0045 | Reinstalling the plugin market leaves it enabled / 重装插件市场时保持已启用 | [EN](0045-market-reinstall-enables.md) · [中文](0045-market-reinstall-enables.zh.md) | Accepted / 已接受 |
 | 0046 | Failure incidents that open a triage session / 把失败变成可交给 AI 排查的故障事件 | [EN](0046-incident-ai-triage.md) · [中文](0046-incident-ai-triage.zh.md) | Accepted / 已接受 |
+| 0047 | The desktop companion has its own size / 桌面伴窗使用独立大小 | [EN](0047-companion-size.md) · [中文](0047-companion-size.zh.md) | Accepted / 已接受 |
