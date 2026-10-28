@@ -1,7 +1,7 @@
 # 0014:渲染层权限默认拒绝
 
 - 日期:2026-08-15
-- 状态:已接受
+- 状态:已接受;由 [0049](0049-clipboard-write-allowlist.zh.md) 修订(剪贴板写入白名单)
 - English: [0014](0014-deny-renderer-permissions-by-default.md)
 
 ## 背景

@@ -610,6 +610,23 @@ shellTest('diagnostic export writes the report to the chosen path', async ({ ele
   expect(text).toContain(version)
 })
 
+shellTest('the chat copy buttons can write the clipboard (decision 0049)', async ({ window }) => {
+  // The session boundary denies every web permission except its allowlist. If
+  // clipboard-sanitized-write drops out of it, navigator.clipboard.writeText
+  // rejects with NotAllowedError and every copy button in the chat (message row,
+  // code-block header) silently does nothing — the shipped shell.10 defect.
+  const outcome = await window.evaluate(async () => {
+    try {
+      await navigator.clipboard.writeText('dsh-desktop copy probe')
+      return 'ok'
+    } catch (error) {
+      const failure = error as Error
+      return `rejected: ${failure.name}: ${failure.message}`
+    }
+  })
+  expect(outcome).toBe('ok')
+})
+
 shellTest('portable preset import lands a user preset under the user preset root', async ({ electronApp, window, dshHome }) => {
   await packagedOrStubHeadline(window)
   const presetFile = join(dshHome, 'team.dshpreset')

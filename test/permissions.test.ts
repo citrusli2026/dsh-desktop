@@ -4,27 +4,53 @@ import assert from 'node:assert/strict'
 import type { PermissionCheckHandlerHandlerDetails, PermissionRequest, Session, WebContents } from 'electron'
 import { denyUnexpectedPermissions } from '../src/main/permissions.ts'
 
-test('denies both permission checks and permission requests', () => {
-  const handlers: {
-    check?: NonNullable<Parameters<Session['setPermissionCheckHandler']>[0]>
-    request?: NonNullable<Parameters<Session['setPermissionRequestHandler']>[0]>
-  } = {}
+type CheckHandler = NonNullable<Parameters<Session['setPermissionCheckHandler']>[0]>
+type RequestHandler = NonNullable<Parameters<Session['setPermissionRequestHandler']>[0]>
+type Permission = Parameters<CheckHandler>[1]
+
+function installed () {
+  const handlers: { check?: CheckHandler; request?: RequestHandler } = {}
   const target = {
-    setPermissionCheckHandler(handler: Parameters<Session['setPermissionCheckHandler']>[0]) {
+    setPermissionCheckHandler (handler: CheckHandler | null) {
       if (handler !== null) handlers.check = handler
     },
-    setPermissionRequestHandler(handler: Parameters<Session['setPermissionRequestHandler']>[0]) {
+    setPermissionRequestHandler (handler: RequestHandler | null) {
       if (handler !== null) handlers.request = handler
     },
   }
 
   denyUnexpectedPermissions(target)
 
-  assert.ok(handlers.check)
-  assert.equal(handlers.check(null, 'geolocation', 'http://127.0.0.1', {} as PermissionCheckHandlerHandlerDetails), false)
+  const check = handlers.check
+  const request = handlers.request
+  assert.ok(check)
+  assert.ok(request)
 
-  let granted: boolean | undefined
-  assert.ok(handlers.request)
-  handlers.request({} as WebContents, 'media', value => { granted = value }, {} as PermissionRequest)
-  assert.equal(granted, false)
+  return {
+    check: (permission: Permission) => check(null, permission, 'http://127.0.0.1', {} as PermissionCheckHandlerHandlerDetails),
+    request: (permission: Permission) => {
+      let granted: boolean | undefined
+      request({} as WebContents, permission, value => { granted = value }, {} as PermissionRequest)
+      return granted
+    },
+  }
+}
+
+test('allows the clipboard write the Harness copy buttons need', () => {
+  const permissions = installed()
+
+  // A denied check here is what made every chat/code-block copy button inert
+  // (navigator.clipboard.writeText rejects with NotAllowedError).
+  assert.equal(permissions.check('clipboard-sanitized-write'), true)
+  assert.equal(permissions.request('clipboard-sanitized-write'), true)
+})
+
+test('denies clipboard reads and every other permission', () => {
+  const permissions = installed()
+
+  const denied: Permission[] = ['clipboard-read', 'media', 'geolocation', 'notifications', 'display-capture', 'openExternal']
+  for (const permission of denied) {
+    assert.equal(permissions.check(permission), false, `${permission} must not be checked in`)
+    assert.equal(permissions.request(permission), false, `${permission} must not be granted`)
+  }
 })

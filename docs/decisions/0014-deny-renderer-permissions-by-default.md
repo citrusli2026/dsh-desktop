@@ -1,7 +1,7 @@
 # 0014: Deny renderer permissions by default
 
 - Date: 2026-08-15
-- Status: accepted
+- Status: accepted; amended by [0049](0049-clipboard-write-allowlist.md) (clipboard write allowlist)
 - 中文: [0014](0014-deny-renderer-permissions-by-default.zh.md)
 
 ## Context

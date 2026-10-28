@@ -19,7 +19,7 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0011 | Shell UX polish: retry recovery, persisted window state, tray surface / 壳体验打磨:重试恢复、窗口状态持久化、托盘面 | [EN](0011-shell-ux-polish.md) · [中文](0011-shell-ux-polish.zh.md) | Accepted / 已接受 |
 | 0012 | Isolate the desktop data home by default / 桌面数据目录默认独立 | [EN](0012-isolated-dsh-home.md) · [中文](0012-isolated-dsh-home.zh.md) | Accepted / 已接受 |
 | 0013 | Product naming: app/artifacts are dsh-desktop, repo keeps dsh-electron-shell / 产品命名:应用与安装包用 dsh-desktop,仓库保持 dsh-electron-shell | [EN](0013-product-naming.md) · [中文](0013-product-naming.zh.md) | Superseded by 0022 / 已被 0022 取代 |
-| 0014 | Deny renderer permissions by default / 渲染层权限默认拒绝 | [EN](0014-deny-renderer-permissions-by-default.md) · [中文](0014-deny-renderer-permissions-by-default.zh.md) | Accepted / 已接受 |
+| 0014 | Deny renderer permissions by default / 渲染层权限默认拒绝 | [EN](0014-deny-renderer-permissions-by-default.md) · [中文](0014-deny-renderer-permissions-by-default.zh.md) | Amended by 0049 / 由 0049 修订 |
 | 0015 | Local-only diagnostics and bounded log retention / 本地诊断报告与有界日志保留 | [EN](0015-local-diagnostics-and-log-retention.md) · [中文](0015-local-diagnostics-and-log-retention.zh.md) | Accepted / 已接受 |
 | 0016 | Minimal dual-platform release surface / 最小双端发布面 | [EN](0016-minimal-dual-platform-release-surface.md) · [中文](0016-minimal-dual-platform-release-surface.zh.md) | Partially superseded by 0017 / 部分被 0017 取代 |
 | 0017 | Linux deb as the sole Linux release format / Linux 发布唯一格式 deb | [EN](0017-linux-deb-sole-format.md) · [中文](0017-linux-deb-sole-format.zh.md) | Accepted / 已接受 |
@@ -53,3 +53,4 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0046 | Failure incidents that open a triage session / 把失败变成可交给 AI 排查的故障事件 | [EN](0046-incident-ai-triage.md) · [中文](0046-incident-ai-triage.zh.md) | Accepted / 已接受 |
 | 0047 | The desktop companion has its own size / 桌面伴窗使用独立大小 | [EN](0047-companion-size.md) · [中文](0047-companion-size.zh.md) | Accepted / 已接受 |
 | 0048 | Reload-safe webserver route registration / 热重载安全的 webserver 路由注册 | [EN](0048-reload-safe-routes.md) · [中文](0048-reload-safe-routes.zh.md) | Accepted / 已接受 |
+| 0049 | Allow the clipboard write permission the Harness copy buttons need / 放行 Harness 复制按钮所需的剪贴板写入权限 | [EN](0049-clipboard-write-allowlist.md) · [中文](0049-clipboard-write-allowlist.zh.md) | Accepted / 已接受 |

@@ -14,7 +14,8 @@
 `dsh-desktop` 自带 Node 24.21.0 与完整 `@deepseek-ai/dsh` 依赖闭包，提供原生窗口、
 托盘、菜单、单实例、进程监督、更新与本地诊断，不改变 Agent 行为。默认使用
 `~/.dsh-desktop`，与 CLI 数据隔离；渲染器保持沙箱、上下文隔离、关闭 Node
-集成、限制导航并默认拒绝额外 Web 权限。
+集成、限制导航并默认拒绝额外 Web 权限，只放行聊天与代码框复制所需的
+剪贴板写入权限（0049）。
 
 原生菜单、托盘、窗口标题与通知的语言及主题由 `ShellLocaleController` 管理，优先
 读取 `profiles/web/cordis.patch.yml` 中 `locale`、`ui-theme` 的 `config.preference`；
@@ -61,7 +62,7 @@ src/main/market-install.ts  手动市场安装阶段、失败归因、安装后�
 src/main/safe-mode.ts       安全模式:用户 bundle 盘点、禁用覆盖层、失败签名检测
 src/main/restart-policy.ts  就绪协议、退避与重启预算纯函数
 src/main/window-state.ts    窗口几何校验纯函数
-src/main/permissions.ts     Electron 会话权限默认拒绝
+src/main/permissions.ts     Electron 会话权限默认拒绝 + 剪贴板写入白名单(0049)
 src/main/menu.ts            应用菜单、About、诊断入口
 src/main/pages.ts           有 CSP 的加载页与错误恢复页
 src/main/shell-preferences.ts  桌面偏好（兼容历史关闭提示字段）
