@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | `0.2.1-rc.2.shell.10`（伴窗独立大小、SDK 1.32、热重载安全路由，内核不变），GitHub 已交付（tag `996e8ca`），GitCode 镜像待网络恢复，见 §103 |
-| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.10`（10 资产，`prerelease=false`）；⏳ GitCode release 已建对象但仅 1/8（种子），镜像因网络限速暂停；`v0.2.1-rc.2.shell.9` 为上一版 |
-| 本地门禁 | ✅ `pnpm verify` 通过；540 单测；`dist:dir`（shell.10）后 packaged smoke、Harness-UI smoke 均 OK；内置鲸鱼 3/3（伴窗 220 px 独立断言）、通用伴窗 2/2、UI review 4/4、垃圾桶 UI、市场离线/真实、LAN 2/2 通过；见 §103 |
-| 核心发布 | ✅ Release `40190713795` / tag `996e8ca`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§103） |
-| 官网数据 | ⚠️ site-refresh 自动同步（bot `8c695a4`）：`v0.2.1-rc.2.shell.10`，但 `gitcode_ok=1/8`，镜像完成后需重新生成（§103） |
-| 国内镜像 | ⏳ GitCode release / tag `996e8ca` 已创建（仅 amd64 `.sha256` 种子，1/8）；网络限速/代理 501 导致 7 个资产未上传，需恢复后重跑 `mirror-gitcode-v2.mjs`（§103） |
-| 实时下载统计 | GitHub 安装快照 8242（mac 896 / Windows 6447 / Linux 899），89 版本（2026-10-25T13:02Z 生成）；两种统计不混用 |
+| 最新代码基线 | `0.2.1-rc.2.shell.11`（修复聊天页代码框「复制」失效 + CI/dsh-watch 修复，内核不变），GitHub 与 GitCode 均已交付（tag `17e4ab5`），见 §104 |
+| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.11`（10 资产，`prerelease=false`，`releases/latest` 已指向它）＋ GitCode release（八资产 8/8，amd64 deb 全量回读 SHA-256 `adf05ded…` 一致）；`v0.2.1-rc.2.shell.10` 为上一版（镜像仍未补齐，见 §103） |
+| 本地门禁 | ✅ `pnpm verify` 通过、本地另跑 `pnpm security:audit`（根与闭包）均 exit 0；544 单测；新增剪贴板 E2E 含反向验证；`dist:dir`（shell.11）后 packaged smoke、Harness-UI smoke、`DSH_E2E_PACKAGED=1` 复制断言均通过；LAN 2/2；见 §104 |
+| 核心发布 | ✅ Release `40711108274` / tag `17e4ab5`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§104）；主分支 CI `40711097495` 同时转绿 |
+| 官网数据 | ✅ 本地重新生成（`c2bf74d`，接替失败的 bot run `40717963690`）：`v0.2.1-rc.2.shell.11`、八资产 `gitcode_ok=true`、下载快照带 GitHub+GitCode 徽标（§104） |
+| 国内镜像 | ✅ GitCode release / tag `17e4ab5`；八资产匿名 Range GET 8/8；amd64 deb 全量 234,213,472 B，SHA-256 `adf05ded…` 与官方 `.sha256` 一致；`--status unset` 创建（§104） |
+| 实时下载统计 | GitHub 安装快照 9142（mac 985 / Windows 7083 / Linux 1074），90 版本（2026-10-28T16:09Z 生成）；两种统计不混用 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -3104,3 +3104,47 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    `node scripts/gen-site-data.mjs` 并推送。
 8. **提醒**：用户当前装的是 shell.9；安装 shell.10 后可在「设置 → 扩展 → 小鲸鱼桌宠」独立调
    伴窗大小。
+
+## 104. 发布 v0.2.1-rc.2.shell.11（修复聊天页复制失效 + CI/dsh-watch 修复，2026-10-28）
+
+1. **代码框「复制」无效（#134，ADR 0049）**：`src/main/permissions.ts` 按 ADR 0014 默认拒绝
+   渲染层全部权限，其中含 Chromium 写入前检查的 `clipboard-sanitized-write`；
+   `navigator.clipboard.writeText` 因此抛 `NotAllowedError: Write permission denied`，而上游客户端
+   只在异步 API 缺失时才回退 `execCommand`，表现为代码框右上角、消息行、路径/JSON 复制全部静默
+   失效（没内容、图标不变、无报错）。按 ADR 0014 的要求改为窄白名单：只放行该权限，
+   `clipboard-read`、`media`、`geolocation`、`notifications`、`display-capture`、`openExternal`
+   继续拒绝。方案核对：用壳自身的两个 handler 驱动 Electron 窗口，全拒时
+   `NotAllowedError: Write permission denied`，只放行写入时正常完成。
+2. **验收**：`pnpm run verify` 通过，本地另跑 `pnpm security:audit`（根与闭包）均 exit 0；544 单测；
+   新增 E2E「the chat copy buttons can write the clipboard (decision 0049)」在真实回环 Harness
+   页执行 `writeText`，反向验证（临时恢复全拒）立刻以同一 `NotAllowedError` 失败；
+   `dist:dir`（shell.11）后 packaged smoke、Harness-UI smoke 通过，`DSH_E2E_PACKAGED=1` 的同一
+   断言在打包内核界面通过；LAN 配对 2/2（CI 无私有网段）。
+3. **主分支 CI 每天变红**：`test/site-generators.test.ts` 无条件要求下载快照出现「GitCode」，
+   而该徽标取决于 site 实时数据（镜像未完成时 `gitcode_ok=false`，shell.10 正是如此）。
+   改为按数据断言并用 fixture 覆盖有/无镜像两种渲染；CI run `40711097495` 转绿。
+4. **dsh-watch 每日失败**：`scripts/version.mjs` 静态 import 了依赖 `yaml` 的 `kernel-patches.mjs`，
+   而工作流在 `pnpm install` 之前就运行 `version.mjs check`（裸检出），每天以
+   `ERR_MODULE_NOT_FOUND` 退出并被判成 registry outage，上游 `0.2.2-alpha.2` 因此漏报。改为
+   `bump dsh` 路径内惰性加载，新增裸检出回归测试（复现旧静态 import 的失败），工作流注明约束。
+5. **发布**：tag `v0.2.1-rc.2.shell.11` → `17e4ab5`（GitHub / GitCode peeled 一致）；Release run
+   `40711108274` verify + 四平台 build + publish 全绿；GitHub 10 资产、`prerelease=false`、
+   `/releases/latest` 指向该 tag。
+6. **GitCode 镜像（v2）**：先用 amd64 `.sha256` 种子 `create --status unset` 建对象，再
+   `mirror-gitcode-v2.mjs` 下载 8 资产（约 1.06 GB，GitHub 直连约 300–560 KB/s）、逐个 sha256
+   校验、上传并 PUT 链接 → `linked 8 asset(s) (1 old link replaced)`、`8/8 assets verified
+   anonymously`。全量回读 amd64 deb：234,213,472 B，SHA-256 `adf05ded5b02bf01eba122e2a76207a942204db498d338fa81fd5c21b12b2d46`
+   与官方 `.sha256` 一致。
+7. **官网数据**：release 完成触发的 site-refresh（`40717963690`）在 `gen-site-changelog` 失败——
+   发布说明中文 4 条、英文 5 条（多出的 Verification 条目），已把英文验证内容移到
+   `## Verification` 小节（`ea679fa`）并用修正后的内容更新 GitHub Release 正文（资产未动）。
+   本地重新生成时又发现 `gen-site-data.mjs` 的 GH_CLI/SOCKS 逃生路径用 `execFileSync` 阻塞事件
+   循环，把并发中的可用性探测（20 s AbortSignal）打断，导致大安装包被误记为未镜像（shell.10
+   的 1/8、本次首轮的 4/8）；改为异步 + 探测放到最后一阶段（`cedfdbe`）后同一版本报 8/8。
+   站点数据与下载快照已提交（`c2bf74d`）。
+8. **收尾**：发布前 0 个 open issue / 0 个 open PR，修复后新开 #134 并关闭；Dependabot
+   `undici` 安全更新任务失败（updater 容器 `update_files` 退出 1，仓库根无 undici 直接依赖；
+   本地根与 manifest `pnpm audit` 均 exit 0），仅记录不改依赖。上一轮 shell.10 的停滞镜像进程
+   （下载中、上传前置缺失）已终止以释放带宽。
+9. **提醒**：用户当前装的是 shell.8；macOS 为 check-only 更新（ADR 0010），需手动下载
+   `dsh-desktop-0.2.1-rc.2.shell.11-arm64-mac.dmg` 安装后才能看到复制修复；不要覆盖运行中的 app。
