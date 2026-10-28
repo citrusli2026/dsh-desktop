@@ -15,7 +15,12 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { compareSemver, isSemver, parseCompositeVersion } from './release-shape.mjs'
 import { fetchPublishedVersion, resolvedVersionsFromLockfile, syncKernelPeerPins } from './kernel-peers.mjs'
-import { syncKernelAccountPatch } from './kernel-patches.mjs'
+
+// kernel-patches.mjs imports `yaml` from node_modules, so it must not be a
+// static import: `check` runs on a bare checkout (dsh-watch does it before any
+// `pnpm install`) and a missing dependency there looks like a registry outage.
+// Load it only on the `bump dsh` path that actually rewrites the patch mapping.
+const loadKernelPatches = () => import('./kernel-patches.mjs')
 
 const ROOT = process.cwd()
 const PKG_PATH = join(ROOT, 'package.json')
@@ -132,6 +137,7 @@ async function main() {
     const dsh = target === 'latest' ? (await latestUpstream()).latest : target
     if (!isSemver(dsh)) fail(`not a semver: ${dsh}`)
     const previous = state.pinned
+    const { syncKernelAccountPatch } = await loadKernelPatches()
     if (await syncKernelAccountPatch(ROOT, previous, dsh)) console.log(`version: carried reviewed account patch to ${dsh}; pnpm must verify its context`)
     await writeState(dsh, 0)
     // The kernel ships as a family: sync every @deepseek-ai/dsh-* peer that

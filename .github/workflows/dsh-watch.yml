@@ -34,6 +34,9 @@ jobs:
         id: check
         # version.mjs check: exit 0 = up to date, 3 = update available,
         # anything else = real failure. Never fail the job here.
+        # This runs BEFORE `pnpm install`, so scripts/version.mjs must keep its
+        # node_modules imports lazy: a static `yaml` import here reported every
+        # daily run as a registry outage (ERR_MODULE_NOT_FOUND, Oct 2026).
         run: |
           set +e
           OUT=$(node scripts/version.mjs check 2>&1)
