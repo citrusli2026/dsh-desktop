@@ -10,7 +10,8 @@
 // If nothing meaningful changed since the last run, the existing file (and its
 // generated_at timestamp) is left untouched so `git diff` stays empty.
 
-import { execFileSync } from 'node:child_process'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -38,20 +39,28 @@ const SOCKS = process.env.GH_SOCKS5
 // HTTP stack survives routes direct connections cannot), set GH_CLI=1 to
 // read GitHub through `gh api` instead.
 const GH_CLI = process.env.GH_CLI === '1'
+const run = promisify(execFile)
 
-function ghApiText(url, accept) {
+// The escape hatches shell out (gh/curl). They must stay asynchronous: the
+// GitCode availability probe runs concurrently and aborts after 20 s of wall
+// clock, so a synchronous child process (gh can take seconds from a domestic
+// network) used to stall the event loop and mark every large installer
+// unreachable while the tiny checksums — probed in the free slots — passed.
+async function ghApiText(url, accept) {
   const path = url.replace(/^https:\/\/api\.github\.com/, '')
   const args = ['api', path]
   if (accept !== undefined) args.push('-H', `Accept: ${accept}`)
-  return execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+  const { stdout } = await run('gh', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+  return stdout
 }
 
-function curlText(url, headers) {
+async function curlText(url, headers) {
   const args = ['-sfSL', '--max-time', '300']
   if (SOCKS) args.push('-x', `socks5h://${SOCKS}`)
   for (const [name, value] of Object.entries(headers)) args.push('-H', `${name}: ${value}`)
   args.push(url)
-  return execFileSync('curl', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+  const { stdout } = await run('curl', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+  return stdout
 }
 
 async function api(url) {
@@ -61,8 +70,8 @@ async function api(url) {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     'User-Agent': 'dsh-desktop-site-generator',
   }
-  if (GH_CLI) return JSON.parse(ghApiText(url))
-  if (SOCKS !== undefined) return JSON.parse(curlText(url, headers))
+  if (GH_CLI) return JSON.parse(await ghApiText(url))
+  if (SOCKS !== undefined) return JSON.parse(await curlText(url, headers))
   const res = await fetch(url, { headers })
   if (!res.ok) {
     throw new Error(`GitHub API ${res.status} for ${url}: ${await res.text()}`)
@@ -76,9 +85,9 @@ async function readChecksum(asset) {
     'User-Agent': 'dsh-desktop-site-generator',
   }
   const text = GH_CLI
-    ? ghApiText(`https://api.github.com/repos/${REPO}/releases/assets/${asset.id}`, 'application/octet-stream')
+    ? await ghApiText(`https://api.github.com/repos/${REPO}/releases/assets/${asset.id}`, 'application/octet-stream')
     : SOCKS !== undefined
-      ? curlText(asset.browser_download_url, headers)
+      ? await curlText(asset.browser_download_url, headers)
       : await (async () => {
           const response = await fetch(asset.browser_download_url, { headers })
           if (!response.ok) throw new Error(`checksum download ${response.status} for ${asset.name}`)
@@ -119,6 +128,18 @@ const downloadsByPlatform = published.reduce(
   { mac: 0, win: 0, linux: 0 },
 )
 
+/**
+ * Availability flags are the last phase on purpose: nothing else is awaited or
+ * shelled out while these probes are in flight, so a slow GitHub escape hatch
+ * cannot abort a large installer's range GET and leave it falsely unmirrored.
+ */
+async function probeGitCode(assets) {
+  return Promise.all(assets.map(async asset => ({
+    ...asset,
+    gitcode_ok: await verifyGitCodeAvailability(asset.gitcode_url, asset.size),
+  })))
+}
+
 const publicAssets = release.assets.filter(a => classifyPublicAsset(a.name) !== null)
 
 const data = {
@@ -142,8 +163,7 @@ const data = {
     html_url: release.html_url,
     published_at: release.published_at,
     prerelease: release.prerelease,
-    assets: await Promise.all(publicAssets.map(async (a) => {
-      const gitcodeUrl = `${GITCODE_BASE}/${release.tag_name}/${a.name}`
+    assets: await probeGitCode(await Promise.all(publicAssets.map(async (a) => {
       const kind = classifyPublicAsset(a.name)
       return {
         name: a.name,
@@ -152,10 +172,9 @@ const data = {
         url: a.browser_download_url,
         kind,
         sha256: kind === 'checksum' ? await readChecksum(a) : null,
-        gitcode_url: gitcodeUrl,
-        gitcode_ok: await verifyGitCodeAvailability(gitcodeUrl, a.size),
+        gitcode_url: `${GITCODE_BASE}/${release.tag_name}/${a.name}`,
       }
-    })),
+    }))),
   },
 }
 
