@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop 更新日志","url":"https://dsh-desktop.com/changelog","inLanguage":"zh-CN","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/"},{"@type":"ListItem","position":2,"name":"更新日志","item":"https://dsh-desktop.com/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-25","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.10"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-28","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.11"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,14 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.11 <small>（内核 0.2.1-rc.2）</small></h2>
+  <ul>
+    <li><strong>修复聊天页代码框「复制」按钮点击没有任何反应</strong>（#134）：消息行的复制、代码框右上角的复制、 路径/JSON 复制全部失效。原因是 ADR 0014 的「渲染层权限默认拒绝」把 Chromium 写入前检查的 <code>clipboard-sanitized-write</code> 也一起拒了，<code>navigator.clipboard.writeText</code> 直接抛 <code>NotAllowedError: Write permission denied</code>；上游客户端只在异步 API <strong>不存在</strong>时才回退 <code>execCommand('copy')</code>，于是失败完全静默（不写剪贴板、图标不变、也没有报错）。按 ADR 0049 改为窄白名单：只放行 <code>clipboard-sanitized-write</code>，<code>clipboard-read</code>、<code>media</code>、<code>geolocation</code>、 <code>notifications</code>、<code>display-capture</code>、<code>openExternal</code> 等继续拒绝。</li>
+    <li><strong>修复主分支 CI 每天变红</strong>（<code>test/site-generators.test.ts</code>）：下载快照的断言原来无条件要求 「GitCode」字样，但它取决于实时站数据——<code>site-refresh</code> 机器人会在镜像完成前写入 <code>gitcode_ok=false</code>，于是每个这样的数据态都把 CI 打红。改为按数据断言（镜像成功的安装包才要求 徽标），并用 fixture 覆盖「有镜像 / 无镜像」两种渲染结果。</li>
+    <li><strong>修复 dsh-watch 每日失败</strong>：<code>scripts/version.mjs</code> 静态 import 了依赖 <code>yaml</code> 的 <code>kernel-patches.mjs</code>，而工作流在 <code>pnpm install</code> <strong>之前</strong>就运行 <code>version.mjs check</code>（裸检出）， 于是每天以 <code>ERR_MODULE_NOT_FOUND</code> 退出，被判成「registry outage」，上游 <code>0.2.2-alpha.2</code> 因此 没被报出来。改为在 <code>bump dsh</code> 路径内惰性加载，新增裸检出回归测试，工作流里也写明了这条约束。</li>
+    <li><strong>issue / PR 状态</strong>：发布前 0 个 open issue、0 个 open PR（shell.8 的失败自动单 #133 与已被 通用伴窗取代的 PR #131 已在 shell.10 关闭）。</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.10 <small>（内核 0.2.1-rc.2）</small></h2>
   <ul>
     <li><strong>小鲸鱼桌面伴窗大小可单独配置</strong>：设置 → 扩展 → 小鲸鱼桌宠新增「桌面伴窗大小」滑杆 （80–400 px，默认 160）。它<strong>只影响最小化后的桌面伴窗</strong>，主窗口仍使用插件自己保存的缩放； 重新最小化即生效，不需要重启 Harness。此前伴窗按视口公式取到 122 px 下限、又硬编码 1.6 倍， 与主窗口差距很大。ADR 0047。</li>
@@ -110,13 +118,6 @@
     <li><strong>工作区选择结果可判别</strong>：「取消」保持静默，「目录不可用」明确提示，不再都表现为没反应（#126）。</li>
     <li><strong>托盘/菜单失败有系统通知</strong>：重启 Harness、局域网配对、打开链接等失败时弹出系统通知并写日志，不再只留在控制台（#127）。</li>
     <li><strong>统一失败反馈约定</strong>：每个扩展界面各有一条可见的失败通道，渲染在触发动作附近，见 ADR 0042（#128）。</li>
-  </ul>
-
-  <h2>v0.2.1-rc.2.shell.3 <small>（内核 0.2.1-rc.2）</small></h2>
-  <ul>
-    <li><strong>Electron 运行时升级到 44.9.1</strong>：主进程随之到 <strong>Chromium 152.0.7977.167 / Node 24.22.0</strong>（与内置 Harness 的 Node 24.21.0 同一条 24 线），用于收上游的安全与稳定性修复。壳的功能、界面与数据目录不变，安装包可直接覆盖升级。</li>
-    <li><strong>测试工具链到 Playwright 1.64.1</strong>：端到端与打包回归与最新驱动保持一致，本版仍跑通 24 项打包回归与四端视觉门禁。</li>
-    <li><strong>边界说明</strong>：内核仍是 <code>0.2.1-rc.2</code>，签名/公证边界与上一版一致；桌面工具面板的 Star 入口只打开仓库页面 （带 <code>?ref=app-panel</code> 归因），不发送任何遥测。</li>
   </ul>
   <!-- changelog:auto:end -->
 

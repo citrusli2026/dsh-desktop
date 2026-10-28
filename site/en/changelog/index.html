@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop Changelog","url":"https://dsh-desktop.com/en/changelog","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/en"},{"@type":"ListItem","position":2,"name":"Changelog","item":"https://dsh-desktop.com/en/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-25","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.10"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-28","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.11"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,14 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.1-rc.2.shell.11 <small>(kernel 0.2.1-rc.2)</small></h2>
+  <ul>
+    <li><strong>Fix the chat copy buttons</strong> (#134): the message-row copy, the code-block header copy and every path/JSON copy silently did nothing. ADR 0014's deny-by-default renderer boundary also denied <code>clipboard-sanitized-write</code>, so <code>navigator.clipboard.writeText</code> rejected with <code>NotAllowedError: Write permission denied</code>, and the client only falls back to <code>execCommand('copy')</code> when the async API is missing. ADR 0049 adds a narrow allowlist: <code>clipboard-sanitized-write</code> only; <code>clipboard-read</code>, <code>media</code>, <code>geolocation</code>, <code>notifications</code>, <code>display-capture</code> and <code>openExternal</code> stay denied.</li>
+    <li><strong>Fix the daily main-branch CI failure</strong> (<code>test/site-generators.test.ts</code>): the download snapshot assertion demanded a “GitCode” badge unconditionally, but the site-refresh bot records <code>gitcode_ok=false</code> until the mirror finishes, so any such data state turned CI red. It now asserts from the data and covers both badge states with a fixture.</li>
+    <li><strong>Fix the failing dsh-watch run</strong>: <code>scripts/version.mjs</code> statically imported <code>kernel-patches.mjs</code> (which needs <code>yaml</code>) while the workflow runs <code>version.mjs check</code> on a bare checkout before <code>pnpm install</code>, so every daily run died with <code>ERR_MODULE_NOT_FOUND</code> and was reported as a registry outage. The import is now lazy on the kernel-bump path, with a bare-checkout regression test.</li>
+    <li><strong>Tracker</strong>: zero open issues and zero open pull requests before the release.</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.10 <small>(kernel 0.2.1-rc.2)</small></h2>
   <ul>
     <li><strong>The desktop companion now has its own size</strong>: a slider under “Desktop settings → Extensions → Whale companion” (80–400 px, default 160) affects only the minimized companion; the in-window widget keeps its own saved scale, and re-minimizing applies it without a Harness restart. ADR 0047.</li>
@@ -110,13 +118,6 @@
     <li>The native workspace picker returns a discriminated result: cancel stays silent, an unusable directory is explained (#126).</li>
     <li>Menu/tray failures raise a native notification plus a log line instead of dying in the console (#127).</li>
     <li>ADR 0042 records the per-surface failure contract (#128).</li>
-  </ul>
-
-  <h2>v0.2.1-rc.2.shell.3 <small>(kernel 0.2.1-rc.2)</small></h2>
-  <ul>
-    <li><strong>Electron runtime upgraded to 44.9.1</strong>: the main process now runs <strong>Chromium 152.0.7977.167 / Node 24.22.0</strong> (the same Node 24 line as the bundled Harness at 24.21.0), taking upstream security and stability fixes. Shell features, UI and data directory are unchanged, so the installer upgrades in place.</li>
-    <li><strong>Test toolchain moved to Playwright 1.64.1</strong>: end-to-end and packaged regression stay on the current driver; this build still passes the 24 packaged cases and the four-runner visual gate.</li>
-    <li><strong>Boundary note</strong>: the kernel stays <code>0.2.1-rc.2</code> and the signing/notarization boundary is unchanged; the desktop-tools panel's star entry only opens the repository page with <code>?ref=app-panel</code> attribution and sends no telemetry.</li>
   </ul>
   <!-- changelog:auto:end -->
 
