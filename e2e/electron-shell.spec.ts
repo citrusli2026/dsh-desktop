@@ -627,7 +627,7 @@ shellTest('the chat copy buttons can write the clipboard (decision 0049)', async
   expect(outcome).toBe('ok')
 })
 
-shellTest('the boundary grants microphone audio and never the camera (decision 0050)', async ({ window }) => {
+shellTest('the boundary grants microphone audio and never the camera (decision 0050) @smoke', async ({ window }) => {
   // Permissions.query consults the same session handler a real getUserMedia call
   // would, without opening a device (or tripping a macOS TCC prompt on CI).
   const states = await window.evaluate(async () => {
