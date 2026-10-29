@@ -299,10 +299,10 @@
       <article class="latest-card" data-reveal style="--i:5" aria-labelledby="latest-title">
         <div class="latest-card__copy">
           <p class="sec-marker" data-i18n="latest.marker">当前版本重点</p>
-          <h3 id="latest-title" data-i18n="latest.title">Harness rc.2：内核升级、Linux arm64 与四端视觉证据门禁</h3>
-          <p data-i18n="latest.lead">内置 Harness 升到上游 0.2.1-rc.2：32 个内核包 peer 同步、锁定文件重生成、发行年龄豁免重新固定；同时发布 Linux arm64 包，并修复 macOS 上控制套接字路径过长导致正常连接被误报为离线的问题。</p>
+          <h3 id="latest-title" data-i18n="latest.title">Harness 0.2.2-alpha.2：内核跃迁与权限边界复审</h3>
+          <p data-i18n="latest.lead">内置 Harness 升到上游 0.2.2-alpha.2（内核升级使壳修订归零）：manifest pin 与 32 个内核包 peer 同步、发行年龄豁免按新内核重新固定、闭包锁文件重生成后重新部署；两处维护补丁都在新内核上重新落地并登记复核。同时修复了语音输入在桌面端无法录音的问题，并逐项复审了渲染层的权限边界。</p>
         </div>
-        <ul data-i18n="latest.items"><li><b>内核兼容：</b>账号授权弹窗与 onboarding 守卫补丁随内核迁移，两处被补丁的上游 bundle 与上一版逐字节一致；会话回收站补丁改为「已复核内核」清单，未复核的新内核直接拒绝构建。</li><li><b>Linux arm64：</b>新增 ubuntu-24.04-arm 打包，<code>-arm64.deb</code> 与 amd64 同源发布（GitHub Release 共 10 个文件，其中 8 个是用户可见的安装包与校验文件）；arm64 包已在 arm64 Ubuntu 24.04 虚拟机中安装并运行。</li><li><b>四端视觉证据门禁：</b>macOS、Windows、Linux x64/arm64 四个 runner 必须渲染出 21 个打包扩展面（首启与安全模式、浮动飞书快捷控制、飞书管理五态、六个设置面板、LAN 配对、回收站、恢复与加载），缺一即失败，截图随工件发布；维护者另在真机/虚拟机上补做安装与桌面验收。<a href="/changelog">查看完整更新日志 →</a></li></ul>
+        <ul data-i18n="latest.items"><li><b>内核兼容：</b>账号授权弹窗与 onboarding 守卫补丁按新版源码重新生成；会话回收站补丁完成上游复审（两个被改 bundle 的上游 diff 共约 5100 行，所有生命周期锚点仍唯一命中，会话创建拆到新的 <code>SessionCommandController</code>，委托改挂在字节相同的 <code>resolveAgent</code> 上），新内核已登记进已复核清单。</li><li><b>语音输入：</b>录音走 <code>getUserMedia({ audio })</code>，此前被默认拒绝的权限边界按 <code>media</code> 整体拒掉，已发布的麦克风按钮只会报权限错误；现在只放行音频——摄像头永远拒绝——并补上 macOS 的麦克风用途声明，首次录音仍由系统逐应用授权。</li><li><b>权限复审：</b>把内置闭包里所有需要权限的 Web API 逐个核对，只有剪贴板写入与麦克风被已发布界面使用；<code>clipboard-read</code> 的两个调用点分别是 xterm 的能力探测与带内部剪贴板回退的显式粘贴，通知、全屏、指针锁、屏幕捕获等继续拒绝。<a href="/changelog">查看完整更新日志 →</a></li></ul>
       </article>
     </div>
   </section>
