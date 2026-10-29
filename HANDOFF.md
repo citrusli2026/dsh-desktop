@@ -3197,3 +3197,11 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
 9. **收尾**：Dependabot 的 undici 安全更新任务继续以 updater 容器 `update_files` 退出 1 失败（仓库
    根与 manifest 都无直接 undici 依赖，两处 `pnpm audit` 均 exit 0），仅记录。用户当前装的是
    shell.8，macOS 为 check-only 更新（ADR 0010），需手动下载安装。
+10. **dsh-watch 自动升级修复（接 #136）**：2026-10-29 07:41Z 的定时任务其实就是这次内核升级的
+   自动版本——它在 `Rebuild the harness closure` 失败并开单 #136，原因是两处本仓库能修的缺口：
+   `syncKernelPeerPins` 只同步 `@deepseek-ai/dsh-*`，而新 `dsh-app-boot` 还 peer 了
+   `@deepseek-ai/cordis-plugin-group ~1.0.6-alpha.1`（本次已手动改成该范围）；以及账号补丁上下文
+   漂移（`zh` 因新增 `ja` 变成 `zh,`）。`version.mjs bump dsh` 现在会读取新 app-boot 的 peer 表，
+   对 dsh-* 之外的 pin 采用严格更新的范围（注册表读不到时保留原 pin，宁可不猜）；
+   补丁上下文仍需人工复审，失败单里已写明 `pnpm patch` 处置方式而不是只让人翻日志。
+   单测覆盖 `minimumVersion`/`adoptNonDshPeerPins`，并用真实 0.2.2-alpha.2 peer 表验证过。
