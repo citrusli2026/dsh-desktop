@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop Changelog","url":"https://dsh-desktop.com/en/changelog","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/en"},{"@type":"ListItem","position":2,"name":"Changelog","item":"https://dsh-desktop.com/en/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-28","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.11"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-29","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.2-alpha.2.shell.0"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,13 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.2-alpha.2.shell.0 <small>(kernel 0.2.2-alpha.2)</small></h2>
+  <ul>
+    <li><strong>Kernel 0.2.1-rc.2 → 0.2.2-alpha.2</strong> (a kernel bump resets the shell revision to 0): the manifest pin moved with 32 <code>dsh-*</code> peers, <code>cordis-plugin-group</code> went 1.0.5-alpha.1 → 1.0.6-alpha.1 to satisfy the new app-boot peer, the release-age excludes were re-pinned (315 → 302 entries), the closure lockfile was regenerated and redeployed, and the peer audit reports <code>closure satisfied</code>. Both maintenance patches were rebuilt on the new bundles: the account settings popup fallback and onboarding guard were regenerated against the new source (same two hunks), and the session-trash lifecycle patch passed its upstream review — the two edited bundles changed by ~5100 diff lines, all lifecycle anchors still resolve once, session creation moved into the new <code>SessionCommandController</code>, and the outer <code>inspect</code> the delegation anchored on was removed, so the delegation now hangs off the byte-identical <code>resolveAgent</code> forwarder; the kernel is recorded in <code>REVIEWED_KERNELS</code>.</li>
+    <li><strong>Voice input can record again</strong> (ADR 0050): the Harness voice input records the prompt with <code>getUserMedia({ audio })</code>, which the deny-by-default boundary rejected as <code>media</code>, so the shipped microphone button only ever reported <code>RecordingError(&quot;permission&quot;)</code>. <code>media</code> is now granted only when every requested type is audio — camera video, audio+video, empty lists and unknown types stay denied — and <code>NSMicrophoneUsageDescription</code> is added to the macOS <code>Info.plist</code> (without it the OS terminates the process); the first recording still needs the per-app system approval.</li>
+    <li><strong>The rest of the boundary was audited</strong> (ADR 0050 records the scope and verdicts): every permission-gated web API in the bundled closure was checked and only clipboard write (0049) and the microphone are used by shipped surfaces; <code>clipboard-read</code> stays denied because its two call sites are xterm's capability probe and the spreadsheet preview's explicit paste menu, which already falls back to its own buffer; notifications, fullscreen, pointer lock, display capture, geolocation, share, file pickers, <code>storage.persist</code>, <code>SpeechRecognition</code> and <code>window.print</code> are unused and stay denied.</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.11 <small>(kernel 0.2.1-rc.2)</small></h2>
   <ul>
     <li><strong>Fix the chat copy buttons</strong> (#134): the message-row copy, the code-block header copy and every path/JSON copy silently did nothing. ADR 0014's deny-by-default renderer boundary also denied <code>clipboard-sanitized-write</code>, so <code>navigator.clipboard.writeText</code> rejected with <code>NotAllowedError: Write permission denied</code>, and the client only falls back to <code>execCommand('copy')</code> when the async API is missing. ADR 0049 adds a narrow allowlist: <code>clipboard-sanitized-write</code> only; <code>clipboard-read</code>, <code>media</code>, <code>geolocation</code>, <code>notifications</code>, <code>display-capture</code> and <code>openExternal</code> stay denied.</li>
@@ -108,16 +115,6 @@
     <li><strong>Security boundary</strong>: sandboxed with context isolation, no Node integration, <code>window.open</code> denied, navigation pinned to the declared path; the preload only exposes hide/focus-main. No DOM access, no <code>executeJavaScript</code>, no approval bridge — approvals stay in the main window.</li>
     <li><strong>Panel entry</strong>: a new “Companion windows” group in the desktop-tools panel toggles declared companions; placement follows the display containing the main window and windows are destroyed on quit.</li>
     <li><strong>Community request #130</strong>: the whale widget only needs the declaration and its <code>/dsh-whale/pet</code> route — no <code>app.asar</code> patching and no disabling auto-update.</li>
-  </ul>
-
-  <h2>v0.2.1-rc.2.shell.4 <small>(kernel 0.2.1-rc.2)</small></h2>
-  <ul>
-    <li>The desktop-tools panel now closes on an outside pointerdown; the trigger toggle and drag behaviour are unchanged (#123).</li>
-    <li>Every panel action reports failures — non-true results and thrown errors — in a single alert status line (#125).</li>
-    <li>The Feishu manager refuses an empty workspace before IPC, with a field-level error, <code>aria-invalid</code> and focus; the settings form mirrors the same error (#124).</li>
-    <li>The native workspace picker returns a discriminated result: cancel stays silent, an unusable directory is explained (#126).</li>
-    <li>Menu/tray failures raise a native notification plus a log line instead of dying in the console (#127).</li>
-    <li>ADR 0042 records the per-surface failure contract (#128).</li>
   </ul>
   <!-- changelog:auto:end -->
 

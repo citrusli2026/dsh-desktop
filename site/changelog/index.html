@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop 更新日志","url":"https://dsh-desktop.com/changelog","inLanguage":"zh-CN","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/"},{"@type":"ListItem","position":2,"name":"更新日志","item":"https://dsh-desktop.com/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-28","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.1-rc.2.shell.11"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop 更新日志","inLanguage":"zh-CN","dateModified":"2026-10-29","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.2-alpha.2.shell.0"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,13 @@
   <p class="seo-lead">版本号是复合形式 <code>&lt;dsh 内核版本&gt;.shell.&lt;壳修订&gt;</code>：内核随官方 <code>@deepseek-ai/dsh</code> 升级，壳修订只包含桌面壳自身的修复与功能。以下节选近期版本要点，完整说明见各版本 Release 页。</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.2-alpha.2.shell.0 <small>（内核 0.2.2-alpha.2）</small></h2>
+  <ul>
+    <li><strong>内核升级 0.2.1-rc.2 → 0.2.2-alpha.2</strong>（复合版本规则：内核升级把壳修订归零）：manifest pin 与 32 个 <code>dsh-*</code> peer 一起更新，<code>cordis-plugin-group</code> 1.0.5-alpha.1 → 1.0.6-alpha.1 以满足新内核 app-boot 的 peer；release-age 豁免按 315 → 302 条重钉，闭包锁文件重生成后重新部署，peer 审计 <code>closure satisfied</code>。两处维护补丁都在新内核上重新落地：账号设置的弹窗回退与 onboarding 守卫 按新版源码重新生成（仍为原来的两处 hunk）；会话垃圾桶的生命周期补丁完成上游复审（两个被改 bundle 的上游 diff 共约 5100 行，所有锚点仍唯一命中；会话创建拆到了新的 <code>SessionCommandController</code>，旧锚点用的外层 <code>inspect</code> 被上游删除，委托改为挂在字节相同的 <code>resolveAgent</code> 前向方法上），并登记进 <code>REVIEWED_KERNELS</code>。</li>
+    <li><strong>修复语音输入无法录音</strong>（ADR 0050）：Harness 的语音输入用 <code>getUserMedia({ audio })</code> 录提示词， 而默认拒绝的权限边界把它按 <code>media</code> 拒了，已发布的麦克风按钮只会报 <code>RecordingError(&quot;permission&quot;)</code>。 现在 <code>media</code> 只在请求类型<strong>全部是音频</strong>时放行——摄像头（<code>video</code>）、音视频混合、空列表与未知 类型继续拒绝；macOS 的 <code>Info.plist</code> 增加 <code>NSMicrophoneUsageDescription</code>（缺少它系统会直接终止 进程），首次录音仍由 macOS 逐应用授权。</li>
+    <li><strong>权限边界逐项复审</strong>（ADR 0050 记录了检索范围与结论）：把内置闭包里所有需要权限的 Web API 过了 一遍——只有剪贴板写入（0049）与麦克风两项被已发布界面使用；<code>clipboard-read</code> 的两个调用点分别是 xterm 的能力探测和电子表格预览里带内部剪贴板回退的显式「粘贴」，继续拒绝；通知、全屏、指针锁、 屏幕捕获、定位、分享、文件选择器、<code>storage.persist</code>、<code>SpeechRecognition</code>、<code>window.print</code> 在已发布 界面中均无调用，继续拒绝。</li>
+  </ul>
+
   <h2>v0.2.1-rc.2.shell.11 <small>（内核 0.2.1-rc.2）</small></h2>
   <ul>
     <li><strong>修复聊天页代码框「复制」按钮点击没有任何反应</strong>（#134）：消息行的复制、代码框右上角的复制、 路径/JSON 复制全部失效。原因是 ADR 0014 的「渲染层权限默认拒绝」把 Chromium 写入前检查的 <code>clipboard-sanitized-write</code> 也一起拒了，<code>navigator.clipboard.writeText</code> 直接抛 <code>NotAllowedError: Write permission denied</code>；上游客户端只在异步 API <strong>不存在</strong>时才回退 <code>execCommand('copy')</code>，于是失败完全静默（不写剪贴板、图标不变、也没有报错）。按 ADR 0049 改为窄白名单：只放行 <code>clipboard-sanitized-write</code>，<code>clipboard-read</code>、<code>media</code>、<code>geolocation</code>、 <code>notifications</code>、<code>display-capture</code>、<code>openExternal</code> 等继续拒绝。</li>
@@ -108,16 +115,6 @@
     <li><strong>安全边界</strong>：伴随窗口使用 <code>sandbox</code> + <code>contextIsolation</code>、无 <code>nodeIntegration</code>、拒绝 <code>window.open</code>， 导航锁定在声明路径；只转发登录 token。预加载只提供「隐藏自己 / 聚焦主窗口」，壳不读 Harness DOM、 不调用 <code>executeJavaScript</code>、不提供审批桥——审批仍只在主窗口完成。</li>
     <li><strong>面板入口</strong>：桌面工具面板新增「伴随窗口」分组，列出已声明的伴随窗口并可手动开关；位置跟随主窗口 所在显示器的变化，多个窗口依次错开，退出时销毁。</li>
     <li><strong>承接社区需求 #130</strong>：小鲸鱼插件只需增加上述声明与 <code>/dsh-whale/pet</code> 路由即可获得该窗口，无需替换 <code>app.asar</code>、无需关闭自动更新。契约见 <code>docs/companion-windows.md</code>。</li>
-  </ul>
-
-  <h2>v0.2.1-rc.2.shell.4 <small>（内核 0.2.1-rc.2）</small></h2>
-  <ul>
-    <li><strong>桌面工具面板点空白关闭</strong>：面板打开后点击面板外任意位置即收起；触发按钮的开关与拖动语义不变（#123）。</li>
-    <li><strong>扩展动作失败不再静默</strong>：局域网配对、安全模式、重启 Harness、打开日志、导出诊断、检查更新等操作失败时，面板底部给出「操作未完成：动作名」提示，抛出的异常同样会被捕获（#125）。</li>
-    <li><strong>飞书未选工作区有字段级提示</strong>：扫码创建或保存时，空工作区直接在输入框下方报错、<code>aria-invalid</code> 生效并聚焦到该字段，不再只写页面底部；设置页的工作区行同步显示同一错误（#124）。</li>
-    <li><strong>工作区选择结果可判别</strong>：「取消」保持静默，「目录不可用」明确提示，不再都表现为没反应（#126）。</li>
-    <li><strong>托盘/菜单失败有系统通知</strong>：重启 Harness、局域网配对、打开链接等失败时弹出系统通知并写日志，不再只留在控制台（#127）。</li>
-    <li><strong>统一失败反馈约定</strong>：每个扩展界面各有一条可见的失败通道，渲染在触发动作附近，见 ADR 0042（#128）。</li>
   </ul>
   <!-- changelog:auto:end -->
 
