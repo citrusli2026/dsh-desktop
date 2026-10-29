@@ -1,7 +1,7 @@
 # 0049: Allow the clipboard write permission the Harness copy buttons need
 
 - Date: 2026-10-28
-- Status: Accepted
+- Status: Accepted; extended by [0050](0050-microphone-media-allowlist.md) (microphone audio)
 - Amends: [0014](0014-deny-renderer-permissions-by-default.md)
 - 中文：[0049](0049-clipboard-write-allowlist.zh.md)
 

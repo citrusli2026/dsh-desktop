@@ -4,10 +4,10 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-10-18 · 当前代码基线 `0.2.1-rc.2.shell.0`（内核升级至 `0.2.1-rc.2`，尚未发布）；
-已发布 tag 为 `v0.2.1-rc.1.shell.1`，其官网、GitCode 镜像与发布证据见 HANDOFF §85–88。
+最后更新: 2026-10-29 · 当前代码基线 `0.2.2-alpha.2.shell.0`（内核升级至 `0.2.2-alpha.2`，尚未发布）；
+已发布 tag 为 `v0.2.1-rc.2.shell.11`，其官网、GitCode 镜像与发布证据见 HANDOFF §104。
 （主界面提供一次性首次成功引导；桌面设置提供本地优先、只读且脱敏的运行体检；
-发布门禁覆盖真实 Harness、插件市场、安全模式、移动设备连接和跨版本升级，并在 macOS、Windows、Linux x64 与 Linux arm64 四个 runner 上**验证打包应用真的渲染出全部 22 个桌面扩展面**（`scripts/verify-visual-evidence.mjs`，截图随工件发布）；内置内核 `0.2.1-rc.2`）
+发布门禁覆盖真实 Harness、插件市场、安全模式、移动设备连接和跨版本升级，并在 macOS、Windows、Linux x64 与 Linux arm64 四个 runner 上**验证打包应用真的渲染出全部 22 个桌面扩展面**（`scripts/verify-visual-evidence.mjs`，截图随工件发布）；内置内核 `0.2.2-alpha.2`）
 
 ## 1. 产品概述
 
@@ -15,7 +15,7 @@
 托盘、菜单、单实例、进程监督、更新与本地诊断，不改变 Agent 行为。默认使用
 `~/.dsh-desktop`，与 CLI 数据隔离；渲染器保持沙箱、上下文隔离、关闭 Node
 集成、限制导航并默认拒绝额外 Web 权限，只放行聊天与代码框复制所需的
-剪贴板写入权限（0049）。
+剪贴板写入权限（0049）与语音输入所需的仅麦克风媒体权限（0050，摄像头始终拒绝）。
 
 原生菜单、托盘、窗口标题与通知的语言及主题由 `ShellLocaleController` 管理，优先
 读取 `profiles/web/cordis.patch.yml` 中 `locale`、`ui-theme` 的 `config.preference`；
@@ -62,7 +62,7 @@ src/main/market-install.ts  手动市场安装阶段、失败归因、安装后�
 src/main/safe-mode.ts       安全模式:用户 bundle 盘点、禁用覆盖层、失败签名检测
 src/main/restart-policy.ts  就绪协议、退避与重启预算纯函数
 src/main/window-state.ts    窗口几何校验纯函数
-src/main/permissions.ts     Electron 会话权限默认拒绝 + 剪贴板写入白名单(0049)
+src/main/permissions.ts     Electron 会话权限默认拒绝 + 剪贴板写入(0049)与仅麦克风媒体(0050)白名单
 src/main/menu.ts            应用菜单、About、诊断入口
 src/main/pages.ts           有 CSP 的加载页与错误恢复页
 src/main/shell-preferences.ts  桌面偏好（兼容历史关闭提示字段）

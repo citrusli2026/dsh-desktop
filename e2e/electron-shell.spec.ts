@@ -627,6 +627,28 @@ shellTest('the chat copy buttons can write the clipboard (decision 0049)', async
   expect(outcome).toBe('ok')
 })
 
+shellTest('the boundary grants microphone audio and never the camera (decision 0050)', async ({ window }) => {
+  // Permissions.query consults the same session handler a real getUserMedia call
+  // would, without opening a device (or tripping a macOS TCC prompt on CI).
+  const states = await window.evaluate(async () => {
+    const query = async (name: string) => (await navigator.permissions.query({ name: name as PermissionName })).state
+    return {
+      microphone: await query('microphone'),
+      camera: await query('camera'),
+      clipboardWrite: await query('clipboard-write'),
+      clipboardRead: await query('clipboard-read'),
+      notifications: await query('notifications'),
+    }
+  })
+  expect(states).toEqual({
+    microphone: 'granted',
+    camera: 'denied',
+    clipboardWrite: 'granted',
+    clipboardRead: 'denied',
+    notifications: 'denied',
+  })
+})
+
 shellTest('portable preset import lands a user preset under the user preset root', async ({ electronApp, window, dshHome }) => {
   await packagedOrStubHeadline(window)
   const presetFile = join(dshHome, 'team.dshpreset')

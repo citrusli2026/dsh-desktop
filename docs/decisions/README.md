@@ -53,4 +53,5 @@ This directory records the architecture decisions made while building dsh-deskto
 | 0046 | Failure incidents that open a triage session / 把失败变成可交给 AI 排查的故障事件 | [EN](0046-incident-ai-triage.md) · [中文](0046-incident-ai-triage.zh.md) | Accepted / 已接受 |
 | 0047 | The desktop companion has its own size / 桌面伴窗使用独立大小 | [EN](0047-companion-size.md) · [中文](0047-companion-size.zh.md) | Accepted / 已接受 |
 | 0048 | Reload-safe webserver route registration / 热重载安全的 webserver 路由注册 | [EN](0048-reload-safe-routes.md) · [中文](0048-reload-safe-routes.zh.md) | Accepted / 已接受 |
-| 0049 | Allow the clipboard write permission the Harness copy buttons need / 放行 Harness 复制按钮所需的剪贴板写入权限 | [EN](0049-clipboard-write-allowlist.md) · [中文](0049-clipboard-write-allowlist.zh.md) | Accepted / 已接受 |
+| 0049 | Allow the clipboard write permission the Harness copy buttons need / 放行 Harness 复制按钮所需的剪贴板写入权限 | [EN](0049-clipboard-write-allowlist.md) · [中文](0049-clipboard-write-allowlist.zh.md) | Extended by 0050 / 由 0050 扩展 |
+| 0050 | Microphone-only media for voice input, and the audited rest of the boundary / 仅麦克风的媒体权限(语音输入)与边界复审 | [EN](0050-microphone-media-allowlist.md) · [中文](0050-microphone-media-allowlist.zh.md) | Accepted / 已接受 |

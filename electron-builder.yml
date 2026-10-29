@@ -70,6 +70,12 @@ mac:
   # intentionally not notarized and still needs a first-launch confirmation.
   identity: "-"
   hardenedRuntime: false
+  # macOS terminates a process that requests the microphone without a usage
+  # string, so the bundled Harness voice input (decision 0050) needs this in
+  # Info.plist. Recording still requires the user to allow the app in the
+  # system dialog the first time the chat mic is used.
+  extendInfo:
+    NSMicrophoneUsageDescription: 语音输入需要使用麦克风(仅在你按下录音时) · dsh-desktop uses the microphone only while you record a voice prompt.
   # Keep the sidecar bytes stable after build-cc-connect.mjs writes its
   # manifest. It is launched as a child process and does not need to be
   # re-signed by the app bundle; signing it here would rewrite its Mach-O

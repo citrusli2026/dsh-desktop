@@ -1,7 +1,7 @@
 # 0049:放行 Harness 复制按钮所需的剪贴板写入权限
 
 - 日期:2026-10-28
-- 状态:已接受
+- 状态:已接受;由 [0050](0050-microphone-media-allowlist.zh.md) 扩展(麦克风音频)
 - 修订:[0014](0014-deny-renderer-permissions-by-default.zh.md)
 - English:[0049](0049-clipboard-write-allowlist.md)
 
