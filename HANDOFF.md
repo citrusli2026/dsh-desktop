@@ -9,13 +9,13 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | `0.2.1-rc.2.shell.11`（修复聊天页代码框「复制」失效 + CI/dsh-watch 修复，内核不变），GitHub 与 GitCode 均已交付（tag `17e4ab5`），见 §104 |
-| 已发布 | ✅ GitHub 正式版 `0.2.1-rc.2.shell.11`（10 资产，`prerelease=false`，`releases/latest` 已指向它）＋ GitCode release（八资产 8/8，amd64 deb 全量回读 SHA-256 `adf05ded…` 一致）；`v0.2.1-rc.2.shell.10` 为上一版（镜像仍未补齐，见 §103） |
-| 本地门禁 | ✅ `pnpm verify` 通过、本地另跑 `pnpm security:audit`（根与闭包）均 exit 0；544 单测；新增剪贴板 E2E 含反向验证；`dist:dir`（shell.11）后 packaged smoke、Harness-UI smoke、`DSH_E2E_PACKAGED=1` 复制断言均通过；LAN 2/2；见 §104 |
-| 核心发布 | ✅ Release `40711108274` / tag `17e4ab5`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§104）；主分支 CI `40711097495` 同时转绿 |
-| 官网数据 | ✅ 本地重新生成（`c2bf74d`，接替失败的 bot run `40717963690`）：`v0.2.1-rc.2.shell.11`、八资产 `gitcode_ok=true`、下载快照带 GitHub+GitCode 徽标（§104） |
-| 国内镜像 | ✅ GitCode release / tag `17e4ab5`；八资产匿名 Range GET 8/8；amd64 deb 全量 234,213,472 B，SHA-256 `adf05ded…` 与官方 `.sha256` 一致；`--status unset` 创建（§104） |
-| 实时下载统计 | GitHub 安装快照 9142（mac 985 / Windows 7083 / Linux 1074），90 版本（2026-10-28T16:09Z 生成）；两种统计不混用 |
+| 最新代码基线 | `0.2.2-alpha.2.shell.0`（内核跃迁 `0.2.1-rc.2 → 0.2.2-alpha.2`、语音输入/权限边界复审），GitHub 已交付（tag `5c0b24f`），GitCode 镜像待带宽恢复，见 §105 |
+| 已发布 | ✅ GitHub 正式版 `0.2.2-alpha.2.shell.0`（10 资产，`prerelease=false`，`releases/latest` 已指向它）；⏳ GitCode release 已创建但仅 1/8（amd64 `.sha256` 种子），镜像被 GitHub 资产带宽阻断；`v0.2.1-rc.2.shell.11` 为上一版 |
+| 本地门禁 | ✅ `pnpm verify`（545 单测）与 `pnpm security:audit`（根与闭包）通过；LAN 2/2、市场离线 1/1、市场真实 2/2；`dist:dir`（shell.0）后 packaged smoke、Harness-UI smoke 通过；打包 @smoke 28 passed/1 skipped（需 `WHALE_PLUGIN_DIR`）；权限与剪贴板打包 E2E 2/2；见 §105 |
+| 核心发布 | ✅ Release `40878299835` / tag `5c0b24f`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§105）；主分支 CI `40878290673` success |
+| 官网数据 | ⚠️ site-refresh bot `40884510964` 成功（`4719fe8`）：`v0.2.2-alpha.2.shell.0`、`gitcode_ok=1/8`（镜像未完成）；首页「当前版本重点」文案同步更新（`d8dffc4`） |
+| 国内镜像 | ⏳ GitCode release / tag `5c0b24f` 已 `--status unset` 创建（1/8 种子）；GitHub 资产 CDN 实测仅 28–52 KB/s 且多次连接超时，1.06 GB 下载不可行，已停止并清理 staging；恢复后执行 `node scripts/mirror-gitcode-v2.mjs v0.2.2-alpha.2.shell.0`，再 `GH_CLI=1 node scripts/gen-site-data.mjs` 刷新 `gitcode_ok` |
+| 实时下载统计 | GitHub 安装快照 9323（mac 991 / Windows 7237 / Linux 1095），91 版本（2026-10-29T14:11Z 生成）；两种统计不混用 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -3148,3 +3148,52 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    （下载中、上传前置缺失）已终止以释放带宽。
 9. **提醒**：用户当前装的是 shell.8；macOS 为 check-only 更新（ADR 0010），需手动下载
    `dsh-desktop-0.2.1-rc.2.shell.11-arm64-mac.dmg` 安装后才能看到复制修复；不要覆盖运行中的 app。
+
+## 105. 发布 v0.2.2-alpha.2.shell.0（内核跃迁 + 语音输入/权限边界复审，2026-10-29）
+
+1. **内核升级**：`node scripts/version.mjs bump dsh 0.2.2-alpha.2`（复合版本按规则把壳修订归零：
+   `0.2.2-alpha.2.shell.0`）。npm 上 `0.2.2-alpha.2` 是版本号最高的一版（`alpha` 标签；`latest` 仍是
+   `0.2.1-rc.2`，另有 `0.2.1-rc.4` 在 `next`），与 `version.mjs`/dsh-watch 的取最高版规则一致。
+   同步 32 个 `dsh-*` peer；`@deepseek-ai/cordis-plugin-group` 1.0.5-alpha.1 → 1.0.6-alpha.1（新内核
+   `dsh-app-boot` 的 peer 是 `~1.0.6-alpha.1`，旧 pin 会 unmet peer）；`sync-release-age-excludes`
+   315 → 302 条；闭包锁文件重生成，`pnpm run bootstrap` 重新部署 433 MB 闭包并报
+   `audit-harness-peers: closure satisfied`（该内核树无 fs-ext，native 无重建项）。
+2. **两处维护补丁**：账号补丁按新源码重生成——旧补丁在 `dsh-client-ui-settings-account@0.2.2-alpha.2`
+   上 `ERR_PNPM_PATCH_FAILED`（第二处 hunk 的上下文行因新增 `ja` 语言从 `zh` 变成 `zh,`），
+   `pnpm patch` → 编辑 → `patch-commit` 后两处 hunk（登录弹窗回退、onboarding 守卫）保持不变。
+   会话垃圾桶补丁完成上游复审：`dsh-api-session-controller/lib/index.js` 3183 行、
+   `dsh-client-ui-workspace/lib/client.js` 1917 行 diff；类、`sessionPersistence` 依赖、`resolve`、
+   `claim`、3 处 `agents.create/resume(...).agent` 句柄点与子会话创建锚点仍唯一命中，workspace 变换
+   不变；上游把会话创建拆进新的 `SessionCommandController`（委托到已复核控制器），并删除了外层
+   `inspect`，因此委托改为挂在字节相同的 `resolveAgent` 前向方法上；`0.2.2-alpha.2` 已加入
+   `REVIEWED_KERNELS`（`test/session-trash-kernel.test.ts` 通过）。
+3. **语音输入/权限复审（ADR 0050）**：内置 `dsh-experimental-client-ui-voice-input` 用
+   `getUserMedia({ audio, video: false })` 录音，默认拒绝边界把它按 `media` 拒掉，已发布的麦克风
+   按钮只会报 `RecordingError("permission")`。现 `media` 仅在请求类型全部为音频时放行（video、
+   audio+video、空列表、`unknown` 检查全部拒绝），`electron-builder.yml` 增加
+   `NSMicrophoneUsageDescription`（缺它 macOS 直接终止进程），首次录音仍由系统逐应用授权。
+   闭包全量复审结论：只有剪贴板写入与麦克风被已发布界面使用；`clipboard-read` 的两个调用点是
+   xterm 能力探测与带内部缓冲回退的显式粘贴；通知、全屏、指针锁、屏幕捕获、定位、分享、文件
+   选择器、`storage.persist`、`SpeechRecognition`、`window.print` 均无调用，继续拒绝。
+4. **实测证据**（壳层真实处理器 + Electron 会话）：`permissions.query` 得
+   `microphone=granted`、`camera=denied`、`clipboard-write=granted`、`clipboard-read=denied`、
+   `notifications=denied`、`persistent-storage=denied`；打包后的 `Info.plist` 已确认含麦克风用途串。
+5. **验证**：`pnpm run verify`（545 单测 + 覆盖率 + 站点检查 + 构建）、`pnpm security:audit`（根与
+   闭包）均通过；LAN 2/2、市场离线 1/1、市场真实 2/2；`dist:dir` 后 packaged smoke 与 Harness-UI
+   smoke 通过；打包 @smoke 子集 28 passed / 1 skipped（鲸鱼伴窗用例需要 `WHALE_PLUGIN_DIR`）；
+   权限与剪贴板两条打包 E2E 均通过。
+6. **发布**：tag `v0.2.2-alpha.2.shell.0` → `5c0b24f`（GitHub / GitCode peeled 一致）；Release run
+   `40878299835` verify + 四平台 build + publish 全绿；GitHub 10 资产、`prerelease=false`、
+   `/releases/latest` 指向该 tag；主分支 CI `40878290673` success。
+7. **GitCode 镜像未完成（带宽）**：已用 amd64 `.sha256` 种子 `create --status unset` 建好 release
+   对象，随后两次 `mirror-gitcode-v2.mjs` 运行都卡在 GitHub 资产下载——实测 CDN 只有 28–52 KB/s，
+   `curl -L -r` 多次 20 s 内 0 字节，1.06 GB 需数小时且随时超时，已停止并清理 staging（并发运行
+   还会和 launchd 守护抢带宽）。恢复后执行：
+   `node scripts/mirror-gitcode-v2.mjs v0.2.2-alpha.2.shell.0`（8/8 匿名验证），再
+   `GH_CLI=1 node scripts/gen-site-data.mjs` 把 `gitcode_ok` 刷成 8/8 并推送。
+8. **官网**：site-refresh bot `40884510964` 成功（`4719fe8`）：`v0.2.2-alpha.2.shell.0`、
+   `gitcode_ok=1/8`、下载快照与 changelog 已生成；首页「当前版本重点」与英文 release-focus 同步改成
+   新内核与权限复审（`d8dffc4`）。统计快照 9323（mac 991 / win 7237 / linux 1095）。
+9. **收尾**：Dependabot 的 undici 安全更新任务继续以 updater 容器 `update_files` 退出 1 失败（仓库
+   根与 manifest 都无直接 undici 依赖，两处 `pnpm audit` 均 exit 0），仅记录。用户当前装的是
+   shell.8，macOS 为 check-only 更新（ADR 0010），需手动下载安装。
