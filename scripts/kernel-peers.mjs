@@ -3,6 +3,7 @@
  * version tool and tests can use them without touching the network.
  * @module scripts/kernel-peers
  */
+import { compareSemver } from './release-shape.mjs'
 
 /**
  * Sync every kernel-versioned direct peer of the manifest to the new kernel
@@ -20,6 +21,61 @@ export function syncKernelPeerPins(dependencies, fromVersion, toVersion) {
     }
   }
   return dependencies
+}
+
+/**
+ * First version literal in a range: `~1.0.6-alpha.1` → `1.0.6-alpha.1`.
+ * Used to compare a manifest pin against the range a new kernel peers on.
+ */
+export function minimumVersion(range) {
+  return /\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?/.exec(String(range))?.[0] ?? null
+}
+
+/**
+ * Adopt the peer ranges a new kernel's app-boot declares for manifest pins
+ * outside the `@deepseek-ai/dsh-*` family. The kernel peers on packages such as
+ * `@deepseek-ai/cordis-plugin-group`, which follows its own line and therefore
+ * is not covered by `syncKernelPeerPins`; leaving the old pin produced an
+ * unmet peer on the 0.2.2-alpha.2 bump (dsh-watch issue #136). Only a strictly
+ * newer required minimum replaces the pin. Mutates `dependencies` and returns
+ * the names that changed.
+ */
+export function adoptNonDshPeerPins(dependencies, peers) {
+  const changed = []
+  for (const [name, range] of Object.entries(dependencies)) {
+    if (name === '@deepseek-ai/dsh' || name.startsWith('@deepseek-ai/dsh-')) continue
+    if (typeof range !== 'string' || peers === null || typeof peers !== 'object') continue
+    const required = peers[name]
+    if (typeof required !== 'string') continue
+    const requiredMin = minimumVersion(required)
+    const currentMin = minimumVersion(range)
+    if (requiredMin === null || currentMin === null) continue
+    const order = compareSemver(requiredMin, currentMin)
+    if (order !== null && order > 0) {
+      dependencies[name] = required
+      changed.push(name)
+    }
+  }
+  return changed
+}
+
+/**
+ * Peer dependency ranges a published package declares, or null when the
+ * registry cannot answer (callers keep their existing pins).
+ */
+export async function fetchPeerDependencies(pkg, version) {
+  try {
+    const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(pkg)}`, {
+      signal: AbortSignal.timeout(20_000),
+      headers: { accept: 'application/json' },
+    })
+    if (!response.ok) return null
+    const body = await response.json()
+    const peers = body.versions?.[version]?.peerDependencies
+    return peers !== null && typeof peers === 'object' ? peers : null
+  } catch {
+    return null
+  }
 }
 
 /**

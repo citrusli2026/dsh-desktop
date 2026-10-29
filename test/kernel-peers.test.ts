@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 // @ts-expect-error Dependency-free build scripts intentionally stay plain ESM JavaScript.
-import { kernelExcludeAdditions, resolvedVersionsFromLockfile, syncKernelPeerPins } from '../scripts/kernel-peers.mjs'
+import { adoptNonDshPeerPins, kernelExcludeAdditions, minimumVersion, resolvedVersionsFromLockfile, syncKernelPeerPins } from '../scripts/kernel-peers.mjs'
 
 test('syncKernelPeerPins moves kernel-versioned peers and leaves everything else alone', () => {
   const deps: Record<string, string> = {
@@ -113,4 +113,36 @@ test('exclude additions name only kernel packages the new lockfile resolves with
   ].join('\n')
   assert.deepEqual(kernelExcludeAdditions(workspace, lockfile, '0.2.1-alpha.5'), ['@deepseek-ai/dsh-agent-preset'])
   assert.deepEqual(kernelExcludeAdditions(workspace, lockfile, '0.2.1-alpha.4'), [])
+})
+
+test('minimumVersion reads the first version literal of a range', () => {
+  assert.equal(minimumVersion('~1.0.6-alpha.1'), '1.0.6-alpha.1')
+  assert.equal(minimumVersion('^0.2.2-alpha.2'), '0.2.2-alpha.2')
+  assert.equal(minimumVersion('>=1.2.3 || ^2.0.0'), '1.2.3')
+  assert.equal(minimumVersion('workspace:*'), null)
+})
+
+test('adoptNonDshPeerPins adopts a newer app-boot peer for a non-dsh pin only', () => {
+  // The 0.2.2-alpha.2 bump failed in dsh-watch (#136) with an unmet
+  // @deepseek-ai/cordis-plugin-group peer because the sync only covers dsh-*.
+  const deps: Record<string, string> = {
+    '@deepseek-ai/cordis-plugin-group': '~1.0.5-alpha.1',
+    '@deepseek-ai/cordis-plugin-include': '~1.0.11-alpha.1',
+    '@deepseek-ai/dsh-settings': '^0.2.1-rc.2',
+  }
+  const changed = adoptNonDshPeerPins(deps, {
+    '@deepseek-ai/cordis-plugin-group': '~1.0.6-alpha.1',
+    '@deepseek-ai/cordis-plugin-include': '~1.0.11-alpha.1',
+    '@deepseek-ai/dsh-settings': '^0.2.2-alpha.2',
+  })
+  assert.deepEqual(changed, ['@deepseek-ai/cordis-plugin-group'])
+  assert.equal(deps['@deepseek-ai/cordis-plugin-group'], '~1.0.6-alpha.1')
+  assert.equal(deps['@deepseek-ai/cordis-plugin-include'], '~1.0.11-alpha.1')
+  assert.equal(deps['@deepseek-ai/dsh-settings'], '^0.2.1-rc.2')
+})
+
+test('adoptNonDshPeerPins is a no-op when the registry answer is missing', () => {
+  const deps: Record<string, string> = { '@deepseek-ai/cordis-plugin-group': '~1.0.5-alpha.1' }
+  assert.deepEqual(adoptNonDshPeerPins(deps, null), [])
+  assert.equal(deps['@deepseek-ai/cordis-plugin-group'], '~1.0.5-alpha.1')
 })

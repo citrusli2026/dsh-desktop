@@ -111,5 +111,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEW: ${{ steps.check.outputs.new }}
         run: |
-          gh issue create --title "dsh-watch: bump to $NEW failed verification" \
-            --body "The automated bump to @deepseek-ai/dsh $NEW failed verification in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Inspect the first failing step and its logs before assigning a cause; this report does not assume dependency age or an upstream incompatibility."
+          BODY_FILE="${RUNNER_TEMP:-/tmp}/dsh-watch-issue.md"
+          cat > "$BODY_FILE" <<BODY
+          The automated bump to @deepseek-ai/dsh $NEW failed verification in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Read the first failing step's logs before assigning a cause.
+
+          Known failure modes and their remedies (see .agents/skills/release-dsh-desktop/SKILL.md):
+          - ERR_PNPM_PATCH_FAILED / ERR_PNPM_UNUSED_PATCH: a reviewed patch no longer applies to the new bundle. Rebuild it with the \`pnpm patch\` -> edit -> \`patch-commit\` flow, then re-check both reviewed hunks in the deployed closure. Patch context is reviewed by a human by design, so this class stays manual.
+          - unmet peer on a package outside the dsh-* family: \`version.mjs bump dsh\` adopts the ranges \`@deepseek-ai/dsh-app-boot@<new>\` declares, so an unmet peer here means the registry read failed (network); re-run the bump.
+
+          This report does not assume dependency age or an upstream incompatibility.
+          BODY
+          gh issue create --title "dsh-watch: bump to $NEW failed verification" --body-file "$BODY_FILE"

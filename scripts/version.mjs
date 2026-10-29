@@ -14,7 +14,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { compareSemver, isSemver, parseCompositeVersion } from './release-shape.mjs'
-import { fetchPublishedVersion, resolvedVersionsFromLockfile, syncKernelPeerPins } from './kernel-peers.mjs'
+import { adoptNonDshPeerPins, fetchPeerDependencies, fetchPublishedVersion, resolvedVersionsFromLockfile, syncKernelPeerPins } from './kernel-peers.mjs'
 
 // kernel-patches.mjs imports `yaml` from node_modules, so it must not be a
 // static import: `check` runs on a bare checkout (dsh-watch does it before any
@@ -160,6 +160,15 @@ async function main() {
       dependencies[name] = published === true
         ? range.replaceAll(previous, dsh)
         : resolvedOld.get(name) ?? range
+    }
+    // The kernel also peers on packages outside the @deepseek-ai/dsh-* family
+    // (0.2.2-alpha.2 requires @deepseek-ai/cordis-plugin-group ~1.0.6-alpha.1),
+    // and those follow their own release line, so the sync above cannot see
+    // them. Adopt the ranges the new app-boot declares; unresolved registry
+    // reads keep the existing pin instead of guessing.
+    const appBootPeers = await fetchPeerDependencies('@deepseek-ai/dsh-app-boot', dsh)
+    for (const name of adoptNonDshPeerPins(dependencies, appBootPeers)) {
+      console.log(`version: adopted ${name} ${dependencies[name]} from the new app-boot peer`)
     }
     if (JSON.stringify(dependencies) !== dependenciesBefore) await writeJson(MANIFEST_PATH, manifest)
     const moved = Object.values(dependencies).filter(range => typeof range === 'string' && range.includes(dsh)).length
