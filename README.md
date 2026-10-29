@@ -70,7 +70,7 @@ Get installers from the [website](https://dsh-desktop.com) (shows GitHub and the
 
 ## Versioning
 
-Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.2.1-rc.2.shell.0` bundles `@deepseek-ai/dsh` 0.2.1-rc.2 at shell revision 0. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically. A source version is not a published download; the website lists released builds only.
+Versions and tags are composite: `<dsh version>.shell.<shell rev>` — e.g. `0.2.2-alpha.2.shell.0` bundles `@deepseek-ai/dsh` 0.2.2-alpha.2 at shell revision 0. `scripts/version.mjs` owns the version field; a daily `dsh-watch` workflow checks upstream npm and opens a verified bump PR automatically. A source version is not a published download; the website lists released builds only.
 
 ## Development
 

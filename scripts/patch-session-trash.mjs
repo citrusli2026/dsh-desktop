@@ -68,7 +68,13 @@ export function patchSessionTrash(source) {
   if (handles !== 3) throw new Error('session-trash patch: owning create/resume sites changed')
   patched = replaceOnce(patched, '\t\t\t\tawait this.ctx.agents.create({\n\t\t\t\t\tsessionId: childId,', '\t\t\t\tthis.agents.keepTrashHandle(await this.ctx.agents.create({\n\t\t\t\t\tsessionId: childId,')
   patched = replaceOnce(patched, '\t\t\t\t\tsetup: composition.setup\n\t\t\t\t});', '\t\t\t\t\tsetup: composition.setup\n\t\t\t\t}));')
-  patched = replaceOnce(patched, '\t\tinspect(sessionId, signal) {', '\t\tasync withIdleSession(sessionId, operation) {\n\t\t\treturn this.agents.withIdleSession(sessionId, operation);\n\t\t}\n\t\tinspect(sessionId, signal) {')
+  // 0.2.2-alpha.2 split Session creation into SessionCommandController and
+  // dropped the outer controller's `inspect` method (the old anchor here). The
+  // delegating `resolveAgent` forwarder it sat next to is byte-identical in
+  // both reviewed kernels, so the exposed entry point hangs off that instead.
+  patched = replaceOnce(patched,
+    '\t\tresolveAgent(sessionId) {\n\t\t\treturn this.agents.resolveAgent(sessionId);\n\t\t}\n',
+    '\t\tresolveAgent(sessionId) {\n\t\t\treturn this.agents.resolveAgent(sessionId);\n\t\t}\n\t\tasync withIdleSession(sessionId, operation) {\n\t\t\treturn this.agents.withIdleSession(sessionId, operation);\n\t\t}\n')
   return patched
 }
 
@@ -90,8 +96,20 @@ export function patchWorkspaceTrashNavigation(source) {
  *  dsh-client-ui-workspace/lib/client.js) upstream between the versions, then
  *  re-run both transforms against the new source. 0.2.1-rc.1 → 0.2.1-rc.2:
  *  both files are byte-identical upstream (diff 0 lines) and both transforms
- *  still apply, so the reviewed diff carries over unchanged. */
-export const REVIEWED_KERNELS = ['0.2.1-rc.1', '0.2.1-rc.2']
+ *  still apply, so the reviewed diff carries over unchanged.
+ *  0.2.1-rc.2 → 0.2.2-alpha.2: both upstream bundles changed a lot
+ *  (dsh-api-session-controller/lib/index.js 3183 diff lines,
+ *  dsh-client-ui-workspace/lib/client.js 1917). Every lifecycle anchor this
+ *  patch depends on still resolves exactly once — the ApiSessionAgentController
+ *  class, its "sessionPersistence" service dependency, `resolve`, `claim`, the
+ *  three `agents.resume/create(...).agent` handle sites and the child-create
+ *  site — and the workspace transform applies unchanged. Two upstream
+ *  structural changes were absorbed: Session creation moved to the new
+ *  SessionCommandController (which delegates to the reviewed controller, so
+ *  handle wrapping stays on the owning path), and the outer controller's
+ *  `inspect` method the delegation used as its anchor was removed; the
+ *  delegation now hangs off the byte-identical `resolveAgent` forwarder. */
+export const REVIEWED_KERNELS = ['0.2.1-rc.1', '0.2.1-rc.2', '0.2.2-alpha.2']
 
 /** Only the shell-owned deployed closure is an allowed target. */
 export async function patchBundledSessionTrash(root, upstreamRoot = root) {
