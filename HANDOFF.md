@@ -10,12 +10,12 @@
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
 | 最新代码基线 | `0.2.2-alpha.2.shell.0`（内核跃迁 `0.2.1-rc.2 → 0.2.2-alpha.2`、语音输入/权限边界复审），GitHub 已交付（tag `5c0b24f`），GitCode 镜像待带宽恢复，见 §105 |
-| 已发布 | ✅ GitHub 正式版 `0.2.2-alpha.2.shell.0`（10 资产，`prerelease=false`，`releases/latest` 已指向它）；⏳ GitCode release 已创建但仅 1/8（amd64 `.sha256` 种子），镜像被 GitHub 资产带宽阻断；`v0.2.1-rc.2.shell.11` 为上一版 |
+| 已发布 | ✅ GitHub 正式版 `0.2.2-alpha.2.shell.0`（10 资产，`prerelease=false`，`releases/latest` 已指向它）＋ GitCode release（八资产 8/8，amd64 deb 全量回读 SHA-256 `4ec691b8…` 一致）；`v0.2.1-rc.2.shell.11` 为上一版 |
 | 本地门禁 | ✅ `pnpm verify`（545 单测）与 `pnpm security:audit`（根与闭包）通过；LAN 2/2、市场离线 1/1、市场真实 2/2；`dist:dir`（shell.0）后 packaged smoke、Harness-UI smoke 通过；打包 @smoke 28 passed/1 skipped（需 `WHALE_PLUGIN_DIR`）；权限与剪贴板打包 E2E 2/2；见 §105 |
 | 核心发布 | ✅ Release `40878299835` / tag `5c0b24f`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§105）；主分支 CI `40878290673` success |
-| 官网数据 | ⚠️ site-refresh bot `40884510964` 成功（`4719fe8`）：`v0.2.2-alpha.2.shell.0`、`gitcode_ok=1/8`（镜像未完成）；首页「当前版本重点」文案同步更新（`d8dffc4`） |
-| 国内镜像 | ⏳ GitCode release / tag `5c0b24f` 已 `--status unset` 创建（1/8 种子）；GitHub 资产 CDN 实测仅 28–52 KB/s 且多次连接超时，1.06 GB 下载不可行，已停止并清理 staging；恢复后执行 `node scripts/mirror-gitcode-v2.mjs v0.2.2-alpha.2.shell.0`，再 `GH_CLI=1 node scripts/gen-site-data.mjs` 刷新 `gitcode_ok` |
-| 实时下载统计 | GitHub 安装快照 9323（mac 991 / Windows 7237 / Linux 1095），91 版本（2026-10-29T14:11Z 生成）；两种统计不混用 |
+| 官网数据 | ✅ 镜像完成后本地重生成（`GH_CLI=1 gen-site-data`）：`v0.2.2-alpha.2.shell.0`、八资产 `gitcode_ok=true`、下载快照带 GitHub+GitCode 徽标；bot `40884510964`（`4719fe8`）与首页文案 `d8dffc4` 为同日产物（§105） |
+| 国内镜像 | ✅ GitCode release / tag `5c0b24f`（`--status unset`）；八资产匿名 Range GET 8/8；amd64 deb 全量 236,460,404 B，SHA-256 `4ec691b8…` 与官方 `.sha256` 一致（§105） |
+| 实时下载统计 | GitHub 安装快照 9718（mac 1106 / Windows 7390 / Linux 1222），91 版本（2026-10-30T00:47Z 生成）；两种统计不混用 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
 
@@ -3185,15 +3185,19 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
 6. **发布**：tag `v0.2.2-alpha.2.shell.0` → `5c0b24f`（GitHub / GitCode peeled 一致）；Release run
    `40878299835` verify + 四平台 build + publish 全绿；GitHub 10 资产、`prerelease=false`、
    `/releases/latest` 指向该 tag；主分支 CI `40878290673` success。
-7. **GitCode 镜像未完成（带宽）**：已用 amd64 `.sha256` 种子 `create --status unset` 建好 release
-   对象，随后两次 `mirror-gitcode-v2.mjs` 运行都卡在 GitHub 资产下载——实测 CDN 只有 28–52 KB/s，
-   `curl -L -r` 多次 20 s 内 0 字节，1.06 GB 需数小时且随时超时，已停止并清理 staging（并发运行
-   还会和 launchd 守护抢带宽）。恢复后执行：
-   `node scripts/mirror-gitcode-v2.mjs v0.2.2-alpha.2.shell.0`（8/8 匿名验证），再
-   `GH_CLI=1 node scripts/gen-site-data.mjs` 把 `gitcode_ok` 刷成 8/8 并推送。
-8. **官网**：site-refresh bot `40884510964` 成功（`4719fe8`）：`v0.2.2-alpha.2.shell.0`、
-   `gitcode_ok=1/8`、下载快照与 changelog 已生成；首页「当前版本重点」与英文 release-focus 同步改成
-   新内核与权限复审（`d8dffc4`）。统计快照 9323（mac 991 / win 7237 / linux 1095）。
+7. **GitCode 镜像（次日补齐）**：发布当晚先用 amd64 `.sha256` 种子 `create --status unset` 建好
+   release 对象；随后两次 `mirror-gitcode-v2.mjs` 都卡在 GitHub 资产下载（CDN 28–52 KB/s，`curl -r`
+   20 s 内 0 字节），已清理 staging 交给 launchd 守护。2026-10-30 08:40 复查发现 `gh release
+   download` 已恢复到 ~4.5 MB/s（同一时刻 `curl -r` 仍 0 字节，说明卡的是裸 curl 那条路径），随即
+   重跑：首次在首个大文件上传时报 `attachment reservation failed with HTTP 401`（小文件上传与随后
+   重试均正常，属浏览器 token 轮换的瞬时 401）；带 `--work-dir` 重跑后
+   `uploaded 7` → `linked 7 asset(s)` → **8/8 assets verified anonymously**。全量回读 amd64 deb：
+   236,460,404 B，SHA-256 `4ec691b81085c596f2a45a23784de57c7fa6d935fa2c6d98c6b3c26398418ae7`
+   与官方 `.sha256` 一致。站点数据已用 `GH_CLI=1 gen-site-data` 重生成（8/8）并重跑下载快照。
+8. **官网**：site-refresh bot `40884510964` 成功（`4719fe8`）：`v0.2.2-alpha.2.shell.0`、下载快照与
+   changelog 已生成（镜像完成前 `gitcode_ok=1/8`）；首页「当前版本重点」与英文 release-focus 同步改成
+   新内核与权限复审（`d8dffc4`）；镜像完成后本地重生成数据（8/8）并重跑 `gen-site-download-index` /
+   `gen-site-sitemap`。统计快照 9718（mac 1106 / win 7390 / linux 1222）。
 9. **收尾**：Dependabot 的 undici 安全更新任务继续以 updater 容器 `update_files` 退出 1 失败（仓库
    根与 manifest 都无直接 undici 依赖，两处 `pnpm audit` 均 exit 0），仅记录。用户当前装的是
    shell.8，macOS 为 check-only 更新（ADR 0010），需手动下载安装。
