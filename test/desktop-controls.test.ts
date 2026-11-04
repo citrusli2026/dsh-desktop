@@ -50,7 +50,11 @@ test('desktop controls package exposes a safe additive client plugin contract', 
   assert.match(client, /groupRecovery/)
   // The overlay and settings page expose an explicit visual hierarchy.
   assert.match(client, /data-dsh-controls-panel-head/)
-  assert.match(client, /data-dsh-controls-action-detail/)
+  // 2026-11-04: every overlay row is a single line (label only); subtitles were
+  // what made the expanded menu too tall, so they must not come back.
+  assert.match(client, /data-dsh-controls-action-title/)
+  assert.doesNotMatch(client, /data-dsh-controls-action-detail/)
+  assert.doesNotMatch(client, /data-dsh-controls-action-body/)
   assert.match(client, /panelConnect/)
   assert.match(client, /panelRecovery/)
   assert.match(client, /panelMaintenance/)
@@ -402,7 +406,9 @@ test('plugin-declared companion windows are listed and toggled from the panel (A
   assert.match(client, /"data-dsh-controls-group": "companions"/)
   assert.match(client, /listCompanions/)
   assert.match(client, /toggleCompanion/)
-  assert.match(client, /companionHint/)
+  // Rows are single-line: the companion title is the label, with no hint line.
+  assert.match(client, /companions\.map\(\(item\) => react_jsx_runtime\.jsx\(PanelAction, \{ mark: "◎", label: item\.title/)
+  assert.doesNotMatch(client, /companionHint/)
   // The bridge is narrow: list + toggle, no DOM or approval channel.
   assert.match(preload, /listCompanions: \(\): Promise<CompanionDescriptor\[\]> => ipcRenderer\.invoke\('companion:list'\)/)
   assert.match(preload, /toggleCompanion: \(id: string\): Promise<boolean> => ipcRenderer\.invoke\('companion:toggle', id\)/)
