@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop Changelog","url":"https://dsh-desktop.com/en/changelog","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/en"},{"@type":"ListItem","position":2,"name":"Changelog","item":"https://dsh-desktop.com/en/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-10-29","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.2-alpha.2.shell.0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-11-04","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.2-alpha.3.shell.0"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,12 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.2-alpha.3.shell.0 <small>(kernel 0.2.2-alpha.3)</small></h2>
+  <ul>
+    <li><strong>Kernel 0.2.2-alpha.2 → 0.2.2-alpha.3</strong>: the manifest pin plus 32 <code>dsh-*</code> peer ranges moved together, <code>cordis-plugin-group</code> follows the new app-boot peer (1.0.6-alpha.2), release-age exemptions were re-pinned (315 → 302), the closure was regenerated and re-deployed with <code>audit-harness-peers: closure satisfied</code>. Both maintenance patches were re-reviewed against the new bundles: the account patch is still two hunks applied cleanly, and the session-trash patch's anchors and the <code>binding.session</code> / <code>removed</code> contract it reads are unchanged (the host bundle's 50-line diff is projection plumbing only; the workspace bundle's navigation block is byte-identical). 0.2.2-alpha.3 is registered in <code>REVIEWED_KERNELS</code>.</li>
+    <li><strong>Desktop tools menu is one line per action</strong>: the overlay no longer renders a muted subtitle under each label (row height 52px → 38px, long labels ellipsize), while group headers and the panel headline stay. Each setting's description remains on its settings page; only the eleven duplicated subtitle strings were removed in both locales. Gates: <code>pnpm run verify</code>, LAN pairing 2/2, offline market 1/1, real market 2/2, and <code>dist:dir</code> followed by the packaged and Harness-UI smoke tests.</li>
+  </ul>
+
   <h2>v0.2.2-alpha.2.shell.0 <small>(kernel 0.2.2-alpha.2)</small></h2>
   <ul>
     <li><strong>Kernel 0.2.1-rc.2 → 0.2.2-alpha.2</strong> (a kernel bump resets the shell revision to 0): the manifest pin moved with 32 <code>dsh-*</code> peers, <code>cordis-plugin-group</code> went 1.0.5-alpha.1 → 1.0.6-alpha.1 to satisfy the new app-boot peer, the release-age excludes were re-pinned (315 → 302 entries), the closure lockfile was regenerated and redeployed, and the peer audit reports <code>closure satisfied</code>. Both maintenance patches were rebuilt on the new bundles: the account settings popup fallback and onboarding guard were regenerated against the new source (same two hunks), and the session-trash lifecycle patch passed its upstream review — the two edited bundles changed by ~5100 diff lines, all lifecycle anchors still resolve once, session creation moved into the new <code>SessionCommandController</code>, and the outer <code>inspect</code> the delegation anchored on was removed, so the delegation now hangs off the byte-identical <code>resolveAgent</code> forwarder; the kernel is recorded in <code>REVIEWED_KERNELS</code>.</li>
@@ -107,14 +113,6 @@
     <li><strong>Update prompt</strong>: macOS/Linux “new version available” opens the community download page in the user's locale instead of a GitHub release page.</li>
     <li><strong>Real-plugin release gate</strong>: opt-in <code>pnpm run test:e2e:whale</code> plus a HID click-through check; the fixture suite now covers the auth fence and the late-load race.</li>
     <li><strong>Boundary unchanged</strong>: no DOM access, no <code>executeJavaScript</code>, no approval bridge — approvals in the companion hand off to the main window.</li>
-  </ul>
-
-  <h2>v0.2.1-rc.2.shell.5 <small>(kernel 0.2.1-rc.2)</small></h2>
-  <ul>
-    <li><strong>Plugin companion windows (ADR 0043)</strong>: an installed plugin can declare <code>dsh.companion { route, width, height, title, showOnMinimize }</code> in its own <code>package.json</code>; the shell discovers it read-only, probes the route for a 2xx HTML response, and hosts it in a sandboxed window that appears when the main window is minimized and hides when it is restored.</li>
-    <li><strong>Security boundary</strong>: sandboxed with context isolation, no Node integration, <code>window.open</code> denied, navigation pinned to the declared path; the preload only exposes hide/focus-main. No DOM access, no <code>executeJavaScript</code>, no approval bridge — approvals stay in the main window.</li>
-    <li><strong>Panel entry</strong>: a new “Companion windows” group in the desktop-tools panel toggles declared companions; placement follows the display containing the main window and windows are destroyed on quit.</li>
-    <li><strong>Community request #130</strong>: the whale widget only needs the declaration and its <code>/dsh-whale/pet</code> route — no <code>app.asar</code> patching and no disabling auto-update.</li>
   </ul>
   <!-- changelog:auto:end -->
 
