@@ -1,6 +1,6 @@
 # HANDOFF — 运维核心
 
-> 更新于 2026-10-17。产品架构见 `docs/ARCHITECTURE.md`；
+> 更新于 2026-11-04。产品架构见 `docs/ARCHITECTURE.md`；
 > 决策记录见 `docs/decisions/`。本文是运维事实的唯一来源。
 
 ## 一、当前状态
@@ -9,12 +9,12 @@
 |---|---|
 | 官网 | ✅ <https://dsh-desktop.com>（国内解析已钉健康 Vercel 段 64.29.17.x；打不开时直接用 [GitHub Releases](https://github.com/citrusli2026/dsh-desktop/releases) / [GitCode Releases](https://gitcode.com/citrusli2026/dsh-desktop/releases)；`*.vercel.app` 备用域名在国内不可达已弃用引导，2026-09-21 实测） |
 | 产品定位 | ✅ 可靠的 Electron 壳 + 开箱即用支持；不做 Agent 工作台；签名/公证待使用量与反馈后评估（ADR 0030） |
-| 最新代码基线 | `0.2.2-alpha.2.shell.0`（内核跃迁 `0.2.1-rc.2 → 0.2.2-alpha.2`、语音输入/权限边界复审），GitHub 已交付（tag `5c0b24f`），GitCode 镜像待带宽恢复，见 §105 |
-| 已发布 | ✅ GitHub 正式版 `0.2.2-alpha.2.shell.0`（10 资产，`prerelease=false`，`releases/latest` 已指向它）＋ GitCode release（八资产 8/8，amd64 deb 全量回读 SHA-256 `4ec691b8…` 一致）；`v0.2.1-rc.2.shell.11` 为上一版 |
-| 本地门禁 | ✅ `pnpm verify`（545 单测）与 `pnpm security:audit`（根与闭包）通过；LAN 2/2、市场离线 1/1、市场真实 2/2；`dist:dir`（shell.0）后 packaged smoke、Harness-UI smoke 通过；打包 @smoke 28 passed/1 skipped（需 `WHALE_PLUGIN_DIR`）；权限与剪贴板打包 E2E 2/2；见 §105 |
-| 核心发布 | ✅ Release `40878299835` / tag `5c0b24f`，verify + 四平台 build（含打包 @smoke 门禁）+ publish success，十文件与来源证明通过（§105）；主分支 CI `40878290673` success |
-| 官网数据 | ✅ 镜像完成后本地重生成（`GH_CLI=1 gen-site-data`）：`v0.2.2-alpha.2.shell.0`、八资产 `gitcode_ok=true`、下载快照带 GitHub+GitCode 徽标；bot `40884510964`（`4719fe8`）与首页文案 `d8dffc4` 为同日产物（§105） |
-| 国内镜像 | ✅ GitCode release / tag `5c0b24f`（`--status unset`）；八资产匿名 Range GET 8/8；amd64 deb 全量 236,460,404 B，SHA-256 `4ec691b8…` 与官方 `.sha256` 一致（§105） |
+| 最新代码基线 | `0.2.2-alpha.3.shell.0`（内核跃迁 `0.2.2-alpha.2 → 0.2.2-alpha.3`、桌面工具菜单单行化），GitHub 与 GitCode 均已交付（tag `79350c6`），见 §106 |
+| 已发布 | ✅ GitHub 正式版 `0.2.2-alpha.3.shell.0`（10 资产，`prerelease=false`，`releases/latest` 已指向它）＋ GitCode release（八资产 8/8，amd64 deb 全量回读 SHA-256 `d5987ac3…` 一致）；`v0.2.2-alpha.2.shell.0` 为上一版 |
+| 本地门禁 | ✅ `pnpm verify`（typecheck、全部单测与覆盖率、`site:check`、build）与 `bootstrap`（`audit-harness-peers: closure satisfied`）通过；LAN 2/2、市场离线 1/1、市场真实 2/2；`dist:dir`（shell.0）后 packaged smoke、Harness-UI smoke 通过；打包 `desktop-ui-review` 截图复核菜单单行；见 §106 |
+| 核心发布 | ✅ Release `41780125650` / tag `79350c6`，verify + 四平台 build + publish success，十文件与来源证明通过（§106）；主分支 CI `41780097394` success |
+| 官网数据 | ✅ 镜像完成后本地重生成（`GH_CLI=1 gen-site-data`）：`v0.2.2-alpha.3.shell.0`、八资产 `gitcode_ok=true`、下载快照带 GitHub+GitCode 徽标；site-refresh bot `41788872016`（`f5adfe4`）已先跑通 changelog 与下载页（§106） |
+| 国内镜像 | ✅ GitCode release `66485` / tag `79350c6`（`--status unset`）；八资产匿名 8/8；amd64 deb 全量 236,752,816 B，SHA-256 `d5987ac3…` 与官方 `.sha256` 一致（§106） |
 | 实时下载统计 | GitHub 安装快照 9718（mac 1106 / Windows 7390 / Linux 1222），91 版本（2026-10-30T00:47Z 生成）；两种统计不混用 |
 
 ## 二、官网浅色体系与声明精简（2026-08-15 已提交部署，无新 tag）
@@ -3209,3 +3209,61 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    对 dsh-* 之外的 pin 采用严格更新的范围（注册表读不到时保留原 pin，宁可不猜）；
    补丁上下文仍需人工复审，失败单里已写明 `pnpm patch` 处置方式而不是只让人翻日志。
    单测覆盖 `minimumVersion`/`adoptNonDshPeerPins`，并用真实 0.2.2-alpha.2 peer 表验证过。
+
+## 106. 发布 v0.2.2-alpha.3.shell.0（内核跃迁 + 桌面工具菜单单行化 + 三个 Dependabot PR，2026-11-04）
+
+1. **内核升级**：`node scripts/version.mjs bump dsh 0.2.2-alpha.3` → 复合版本 `0.2.2-alpha.3.shell.0`
+   （壳修订归零）。同步 32 个 `dsh-*` peer；新内核 `dsh-app-boot` 的 peer 把
+   `@deepseek-ai/cordis-plugin-group` 从 `~1.0.6-alpha.1` 抬到 `~1.0.6-alpha.2`，`version.mjs` 自动采纳；
+   `sync-release-age-excludes` 315 → 302 条；闭包锁文件重生成后 `pnpm run bootstrap` 部署 435 MB 闭包，
+   报 `audit-harness-peers: closure satisfied, no missing non-optional peers`（该内核树无 fs-ext，
+   native 无重建项）。`version.mjs check` 现已 exit 0（0.2.2-alpha.3 为最新发布版）。
+2. **两处维护补丁复审**：账号补丁 `bump` 时自动改写为 `@deepseek-ai__dsh-client-ui-settings-account@0.2.2-alpha.3.patch`，
+   `pnpm-workspace.yaml` 的 `patchedDependencies` 同步更换，部署后两处 hunk 在位（登录弹窗回退
+   `:1034`、onboarding 守卫 `:5055`）。会话垃圾桶补丁按上游复审：`dsh-api-session-controller/lib/index.js`
+   仅 50 行 diff（投影管道 `sessionProjections.onChanged` → `onEventChanged`、`cachedSnapshot` →
+   `snapshot`、`SessionList` 改从注册的 `sessionListMetadata` 读取句柄），`dsh-client-ui-workspace/lib/client.js`
+   虽有 1003 行 diff，但 `watchNavigation()`、`clearArchivedCurrent()`、`clearMain()` 与 alpha.2 逐字节
+   相同；插入的守卫读取 `this.mainReference?.binding.session.getSnapshot().removed`，该形状在
+   `dsh-api-session-controller` 里仍成立（`retain()` :3858、`get binding()` :3774、快照 `removed` :2926）。
+   `REVIEWED_KERNELS` 增加 `0.2.2-alpha.3`。
+3. **桌面工具菜单单行化**（用户反馈：展开后太长、副标题占位）：每行改为「图标 + 标题 + ›」单行，
+   行高 52 → 38 px，删除 `data-dsh-controls-action-body` / `-action-detail` 节点与 11 个只服务副标题的
+   文案键（中英双语同步删除）；分组标题（连接/恢复/维护/信息/伴随窗口）与 Feishu 状态卡保留，设置页
+   仍在用的 `feishuEntryDetail`、`safeModeDetail`、`lanSettingsDetail` 保留。契约单测改为断言标题存在、
+   副标题节点不存在；打包后截图实测整面板 846 px 高（宽 342 px），原先副标题占用的高度全部回收。
+   提交 `637f075`。
+4. **环境踩坑（可复用）**：
+   - `manifest/harness/pnpm-lock.yaml` 若被 pnpm 11 写过，`patchedDependencies` 会变成裸哈希形式，
+     pnpm 10.33.2（仓库 `packageManager` 锁定）随后报 `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`；恢复成
+     `{hash, path}` 两字段即可。**只让 pnpm 10.33.2 碰这个锁文件。**
+   - 非 TTY 下任何 `pnpm install` 都要 `CI=true`，否则 `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`。
+   - `pnpm run verify` 需要 `go`（`/opt/homebrew/bin`）在 PATH 里，否则 cc-connect 配置用例报
+     `spawn go ENOENT`。
+   - `gen-site-changelog` 要求中英文 release notes 的 fact 数相等，`alpha.3` 初稿中英不一致导致
+     Site Data Refresh 失败（见第 7 条），发布前用 `write-release-notes check` 与逐条对齐规避。
+5. **发布**：tag `v0.2.2-alpha.3.shell.0` → `79350c6`（GitHub / GitCode peeled 一致）；Release run
+   `41780125650` verify + 四平台 build + publish 全绿；GitHub 10 资产、`prerelease=false`、
+   `/releases/latest` 已指向该 tag；主分支 CI `41780097394` success。资产：amd64 deb 236,752,816 B
+   （`d5987ac3fcd6c6e30bc5358bc10b6a68aeff8db39d6b390a81c17e6b458ff1fd`）、arm64 deb 231,060,556 B、
+   dmg 294,880,185 B、exe 269,135,605 B。
+6. **Dependabot 三单收口**：electron 44.9.3（`a34ac01`）、electron-updater 6.8.11（`bb2bc15`）、
+   electron-builder 26.18.0（`e2c9230`）全部合入 main。builder 这单本身 CI 红在
+   `test/packaging-lock.test.ts:6`：重新生成的锁文件把 `@electron/osx-sign` / `@electron/universal`
+   的 `plist` 从 3.1.1 降回 3.1.0 并丢掉 `@xmldom/xmldom 0.9.12`；在根 `pnpm-workspace.yaml` 增加
+   `'plist@^3.1.0': 3.1.1` 覆盖（注册表 3.1.0 未撤回，只是依赖解析漂移）后锁文件恢复，`check` 转绿。
+7. **GitCode 镜像**：先用 amd64 `.sha256` 种子 `create --status unset` 建好 release 对象（id `66485`，
+   描述 `Mirrored from https://github.com/citrusli2026/dsh-desktop/releases`）。GitHub 资产 CDN 当晚把本机
+   限速到 ~38–55 KB/s（proxy 单连 168 KB/s、两连 327 KB/s、八连反而塌到 60 KB/s），改用本地分块并发脚本
+   预填 staging；约两小时后限速解除（`curl -r` 直连回到 ~800 KB/s），直接分块下载补齐 arm64 deb 与 exe，
+   `mirror-gitcode-v2.mjs --work-dir` 一次跑通：`uploaded 7` → `linked 7 asset(s)` →
+   **8/8 assets verified anonymously**。amd64 deb 全量回读 236,752,816 B，SHA-256 `d5987ac3…` 与官方一致。
+8. **官网**：tag 触发的 Site Data Refresh `41784303396` 失败，原因是 alpha.3 release notes 中文 2 条、
+   英文 3 条（`gen-site-changelog.mjs:89` 强制等数）；把验证句折进第二条英文 bullet 后提交 `a831a41`，
+   手动 dispatch `site-refresh.yml` → `41788872016` success，bot 推送 `f5adfe4`（changelog 8 版本、
+   下载页、stars 20、sitemap）。镜像完成后本地 `GH_CLI=1 gen-site-data` 重生成，八资产 `gitcode_ok=true`，
+   再跑 `gen-site-download-index` / `gen-site-sitemap` 一并提交。
+9. **收尾**：dsh-watch 失败单 #140 关闭为「已由重试解决」——失败步骤是 `Regenerate the closure
+   lockfile`，报 `ERR_PNPM_NO_MATCHING_VERSION … @deepseek-ai/dsh-tool-pwsh-persistent@0.2.2-alpha.3`，
+   属上游「内核先发、工具包后发」的发布竞态；该版本现已在 npmjs 与 npmmirror 均可解析，本次升级
+   + 全量门禁 + 正式发布已覆盖该路径。macOS 端为 check-only 更新（ADR 0010），升级需手动下载安装。
