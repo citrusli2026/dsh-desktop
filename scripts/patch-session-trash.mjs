@@ -108,8 +108,21 @@ export function patchWorkspaceTrashNavigation(source) {
  *  SessionCommandController (which delegates to the reviewed controller, so
  *  handle wrapping stays on the owning path), and the outer controller's
  *  `inspect` method the delegation used as its anchor was removed; the
- *  delegation now hangs off the byte-identical `resolveAgent` forwarder. */
-export const REVIEWED_KERNELS = ['0.2.1-rc.1', '0.2.1-rc.2', '0.2.2-alpha.2']
+ *  delegation now hangs off the byte-identical `resolveAgent` forwarder.
+ *  0.2.2-alpha.2 → 0.2.2-alpha.3: dsh-api-session-controller/lib/index.js moved
+ *  50 diff lines, all in projection plumbing (`sessionProjections.onChanged` →
+ *  `onEventChanged`, `cachedSnapshot` → `snapshot`, ApiSessionList reading
+ *  `sessionListMetadata` through its registered handle instead of the
+ *  projection values). Every lifecycle anchor still resolves exactly once, so
+ *  the host transform applies unchanged (+2234 chars). The client bundle moved
+ *  1003 diff lines elsewhere, but the two regions this patch touches are
+ *  byte-identical upstream: `watchNavigation()` (1102 chars) and
+ *  `clearArchivedCurrent()` + `clearMain()`. The retained-reference contract
+ *  the inserted guard reads is also unchanged — the retain handle still exposes
+ *  `binding.session`, and the client SessionSnapshot still carries `removed`
+ *  (@deepseek-ai/dsh-api-session-controller/lib/client.js `get binding()` and
+ *  the `removed = true` relay). The workspace transform applies (+165 chars). */
+export const REVIEWED_KERNELS = ['0.2.1-rc.1', '0.2.1-rc.2', '0.2.2-alpha.2', '0.2.2-alpha.3']
 
 /** Only the shell-owned deployed closure is an allowed target. */
 export async function patchBundledSessionTrash(root, upstreamRoot = root) {

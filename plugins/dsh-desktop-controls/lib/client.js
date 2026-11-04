@@ -187,9 +187,9 @@ window.__ModuleLoader__.load({
         display: grid;
         gap: 10px;
         grid-template-columns: 34px minmax(0, 1fr) auto;
-        min-height: 52px;
+        min-height: 38px;
         overflow: hidden;
-        padding: 7px 9px;
+        padding: 5px 9px;
         text-align: left;
         width: 100%;
       }
@@ -220,22 +220,16 @@ window.__ModuleLoader__.load({
         border-color: var(--dsh-controls-accent);
         color: #fff;
       }
-      [data-dsh-desktop-controls] [data-dsh-controls-action-body] { min-width: 0; }
+      /* 一行一个功能：标题独占一行并截断，不再渲染副标题描述。 */
       [data-dsh-desktop-controls] [data-dsh-controls-action-title] {
         display: block;
-        font-size: 12.5px;
+        font-size: 13px;
         font-weight: 650;
         line-height: 1.3;
-      }
-      [data-dsh-desktop-controls] [data-dsh-controls-action-detail] {
-        color: var(--dsh-controls-muted);
-        display: -webkit-box;
-        font-size: 10.5px;
-        line-height: 1.35;
-        margin-top: 2px;
+        min-width: 0;
         overflow: hidden;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-action-arrow] {
         color: var(--dsh-controls-muted);
@@ -1039,20 +1033,16 @@ window.__ModuleLoader__.load({
         feishuStart: "开启连接", feishuStop: "关闭连接", feishuRestart: "重新连接", feishuWorking: "处理中…", feishuManage: "管理应用",
         feishuStartFailed: "开启失败：", feishuStopFailed: "关闭失败：",
         about: "关于",
-        aboutDetail: "版本、运行时与项目来源",
         star: "在 GitHub 上 Star",
-        starDetail: "在 GitHub 上给 dsh-desktop 点个 Star，帮更多人发现它",
-        checkUpdates: "检查更新", checkUpdatesDetail: "检查 dsh-desktop 新版本",
-        openLogs: "打开日志", openLogsDetail: "查看本机运行日志",
-        exportDiagnostics: "导出诊断", exportDiagnosticsDetail: "生成脱敏诊断报告",
+        checkUpdates: "检查更新",
+        openLogs: "打开日志",
+        exportDiagnostics: "导出诊断",
         restartHarness: "重启 Harness",
-        restartDetail: "保留设置并重新启动内核",
         unavailable: "请右键窗口或点击系统托盘图标使用桌面工具。",
         actionFailed: "操作未完成",
         actionFailedSeparator: "：",
         actionBridgeUnavailable: "桌面桥不可用；请从系统托盘重试或重新打开桌面设置。",
         companionGroup: "伴随窗口",
-        companionHint: "由已安装插件声明；显示在桌面右下角",
         settingsTitle: "桌面设置", settingsCopy: "连接设备、调整桌面习惯；需要时可从这里体检、恢复或维护 Harness。",
         guideEyebrow: "第一次使用", guideTitle: "从这里开始", guideClose: "关闭首次使用引导", guideIntro: "无需先安装插件，完成下面四步即可开始。",
         guideRuntime: "运行环境就绪", guideWorkspace: "选择工作区", guideModel: "配置模型", guideTask: "完成第一条任务", guideDone: "完成", guidePending: "待完成", guideMarketOptional: "插件市场是可选项，不影响你先完成第一条任务。",
@@ -1069,7 +1059,7 @@ window.__ModuleLoader__.load({
         connectStreamPreview: "流式预览", connectStreamPreviewInterval: "刷新间隔", connectPreviewCurrent: "当前：{seconds}s",
         connectCardModeTitle: "卡片样式", connectCardModeLegacy: "经典", connectCardModeRich: "富卡片（Card 2.0）",
         connectProgressStyleTitle: "进度展示", connectProgressStyleLegacy: "逐条", connectProgressStyleCompact: "单消息更新", connectProgressStyleCard: "结构化卡片",
-        lanStart: "开始配对", lanShowQr: "显示二维码", lanStop: "停止共享", lanPanelDetail: "同一局域网 · 扫码进入 Harness", lanActiveDetail: "局域网入口已开启", lanStopDetail: "关闭当前局域网入口",
+        lanStart: "开始配对", lanShowQr: "显示二维码", lanStop: "停止共享",
         shortcut: "唤起快捷键", record: "重新设置", recording: "请按下快捷键…",
         shortcutHelp: "至少包含一个修饰键，例如 Ctrl + Alt + K。",
         launchAtLogin: "开机启动",
@@ -1080,7 +1070,7 @@ window.__ModuleLoader__.load({
         screenCapture: "屏幕捕获", screenCaptureDetail: "开启后 Agent 可截屏并作为会话附件（需要视觉模型）；切换后自动重启内核。",
         screenCapturePermission: "尚未授权屏幕录制：请在 系统设置 → 隐私与安全性 → 屏幕录制 中允许 dsh-desktop，然后重试。",
         safeMode: "安全模式", safeModeDetail: "隔离第三方插件，仅运行官方与内置扩展。",
-        safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式", safeModeExitDetail: "恢复第三方插件并重新启动",
+        safeModeStart: "以安全模式启动", safeModeExit: "退出安全模式",
         market: "插件市场", marketDetail: "社区插件全部由你手动安装；dsh-desktop 不会预装或静默恢复。",
         marketInstall: "安装插件市场", marketReinstall: "重新安装", marketWorking: "处理中", marketInstalledHint: "已安装 · 打开 设置 → 插件市场", marketMissing: "尚未安装", marketDamaged: "安装记录或文件不完整", marketFailed: "安装未完成，请重试。", marketRestartFailed: "已安装，但重启 Harness 失败；请从恢复区重试。", marketRisk: "将从网络下载并运行第三方社区代码及其安装脚本，请确认来源后继续。", marketConfirm: "确认安装", marketCancel: "取消",
         marketPreparing: "正在准备随包 Node、pnpm 与系统代理…", marketInstalling: "正在下载并安装，可能需要几分钟…", marketVerifying: "正在验证 profile 与实际安装版本…", marketRestarting: "安装完成，正在重启 Harness…", marketSuccess: "插件市场 {version} 已安装并运行。",
@@ -1121,20 +1111,16 @@ window.__ModuleLoader__.load({
         feishuStart: "Start connection", feishuStop: "Stop connection", feishuRestart: "Reconnect", feishuWorking: "Working…", feishuManage: "Manage",
         feishuStartFailed: "Start failed: ", feishuStopFailed: "Stop failed: ",
         about: "About",
-        aboutDetail: "Version, runtime, and project source",
         star: "Star on GitHub",
-        starDetail: "Star dsh-desktop on GitHub so more people find it",
-        checkUpdates: "Check for updates", checkUpdatesDetail: "Check for a new dsh-desktop release",
-        openLogs: "Open logs", openLogsDetail: "Reveal the local log folder",
-        exportDiagnostics: "Export diagnostics", exportDiagnosticsDetail: "Save a sanitized diagnostic report",
+        checkUpdates: "Check for updates",
+        openLogs: "Open logs",
+        exportDiagnostics: "Export diagnostics",
         restartHarness: "Restart Harness",
-        restartDetail: "Keep settings and restart the kernel",
         unavailable: "Right-click the window or use the system tray for desktop tools.",
         actionFailed: "Action did not complete",
         actionFailedSeparator: ": ",
         actionBridgeUnavailable: "The desktop bridge is unavailable; retry from the system tray or reopen Desktop settings.",
         companionGroup: "Companion windows",
-        companionHint: "Declared by an installed plugin; opens at the bottom-right of the desktop",
         settingsTitle: "Desktop settings", settingsCopy: "Connect devices and tune desktop habits; inspect, recover, or maintain Harness when needed.",
         guideEyebrow: "FIRST RUN", guideTitle: "Start here", guideClose: "Dismiss first-run guide", guideIntro: "No plugin is required. Complete these four steps to get started.",
         guideRuntime: "Runtime ready", guideWorkspace: "Choose a workspace", guideModel: "Configure a model", guideTask: "Complete your first task", guideDone: "Done", guidePending: "To do", guideMarketOptional: "The plugin market is optional and never blocks your first task.",
@@ -1151,7 +1137,7 @@ window.__ModuleLoader__.load({
         connectStreamPreview: "Stream preview", connectStreamPreviewInterval: "Refresh interval", connectPreviewCurrent: "Current: {seconds}s",
         connectCardModeTitle: "Card style", connectCardModeLegacy: "Classic", connectCardModeRich: "Rich card (Card 2.0)",
         connectProgressStyleTitle: "Progress display", connectProgressStyleLegacy: "Separate messages", connectProgressStyleCompact: "Single message updates", connectProgressStyleCard: "Structured card",
-        lanStart: "Start pairing", lanShowQr: "Show QR code", lanStop: "Stop sharing", lanPanelDetail: "Same LAN · scan to enter Harness", lanActiveDetail: "LAN access is active", lanStopDetail: "Close the current LAN entry point",
+        lanStart: "Start pairing", lanShowQr: "Show QR code", lanStop: "Stop sharing",
         shortcut: "Summon shortcut", record: "Change", recording: "Press a shortcut…",
         shortcutHelp: "Include at least one modifier, such as Ctrl + Alt + K.",
         launchAtLogin: "Launch at login",
@@ -1162,7 +1148,7 @@ window.__ModuleLoader__.load({
         screenCapture: "Screen capture", screenCaptureDetail: "Lets the agent capture the screen as conversation attachments (vision model required); the kernel restarts on toggle.",
         screenCapturePermission: "Screen recording is not authorized; allow dsh-desktop in System Settings → Privacy → Screen Recording, then retry.",
         safeMode: "Safe Mode", safeModeDetail: "Quarantine third-party plugins; official and built-in extensions only.",
-        safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode", safeModeExitDetail: "Restore third-party plugins and restart",
+        safeModeStart: "Start in Safe Mode", safeModeExit: "Exit Safe Mode",
         market: "Plugin market", marketDetail: "Community plugins are always installed by you; dsh-desktop never bundles or silently restores them.",
         marketInstall: "Install the market", marketReinstall: "Reinstall", marketWorking: "Working", marketInstalledHint: "Installed · open Settings → Plugin Market", marketMissing: "Not installed", marketDamaged: "Install record or files are incomplete", marketFailed: "Install did not finish; retry when ready.", marketRestartFailed: "Installed, but Harness did not restart; retry from Recovery.", marketRisk: "This downloads and runs third-party community code and install scripts. Verify the source before continuing.", marketConfirm: "Confirm install", marketCancel: "Cancel",
         marketPreparing: "Preparing the bundled Node, pnpm, and system proxy…", marketInstalling: "Downloading and installing — this can take a few minutes…", marketVerifying: "Verifying the profile and installed version…", marketRestarting: "Installed; restarting Harness…", marketSuccess: "Plugin market {version} is installed and running.",
@@ -2320,7 +2306,12 @@ window.__ModuleLoader__.load({
       });
     }
 
-    function PanelAction({ mark, label, detail, primary = false, disabled = false, onClick }) {
+    /**
+     * 浮层里的单个功能：标记 + 名称一行。2026-11-04 起不再渲染副标题
+     * 描述——展开后的菜单此前被每行两段文字撑得过长，用户要求每个功能
+     * 只占一行，用途交给设置页的说明承载。
+     */
+    function PanelAction({ mark, label, primary = false, disabled = false, onClick }) {
       return react_jsx_runtime.jsxs("button", {
         type: "button",
         "data-dsh-controls-action": true,
@@ -2329,10 +2320,7 @@ window.__ModuleLoader__.load({
         onClick: onClick,
         children: [
           react_jsx_runtime.jsx("span", { "data-dsh-controls-action-mark": true, "aria-hidden": "true", children: mark }),
-          react_jsx_runtime.jsxs("span", { "data-dsh-controls-action-body": true, children: [
-            react_jsx_runtime.jsx("strong", { "data-dsh-controls-action-title": true, children: label }),
-            react_jsx_runtime.jsx("small", { "data-dsh-controls-action-detail": true, children: detail }),
-          ] }),
+          react_jsx_runtime.jsx("strong", { "data-dsh-controls-action-title": true, children: label }),
           react_jsx_runtime.jsx("span", { "data-dsh-controls-action-arrow": true, "aria-hidden": "true", children: "›" }),
         ],
       });
@@ -2788,35 +2776,35 @@ window.__ModuleLoader__.load({
                     ] }),
                   ] })) : null,
                 react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
-                  typeof bridge?.openConnectManager === "function" ? react_jsx_runtime.jsx(PanelAction, { mark: "FS", label: copy.feishuEntry, detail: copy.feishuEntryDetail, disabled: busy !== "", onClick: () => void openConnectManager() }) : null,
+                  typeof bridge?.openConnectManager === "function" ? react_jsx_runtime.jsx(PanelAction, { mark: "FS", label: copy.feishuEntry, disabled: busy !== "", onClick: () => void openConnectManager() }) : null,
                   lanState?.running === true ? react_jsx_runtime.jsxs(react.Fragment, { children: [
-                    react_jsx_runtime.jsx(PanelAction, { mark: "QR", label: copy.lanShowQr, detail: copy.lanActiveDetail, primary: true, disabled: busy !== "", onClick: () => void invoke("showLanPairing") }),
-                    react_jsx_runtime.jsx(PanelAction, { mark: "OFF", label: copy.lanStop, detail: copy.lanStopDetail, disabled: busy !== "", onClick: () => void invoke("stopLanPairing") }),
-                  ] }) : react_jsx_runtime.jsx(PanelAction, { mark: "LAN", label: copy.lanStart, detail: copy.lanPanelDetail, primary: true, disabled: busy !== "", onClick: () => void invoke("startLanPairing") }),
+                    react_jsx_runtime.jsx(PanelAction, { mark: "QR", label: copy.lanShowQr, primary: true, disabled: busy !== "", onClick: () => void invoke("showLanPairing") }),
+                    react_jsx_runtime.jsx(PanelAction, { mark: "OFF", label: copy.lanStop, disabled: busy !== "", onClick: () => void invoke("stopLanPairing") }),
+                  ] }) : react_jsx_runtime.jsx(PanelAction, { mark: "LAN", label: copy.lanStart, primary: true, disabled: busy !== "", onClick: () => void invoke("startLanPairing") }),
                 ] }),
               ] }),
               react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "recovery", children: [
                 react_jsx_runtime.jsx("h3", { "data-dsh-controls-group-label": true, children: copy.panelRecovery }),
                 react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
-                  react_jsx_runtime.jsx(PanelAction, { mark: "SAFE", label: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart, detail: preferences?.safeMode === true ? copy.safeModeExitDetail : copy.safeModeDetail, disabled: busy !== "", onClick: () => void invoke(preferences?.safeMode === true ? "exitSafeMode" : "enterSafeMode") }),
-                  react_jsx_runtime.jsx(PanelAction, { mark: "↻", label: copy.restartHarness, detail: copy.restartDetail, disabled: busy !== "", onClick: () => void invoke("restartHarness") }),
+                  react_jsx_runtime.jsx(PanelAction, { mark: "SAFE", label: preferences?.safeMode === true ? copy.safeModeExit : copy.safeModeStart, disabled: busy !== "", onClick: () => void invoke(preferences?.safeMode === true ? "exitSafeMode" : "enterSafeMode") }),
+                  react_jsx_runtime.jsx(PanelAction, { mark: "↻", label: copy.restartHarness, disabled: busy !== "", onClick: () => void invoke("restartHarness") }),
                 ] }),
               ] }),
               react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "maintenance", children: [
                 react_jsx_runtime.jsx("h3", { "data-dsh-controls-group-label": true, children: copy.panelMaintenance }),
                 react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
-                  react_jsx_runtime.jsx(PanelAction, { mark: "↑", label: copy.checkUpdates, detail: copy.checkUpdatesDetail, disabled: busy !== "", onClick: () => void invoke("checkForUpdates") }),
-                  react_jsx_runtime.jsx(PanelAction, { mark: "LOG", label: copy.openLogs, detail: copy.openLogsDetail, disabled: busy !== "", onClick: () => void invoke("openLogs") }),
-                  react_jsx_runtime.jsx(PanelAction, { mark: "TXT", label: copy.exportDiagnostics, detail: copy.exportDiagnosticsDetail, disabled: busy !== "", onClick: () => void invoke("exportDiagnostics") }),
+                  react_jsx_runtime.jsx(PanelAction, { mark: "↑", label: copy.checkUpdates, disabled: busy !== "", onClick: () => void invoke("checkForUpdates") }),
+                  react_jsx_runtime.jsx(PanelAction, { mark: "LOG", label: copy.openLogs, disabled: busy !== "", onClick: () => void invoke("openLogs") }),
+                  react_jsx_runtime.jsx(PanelAction, { mark: "TXT", label: copy.exportDiagnostics, disabled: busy !== "", onClick: () => void invoke("exportDiagnostics") }),
                 ] }),
               ] }),
               companions.length === 0 ? null : react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "companions", children: [
                 react_jsx_runtime.jsx("h3", { "data-dsh-controls-group-label": true, children: copy.companionGroup }),
-                react_jsx_runtime.jsx("div", { "data-dsh-controls-actions": true, children: companions.map((item) => react_jsx_runtime.jsx(PanelAction, { mark: "◎", label: item.title, detail: copy.companionHint, disabled: busy !== "", onClick: () => void toggleCompanion(item.id) }, item.id)) }),
+                react_jsx_runtime.jsx("div", { "data-dsh-controls-actions": true, children: companions.map((item) => react_jsx_runtime.jsx(PanelAction, { mark: "◎", label: item.title, disabled: busy !== "", onClick: () => void toggleCompanion(item.id) }, item.id)) }),
               ] }),
               react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "info", children: [
                 react_jsx_runtime.jsx("h3", { "data-dsh-controls-group-label": true, children: copy.panelInfo }),
-                react_jsx_runtime.jsx("div", { "data-dsh-controls-actions": true, children: [react_jsx_runtime.jsx(PanelAction, { mark: "i", label: copy.about, detail: copy.aboutDetail, disabled: busy !== "", onClick: () => void invoke("showAbout") }), react_jsx_runtime.jsx(PanelAction, { mark: "★", label: copy.star, detail: copy.starDetail, disabled: busy !== "", onClick: () => void invoke("openStar") }),] }),
+                react_jsx_runtime.jsx("div", { "data-dsh-controls-actions": true, children: [react_jsx_runtime.jsx(PanelAction, { mark: "i", label: copy.about, disabled: busy !== "", onClick: () => void invoke("showAbout") }), react_jsx_runtime.jsx(PanelAction, { mark: "★", label: copy.star, disabled: busy !== "", onClick: () => void invoke("openStar") }),] }),
               ] }),
             ] }) : react_jsx_runtime.jsx("p", { "data-dsh-controls-hint": true, children: copy.unavailable }),
             actionError === "" ? null : react_jsx_runtime.jsx("p", { "data-dsh-controls-error": true, role: "alert", children: actionError }),

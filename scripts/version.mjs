@@ -1,7 +1,7 @@
 /**
  * Composite versioning (docs/decisions/0009): the app version and git tag are
- * `<dsh version>.shell.<shell revision>` — e.g. `0.2.2-alpha.2.shell.0` bundles
- * @deepseek-ai/dsh 0.2.2-alpha.2 at shell revision 0. This tool is the single
+ * `<dsh version>.shell.<shell revision>` — e.g. `0.2.2-alpha.3.shell.0` bundles
+ * @deepseek-ai/dsh 0.2.2-alpha.3 at shell revision 0. This tool is the single
  * writer of package.json's `version` field and the manifest's dsh pin.
  *
  *   node scripts/version.mjs show                  current parts + consistency check
@@ -162,7 +162,7 @@ async function main() {
         : resolvedOld.get(name) ?? range
     }
     // The kernel also peers on packages outside the @deepseek-ai/dsh-* family
-    // (0.2.2-alpha.2 requires @deepseek-ai/cordis-plugin-group ~1.0.6-alpha.1),
+    // (0.2.2-alpha.3 requires @deepseek-ai/cordis-plugin-group ~1.0.6-alpha.2),
     // and those follow their own release line, so the sync above cannot see
     // them. Adopt the ranges the new app-boot declares; unresolved registry
     // reads keep the existing pin instead of guessing.
