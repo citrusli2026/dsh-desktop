@@ -4,10 +4,10 @@
 > 本文记录产品架构、源码职责与 CI/Release 验证契约。
 > 运维事实（发布流程、镜像操作、版本记录）见根 `HANDOFF.md`。
 
-最后更新: 2026-10-29 · 当前代码基线 `0.2.2-alpha.2.shell.0`（内核升级至 `0.2.2-alpha.2`，尚未发布）；
-已发布 tag 为 `v0.2.1-rc.2.shell.11`，其官网、GitCode 镜像与发布证据见 HANDOFF §104。
+最后更新: 2026-11-04 · 当前代码基线 `0.2.2-alpha.3.shell.0`（内核升级至 `0.2.2-alpha.3`）；
+已发布 tag 为 `v0.2.2-alpha.2.shell.0`，其官网、GitCode 镜像与发布证据见 HANDOFF §105。
 （主界面提供一次性首次成功引导；桌面设置提供本地优先、只读且脱敏的运行体检；
-发布门禁覆盖真实 Harness、插件市场、安全模式、移动设备连接和跨版本升级，并在 macOS、Windows、Linux x64 与 Linux arm64 四个 runner 上**验证打包应用真的渲染出全部 22 个桌面扩展面**（`scripts/verify-visual-evidence.mjs`，截图随工件发布）；内置内核 `0.2.2-alpha.2`）
+发布门禁覆盖真实 Harness、插件市场、安全模式、移动设备连接和跨版本升级，并在 macOS、Windows、Linux x64 与 Linux arm64 四个 runner 上**验证打包应用真的渲染出全部 22 个桌面扩展面**（`scripts/verify-visual-evidence.mjs`，截图随工件发布）；内置内核 `0.2.2-alpha.3`）
 
 ## 1. 产品概述
 
