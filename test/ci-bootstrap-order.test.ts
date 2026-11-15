@@ -48,11 +48,16 @@ test('kernel lockfile stays readable by the pinned pnpm major', () => {
   const lock = readFileSync(new URL('../manifest/harness/pnpm-lock.yaml', import.meta.url), 'utf8')
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { packageManager?: string }
   assert.match(pkg.packageManager ?? '', /^pnpm@10\./)
-  // pnpm 10 stores patchedDependencies as a nested `hash:` mapping; the compact
+  // Both kernel patches are deploy-time transforms now (the account bundle went
+  // minified in 0.2.2-rc.2, where a unified diff carries no reviewable context),
+  // so the lockfile should carry no patchedDependencies at all. If one ever
+  // returns: pnpm 10 stores it as a nested `hash:` mapping, and the compact
   // `pkg@version: <hash>` form pnpm 11 writes makes the pinned 10.33.2 abort
-  // `pnpm run bootstrap` with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH, so whichever
-  // version regenerates this file must keep the pinned form.
-  const block = lock.slice(lock.indexOf('patchedDependencies:')).split(/\n(?=\S)/)[0] ?? ''
-  assert.match(block, /hash: [0-9a-f]{40,}/)
-  assert.doesNotMatch(block, /': ?[0-9a-f]{64}$/m)
+  // `pnpm run bootstrap` with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH.
+  const at = lock.indexOf('patchedDependencies:')
+  if (at >= 0) {
+    const block = lock.slice(at).split(/\n(?=\S)/)[0] ?? ''
+    assert.match(block, /hash: [0-9a-f]{40,}/)
+    assert.doesNotMatch(block, /': ?[0-9a-f]{64}$/m)
+  }
 })

@@ -80,14 +80,27 @@ export function patchSessionTrash(source) {
 
 /** The selection owner, not the desktop plugin, releases a removed main-view reference. */
 export function patchWorkspaceTrashNavigation(source) {
-  const clientMarker = '// dsh-desktop: removed-session-selection-v1'
+  const clientMarker = 'dsh-desktop: removed-session-selection-v1'
   if (source.includes(clientMarker)) return source
-  return replaceOnce(source, '\t\t\t\t\tif (this.clearArchivedCurrent()) return;', `\t\t\t\t\t${clientMarker}
+  const formatted = '\t\t\t\t\tif (this.clearArchivedCurrent()) return;'
+  if (source.split(formatted).length === 2) {
+    return source.replace(formatted, `\t\t\t\t\t// ${clientMarker}
 \t\t\t\t\tif (this.mainReference?.binding.session.getSnapshot().removed) {
 \t\t\t\t\t\tthis.clearMain();
 \t\t\t\t\t\treturn;
 \t\t\t\t\t}
 \t\t\t\t\tif (this.clearArchivedCurrent()) return;`)
+  }
+  // 0.2.2-rc.2 began publishing minified client bundles: one line, no
+  // indentation. The same region survives (watchNavigation's reconcile starts
+  // with the archived-current check), but the inserted guard has to sit inline
+  // and use a block comment — a `//` marker would swallow the rest of the
+  // bundle, which is a single line.
+  const minified = 'if(this.clearArchivedCurrent())return;'
+  if (source.split(minified).length === 2) {
+    return source.replace(minified, `/* ${clientMarker} */if(this.mainReference?.binding.session.getSnapshot().removed){this.clearMain();return}${minified}`)
+  }
+  throw new Error('session-trash patch: upstream anchor changed; review lifecycle before building')
 }
 
 /** Kernels whose session-trash lifecycle has been reviewed against this patch.
@@ -121,8 +134,20 @@ export function patchWorkspaceTrashNavigation(source) {
  *  the inserted guard reads is also unchanged — the retain handle still exposes
  *  `binding.session`, and the client SessionSnapshot still carries `removed`
  *  (@deepseek-ai/dsh-api-session-controller/lib/client.js `get binding()` and
- *  the `removed = true` relay). The workspace transform applies (+165 chars). */
-export const REVIEWED_KERNELS = ['0.2.1-rc.1', '0.2.1-rc.2', '0.2.2-alpha.2', '0.2.2-alpha.3']
+ *  the `removed = true` relay). The workspace transform applies (+165 chars).
+ *  0.2.2-alpha.3 → 0.2.2-rc.3: rc.2 began publishing the client bundles
+ *  minified (dsh-client-ui-workspace/lib/client.js 6164 lines → 4, 284999 →
+ *  205018 bytes) while dsh-api-session-controller/lib/index.js stays formatted.
+ *  The host transform therefore applies byte-for-byte (+2234 chars, every
+ *  anchor resolving exactly once, three create/resume sites). The client
+ *  bundle keeps the same region — `watchNavigation()`'s reconcile still opens
+ *  with `clearArchivedCurrent()`, `clearArchivedCurrent()` still reads
+ *  `archivedSessionIds`, and the retain handle still exposes `binding.session`
+ *  (upstream itself no longer reads `removed`, but the inserted guard does, and
+ *  the minified session-controller client still relays `removed = true`). Only
+ *  the whitespace anchor changed, so the transform now also accepts the
+ *  minified form. */
+export const REVIEWED_KERNELS = ['0.2.1-rc.1', '0.2.1-rc.2', '0.2.2-alpha.2', '0.2.2-alpha.3', '0.2.2-rc.3']
 
 /** Only the shell-owned deployed closure is an allowed target. */
 export async function patchBundledSessionTrash(root, upstreamRoot = root) {

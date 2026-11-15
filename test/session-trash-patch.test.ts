@@ -117,16 +117,49 @@ test('persisted child identity protects even a cold parent until children are re
   assert.deepEqual(events, [])
 })
 
+/** Slice `watchNavigation` out of the workspace client of either shape.
+ *
+ * Kernels up to 0.2.2-alpha.3 publish this file formatted, one member per line;
+ * 0.2.2-rc.2 publishes it minified onto a few long lines. Locate the method by
+ * its declaration and its closing brace instead of by surrounding newlines. A
+ * `/` outside a comment or string means a regular expression literal, which
+ * this reader does not model — it refuses instead of slicing the method wrong.
+ */
+function watchNavigationSource(source: string): string {
+  const match = /(?:async\s+)?watchNavigation\s*\(\s*\)\s*\{/.exec(source)
+  assert.ok(match, 'review the workspace navigation lifecycle if its method disappears')
+  let depth = 0
+  let quote: string | null = null
+  let comment: '//' | '/*' | null = null
+  for (let index = match.index + match[0].length - 1; index < source.length; index++) {
+    const char = source[index]!
+    const next = source[index + 1]
+    if (comment === '//') { if (char === '\n') comment = null; continue }
+    if (comment === '/*') { if (char === '*' && next === '/') { comment = null; index++ } continue }
+    if (quote !== null) {
+      if (char === '\\') index++
+      else if (char === quote) quote = null
+      continue
+    }
+    if (char === '/' && next === '/') { comment = '//'; index++; continue }
+    if (char === '/' && next === '*') { comment = '/*'; index++; continue }
+    assert.notEqual(char, '/', 'the pinned watchNavigation now contains a regular expression; extend this reader before trusting it')
+    if (char === '"' || char === "'" || char === '`') { quote = char; continue }
+    if (char === '{') depth++
+    else if (char === '}' && --depth === 0) return source.slice(match.index, index + 1)
+  }
+  throw new Error('unterminated watchNavigation')
+}
+
 test('selection owner clears only a main reference explicitly marked removed', async () => {
   const source = await readFile('manifest/harness/node_modules/@deepseek-ai/dsh-client-ui-workspace/lib/client.js', 'utf8')
   const client = patchWorkspaceTrashNavigation(source)
   assert.equal(patchWorkspaceTrashNavigation(client), client)
-  const start = client.indexOf('\n\t\t\twatchNavigation() {')
-  const end = client.indexOf('\n\t\t\tasync restoreSelection(', start)
+  const method = watchNavigationSource(client)
   let reconcile = () => {}
   let removed = false
   let clears = 0
-  const watcher = runInNewContext(`(class { ${client.slice(start, end)} })`)
+  const watcher = runInNewContext(`(class { ${method} })`)
   const owner = new watcher()
   const list = { subscribe: (callback: () => void) => { reconcile = callback; return () => {} }, getSnapshot: () => ({ phase: 'ready' }) }
   Object.assign(owner, {

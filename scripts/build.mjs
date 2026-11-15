@@ -7,6 +7,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { build } from 'esbuild'
+import { patchBundledAccountUi } from './patch-account-ui.mjs'
 import { patchBundledSessionTrash } from './patch-session-trash.mjs'
 
 rmSync('lib', { recursive: true, force: true })
@@ -87,3 +88,4 @@ const whaleTarget = resolve('resources/harness/node_modules/dsh-whale-widget')
 rmSync(whaleTarget, { recursive: true, force: true })
 cpSync(whaleSource, whaleTarget, { recursive: true })
 await patchBundledSessionTrash(resolve('resources/harness'), resolve('manifest/harness'))
+await patchBundledAccountUi(resolve('resources/harness'), resolve('manifest/harness'))

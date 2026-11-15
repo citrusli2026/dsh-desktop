@@ -10,7 +10,7 @@ import { promisify } from 'node:util'
 
 const run = promisify(execFile)
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const SCRIPTS = ['version.mjs', 'release-shape.mjs', 'kernel-peers.mjs', 'kernel-patches.mjs']
+const SCRIPTS = ['version.mjs', 'release-shape.mjs', 'kernel-peers.mjs']
 
 test('version.mjs runs on a checkout with no installed dependencies', async t => {
   const checkout = await mkdtemp(join(tmpdir(), 'dsh-bare-checkout-'))
@@ -26,10 +26,10 @@ test('version.mjs runs on a checkout with no installed dependencies', async t =>
     JSON.stringify({ dependencies: { '@deepseek-ai/dsh': '0.2.1-rc.2' } }),
   )
 
-  // dsh-watch runs `version.mjs check` before `pnpm install`. A static import of
-  // a node_modules dependency (kernel-patches.mjs imports `yaml`) made that step
-  // die with ERR_MODULE_NOT_FOUND, which the workflow read as a registry outage
-  // and turned into a failed daily run.
+  // dsh-watch runs `version.mjs check` before `pnpm install`, so the release
+  // tooling it imports must not reach for a node_modules dependency: such an
+  // import once died with ERR_MODULE_NOT_FOUND, which the workflow read as a
+  // registry outage and turned into a failed daily run.
   const { stdout } = await run(process.execPath, ['scripts/version.mjs', 'show'], { cwd: checkout })
   assert.match(stdout, /version: package\.json = 0\.2\.1-rc\.2\.shell\.10/)
   assert.match(stdout, /version: consistent/)

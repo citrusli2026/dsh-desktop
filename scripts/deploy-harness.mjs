@@ -12,6 +12,7 @@ import { spawnSync } from 'node:child_process'
 import { lstat, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { patchBundledAccountUi } from './patch-account-ui.mjs'
 import { patchBundledSessionTrash } from './patch-session-trash.mjs'
 import { pruneRuntimeMetadata } from './prune-closure-metadata.mjs'
 
@@ -153,6 +154,7 @@ async function main() {
   await assertNoSymlinks(HARNESS_ROOT)
   await pruneClosure()
   await patchBundledSessionTrash(HARNESS_ROOT)
+  await patchBundledAccountUi(HARNESS_ROOT)
 
   const dshBin = join(HARNESS_ROOT, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
   const pnpmCjs = join(HARNESS_ROOT, 'node_modules', 'pnpm', 'bin', 'pnpm.cjs')
