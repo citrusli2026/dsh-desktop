@@ -37,7 +37,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"WebPage","name":"DSH Desktop Changelog","url":"https://dsh-desktop.com/en/changelog","inLanguage":"en","isPartOf":{"@id":"https://dsh-desktop.com/#website"}},{"@type":"WebSite","@id":"https://dsh-desktop.com/#website","url":"https://dsh-desktop.com/","name":"DSH Desktop"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"DSH Desktop","item":"https://dsh-desktop.com/en"},{"@type":"ListItem","position":2,"name":"Changelog","item":"https://dsh-desktop.com/en/changelog"}]}</script>
 <!-- changelog:ld:start -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-11-04","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.2-alpha.3.shell.0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DSH Desktop changelog","inLanguage":"en","dateModified":"2026-11-15","about":{"@type":"SoftwareApplication","name":"DSH Desktop","applicationCategory":"DeveloperApplication","softwareVersion":"0.2.2-rc.3.shell.0"}}</script>
 <!-- changelog:ld:end -->
 </head>
 <body>
@@ -50,6 +50,14 @@
   <p class="seo-lead">Versions are composite: <code>&lt;dsh kernel&gt;.shell.&lt;shell rev&gt;</code>. The kernel tracks the official <code>@deepseek-ai/dsh</code> package; shell revisions carry desktop-shell fixes and features only. Highlights below; full notes live on each GitHub release page.</p>
 
   <!-- changelog:auto:start -->
+  <h2>v0.2.2-rc.3.shell.0 <small>(kernel 0.2.2-rc.3)</small></h2>
+  <ul>
+    <li><strong>Kernel 0.2.2-alpha.3 → 0.2.2-rc.3</strong>: the 32 <code>dsh-*</code> pins that carry the kernel version moved together (the manifest carries 38 <code>dsh-*</code> dependencies), cordis follows to 4.1.0 with <code>cordis-plugin-group ~1.1.0</code>, release-age exemptions were re-pinned (342 → 322), and the regenerated closure deploys with <code>audit-harness-peers: closure satisfied</code>. Attempts to land rc.1 through rc.3 had failed ten times (issues #142–#154) at &quot;Rebuild the harness closure&quot;: since rc.2 upstream minifies the published client bundles, so the account patch no longer matched a whole line (<code>ERR_PNPM_PATCH_FAILED</code>).</li>
+    <li><strong>Both maintenance patches are applied at deploy time</strong>: the two account changes (redirect the pre-opened tab when the browser blocks the login popup; require the onboarding bridge in the <code>dshDesktop</code> capability probe) are no longer a pnpm patch — in a single-line minified bundle a unified diff is neither reviewable nor matchable. <code>scripts/patch-account-ui.mjs</code> applies them during deploy and packaging with exact anchors, hit counts, and idempotence, and refuses any kernel outside <code>REVIEWED_KERNELS</code> instead of shipping silently. The session-trash lifecycle patch gained the minified anchor branch, and both are covered by <code>node --check</code> plus behavioural unit tests.</li>
+    <li><strong>The desktop-tools overlay is half as tall</strong> (community feedback: too long to reach the last button without scrolling): the two connect entries stay full width while recovery, maintenance and information pair their actions in a two-column grid (nine rows become six), and the Feishu card folds into a heading, one three-cell status line, and its action chips. Measured 886px → 492px (Chinese, light) and 886px → 505px (English, dark), about 44% shorter; the panel copy, the Feishu hint and long English labels may now wrap to two lines instead of being cut mid-sentence. A new e2e gate pins the panel at 540px and asserts the grid, per locale.</li>
+    <li><strong>Dependencies</strong>: <code>electron</code> 44.9.3 → 44.10.2 and <code>@playwright/test</code> 1.64.1 → 1.65.0 (dependabot #151, #152).</li>
+  </ul>
+
   <h2>v0.2.2-alpha.3.shell.0 <small>(kernel 0.2.2-alpha.3)</small></h2>
   <ul>
     <li><strong>Kernel 0.2.2-alpha.2 → 0.2.2-alpha.3</strong>: the manifest pin plus 32 <code>dsh-*</code> peer ranges moved together, <code>cordis-plugin-group</code> follows the new app-boot peer (1.0.6-alpha.2), release-age exemptions were re-pinned (315 → 302), the closure was regenerated and re-deployed with <code>audit-harness-peers: closure satisfied</code>. Both maintenance patches were re-reviewed against the new bundles: the account patch is still two hunks applied cleanly, and the session-trash patch's anchors and the <code>binding.session</code> / <code>removed</code> contract it reads are unchanged (the host bundle's 50-line diff is projection plumbing only; the workspace bundle's navigation block is byte-identical). 0.2.2-alpha.3 is registered in <code>REVIEWED_KERNELS</code>.</li>
@@ -104,15 +112,6 @@
     <li><strong>Attribution</strong>: the settings row names MeteorNOX and links the upstream project; the vendored copy never auto-updates from npm. Code is MIT; artwork/audio stay under upstream <code>PROVENANCE.md</code> (<code>third_party/dsh-whale-widget/VENDORED.md</code>).</li>
     <li><strong>Boundary unchanged</strong>: no DOM access, no <code>executeJavaScript</code>, no approval bridge; companion approvals hand off to the main window.</li>
     <li><strong>Verification</strong>: full local verify, a new packaged end-to-end for the toggle → restart → whale → pet path, the default-off and Safe Mode cases, plus the existing companion and external-plugin suites.</li>
-  </ul>
-
-  <h2>v0.2.1-rc.2.shell.6 <small>(kernel 0.2.1-rc.2)</small></h2>
-  <ul>
-    <li><strong>Companion windows now work with real plugins</strong>: the HTML probe uses the main window's session instead of a credential-less Node <code>fetch</code> (which the Harness connection fence answers with 401), and a late <code>showInactive()</code> can no longer cover a main window the user already restored.</li>
-    <li><strong>Click-through</strong>: a generic <code>window.dshCompanion.setInteractive()</code> lets a plugin page hand clicks on its transparent areas to the desktop; the window is interactive by default, so plugins that ignore it are unaffected.</li>
-    <li><strong>Update prompt</strong>: macOS/Linux “new version available” opens the community download page in the user's locale instead of a GitHub release page.</li>
-    <li><strong>Real-plugin release gate</strong>: opt-in <code>pnpm run test:e2e:whale</code> plus a HID click-through check; the fixture suite now covers the auth fence and the late-load race.</li>
-    <li><strong>Boundary unchanged</strong>: no DOM access, no <code>executeJavaScript</code>, no approval bridge — approvals in the companion hand off to the main window.</li>
   </ul>
   <!-- changelog:auto:end -->
 
