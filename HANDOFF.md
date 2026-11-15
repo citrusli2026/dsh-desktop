@@ -3267,3 +3267,69 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    lockfile`，报 `ERR_PNPM_NO_MATCHING_VERSION … @deepseek-ai/dsh-tool-pwsh-persistent@0.2.2-alpha.3`，
    属上游「内核先发、工具包后发」的发布竞态；该版本现已在 npmjs 与 npmmirror 均可解析，本次升级
    + 全量门禁 + 正式发布已覆盖该路径。macOS 端为 check-only 更新（ADR 0010），升级需手动下载安装。
+
+## 107. 发布 v0.2.2-rc.3.shell.0（内核 rc.3 + 补丁机制改造 + 桌面工具面板紧凑化，2026-11-15）
+
+1. **内核升级**：`node scripts/version.mjs bump dsh 0.2.2-rc.3` → 复合版本 `0.2.2-rc.3.shell.0`；
+   同步 32 个 `dsh-*` peer；新内核 `dsh-app-boot` 的 peer 把 `@deepseek-ai/cordis-plugin-group`
+   从 `~1.0.6-alpha.2` 抬到 `~1.1.0`（`version.mjs` 自动采纳），`@deepseek-ai/cordis` 落到 4.1.0；
+   `sync-release-age-excludes` 342 → 322 条；`manifest/harness` 锁文件重生成（resolved 734）后
+   `pnpm run bootstrap` 全绿（`pruned 20620 paths`、`+667 packages`、fetch-node v24.21.0）。
+   闭包里 `@deepseek-ai/dsh-invariants@0.2.0-rc.2` 仍 peer 到 `cordis ~4.0.4`，可接受：闭包内没有任何包
+   import 它，`.npmrc` 未开 `strict-peer-dependencies`，`audit-harness-peers` 只断言 peer 目录存在。
+2. **维护补丁机制改造（本次发布的关键）**：从 `0.2.2-rc.2` 起上游把 client 包**压缩成单行**发布
+   （`dsh-client-ui-settings-account/lib/client.js` 5450 行 / 258,550 B → 2 行 / 187,335 B；
+   `dsh-client-ui-workspace` 6164 行 / 284,999 B → 4 行 / 205,018 B；`dsh-api-session-controller`
+   的 client 4341 行 → 4 行），`pnpm patch` 的 diff 只能在整行上下文里匹配，于是
+   `pnpm install --frozen-lockfile` 报 `ERR_PNPM_PATCH_FAILED` / `ERR_PNPM_UNUSED_PATCH`
+   —— dsh-watch #142～#154 这一串失败单的同一个根因。改法：
+   - 新增 `scripts/patch-account-ui.mjs`：按语义锚点做**部署期 transform**（与会话垃圾桶补丁同构），
+     `patchAccountLogin` 补弹窗回退 else 分支、`patchAccountDesktopGuard` 补 `dshOnboarding.hasApiKey`
+     守卫；两者都断言锚点命中数必须为 1，写回经 `.tmp` + rename（防 pnpm deploy 硬链接回写 manifest）。
+   - 删除 `manifest/harness/patches/`、`pnpm-workspace.yaml` 的 `patchedDependencies`、
+     `scripts/kernel-patches.mjs`、`test/kernel-patches.test.ts` 与 `version.mjs` 的 carry 逻辑。
+   - `scripts/patch-session-trash.mjs`：`patchWorkspaceTrashNavigation` 增加压缩版锚点分支
+     （`if(this.clearArchivedCurrent())return;`，rc.3 出现 1 次），插入 `/* removed-session-selection-v1 */`
+     守卫；`REVIEWED_KERNELS` 增加 `0.2.2-rc.3`，注释记录 host 补丁 +2234 字符逐字节一致、
+     三处 create/resume、workspace 仅空白差异、`clearMain()` / `handleRemoved()` 契约存活。
+   - 单测：`test/kernel-account-patch.test.ts` 用大括号扫描器提 `BrowserLogin` 类体（跳过注释/字符串），
+     同时覆盖格式化与压缩两种 bundle；`test/session-trash-patch.test.ts` 新增 `watchNavigationSource()`。
+3. **桌面工具面板紧凑化**（用户反馈：展开后太长，高度至少缩短 1/3）：真 Electron 实测整面板
+   **886 px → 492 px（中文）/ 505 px（英文）**，缩短约 44%，不再滚动。做法：删掉面板内 eyebrow 行；
+   action 组改双列 grid（`repeat(2,minmax(0,1fr))`，落单动作整行），行高 38 → 26 px、图标 34×30 → 22×20、
+   箭头 `›` 只保留 DOM；连接组因英文 `Feishu connections` / `Start pairing` 在双列里会被截断，用
+   `data-dsh-controls-actions-wide` 保持整行；飞书状态卡由 2×2+跨行改成单行三格（229 → 123 px）；
+   说明文案统一 `-webkit-line-clamp: 2`。新增 `e2e/desktop-controls-density.spec.ts`
+   （`@desktop-ui`）：起真 Electron 点开面板、量各分组高度、断言 `MAX_PANEL_HEIGHT = 540`、
+   双列结构、`scrollHeight <= clientHeight`，并留中英两张截图。
+4. **依赖**：#151 `@playwright/test` 1.64.1 → 1.65.0、#152 electron 44.9.3 → 44.10.2 均合入 main，
+   当前无开放 PR。
+5. **发布过程四次失败与真因（可复用）**：
+   - run `43678355065` verify 失败：`e2e/desktop-controls-density.spec.ts#56 Argument of type
+     'number | undefined' is not assignable to parameter of type 'number | bigint'`。代码已修，但
+     **对 merge commit 做了 `git commit --amend`，随后 `git pull --rebase` 展平 merge 时把修复丢掉**。
+     教训：永远不要 amend merge commit。
+   - Windows：PowerShell `Expand-Archive` 打印 `Cannot find an overload for "ExtractToDirectory"`
+     却返回 0，留下空 staging 根（`fetch-node: expected extraction root …`）。`scripts/fetch-node.mjs`
+     与 `scripts/install-electron.mjs` 改为 `tar`(bsdtar) → `pwsh` → `powershell` 依次尝试，
+     **以解压产物是否存在判定成败**，不再信 exit code。
+   - macOS：`macos-14` 于 2026-11-02 从 GitHub Actions 退役，job 1 s 内取消
+     （`The configuration 'macos-14-arm64-us-default' is not supported`）。旧日志显示该标签一直解析到
+     **arm64** 镜像（`Image: macos-14-arm64`），而这正是历史 dmg 都叫 `-arm64-mac.dmg` 的原因。
+     先误改成 `macos-15-intel`（x64），升级 smoke 立刻失败（`expected one matching installer … found 0`，
+     因为 `isCurrentInstaller` 与站点门禁都只认 arm64 dmg）；最终改成裸 `macos-15`（arm64 镜像），
+     与决策 0016「macOS 只发 Apple Silicon」一致。tag 因此重打四次，最终 run `43686969648` 全绿。
+6. **发布**：tag `v0.2.2-rc.3.shell.0` → `d76551b`（GitHub / GitCode 一致）；verify + 四平台 build
+   （`macos-15` / `windows-2022` / `ubuntu-24.04` / `ubuntu-24.04-arm`）+ publish 全绿；
+   GitHub 10 个资产、`prerelease=false`：`-arm64-mac.dmg` 349,737,796 B、
+   `-amd64.deb` 244,666,336 B、`-arm64.deb` 238,839,768 B、`setup.exe` 319,944,020 B
+   （含 `.blockmap`、`latest.yml`）与三份 `.sha256`。
+7. **GitCode 镜像（待补）**：本机浏览器扩展当时未连接，`mirror-gitcode-v2.mjs` 已把 8 个公共资产
+   下载并校验通过（`checksum ok` ×4），卡在 `could not read authorization from browser session: release-task`。
+   已下载的文留在 `/var/folders/…/mirror-v2-v0.2.2-rc.3.shell.0-tWiqAE/`，等浏览器就绪后续跑：
+   `node scripts/mirror-gitcode-v2.mjs v0.2.2-rc.3.shell.0 --work-dir <该目录>`（期望 `8/8 assets verified anonymously`）。
+8. **官网**：tag 触发的 Site Data Refresh `43689372795` 在「Re-probe GitCode」阶段重试最多 ~30 min，
+   镜像不到位时仍会提交 `gitcode_ok=false`；镜像完成后需 `GH_CLI=1 node scripts/gen-site-data.mjs`
+   再跑 `gen-site-download-index` / `gen-site-sitemap` 一并提交。
+9. **收尾**：关闭 #155（发布失败）与 10 个 dsh-watch 单 #142/#144/#145/#146/#147/#148/#149/#150/#153/#154，
+   原因统一指向第 2 条的补丁机制改造；当前开放 issue 为 0。
