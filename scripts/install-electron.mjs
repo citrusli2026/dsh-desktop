@@ -43,22 +43,29 @@ const sha256 = buffer => createHash('sha256').update(buffer).digest('hex')
  * Extract the checksum-verified Electron archive with a platform tool. The
  * project-local extract-zip dependency was removed because its latest npm
  * release is affected by a symlink traversal advisory.
+ *
+ * On Windows the bundled bsdtar is tried first: PowerShell's `Expand-Archive`
+ * prints `Cannot find an overload for "ExtractToDirectory"` and still exits 0
+ * on runner images whose Archive module lacks the three-argument overload, so
+ * each attempt is judged by the staged entry point rather than its exit status.
  */
 function extractElectronZip(zipPath, destination) {
-  const result = process.platform === 'win32'
-    ? spawnSync('powershell', [
-        '-NoProfile', '-NonInteractive', '-Command',
-        'Expand-Archive -LiteralPath $env:DSH_ELECTRON_ARCHIVE -DestinationPath $env:DSH_ELECTRON_DESTINATION -Force',
-      ], {
-        env: {
-          ...process.env,
-          DSH_ELECTRON_ARCHIVE: zipPath,
-          DSH_ELECTRON_DESTINATION: destination,
-        },
-        stdio: 'inherit',
-      })
-    : spawnSync('unzip', ['-q', '-o', zipPath, '-d', destination], { stdio: 'inherit' })
-  if (result.status !== 0) fail('Electron archive extraction failed')
+  const attempts = platform === 'win32'
+    ? [
+        ['tar', ['-xf', zipPath, '-C', destination]],
+        ['pwsh', ['-NoProfile', '-NonInteractive', '-Command',
+          `Microsoft.PowerShell.Archive\\Expand-Archive -LiteralPath '${zipPath}' -DestinationPath '${destination}' -Force`]],
+        ['powershell', ['-NoProfile', '-NonInteractive', '-Command',
+          `Expand-Archive -LiteralPath '${zipPath}' -DestinationPath '${destination}' -Force`]],
+      ]
+    : [['unzip', ['-q', '-o', zipPath, '-d', destination]]]
+  const tried = []
+  for (const [command, args] of attempts) {
+    const result = spawnSync(command, args, { stdio: 'inherit' })
+    if (existsSync(join(destination, platformPath))) return
+    tried.push(`${command}: ${result.error?.code ?? `exit ${result.status}`}`)
+  }
+  fail(`Electron archive extraction failed (${tried.join('; ')})`)
 }
 
 async function main() {

@@ -36,6 +36,34 @@ function fail(message) {
   process.exit(1)
 }
 
+/**
+ * Unpack a Windows zip without trusting an extractor's exit status.
+ *
+ * `Expand-Archive` reports `Cannot find an overload for "ExtractToDirectory"`
+ * and still exits 0 on runner images whose Archive module was built against a
+ * .NET runtime without the three-argument overload, which silently produced an
+ * empty staging root and failed the release build two steps later. Every
+ * attempt below is therefore judged by the extracted directory itself, and the
+ * bundled bsdtar (`tar`, shipped with Windows since 10) is tried first because
+ * it reads zip archives without PowerShell at all.
+ */
+function extractZip(archivePath, destination, expectedRoot) {
+  const attempts = [
+    ['tar', ['-xf', archivePath, '-C', destination]],
+    ['pwsh', ['-NoProfile', '-NonInteractive', '-Command',
+      `Microsoft.PowerShell.Archive\\Expand-Archive -LiteralPath '${archivePath}' -DestinationPath '${destination}' -Force`]],
+    ['powershell', ['-NoProfile', '-NonInteractive', '-Command',
+      `Expand-Archive -LiteralPath '${archivePath}' -DestinationPath '${destination}' -Force`]],
+  ]
+  const tried = []
+  for (const [command, args] of attempts) {
+    const result = spawnSync(command, args, { stdio: 'inherit' })
+    if (existsSync(expectedRoot)) return
+    tried.push(`${command}: ${result.error?.code ?? `exit ${result.status}`}`)
+  }
+  fail(`zip extraction failed (${tried.join('; ')})`)
+}
+
 /** Node dist label for the current platform/arch, e.g. darwin-arm64, win-x64. */
 function distName() {
   const platform = process.platform === 'darwin' ? 'darwin'
@@ -145,15 +173,13 @@ async function main() {
   if (actual !== expected) fail(`checksum mismatch for ${file}: pinned ${expected}, got ${actual}`)
 
   console.log(`fetch-node: extracting ${file}`)
+  const extracted = join(TMP_ROOT, `node-${version}-${name}`)
   if (file.endsWith('.zip')) {
-    const result = spawnSync('powershell', ['-NoProfile', '-Command',
-      `Expand-Archive -Force -Path '${archivePath}' -DestinationPath '${TMP_ROOT}'`], { stdio: 'inherit' })
-    if (result.status !== 0) fail('zip extraction failed')
+    extractZip(archivePath, TMP_ROOT, extracted)
   } else {
     await extract({ file: archivePath, cwd: TMP_ROOT })
   }
 
-  const extracted = join(TMP_ROOT, `node-${version}-${name}`)
   if (!existsSync(extracted)) fail(`expected extraction root ${extracted}`)
   await rm(nodeDir, { recursive: true, force: true })
   await rename(extracted, nodeDir)
