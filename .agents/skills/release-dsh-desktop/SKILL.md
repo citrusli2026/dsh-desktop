@@ -100,7 +100,7 @@ temporary credential copies and cleanup; verify thoughts cannot enter answer tex
     peeled tag commit match `git rev-parse v<v>.shell.0^{}`.
 14. `gh run list --workflow=release.yml --limit 1` → note the id;
     `gh run watch <id> --exit-status` → exit 0, jobs verify + 4×build
-    (macos-15-intel, windows-2022, ubuntu-24.04, ubuntu-24.04-arm) + publish all `success`. **If verify fails on
+    (macos-15, windows-2022, ubuntu-24.04, ubuntu-24.04-arm) + publish all `success`. **If verify fails on
     `security:audit`**, apply the audit-floor row below, then cancel the
     run, `git tag -f`, force-push the tag to both remotes, and watch the
     new run.
@@ -248,7 +248,7 @@ to the same commit, preventing a lagging GitCode default branch from receiving
 the new release tag by mistake.
 
 Watch the run: `gh run list --workflow=release.yml --limit 1`, then
-`gh run watch <id> --exit-status`. Jobs: verify → build (macos-15-intel +
+`gh run watch <id> --exit-status`. Jobs: verify → build (macos-15 +
 windows-2022 + ubuntu-24.04 + ubuntu-24.04-arm) → publish. Success means: 10 assets
 (dmg/exe/deb + three `.sha256` + blockmap + latest.yml; AppImage is
 not built), attestations verified, release created on the **normal channel**
@@ -455,7 +455,7 @@ Two layers, both mandatory before a release is called complete.
 
 ### 1. CI visual verification (automatic, every build)
 
-Every desktop runner (macos-15-intel, windows-2022, ubuntu-24.04, ubuntu-24.04-arm) runs the packaged `@smoke` suite and
+Every desktop runner (macos-15, windows-2022, ubuntu-24.04, ubuntu-24.04-arm) runs the packaged `@smoke` suite and
 then **must prove the app rendered**, not merely that a job finished:
 
 ```sh
@@ -516,7 +516,7 @@ When a release touches Feishu display settings, the tray, or the automation view
 | `pnpm -C manifest/harness install --lockfile-only` reports `ERR_PNPM_UNUSED_PATCH` after a kernel bump | the `patchedDependencies` key and patch filename still target the previous `dsh-client-ui-settings-account` version; use the exact `pnpm patch` → edit → `patch-commit` flow above, remove the obsolete patch, regenerate the lockfile, and re-check both account-patch hunks (popup fallback + onboarding guard) in the staged closure |
 | `audit-harness-peers` fails after bump | new kernel peer gap; add the package to the manifest and re-install |
 | `main` push rejected | bot sync landed; fetch and merge origin/main, preserve task SHAs, push normally. A published tag remains immutable; a docs/site follow-up is not a reason to retag |
-| a `build (macos-…)` job is cancelled within ~1 s with `The configuration 'macos-14-arm64-us-default' is not supported` | macOS 14 images were retired from Actions on 2026-11-02, and the bare `macos-15` label now resolves to an arm64 image. Keep the dmg an x64 build with `macos-15-intel` (its cross-version/attest guards compare the same string). Retagging does not help; only the label does |
+| a `build (macos-…)` job is cancelled within ~1 s with `The configuration 'macos-14-arm64-us-default' is not supported` | macOS 14 images were retired from Actions on 2026-11-02 (the old `macos-14` label had actually resolved to its arm64 image). The public macOS build is Apple Silicon only (decision 0016), so the bare `macos-15` label is the right one — it is the arm64 image, and the cross-version/attest guards compare `matrix.os == 'macos-15'`. `macos-15-intel` produces an x64 dmg that neither the site gate nor the upgrade smoke expects. Retagging does not help; only the label does |
 | Windows build dies in `fetch-node` with `expected extraction root …node-v24…-win-x64` right after `extracting node-v24….zip` | PowerShell `Expand-Archive` prints `Cannot find an overload for "ExtractToDirectory"` and still exits 0 on current runner images, so the staging root stays empty. `scripts/fetch-node.mjs` / `scripts/install-electron.mjs` now try the bundled bsdtar first, then `pwsh`, then Windows PowerShell, and judge every attempt by the staged runtime instead of the exit status |
 | backfill run cancels at ~120 min with installers missing | normal; re-dispatch (idempotent), expect 2–3 runs |
 | upload API reports success + release lists assets, but anonymous Range GET 404 `NOT_PATH` on EVERY asset of a fresh release | v5 upload pipeline silently non-persisting (2026-09-20 incident): uploads via `api.gitcode.com` v5 never reach storage. Switch to the v2 browser pipeline (section 6), delete the dead attachments (`action:"delete"`), re-upload + re-link, re-verify |

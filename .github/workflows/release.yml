@@ -61,10 +61,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # macOS 14 images were retired from GitHub Actions on 2026-11-02, and
-          # `macos-15` now resolves to an arm64 image: the Intel label keeps the
-          # dmg an x64 build (artifactName carries ${arch}, ADR 0016).
-          - os: macos-15-intel
+          # macOS 14 images were retired from GitHub Actions on 2026-11-02 (the
+          # old `macos-14` label had actually resolved to its arm64 image). The
+          # public macOS build is Apple Silicon only (decision 0016), and the
+          # bare `macos-15` label is the arm64 image; `macos-15-intel` would ship
+          # an x64 dmg nobody asked for.
+          - os: macos-15
             targets: --mac dmg
             upload: |
               dist/*.dmg
@@ -146,7 +148,7 @@ jobs:
         if: matrix.os == 'windows-2022'
         run: node scripts/verify-windows-installer.mjs dist
       - name: Cross-version upgrade preserves user state (macOS)
-        if: matrix.os == 'macos-15-intel'
+        if: matrix.os == 'macos-15'
         run: node scripts/smoke-upgrade.mjs macos dist test-results/previous-release
       - name: Cross-version upgrade preserves user state (Windows)
         if: matrix.os == 'windows-2022'
@@ -309,7 +311,7 @@ jobs:
       - name: Write installer SHA-256
         run: node scripts/write-release-checksum.mjs dist
       - name: Attest macOS installer (build provenance)
-        if: matrix.os == 'macos-15-intel'
+        if: matrix.os == 'macos-15'
         uses: actions/attest@v4
         with:
           subject-path: dist/*.dmg

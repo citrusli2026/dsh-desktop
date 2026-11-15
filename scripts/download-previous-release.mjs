@@ -35,6 +35,9 @@ export function installerRunsHere(name, platform = process.platform, arch = proc
 }
 
 export function isCurrentInstaller(name, version, platform = process.platform) {
+  // The public macOS build is Apple Silicon only (decision 0016), so the dmg
+  // name carries `arm64` even though electron-builder fills ${arch} from the
+  // build host: the release runner is an arm64 macOS image.
   if (platform === 'darwin') return name.endsWith(`-${version}-arm64-mac.dmg`)
   if (platform === 'win32') return name === `dsh-desktop-setup-${version}.exe`
   if (platform === 'linux') return name.startsWith(`dsh-desktop-${version}-`) && name.endsWith('.deb')
