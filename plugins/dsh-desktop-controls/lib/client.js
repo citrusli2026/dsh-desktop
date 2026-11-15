@@ -100,9 +100,7 @@ window.__ModuleLoader__.load({
         pointer-events: auto;
         width: min(340px, calc(100vw - 32px));
       }
-      [data-dsh-desktop-controls] [data-dsh-controls-panel-head] {
-        padding: 17px 18px 14px;
-      }
+      /* 首次引导卡片继续使用 eyebrow 行；浮动面板本身不再渲染它。 */
       [data-dsh-desktop-controls] [data-dsh-controls-eyebrow] {
         color: var(--dsh-controls-accent);
         display: block;
@@ -112,14 +110,18 @@ window.__ModuleLoader__.load({
         line-height: 1;
         margin-bottom: 7px;
       }
+      /* 紧凑：标题与状态同一行，说明压成单行，不再有 eyebrow 行。 */
+      [data-dsh-desktop-controls] [data-dsh-controls-panel-head] {
+        padding: 13px 14px 10px;
+      }
       [data-dsh-desktop-controls] [data-dsh-controls-title-row] {
         align-items: center;
         display: flex;
-        gap: 12px;
+        gap: 8px;
         justify-content: space-between;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-heading] {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 720;
         letter-spacing: -.01em;
         margin: 0;
@@ -132,10 +134,14 @@ window.__ModuleLoader__.load({
         margin: 4px 0 12px;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-panel-copy] {
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
         color: var(--dsh-controls-muted);
-        font-size: 11.5px;
-        line-height: 1.45;
-        margin: 5px 0 0;
+        display: -webkit-box;
+        font-size: 10.5px;
+        line-height: 1.35;
+        margin: 3px 0 0;
+        overflow: hidden;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-status] {
         align-items: center;
@@ -145,13 +151,13 @@ window.__ModuleLoader__.load({
         color: var(--dsh-controls-muted);
         display: inline-flex;
         flex: 0 0 auto;
-        font-size: 10px;
-        gap: 6px;
+        font-size: 9.5px;
+        gap: 5px;
         line-height: 1;
         margin: 0;
-        max-width: 132px;
+        max-width: 124px;
         overflow: hidden;
-        padding: 6px 8px;
+        padding: 4px 7px;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
@@ -160,36 +166,45 @@ window.__ModuleLoader__.load({
         border-radius: 999px;
         content: "";
         flex: 0 0 auto;
-        height: 6px;
-        width: 6px;
+        height: 5px;
+        width: 5px;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-group] {
         border-top: 1px solid var(--dsh-controls-border);
-        padding: 10px;
+        padding: 5px 8px 6px;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-group-label] {
         color: var(--dsh-controls-muted);
-        font-size: 9px;
+        font-size: 8.5px;
         font-weight: 750;
-        letter-spacing: .12em;
+        letter-spacing: .1em;
         margin: 0;
-        padding: 2px 8px 7px;
+        /* 7px 让标签左缘与按钮内的图标列对齐（按钮 padding 7px）。 */
+        padding: 1px 7px 4px;
         text-transform: uppercase;
       }
-      [data-dsh-desktop-controls] [data-dsh-controls-actions] { display: grid; gap: 4px; }
+      /* 双列按钮：9 个动作从 9 行压到 5 行；落单的动作整行铺满。 */
+      [data-dsh-desktop-controls] [data-dsh-controls-actions] {
+        display: grid;
+        gap: 3px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      [data-dsh-desktop-controls] [data-dsh-controls-actions] > *:last-child:nth-child(odd) { grid-column: 1 / -1; }
+      /* 主入口（连接）整行铺开：两种语言都读得全；工具型动作保持双列。 */
+      [data-dsh-desktop-controls] [data-dsh-controls-actions][data-dsh-controls-actions-wide] { grid-template-columns: minmax(0, 1fr); }
       [data-dsh-desktop-controls] [data-dsh-controls-action] {
         align-items: center;
         background: transparent;
         border: 1px solid transparent;
-        border-radius: 11px;
+        border-radius: 9px;
         color: var(--dsh-controls-text);
         cursor: pointer;
         display: grid;
-        gap: 10px;
-        grid-template-columns: 34px minmax(0, 1fr) auto;
-        min-height: 38px;
+        gap: 6px;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
+        min-height: 26px;
         overflow: hidden;
-        padding: 5px 9px;
+        padding: 3px 7px;
         text-align: left;
         width: 100%;
       }
@@ -205,15 +220,15 @@ window.__ModuleLoader__.load({
         align-items: center;
         background: var(--dsh-controls-panel-muted);
         border: 1px solid var(--dsh-controls-border);
-        border-radius: 9px;
+        border-radius: 6px;
         color: var(--dsh-controls-muted);
         display: inline-flex;
-        font-size: 9px;
+        font-size: 8px;
         font-weight: 750;
-        height: 30px;
+        height: 20px;
         justify-content: center;
-        letter-spacing: .04em;
-        width: 34px;
+        letter-spacing: .01em;
+        width: 22px;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-action][data-dsh-controls-action-primary] [data-dsh-controls-action-mark] {
         background: var(--dsh-controls-accent);
@@ -223,9 +238,9 @@ window.__ModuleLoader__.load({
       /* 一行一个功能：标题独占一行并截断，不再渲染副标题描述。 */
       [data-dsh-desktop-controls] [data-dsh-controls-action-title] {
         display: block;
-        font-size: 13px;
+        font-size: 11.5px;
         font-weight: 650;
-        line-height: 1.3;
+        line-height: 1.2;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -233,59 +248,67 @@ window.__ModuleLoader__.load({
       }
       [data-dsh-desktop-controls] [data-dsh-controls-action-arrow] {
         color: var(--dsh-controls-muted);
+        display: none;
         font-size: 16px;
         line-height: 1;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-action][disabled] { cursor: wait; opacity: .6; }
-      /* 飞书快捷控制：当前应用、桌面进程与通道状态分开显示；操作只在点击后发生。 */
+      /* 飞书快捷控制：当前应用、桌面进程与通道状态分开显示；操作只在点击后发生。
+         三格状态压成一行，面板里只占约 100px 高。 */
       [data-dsh-desktop-controls] [data-dsh-feishu-quick] {
         background: var(--dsh-controls-panel-muted);
         border: 1px solid var(--dsh-controls-border);
-        border-radius: 13px;
+        border-radius: 10px;
         display: grid;
-        gap: 8px;
-        margin: 0 4px 8px;
-        padding: 10px 11px;
+        gap: 4px;
+        margin: 0 0 4px;
+        padding: 7px 8px;
       }
       [data-dsh-desktop-controls] [data-dsh-feishu-quick][data-state="crashed"],
       [data-dsh-desktop-controls] [data-dsh-feishu-quick][data-state="degraded"] {
         border-color: color-mix(in srgb, #c33 36%, var(--dsh-controls-border));
       }
-      [data-dsh-desktop-controls] [data-dsh-feishu-quick-head] { display: grid; gap: 2px; min-width: 0; }
-      [data-dsh-desktop-controls] [data-dsh-feishu-quick-head] strong { font-size: 12px; font-weight: 650; }
+      [data-dsh-desktop-controls] [data-dsh-feishu-quick-head] { align-items: baseline; display: flex; gap: 6px; min-width: 0; }
+      [data-dsh-desktop-controls] [data-dsh-feishu-quick-head] strong { flex: 0 0 auto; font-size: 11px; font-weight: 650; }
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-app] {
-        color: var(--dsh-controls-text);
-        font-size: 11px;
-        line-height: 1.35;
+        color: var(--dsh-controls-muted);
+        font-size: 10px;
+        line-height: 1.3;
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-grid] {
         display: grid;
-        gap: 5px;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-grid] > span {
         background: var(--dsh-controls-panel);
         border: 1px solid var(--dsh-controls-border);
-        border-radius: 9px;
+        border-radius: 7px;
         display: grid;
-        gap: 2px;
+        gap: 1px;
         min-width: 0;
-        padding: 6px 8px;
+        padding: 3px 5px;
       }
-      [data-dsh-desktop-controls] [data-dsh-feishu-quick-grid] > span[data-dsh-feishu-dsh] { grid-column: 1 / -1; }
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-grid] small {
         color: var(--dsh-controls-muted);
-        font-size: 9px;
-        letter-spacing: .03em;
+        font-size: 8px;
+        letter-spacing: .02em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-grid] strong {
-        font-size: 11.5px;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        display: -webkit-box;
+        font-size: 10px;
         font-weight: 650;
-        line-height: 1.25;
-        overflow-wrap: anywhere;
+        line-height: 1.15;
+        overflow: hidden;
       }
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-grid] > span[data-state="ready"] strong,
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-grid] > span[data-state="online"] strong { color: #128b5c; }
@@ -295,22 +318,26 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-grid] > span[data-state="crashed"] strong,
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-grid] > span[data-state="offline"] strong { color: #c33; }
       [data-dsh-desktop-controls] [data-dsh-feishu-hint] {
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
         color: var(--dsh-controls-muted);
-        font-size: 10.5px;
-        line-height: 1.4;
+        display: -webkit-box;
+        font-size: 9.5px;
+        line-height: 1.3;
         margin: 0;
+        overflow: hidden;
       }
-      [data-dsh-desktop-controls] [data-dsh-feishu-quick-actions] { display: flex; flex-wrap: wrap; gap: 6px; }
+      [data-dsh-desktop-controls] [data-dsh-feishu-quick-actions] { display: flex; flex-wrap: wrap; gap: 4px; }
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-actions] button {
         background: var(--dsh-controls-panel);
         border: 1px solid var(--dsh-controls-border);
-        border-radius: 999px;
+        border-radius: 8px;
         color: var(--dsh-controls-text);
         cursor: pointer;
-        font-size: 11.5px;
+        font-size: 10.5px;
         font-weight: 650;
-        min-height: 30px;
-        padding: 0 12px;
+        min-height: 24px;
+        padding: 0 9px;
       }
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-actions] button[data-primary] {
         background: var(--dsh-controls-accent);
@@ -320,8 +347,8 @@ window.__ModuleLoader__.load({
       [data-dsh-desktop-controls] [data-dsh-feishu-quick-actions] button[disabled] { cursor: not-allowed; opacity: .55; }
       [data-dsh-desktop-controls] [data-dsh-feishu-message] {
         color: var(--dsw-alias-state-error-primary, #c33);
-        font-size: 10.5px;
-        line-height: 1.4;
+        font-size: 9.5px;
+        line-height: 1.3;
       }
       [data-dsh-desktop-controls] [data-dsh-controls-hint] {
         color: var(--dsh-controls-muted);
@@ -1019,7 +1046,7 @@ window.__ModuleLoader__.load({
 
     const COPY = {
       zh: {
-        trigger: "桌面工具", title: "桌面工具", panelEyebrow: "DSH DESKTOP", panelCopy: "连接移动设备、调整桌面习惯，或在异常时恢复 Harness。", ready: "已就绪",
+        trigger: "桌面工具", title: "桌面工具", panelCopy: "连接移动设备、调整桌面习惯，或在异常时恢复 Harness。", ready: "已就绪",
         panelConnect: "连接", panelRecovery: "恢复", panelMaintenance: "维护", panelInfo: "信息",
         feishuEntry: "飞书连接", feishuEntryDetail: "扫码创建、管理应用与消息样式", feishuBoundary: "在独立管理窗口中保存应用、开启或关闭连接。关闭窗口不会关闭连接；进入此页不会自动连接。",
         feishuQuickTitle: "飞书连接状态", feishuApplication: "当前应用", feishuProcess: "桌面进程", feishuNoApplication: "未选择应用", feishuLoading: "正在读取连接状态…",
@@ -1097,11 +1124,11 @@ window.__ModuleLoader__.load({
         invalid: "快捷键格式不正确。", conflict: "快捷键已被其它应用占用，请换一个。",
       },
       en: {
-        trigger: "Desktop tools", title: "Desktop tools", panelEyebrow: "DSH DESKTOP", panelCopy: "Connect a device, tune desktop habits, or recover Harness when needed.", ready: "Ready",
+        trigger: "Desktop tools", title: "Desktop tools", panelCopy: "Connect a device, tune desktop habits, or recover Harness when needed.", ready: "Ready",
         panelConnect: "Connect", panelRecovery: "Recovery", panelMaintenance: "Maintenance", panelInfo: "Information",
         feishuEntry: "Feishu connections", feishuEntryDetail: "QR setup, applications and message styles", feishuBoundary: "Save applications and open or close connections in the manager. Closing its window does not disconnect. Visiting this page does not connect automatically.",
         feishuQuickTitle: "Feishu connection", feishuApplication: "Application", feishuProcess: "Desktop service", feishuNoApplication: "No application selected", feishuLoading: "Reading connection state…",
-        feishuConfigureHint: "No application is ready. Open the manager to create one with a QR code or add an existing app; this panel never connects automatically.",
+        feishuConfigureHint: "No application is ready. Open the manager to add one with a QR code; this panel never connects automatically.",
         feishuSecretReentryHint: "Re-enter the old Secret in the manager; nothing reconnects automatically here.",
         feishuSafeModeHint: "Safe Mode paused the connection; start it manually after leaving Safe Mode.",
         feishuDisabledHint: "The connection was explicitly closed; starting again keeps the saved application settings.",
@@ -2732,12 +2759,11 @@ window.__ModuleLoader__.load({
             : null,
           open ? react_jsx_runtime.jsxs("section", { ref: floatingRef, style: floatingStyle, id: "dsh-desktop-controls-panel", "data-dsh-controls-panel": true, role: "dialog", "aria-label": copy.title, children: [
             react_jsx_runtime.jsxs("header", { "data-dsh-controls-panel-head": true, children: [
-              react_jsx_runtime.jsx("span", { "data-dsh-controls-eyebrow": true, children: copy.panelEyebrow }),
               react_jsx_runtime.jsxs("div", { "data-dsh-controls-title-row": true, children: [
                 react_jsx_runtime.jsx("h2", { "data-dsh-controls-heading": true, children: copy.title }),
                 react_jsx_runtime.jsx("p", { "data-dsh-controls-status": true, "data-dsh-controls-stage": startup?.harnessStage ?? null, role: "status", title: startup?.statusLabel ?? copy.ready, children: startup?.statusLabel ?? copy.ready }),
               ] }),
-              react_jsx_runtime.jsx("p", { "data-dsh-controls-panel-copy": true, children: copy.panelCopy }),
+              react_jsx_runtime.jsx("p", { "data-dsh-controls-panel-copy": true, title: copy.panelCopy, children: copy.panelCopy }),
             ] }),
             typeof bridge?.desktopAction === "function" ? react_jsx_runtime.jsxs(react.Fragment, { children: [
               react_jsx_runtime.jsxs("section", { "data-dsh-controls-group": "connect", children: [
@@ -2775,7 +2801,7 @@ window.__ModuleLoader__.load({
                       typeof bridge?.openConnectManager === "function" ? react_jsx_runtime.jsx("button", { type: "button", "data-dsh-feishu-manage": true, disabled: connectBusy !== "", onClick: () => void openConnectManager(), children: copy.feishuManage }) : null,
                     ] }),
                   ] })) : null,
-                react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, children: [
+                react_jsx_runtime.jsxs("div", { "data-dsh-controls-actions": true, "data-dsh-controls-actions-wide": true, children: [
                   typeof bridge?.openConnectManager === "function" ? react_jsx_runtime.jsx(PanelAction, { mark: "FS", label: copy.feishuEntry, disabled: busy !== "", onClick: () => void openConnectManager() }) : null,
                   lanState?.running === true ? react_jsx_runtime.jsxs(react.Fragment, { children: [
                     react_jsx_runtime.jsx(PanelAction, { mark: "QR", label: copy.lanShowQr, primary: true, disabled: busy !== "", onClick: () => void invoke("showLanPairing") }),
