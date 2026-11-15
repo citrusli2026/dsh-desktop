@@ -110,7 +110,7 @@ window.__ModuleLoader__.load({
         line-height: 1;
         margin-bottom: 7px;
       }
-      /* 紧凑：标题与状态同一行，说明压成单行，不再有 eyebrow 行。 */
+      /* 紧凑：标题与状态同一行，说明最多两行，不再有 eyebrow 行。 */
       [data-dsh-desktop-controls] [data-dsh-controls-panel-head] {
         padding: 13px 14px 10px;
       }
@@ -183,7 +183,7 @@ window.__ModuleLoader__.load({
         padding: 1px 7px 4px;
         text-transform: uppercase;
       }
-      /* 双列按钮：9 个动作从 9 行压到 5 行；落单的动作整行铺满。 */
+      /* 双列按钮：工具型动作两两同排（9 行降到 6 行）；落单的动作整行铺满。 */
       [data-dsh-desktop-controls] [data-dsh-controls-actions] {
         display: grid;
         gap: 3px;

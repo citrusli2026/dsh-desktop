@@ -8,7 +8,7 @@ import { launchTrashHarness } from './trash-harness.ts'
  * two-column grid, kept the two connect entries full width, and folded the
  * Feishu card into a one-row summary.
  *
- * Budget: the empty-state panel measured 886px before the redesign and 486px
+ * Budget: the empty-state panel measured 886px before the redesign and 492px
  * after, so 540px fails loudly on any regression while leaving room for the
  * optional companions group and a running LAN pairing row.
  */
@@ -52,8 +52,11 @@ for (const locale of ['zh', 'en'] as const) {
       expect(measure.panel).toBeLessThanOrEqual(MAX_PANEL_HEIGHT)
       // Utility groups pair their actions on one row; the two connect entries
       // stay full width, so they stack instead of squeezing their labels.
-      expect(measure.infoRows[0]).toBe(measure.infoRows[1])
-      expect(measure.connectRows[1]).toBeGreaterThan(measure.connectRows[0])
+      const [feishuTop, pairingTop] = measure.connectRows
+      const [aboutTop, starTop] = measure.infoRows
+      expect(aboutTop).toBe(starTop)
+      expect(feishuTop ?? 0).toBeGreaterThan(0)
+      expect(pairingTop ?? 0).toBeGreaterThan(feishuTop ?? 0)
       // The whole palette fits the 900px window without a scrollbar.
       expect(await panel.evaluate(element => element.scrollHeight <= element.clientHeight)).toBe(true)
     } finally {
