@@ -3324,12 +3324,20 @@ QA提交9fb0ff17798225287589d22b88540e9ba01be006新增全部可用镜像按钮�
    GitHub 10 个资产、`prerelease=false`：`-arm64-mac.dmg` 349,737,796 B、
    `-amd64.deb` 244,666,336 B、`-arm64.deb` 238,839,768 B、`setup.exe` 319,944,020 B
    （含 `.blockmap`、`latest.yml`）与三份 `.sha256`。
-7. **GitCode 镜像（待补）**：本机浏览器扩展当时未连接，`mirror-gitcode-v2.mjs` 已把 8 个公共资产
-   下载并校验通过（`checksum ok` ×4），卡在 `could not read authorization from browser session: release-task`。
-   已下载的文留在 `/var/folders/…/mirror-v2-v0.2.2-rc.3.shell.0-tWiqAE/`，等浏览器就绪后续跑：
-   `node scripts/mirror-gitcode-v2.mjs v0.2.2-rc.3.shell.0 --work-dir <该目录>`（期望 `8/8 assets verified anonymously`）。
-8. **官网**：tag 触发的 Site Data Refresh `43689372795` 在「Re-probe GitCode」阶段重试最多 ~30 min，
-   镜像不到位时仍会提交 `gitcode_ok=false`；镜像完成后需 `GH_CLI=1 node scripts/gen-site-data.mjs`
-   再跑 `gen-site-download-index` / `gen-site-sitemap` 一并提交。
+7. **GitCode 镜像（已完成）**：`mirror-gitcode-v2.mjs` 只修 links、**不创建缺失的 release**——首次运行
+   8 个资产全部 `uploaded`，但 PUT 链接报 `HTTP 404 {"error_code_name":"error","error":"404 Release Not Found"}`
+   （GitCode 上该 tag 还没有 release 对象）；脚本用 `mkdtemp` 且未传 `--work-dir`，退出即删 staging，
+   8 个 attachment 描述符随进程丢失（附件已上传但无人引用）。正确路径是 publisher skill 的「新建 tag」：
+   `gh release download` 取回 8 个公共资产 → 逐个 `gitcode-release.sh upload` 收集描述符（JSONL，需
+   `jq -s '.'` 转数组，`create` 只接受数组且 `length > 0`）→ `gitcode-release.sh create --tag … --ref
+   d76551b98e3da97a453ae38421cd23a5e5541215 --status latest` → 得到 release `id 73207`、`asset_count 8`。
+   匿名校验 `{"asset_count":8,"range_get":"ok"}`；`-arm64.deb` 从 GitCode 回源 SHA-256
+   `47a932a3b9f254bba7b680f1fb35403ac39e06ed8f63eb015ad27dabeacf917c` 与 GitHub 侧一致。
+   教训：新 tag 首次镜像不能只跑 `mirror-gitcode-v2`；要么先 `create` 再 refresh，要么走 upload+create。
+8. **官网（已完成）**：tag 触发的 Site Data Refresh `43689372795` 在镜像到位前先提交了 `d9007e4`
+   （`gitcode_ok=false`）。镜像完成后本地按 workflow 同序列重跑 `gen-site-data`（8/8 `gitcode_ok: true`）、
+   `gen-site-changelog`、`gen-site-stars`、`gen-site-download-index`、`gen-site-sitemap`，
+   `pnpm run site:check` 全 PASS（`site-check: OK … 172 translations`、`api-downloads check: ALL PASS`），
+   提交覆盖该 bot 提交。
 9. **收尾**：关闭 #155（发布失败）与 10 个 dsh-watch 单 #142/#144/#145/#146/#147/#148/#149/#150/#153/#154，
    原因统一指向第 2 条的补丁机制改造；当前开放 issue 为 0。
