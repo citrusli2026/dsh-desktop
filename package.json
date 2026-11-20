@@ -64,7 +64,7 @@
     "electron-updater": "^6.8.11",
     "esbuild": "^0.25.0",
     "sharp": "^0.35.5",
-    "tar": "^7.0.0",
+    "tar": "^7.5.23",
     "typescript": "^7.0.0"
   }
 }
