@@ -57,7 +57,7 @@
     "test:e2e:whale": "node scripts/run-whale-e2e.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "^1.65.0",
+    "@playwright/test": "^1.65.1",
     "@types/node": "^24.19.2",
     "electron": "^44.10.2",
     "electron-builder": "^26.18.0",
