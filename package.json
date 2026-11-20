@@ -59,7 +59,7 @@
   "devDependencies": {
     "@playwright/test": "^1.65.0",
     "@types/node": "^24.19.2",
-    "electron": "^44.10.2",
+    "electron": "^44.11.3",
     "electron-builder": "^26.18.0",
     "electron-updater": "^6.8.11",
     "esbuild": "^0.25.0",
